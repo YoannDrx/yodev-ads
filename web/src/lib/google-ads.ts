@@ -39,6 +39,45 @@ type ApiResult<T> = {
   requestId: string | null
 }
 
+type GoogleAdsFailurePayload = {
+  error?: {
+    message?: string
+    status?: string
+    details?: Array<{
+      errors?: Array<{
+        errorCode?: Record<string, string>
+        message?: string
+        location?: {
+          fieldPathElements?: Array<{ fieldName?: string; index?: number }>
+        }
+      }>
+      requestId?: string
+    }>
+  }
+}
+
+function formatFieldPath(elements: Array<{ fieldName?: string; index?: number }> | undefined) {
+  return elements
+    ?.map((element) => `${element.fieldName ?? '?'}${element.index === undefined ? '' : `[${element.index}]`}`)
+    .join('.')
+}
+
+export function parseGoogleAdsFailure(payload: GoogleAdsFailurePayload) {
+  const failures = payload.error?.details?.flatMap((detail) => detail.errors ?? []) ?? []
+  const messages = failures.map((failure) => {
+    const [family, code] = Object.entries(failure.errorCode ?? {})[0] ?? []
+    const identifier = family && code ? `${family}.${code}` : null
+    const location = formatFieldPath(failure.location?.fieldPathElements)
+    const context = [identifier, location].filter(Boolean).join(' · ')
+    return `${context ? `[${context}] ` : ''}${failure.message ?? 'Erreur Google Ads non détaillée'}`
+  })
+
+  return {
+    message: messages.join(' | ') || payload.error?.message || 'Google Ads a rejeté la requête.',
+    requestId: payload.error?.details?.find((detail) => detail.requestId)?.requestId ?? null,
+  }
+}
+
 export function createOAuthClient(redirectUri?: string) {
   const env = getServerEnv()
   return new OAuth2Client({
@@ -105,10 +144,14 @@ export class GoogleAdsGateway {
       },
     })
     const requestId = response.headers.get('request-id')
-    const data = (await response.json()) as T & { error?: { message?: string; status?: string } }
+    const data = (await response.json()) as T & GoogleAdsFailurePayload
     if (!response.ok) {
-      const message = data.error?.message ?? `Google Ads a répondu avec le statut ${response.status}`
-      throw new GoogleAdsError(message, response.status, requestId)
+      const failure = parseGoogleAdsFailure(data)
+      throw new GoogleAdsError(
+        failure.message || `Google Ads a répondu avec le statut ${response.status}`,
+        response.status,
+        requestId ?? failure.requestId,
+      )
     }
     return { data, requestId }
   }

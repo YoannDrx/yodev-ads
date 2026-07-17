@@ -221,16 +221,29 @@ export async function approveGoogleAdsChange(formData: FormData) {
     if (!client || !connection) throw new Error('Le compte ou sa connexion Google Ads est introuvable.')
     const gateway = new GoogleAdsGateway(connection)
     let executionRequestId: string | null
+    let executionValidationRequestId: string | null
     if (claimed.kind === 'campaign_status') {
       const payload = z
         .object({ campaignId: z.string(), status: z.enum(['ENABLED', 'PAUSED']) })
         .parse(claimed.payload)
+      const validation = await gateway.validateCampaignStatus(
+        client.googleCustomerId,
+        payload.campaignId,
+        payload.status,
+      )
+      executionValidationRequestId = validation.requestId
       const result = await gateway.mutateCampaignStatus(client.googleCustomerId, payload.campaignId, payload.status)
       executionRequestId = result.requestId
     } else if (claimed.kind === 'campaign_budget') {
       const payload = z
         .object({ budgetResourceName: z.string(), amountMicros: z.string() })
         .parse(claimed.payload)
+      const validation = await gateway.validateBudget(
+        client.googleCustomerId,
+        payload.budgetResourceName,
+        payload.amountMicros,
+      )
+      executionValidationRequestId = validation.requestId
       const result = await gateway.mutateBudget(
         client.googleCustomerId,
         payload.budgetResourceName,
@@ -251,7 +264,7 @@ export async function approveGoogleAdsChange(formData: FormData) {
       action: 'approval.executed',
       entityType: 'approval_request',
       entityId: claimed.id,
-      metadata: { kind: claimed.kind, executionRequestId },
+      metadata: { kind: claimed.kind, executionValidationRequestId, executionRequestId },
     })
     target = toUrl('/approvals', 'notice', 'Changement appliqué dans Google Ads.')
   } catch (error) {
