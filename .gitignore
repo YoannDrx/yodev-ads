@@ -7,3 +7,5 @@ __pycache__/
 *.py[cod]
 credentials.json
 google-ads.yaml
+.vercel
+.env*
