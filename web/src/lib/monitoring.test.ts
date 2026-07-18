@@ -26,4 +26,12 @@ describe('monitoring engine', () => {
       [],
     )
   })
+
+  it('ignores historical spend from paused campaigns', () => {
+    expect(
+      analyzeCampaigns({ id: 'agent-1', kind: 'spend_without_conversion', threshold: '50' }, [
+        { ...campaign, status: 'PAUSED' },
+      ]),
+    ).toEqual([])
+  })
 })

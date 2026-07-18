@@ -65,15 +65,25 @@ export function analyzeCampaigns(agent: MonitoringAgentInput, campaigns: Campaig
       title = 'Campagne active sans diffusion'
       description = `« ${campaign.name} » est active mais n’a enregistré aucune impression sur 30 jours.`
       value = impressions
-    } else if (agent.kind === 'spend_without_conversion' && campaign.conversions === 0 && cost >= threshold) {
+    } else if (
+      agent.kind === 'spend_without_conversion' &&
+      campaign.status === 'ENABLED' &&
+      campaign.conversions === 0 &&
+      cost >= threshold
+    ) {
       title = 'Dépense sans conversion'
       description = `« ${campaign.name} » a dépensé ${cost.toFixed(2)} sans générer de conversion.`
       value = cost
-    } else if (agent.kind === 'high_cpa' && campaign.conversions > 0 && cpa >= threshold) {
+    } else if (
+      agent.kind === 'high_cpa' &&
+      campaign.status === 'ENABLED' &&
+      campaign.conversions > 0 &&
+      cpa >= threshold
+    ) {
       title = 'CPA au-dessus du plafond'
       description = `Le CPA de « ${campaign.name} » atteint ${cpa.toFixed(2)}, au-dessus du seuil de ${threshold.toFixed(2)}.`
       value = cpa
-    } else if (agent.kind === 'budget_pressure' && budgetPressure >= threshold) {
+    } else if (agent.kind === 'budget_pressure' && campaign.status === 'ENABLED' && budgetPressure >= threshold) {
       title = 'Pression budgétaire élevée'
       description = `« ${campaign.name} » a consommé ${budgetPressure.toFixed(0)} % de son enveloppe quotidienne extrapolée sur 30 jours.`
       value = budgetPressure
