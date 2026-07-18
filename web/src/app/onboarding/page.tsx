@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
           <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#6af0b1] text-[#0d1722]">
             <Radar />
           </span>
-          <h1 className="mt-5 text-3xl font-semibold tracking-[-.035em]">Bienvenue dans Vigihat</h1>
+          <h1 className="mt-5 text-3xl font-semibold tracking-[-.035em]">Bienvenue dans Vigieads</h1>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-white/55">
             Créez l’espace sécurisé qui contiendra vos clients, vos vigies et votre identité d’agence.
           </p>

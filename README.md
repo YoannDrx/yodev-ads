@@ -1,6 +1,6 @@
-# Vigihat
+# Vigieads
 
-Vigihat is a multi-tenant Google Ads operating system for agencies and independent
+Vigieads is a multi-tenant Google Ads operating system for agencies and independent
 media buyers. The repository contains both the hosted product and a safe local CLI.
 
 ## Hosted product
@@ -12,7 +12,9 @@ The Next.js application in [`web`](web) provides:
 - hosted Google OAuth with AES-256-GCM encryption of refresh tokens;
 - MCC account synchronization through the official Google Ads API v24;
 - live 30-day campaign performance;
+- a live 360° analysis of search terms, keyword quality, responsive search ads and conversion tracking;
 - configurable monitoring agents with manual and daily execution;
+- eight explainable monitoring templates, including wasted queries, Quality Score, ad strength and tracking gaps;
 - explainable alert incidents and acknowledgement workflows;
 - Google `validate_only` checks before every proposed mutation;
 - approval and execution flows for campaign status and daily budgets;
@@ -64,7 +66,7 @@ python -m pip install -e '.[dev]'
 vigie --help
 ```
 
-Create a desktop OAuth client in the Google Cloud project, then let Vigihat
+Create a desktop OAuth client in the Google Cloud project, then let Vigieads
 open the consent screen and create private local Application Default Credentials:
 
 ```bash

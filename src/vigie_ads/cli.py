@@ -88,7 +88,7 @@ def setup(
     name: Annotated[str, typer.Option(help="Initial client display name.")] = "Mail Certificate",
     profile: Annotated[str, typer.Option(help="Initial profile key.")] = "mail-certificate",
     currency: Annotated[str, typer.Option(help="ISO currency code.")] = "EUR",
-    product_name: Annotated[str, typer.Option(help="White-label product name.")] = "Vigihat",
+    product_name: Annotated[str, typer.Option(help="White-label product name.")] = "Vigieads",
     tagline: Annotated[
         str, typer.Option(help="White-label tagline.")
     ] = "Google Ads, sous contrôle.",

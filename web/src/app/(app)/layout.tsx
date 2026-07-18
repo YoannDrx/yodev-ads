@@ -3,6 +3,7 @@ import { OrganizationSwitcher, UserButton } from '@clerk/nextjs'
 import {
   BellRing,
   Bot,
+  ChartNoAxesCombined,
   ClipboardCheck,
   LayoutDashboard,
   ListChecks,
@@ -16,6 +17,7 @@ import { requireWorkspace } from '@/lib/workspace'
 const navigation = [
   { href: '/dashboard', label: 'Cockpit', icon: LayoutDashboard },
   { href: '/accounts', label: 'Comptes clients', icon: UsersRound },
+  { href: '/analysis', label: 'Analyse 360', icon: ChartNoAxesCombined },
   { href: '/alerts', label: 'Alertes', icon: BellRing },
   { href: '/agents', label: 'Vigies autonomes', icon: Bot },
   { href: '/approvals', label: 'Approbations', icon: ClipboardCheck },

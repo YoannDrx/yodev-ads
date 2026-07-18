@@ -34,7 +34,7 @@ export default async function AgentsPage({
         }
       />
       <FlashMessage notice={query.notice} error={query.error} />
-      <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {agentTemplates.map((template) => (
           <Card key={template.kind} className="group overflow-hidden border-[#dde4e7] shadow-none">
             <div className="h-1.5 bg-gradient-to-r from-[#6af0b1] to-[#65b8ff]" />

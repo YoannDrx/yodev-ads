@@ -1,4 +1,10 @@
-import type { CampaignPerformance } from '@/lib/google-ads'
+import type {
+  CampaignPerformance,
+  ConversionTrackingStatus,
+  KeywordPerformance,
+  ResponsiveSearchAdPerformance,
+  SearchTermPerformance,
+} from '@/lib/google-ads'
 
 export const agentTemplates = [
   {
@@ -29,6 +35,34 @@ export const agentTemplates = [
     threshold: 85,
     unit: '% du budget',
   },
+  {
+    kind: 'wasted_search_terms',
+    name: 'Radar des requêtes perdues',
+    description: 'Repère les termes de recherche coûteux sans conversion et propose les exclusions à examiner.',
+    threshold: 20,
+    unit: '€ sans conversion',
+  },
+  {
+    kind: 'low_quality_keywords',
+    name: 'Coach Quality Score',
+    description: 'Surveille les mots-clés actifs dont la pertinence, le CTR attendu ou la page limitent la performance.',
+    threshold: 5,
+    unit: 'score maximal / 10',
+  },
+  {
+    kind: 'weak_responsive_ads',
+    name: 'Studio d’annonces',
+    description: 'Détecte les annonces responsives refusées, faibles ou insuffisamment diversifiées.',
+    threshold: 8,
+    unit: 'titres recommandés',
+  },
+  {
+    kind: 'tracking_gap',
+    name: 'Gardien du tracking',
+    description: 'Alerte quand la dépense progresse sans conversion ou que le suivi Google Ads est inactif.',
+    threshold: 50,
+    unit: '€ sans conversion',
+  },
 ] as const
 
 export type AgentKind = (typeof agentTemplates)[number]['kind']
@@ -44,9 +78,98 @@ export type MonitoringFinding = {
   severity: 'warning' | 'critical'
   title: string
   description: string
-  campaignId: string
-  campaignName: string
+  campaignId?: string
+  campaignName?: string
   value: number
+}
+
+export function analyzeSearchTermsForMonitoring(agent: MonitoringAgentInput, terms: SearchTermPerformance[]) {
+  const threshold = Number(agent.threshold)
+  return terms.flatMap<MonitoringFinding>((term) => {
+    const cost = Number(term.costMicros) / 1_000_000
+    if (term.conversions > 0 || cost < threshold || term.targetingStatus === 'ADDED_EXCLUDED') return []
+    return [
+      {
+        fingerprint: `${agent.id}:search-term:${term.campaignId}:${term.adGroupId}:${term.searchTerm}`,
+        severity: cost >= threshold * 3 ? 'critical' : 'warning',
+        title: 'Requête coûteuse sans conversion',
+        description: `« ${term.searchTerm} » a dépensé ${cost.toFixed(2)} sans conversion. Vérifiez son intention avant de l’exclure.`,
+        campaignId: term.campaignId,
+        campaignName: term.campaignName,
+        value: cost,
+      },
+    ]
+  })
+}
+
+export function analyzeKeywordsForMonitoring(agent: MonitoringAgentInput, keywords: KeywordPerformance[]) {
+  const threshold = Number(agent.threshold)
+  return keywords.flatMap<MonitoringFinding>((keyword) => {
+    if (
+      keyword.status !== 'ENABLED' ||
+      keyword.qualityScore === null ||
+      keyword.qualityScore > threshold ||
+      Number(keyword.impressions) === 0
+    ) {
+      return []
+    }
+    return [
+      {
+        fingerprint: `${agent.id}:keyword:${keyword.criterionId}`,
+        severity: keyword.qualityScore <= 3 ? 'critical' : 'warning',
+        title: `Quality Score faible (${keyword.qualityScore}/10)`,
+        description: `« ${keyword.text} » demande un meilleur alignement entre requête, annonce et page de destination.`,
+        campaignId: keyword.campaignId,
+        campaignName: keyword.campaignName,
+        value: keyword.qualityScore,
+      },
+    ]
+  })
+}
+
+export function analyzeAdsForMonitoring(agent: MonitoringAgentInput, ads: ResponsiveSearchAdPerformance[]) {
+  const minimumHeadlines = Number(agent.threshold)
+  return ads.flatMap<MonitoringFinding>((ad) => {
+    if (ad.status !== 'ENABLED') return []
+    const disapproved = ad.approvalStatus === 'DISAPPROVED'
+    const weak = ['POOR', 'AVERAGE'].includes(ad.adStrength)
+    const incomplete = ad.headlines.length < minimumHeadlines || ad.descriptions.length < 3
+    if (!disapproved && !weak && !incomplete) return []
+    return [
+      {
+        fingerprint: `${agent.id}:ad:${ad.id}`,
+        severity: disapproved || ad.adStrength === 'POOR' ? 'critical' : 'warning',
+        title: disapproved ? 'Annonce refusée' : 'Annonce responsive à renforcer',
+        description: `« ${ad.adGroupName} » : force ${ad.adStrength.toLowerCase()}, ${ad.headlines.length} titres et ${ad.descriptions.length} descriptions.`,
+        campaignId: ad.campaignId,
+        campaignName: ad.campaignName,
+        value: ad.headlines.length,
+      },
+    ]
+  })
+}
+
+export function analyzeTrackingForMonitoring(
+  agent: MonitoringAgentInput,
+  campaigns: CampaignPerformance[],
+  tracking: ConversionTrackingStatus,
+) {
+  const threshold = Number(agent.threshold)
+  const cost = campaigns.reduce((sum, campaign) => sum + Number(campaign.costMicros) / 1_000_000, 0)
+  const conversions = campaigns.reduce((sum, campaign) => sum + campaign.conversions, 0)
+  const trackingActive = tracking.status.includes('MANAGED_BY_')
+  if (trackingActive && (cost < threshold || conversions > 0)) return []
+  return [
+    {
+      fingerprint: `${agent.id}:tracking`,
+      severity: 'critical' as const,
+      title: trackingActive ? 'Dépense sans conversion mesurée' : 'Suivi des conversions inactif',
+      description: trackingActive
+        ? `${cost.toFixed(2)} dépensés sur 30 jours sans conversion. Testez le parcours et la balise.`
+        : `Google Ads remonte l’état « ${tracking.status} ». La stratégie d’enchères travaille sans signal fiable.`,
+      value: cost,
+    },
+  ]
 }
 
 export function analyzeCampaigns(agent: MonitoringAgentInput, campaigns: CampaignPerformance[]) {

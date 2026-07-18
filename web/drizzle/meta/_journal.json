@@ -15,6 +15,13 @@
       "when": 1784366151624,
       "tag": "0001_reflective_menace",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784410483779,
+      "tag": "0002_blue_absorbing_man",
+      "breakpoints": true
     }
   ]
 }

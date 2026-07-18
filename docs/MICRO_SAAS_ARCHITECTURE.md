@@ -1,9 +1,9 @@
-# Vigihat micro-SaaS architecture
+# Vigieads micro-SaaS architecture
 
 ## Implemented product boundary
 
 The local CLI remains the trusted operator tool and automation client. The hosted
-Vigihat application in `web/` adds a multi-tenant control plane without putting
+Vigieads application in `web/` adds a multi-tenant control plane without putting
 shared credentials into CLI configuration.
 
 ## Tenant model

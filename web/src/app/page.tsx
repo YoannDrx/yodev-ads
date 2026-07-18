@@ -8,12 +8,12 @@ const pillars = [
   {
     icon: Eye,
     title: 'Détecter',
-    description: 'Une vue portefeuille lisible et des anomalies calculées sur les données Google Ads réelles.',
+    description: 'Requêtes, Quality Score, annonces, tracking et budget analysés sur les données Google Ads réelles.',
   },
   {
     icon: Sparkles,
     title: 'Expliquer',
-    description: 'Chaque signal indique le compte, la campagne, le seuil et la raison exacte du déclenchement.',
+    description: 'Chaque signal montre sa preuve, son impact, sa priorité et l’action concrète à examiner.',
   },
   {
     icon: ShieldCheck,
@@ -33,7 +33,7 @@ const plans = [
     price: '29 €',
     note: 'Pour démarrer proprement',
     accounts: '3 comptes clients',
-    features: ['Cockpit Google Ads', '4 vigies autonomes', 'Approbations sécurisées', 'Rapports clients'],
+    features: ['Cockpit Google Ads', 'Analyse 360', '8 vigies autonomes', 'Approbations sécurisées'],
   },
   {
     name: 'Studio',
@@ -41,14 +41,14 @@ const plans = [
     note: 'Le choix des consultants',
     accounts: '15 comptes clients',
     featured: true,
-    features: ['Tout Solo', 'Marque blanche', 'API d’agence', 'Historique et audit complet'],
+    features: ['Tout Solo', '15 comptes et rapports clients', 'Marque blanche', 'API d’agence et audit'],
   },
   {
     name: 'Agency',
     price: '189 €',
     note: 'Pour les équipes en croissance',
     accounts: '50 comptes clients',
-    features: ['Tout Studio', 'Rôles avancés', 'Portails clients illimités', 'Support prioritaire'],
+    features: ['Tout Studio', '50 comptes et portails illimités', 'Rôles avancés', 'Support prioritaire'],
   },
 ]
 
@@ -69,12 +69,12 @@ export default async function Home() {
                   </Button>
                 </SignInButton>
                 <Button asChild className="rounded-full bg-[#6af0b1] px-5 text-[#0d1722] hover:bg-[#8ff8c7]">
-                  <Link href="/sign-up">Essayer Vigihat</Link>
+                  <Link href="/sign-up">Essayer Vigieads</Link>
                 </Button>
               </>
             ) : (
               <Button asChild className="rounded-full bg-[#6af0b1] px-5 text-[#0d1722]">
-                <Link href="/dashboard">Ouvrir Vigihat</Link>
+                <Link href="/dashboard">Ouvrir Vigieads</Link>
               </Button>
             )}
           </div>
@@ -88,7 +88,7 @@ export default async function Home() {
               Le système d’exploitation des agences Google Ads.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-white/62 sm:text-xl">
-              Vigihat surveille chaque compte, explique les anomalies et sécurise les changements — pour gérer plus de
+              Vigieads surveille chaque compte, explique les anomalies et sécurise les changements — pour gérer plus de
               clients sans perdre le contrôle.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-4">
@@ -133,7 +133,7 @@ export default async function Home() {
             De la donnée brute à l’action sûre.
           </h2>
           <p className="mt-5 text-lg leading-8 text-[#64717b]">
-            Vigihat ne se contente pas d’afficher des métriques. Il organise le travail quotidien de votre agence.
+            Vigieads ne se contente pas d’afficher des métriques. Il organise le travail quotidien de votre agence.
           </p>
         </div>
         <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -217,7 +217,7 @@ export default async function Home() {
             Votre prochain client ne devrait pas ajouter de chaos.
           </h2>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-white/58">
-            Ajoutez son compte à votre MCC. Vigihat s’occupe du reste : surveillance, garde-fous, reporting et
+            Ajoutez son compte à votre MCC. Vigieads s’occupe du reste : surveillance, garde-fous, reporting et
             traçabilité.
           </p>
           <Button asChild size="lg" className="mt-8 rounded-full bg-[#6af0b1] px-7 text-[#0d1722]">
@@ -227,7 +227,7 @@ export default async function Home() {
           </Button>
         </div>
         <footer className="mx-auto flex max-w-7xl flex-col gap-4 border-t border-white/8 px-6 py-8 text-sm text-white/42 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-          <span>© {new Date().getFullYear()} Vigihat. Google Ads, sous contrôle.</span>
+          <span>© {new Date().getFullYear()} Vigieads. Google Ads, sous contrôle.</span>
           <div className="flex gap-5">
             <Link href="/privacy">Confidentialité</Link>
             <Link href="/terms">Conditions</Link>
@@ -245,7 +245,7 @@ function Brand() {
         <span className="absolute -top-2 h-5 w-7 rounded-full border-2 border-current" />
         <span className="mt-2 text-sm font-black">V</span>
       </span>
-      <span className="text-xl">Vigihat</span>
+      <span className="text-xl">Vigieads</span>
     </Link>
   )
 }

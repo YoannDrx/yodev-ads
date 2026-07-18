@@ -54,7 +54,7 @@ class ClientProfile:
 
 @dataclass(slots=True)
 class BrandSettings:
-    product_name: str = "Vigihat"
+    product_name: str = "Vigieads"
     tagline: str = "Google Ads, sous contrôle."
     logo: str = "◆"
     accent: str = "cyan"
@@ -86,8 +86,11 @@ class BrandSettings:
     @classmethod
     def from_dict(cls, value: dict[str, object] | None) -> BrandSettings:
         value = value or {}
+        product_name = str(value.get("product_name", "Vigieads"))
+        if product_name in {"Vigihat", "VigieAds"}:
+            product_name = "Vigieads"
         return cls(
-            product_name=str(value.get("product_name", "Vigihat")),
+            product_name=product_name,
             tagline=str(value.get("tagline", "Google Ads, sous contrôle.")),
             logo=str(value.get("logo", "◆")),
             accent=str(value.get("accent", "cyan")),
@@ -149,18 +152,27 @@ class VigieConfig:
 
 class ConfigStore:
     def __init__(self, path: Path | None = None) -> None:
-        self.path = path or user_config_path("vigie-ads", appauthor=False) / "config.json"
+        self.path = path or user_config_path("vigieads", appauthor=False) / "config.json"
+        self.legacy_path = (
+            None if path else user_config_path("vigie-ads", appauthor=False) / "config.json"
+        )
 
     def load(self) -> VigieConfig:
-        if not self.path.exists():
+        source = self.path
+        if not source.exists() and self.legacy_path and self.legacy_path.exists():
+            source = self.legacy_path
+        if not source.exists():
             return VigieConfig()
         try:
-            value = json.loads(self.path.read_text(encoding="utf-8"))
+            value = json.loads(source.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
-            raise ConfigurationError(f"Unable to read {self.path}: {error}") from error
+            raise ConfigurationError(f"Unable to read {source}: {error}") from error
         if not isinstance(value, dict):
             raise ConfigurationError("The Vigie Ads configuration root must be an object.")
-        return VigieConfig.from_dict(value)
+        config = VigieConfig.from_dict(value)
+        if source != self.path:
+            self.save(config)
+        return config
 
     def save(self, config: VigieConfig) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

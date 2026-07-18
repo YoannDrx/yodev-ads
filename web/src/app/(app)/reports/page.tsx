@@ -17,7 +17,7 @@ export default async function ReportsPage({
   const query = await searchParams
   const { workspace } = await requireWorkspace()
   const [links, clients] = await Promise.all([listShareLinks(workspace.id), listWorkspaceClients(workspace.id)])
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://vigihat.com'
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://vigieads.vercel.app'
   const freshUrl = query.share ? `${origin}/r/${query.share}` : undefined
   return (
     <>
@@ -39,7 +39,7 @@ export default async function ReportsPage({
             </Button>
           </div>
           <p className="mt-2 text-xs text-emerald-800">
-            Copiez-le maintenant : Vigihat ne stocke que son empreinte cryptographique.
+            Copiez-le maintenant : Vigieads ne stocke que son empreinte cryptographique.
           </p>
         </div>
       )}

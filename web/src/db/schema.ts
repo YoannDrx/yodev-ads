@@ -25,7 +25,7 @@ export const workspaces = pgTable(
     ownerUserId: varchar('owner_user_id', { length: 64 }).notNull(),
     name: varchar('name', { length: 120 }).notNull(),
     slug: varchar('slug', { length: 120 }).notNull(),
-    brandName: varchar('brand_name', { length: 120 }).default('Vigihat').notNull(),
+    brandName: varchar('brand_name', { length: 120 }).default('Vigieads').notNull(),
     brandTagline: varchar('brand_tagline', { length: 180 }).default('Pilotez chaque compte avec confiance.').notNull(),
     accentColor: varchar('accent_color', { length: 16 }).default('#635BFF').notNull(),
     logoUrl: text('logo_url'),

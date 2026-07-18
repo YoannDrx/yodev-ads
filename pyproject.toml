@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "vigie-ads"
+name = "vigieads"
 version = "0.1.0"
 description = "A safe, multi-client command line cockpit for Google Ads"
 readme = "README.md"

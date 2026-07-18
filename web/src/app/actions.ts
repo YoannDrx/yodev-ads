@@ -357,7 +357,16 @@ export async function disconnectGoogleAds() {
 }
 
 const monitoringAgentSchema = z.object({
-  kind: z.enum(['no_delivery', 'spend_without_conversion', 'high_cpa', 'budget_pressure']),
+  kind: z.enum([
+    'no_delivery',
+    'spend_without_conversion',
+    'high_cpa',
+    'budget_pressure',
+    'wasted_search_terms',
+    'low_quality_keywords',
+    'weak_responsive_ads',
+    'tracking_gap',
+  ]),
   clientId: z.union([z.literal('all'), z.string().uuid()]),
   threshold: z.coerce.number().min(0).max(1_000_000),
 })

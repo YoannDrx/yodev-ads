@@ -5,7 +5,13 @@ import { getDb } from '@/db'
 import { alertIncidents, clients, monitoringAgents } from '@/db/schema'
 import { getWorkspaceConnection } from '@/lib/data'
 import { GoogleAdsGateway } from '@/lib/google-ads'
-import { analyzeCampaigns } from '@/lib/monitoring'
+import {
+  analyzeAdsForMonitoring,
+  analyzeCampaigns,
+  analyzeKeywordsForMonitoring,
+  analyzeSearchTermsForMonitoring,
+  analyzeTrackingForMonitoring,
+} from '@/lib/monitoring'
 
 export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: string) {
   const db = getDb()
@@ -26,6 +32,10 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
   })
   const gateway = new GoogleAdsGateway(connection)
   const campaignCache = new Map<string, Awaited<ReturnType<typeof gateway.campaignPerformance>>>()
+  const searchTermCache = new Map<string, Awaited<ReturnType<typeof gateway.searchTermPerformance>>>()
+  const keywordCache = new Map<string, Awaited<ReturnType<typeof gateway.keywordPerformance>>>()
+  const adCache = new Map<string, Awaited<ReturnType<typeof gateway.responsiveSearchAdPerformance>>>()
+  const trackingCache = new Map<string, Awaited<ReturnType<typeof gateway.conversionTrackingStatus>>>()
   let detected = 0
   let resolved = 0
 
@@ -40,7 +50,38 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
         campaigns = await gateway.campaignPerformance(client.googleCustomerId)
         campaignCache.set(client.id, campaigns)
       }
-      const findings = analyzeCampaigns(agent, campaigns)
+      let findings
+      if (agent.kind === 'wasted_search_terms') {
+        let terms = searchTermCache.get(client.id)
+        if (!terms) {
+          terms = await gateway.searchTermPerformance(client.googleCustomerId)
+          searchTermCache.set(client.id, terms)
+        }
+        findings = analyzeSearchTermsForMonitoring(agent, terms)
+      } else if (agent.kind === 'low_quality_keywords') {
+        let keywords = keywordCache.get(client.id)
+        if (!keywords) {
+          keywords = await gateway.keywordPerformance(client.googleCustomerId)
+          keywordCache.set(client.id, keywords)
+        }
+        findings = analyzeKeywordsForMonitoring(agent, keywords)
+      } else if (agent.kind === 'weak_responsive_ads') {
+        let ads = adCache.get(client.id)
+        if (!ads) {
+          ads = await gateway.responsiveSearchAdPerformance(client.googleCustomerId)
+          adCache.set(client.id, ads)
+        }
+        findings = analyzeAdsForMonitoring(agent, ads)
+      } else if (agent.kind === 'tracking_gap') {
+        let tracking = trackingCache.get(client.id)
+        if (!tracking) {
+          tracking = await gateway.conversionTrackingStatus(client.googleCustomerId)
+          trackingCache.set(client.id, tracking)
+        }
+        findings = analyzeTrackingForMonitoring(agent, campaigns, tracking)
+      } else {
+        findings = analyzeCampaigns(agent, campaigns)
+      }
       for (const finding of findings) {
         const fingerprint = `${finding.fingerprint}:${client.id}`
         activeFingerprints.add(fingerprint)

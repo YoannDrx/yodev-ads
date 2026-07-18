@@ -34,6 +34,70 @@ export type CampaignPerformance = {
   conversions: number
 }
 
+export type SearchTermPerformance = {
+  searchTerm: string
+  targetingStatus: string
+  campaignId: string
+  campaignName: string
+  adGroupId: string
+  adGroupName: string
+  impressions: string
+  clicks: string
+  costMicros: string
+  conversions: number
+}
+
+export type KeywordPerformance = {
+  criterionId: string
+  text: string
+  matchType: string
+  status: string
+  qualityScore: number | null
+  expectedCtr: string
+  adRelevance: string
+  landingPageExperience: string
+  campaignId: string
+  campaignName: string
+  adGroupId: string
+  adGroupName: string
+  impressions: string
+  clicks: string
+  costMicros: string
+  conversions: number
+}
+
+export type ResponsiveSearchAdPerformance = {
+  id: string
+  status: string
+  adStrength: string
+  approvalStatus: string
+  campaignId: string
+  campaignName: string
+  adGroupId: string
+  adGroupName: string
+  headlines: string[]
+  descriptions: string[]
+  impressions: string
+  clicks: string
+  costMicros: string
+  conversions: number
+}
+
+export type ConversionTrackingStatus = {
+  status: string
+  managerCustomer: string | null
+  acceptedCustomerDataTerms: boolean
+  enhancedConversionsForLeadsEnabled: boolean
+}
+
+export type AccountAnalysisData = {
+  campaigns: CampaignPerformance[]
+  searchTerms: SearchTermPerformance[]
+  keywords: KeywordPerformance[]
+  ads: ResponsiveSearchAdPerformance[]
+  conversionTracking: ConversionTrackingStatus
+}
+
 type ApiResult<T> = {
   data: T
   requestId: string | null
@@ -240,6 +304,212 @@ export class GoogleAdsGateway {
       costMicros: metrics?.costMicros ?? '0',
       conversions: metrics?.conversions ?? 0,
     }))
+  }
+
+  async searchTermPerformance(customerId: string): Promise<SearchTermPerformance[]> {
+    type Row = {
+      searchTermView?: { searchTerm?: string; status?: string }
+      campaign?: { id?: string; name?: string }
+      adGroup?: { id?: string; name?: string }
+      metrics?: { impressions?: string; clicks?: string; costMicros?: string; conversions?: number }
+    }
+    const rows = await this.search<Row>(
+      customerId,
+      `SELECT search_term_view.search_term,
+              search_term_view.status,
+              campaign.id,
+              campaign.name,
+              ad_group.id,
+              ad_group.name,
+              metrics.impressions,
+              metrics.clicks,
+              metrics.cost_micros,
+              metrics.conversions
+       FROM search_term_view
+       WHERE campaign.status != 'REMOVED'
+         AND segments.date DURING LAST_30_DAYS
+         AND metrics.impressions > 0
+       ORDER BY metrics.cost_micros DESC
+       LIMIT 500`,
+    )
+    return rows.map(({ searchTermView, campaign, adGroup, metrics }) => ({
+      searchTerm: searchTermView?.searchTerm ?? 'Terme indisponible',
+      targetingStatus: searchTermView?.status ?? 'UNKNOWN',
+      campaignId: campaign?.id ?? '',
+      campaignName: campaign?.name ?? 'Campagne sans nom',
+      adGroupId: adGroup?.id ?? '',
+      adGroupName: adGroup?.name ?? 'Groupe sans nom',
+      impressions: metrics?.impressions ?? '0',
+      clicks: metrics?.clicks ?? '0',
+      costMicros: metrics?.costMicros ?? '0',
+      conversions: metrics?.conversions ?? 0,
+    }))
+  }
+
+  async keywordPerformance(customerId: string): Promise<KeywordPerformance[]> {
+    type Row = {
+      adGroupCriterion?: {
+        criterionId?: string
+        status?: string
+        keyword?: { text?: string; matchType?: string }
+        qualityInfo?: {
+          qualityScore?: number
+          searchPredictedCtr?: string
+          creativeQualityScore?: string
+          postClickQualityScore?: string
+        }
+      }
+      campaign?: { id?: string; name?: string }
+      adGroup?: { id?: string; name?: string }
+      metrics?: { impressions?: string; clicks?: string; costMicros?: string; conversions?: number }
+    }
+    const rows = await this.search<Row>(
+      customerId,
+      `SELECT ad_group_criterion.criterion_id,
+              ad_group_criterion.status,
+              ad_group_criterion.keyword.text,
+              ad_group_criterion.keyword.match_type,
+              ad_group_criterion.quality_info.quality_score,
+              ad_group_criterion.quality_info.search_predicted_ctr,
+              ad_group_criterion.quality_info.creative_quality_score,
+              ad_group_criterion.quality_info.post_click_quality_score,
+              campaign.id,
+              campaign.name,
+              ad_group.id,
+              ad_group.name,
+              metrics.impressions,
+              metrics.clicks,
+              metrics.cost_micros,
+              metrics.conversions
+       FROM keyword_view
+       WHERE campaign.status != 'REMOVED'
+         AND ad_group.status != 'REMOVED'
+         AND ad_group_criterion.status != 'REMOVED'
+         AND segments.date DURING LAST_30_DAYS
+       ORDER BY metrics.cost_micros DESC
+       LIMIT 500`,
+    )
+    return rows.map(({ adGroupCriterion, campaign, adGroup, metrics }) => ({
+      criterionId: adGroupCriterion?.criterionId ?? '',
+      text: adGroupCriterion?.keyword?.text ?? 'Mot-clé indisponible',
+      matchType: adGroupCriterion?.keyword?.matchType ?? 'UNKNOWN',
+      status: adGroupCriterion?.status ?? 'UNKNOWN',
+      qualityScore: adGroupCriterion?.qualityInfo?.qualityScore ?? null,
+      expectedCtr: adGroupCriterion?.qualityInfo?.searchPredictedCtr ?? 'UNSPECIFIED',
+      adRelevance: adGroupCriterion?.qualityInfo?.creativeQualityScore ?? 'UNSPECIFIED',
+      landingPageExperience: adGroupCriterion?.qualityInfo?.postClickQualityScore ?? 'UNSPECIFIED',
+      campaignId: campaign?.id ?? '',
+      campaignName: campaign?.name ?? 'Campagne sans nom',
+      adGroupId: adGroup?.id ?? '',
+      adGroupName: adGroup?.name ?? 'Groupe sans nom',
+      impressions: metrics?.impressions ?? '0',
+      clicks: metrics?.clicks ?? '0',
+      costMicros: metrics?.costMicros ?? '0',
+      conversions: metrics?.conversions ?? 0,
+    }))
+  }
+
+  async responsiveSearchAdPerformance(customerId: string): Promise<ResponsiveSearchAdPerformance[]> {
+    type TextAsset = { text?: string }
+    type Row = {
+      adGroupAd?: {
+        status?: string
+        adStrength?: string
+        policySummary?: { approvalStatus?: string }
+        ad?: {
+          id?: string
+          responsiveSearchAd?: { headlines?: TextAsset[]; descriptions?: TextAsset[] }
+        }
+      }
+      campaign?: { id?: string; name?: string }
+      adGroup?: { id?: string; name?: string }
+      metrics?: { impressions?: string; clicks?: string; costMicros?: string; conversions?: number }
+    }
+    const rows = await this.search<Row>(
+      customerId,
+      `SELECT ad_group_ad.ad.id,
+              ad_group_ad.status,
+              ad_group_ad.ad_strength,
+              ad_group_ad.policy_summary.approval_status,
+              ad_group_ad.ad.responsive_search_ad.headlines,
+              ad_group_ad.ad.responsive_search_ad.descriptions,
+              campaign.id,
+              campaign.name,
+              ad_group.id,
+              ad_group.name,
+              metrics.impressions,
+              metrics.clicks,
+              metrics.cost_micros,
+              metrics.conversions
+       FROM ad_group_ad
+       WHERE campaign.status != 'REMOVED'
+         AND ad_group.status != 'REMOVED'
+         AND ad_group_ad.status != 'REMOVED'
+         AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'
+         AND segments.date DURING LAST_30_DAYS
+       ORDER BY metrics.cost_micros DESC
+       LIMIT 500`,
+    )
+    return rows.map(({ adGroupAd, campaign, adGroup, metrics }) => ({
+      id: adGroupAd?.ad?.id ?? '',
+      status: adGroupAd?.status ?? 'UNKNOWN',
+      adStrength: adGroupAd?.adStrength ?? 'UNSPECIFIED',
+      approvalStatus: adGroupAd?.policySummary?.approvalStatus ?? 'UNSPECIFIED',
+      campaignId: campaign?.id ?? '',
+      campaignName: campaign?.name ?? 'Campagne sans nom',
+      adGroupId: adGroup?.id ?? '',
+      adGroupName: adGroup?.name ?? 'Groupe sans nom',
+      headlines: (adGroupAd?.ad?.responsiveSearchAd?.headlines ?? []).flatMap((asset) =>
+        asset.text ? [asset.text] : [],
+      ),
+      descriptions: (adGroupAd?.ad?.responsiveSearchAd?.descriptions ?? []).flatMap((asset) =>
+        asset.text ? [asset.text] : [],
+      ),
+      impressions: metrics?.impressions ?? '0',
+      clicks: metrics?.clicks ?? '0',
+      costMicros: metrics?.costMicros ?? '0',
+      conversions: metrics?.conversions ?? 0,
+    }))
+  }
+
+  async conversionTrackingStatus(customerId: string): Promise<ConversionTrackingStatus> {
+    type Row = {
+      customer?: {
+        conversionTrackingSetting?: {
+          conversionTrackingStatus?: string
+          googleAdsConversionCustomer?: string
+          acceptedCustomerDataTerms?: boolean
+          enhancedConversionsForLeadsEnabled?: boolean
+        }
+      }
+    }
+    const [row] = await this.search<Row>(
+      customerId,
+      `SELECT customer.conversion_tracking_setting.conversion_tracking_status,
+              customer.conversion_tracking_setting.google_ads_conversion_customer,
+              customer.conversion_tracking_setting.accepted_customer_data_terms,
+              customer.conversion_tracking_setting.enhanced_conversions_for_leads_enabled
+       FROM customer
+       LIMIT 1`,
+    )
+    const setting = row?.customer?.conversionTrackingSetting
+    return {
+      status: setting?.conversionTrackingStatus ?? 'UNSPECIFIED',
+      managerCustomer: setting?.googleAdsConversionCustomer?.split('/').at(-1) ?? null,
+      acceptedCustomerDataTerms: setting?.acceptedCustomerDataTerms ?? false,
+      enhancedConversionsForLeadsEnabled: setting?.enhancedConversionsForLeadsEnabled ?? false,
+    }
+  }
+
+  async accountAnalysis(customerId: string): Promise<AccountAnalysisData> {
+    const [campaigns, searchTerms, keywords, ads, conversionTracking] = await Promise.all([
+      this.campaignPerformance(customerId),
+      this.searchTermPerformance(customerId),
+      this.keywordPerformance(customerId),
+      this.responsiveSearchAdPerformance(customerId),
+      this.conversionTrackingStatus(customerId),
+    ])
+    return { campaigns, searchTerms, keywords, ads, conversionTracking }
   }
 
   async validateCampaignStatus(customerId: string, campaignId: string, status: 'ENABLED' | 'PAUSED') {
