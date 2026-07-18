@@ -3,5 +3,42 @@ import Link from 'next/link'
 export const metadata = { title: 'Politique de confidentialité' }
 
 export default function PrivacyPage() {
-  return <main className="mx-auto max-w-3xl px-6 py-16"><Link href="/" className="text-sm font-medium text-violet-700">← VigieAds</Link><h1 className="mt-8 text-4xl font-semibold tracking-tight">Politique de confidentialité</h1><div className="prose prose-neutral mt-8 max-w-none space-y-6 leading-7 text-muted-foreground"><p>VigieAds traite uniquement les informations nécessaires à l’authentification, à l’organisation des espaces de travail et à la gestion des comptes Google Ads explicitement connectés par ses utilisateurs.</p><section><h2 className="text-xl font-semibold text-foreground">Données Google Ads</h2><p>Les jetons d’autorisation sont chiffrés au repos. Ils servent exclusivement à lire les performances et à exécuter les changements approuvés par un utilisateur autorisé. Ils ne sont ni vendus, ni utilisés à des fins publicitaires.</p></section><section><h2 className="text-xl font-semibold text-foreground">Conservation et suppression</h2><p>Un administrateur peut révoquer une connexion Google Ads depuis les réglages. La révocation invalide le jeton auprès de Google et supprime sa copie chiffrée. Les données d’organisation peuvent être exportées ou supprimées sur demande.</p></section><section><h2 className="text-xl font-semibold text-foreground">Sécurité et contact</h2><p>Les accès sont cloisonnés par organisation et les actions sensibles sont auditées. Pour toute demande relative aux données personnelles, contactez l’administrateur de votre espace VigieAds.</p></section><p className="text-sm">Dernière mise à jour : 18 juillet 2026.</p></div></main>
+  return (
+    <main className="mx-auto max-w-3xl px-6 py-16">
+      <Link href="/" className="text-sm font-medium text-emerald-700">
+        ← Vigihat
+      </Link>
+      <h1 className="mt-8 text-4xl font-semibold tracking-tight">Politique de confidentialité</h1>
+      <div className="prose prose-neutral mt-8 max-w-none space-y-6 leading-7 text-muted-foreground">
+        <p>
+          Vigihat traite uniquement les informations nécessaires à l’authentification, à l’organisation des espaces de
+          travail et à la gestion des comptes Google Ads explicitement connectés par ses utilisateurs.
+        </p>
+        <section>
+          <h2 className="text-xl font-semibold text-foreground">Données Google Ads</h2>
+          <p>
+            Les jetons d’autorisation sont chiffrés au repos. Ils servent exclusivement à lire les performances et à
+            exécuter les changements approuvés par un utilisateur autorisé. Ils ne sont ni vendus, ni utilisés à des
+            fins publicitaires.
+          </p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold text-foreground">Conservation et suppression</h2>
+          <p>
+            Un administrateur peut révoquer une connexion Google Ads depuis les réglages. La révocation invalide le
+            jeton auprès de Google et supprime sa copie chiffrée. Les données d’organisation peuvent être exportées ou
+            supprimées sur demande.
+          </p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold text-foreground">Sécurité et contact</h2>
+          <p>
+            Les accès sont cloisonnés par organisation et les actions sensibles sont auditées. Pour toute demande
+            relative aux données personnelles, contactez l’administrateur de votre espace Vigihat.
+          </p>
+        </section>
+        <p className="text-sm">Dernière mise à jour : 18 juillet 2026.</p>
+      </div>
+    </main>
+  )
 }

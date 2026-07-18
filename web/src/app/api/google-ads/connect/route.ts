@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const { workspace, session } = await requireAdminWorkspace()
     const url = new URL(request.url)
     const managerCustomerId = normalizeCustomerId(url.searchParams.get('managerCustomerId') ?? '')
-    const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI ?? new URL('/api/google-ads/callback', url.origin).toString()
+    const redirectUri = new URL('/api/google-ads/callback', url.origin).toString()
     const state = randomBytes(32).toString('base64url')
     const cookieStore = await cookies()
     cookieStore.set(

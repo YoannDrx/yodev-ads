@@ -8,13 +8,13 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://vigie-ads.vercel.app'),
-  title: { default: 'VigieAds — Le cockpit Google Ads des agences', template: '%s · VigieAds' },
+  metadataBase: new URL('https://vigihat.com'),
+  title: { default: 'Vigihat — Le système d’exploitation Google Ads des agences', template: '%s · Vigihat' },
   description:
-    'Centralisez vos comptes Google Ads, surveillez leurs performances et sécurisez chaque changement dans un cockpit multi-client.',
+    'Surveillez tous vos comptes Google Ads, expliquez les anomalies et sécurisez chaque changement dans un cockpit multi-client.',
   openGraph: {
-    title: 'VigieAds — Le cockpit Google Ads des agences',
-    description: 'Une vision claire, des changements contrôlés, tous vos clients réunis.',
+    title: 'Vigihat — Google Ads, sans angle mort',
+    description: 'Détecter, expliquer, approuver et agir sur tous les comptes de votre agence.',
     type: 'website',
     locale: 'fr_FR',
   },

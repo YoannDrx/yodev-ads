@@ -75,4 +75,4 @@ def test_v1_config_is_migrated_with_default_brand(tmp_path: Path) -> None:
     config = ConfigStore(path).load()
 
     assert config.schema_version == 2
-    assert config.brand.product_name == "VigieAds"
+    assert config.brand.product_name == "Vigihat"

@@ -1,6 +1,6 @@
-# VigieAds Web
+# Vigihat Web
 
-The VigieAds hosted control plane is a Next.js 16 App Router application using
+The Vigihat hosted control plane is a Next.js 16 App Router application using
 Clerk Organizations, Neon Postgres, Drizzle ORM, shadcn/ui and the official Google
 Ads REST API.
 

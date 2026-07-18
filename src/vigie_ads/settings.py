@@ -54,7 +54,7 @@ class ClientProfile:
 
 @dataclass(slots=True)
 class BrandSettings:
-    product_name: str = "VigieAds"
+    product_name: str = "Vigihat"
     tagline: str = "Google Ads, sous contrôle."
     logo: str = "◆"
     accent: str = "cyan"
@@ -87,7 +87,7 @@ class BrandSettings:
     def from_dict(cls, value: dict[str, object] | None) -> BrandSettings:
         value = value or {}
         return cls(
-            product_name=str(value.get("product_name", "VigieAds")),
+            product_name=str(value.get("product_name", "Vigihat")),
             tagline=str(value.get("tagline", "Google Ads, sous contrôle.")),
             logo=str(value.get("logo", "◆")),
             accent=str(value.get("accent", "cyan")),

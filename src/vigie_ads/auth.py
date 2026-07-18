@@ -75,7 +75,7 @@ def run_oauth_login(client_id: str, client_secret: str) -> Path:
         host="localhost",
         port=0,
         authorization_prompt_message="Opening Google OAuth in your browser…",
-        success_message="VigieAds OAuth is ready. You can close this tab.",
+        success_message="Vigihat OAuth is ready. You can close this tab.",
         open_browser=True,
     )
     if not credentials.refresh_token:

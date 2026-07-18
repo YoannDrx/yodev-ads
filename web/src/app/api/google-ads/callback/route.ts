@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       throw new Error('La vérification de sécurité OAuth a échoué.')
     }
 
-    const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI ?? new URL('/api/google-ads/callback', url.origin).toString()
+    const redirectUri = new URL('/api/google-ads/callback', url.origin).toString()
     const tokens = await exchangeAuthorizationCode(code, redirectUri)
     const db = getDb()
     const [connection] = await db
