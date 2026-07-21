@@ -5,11 +5,13 @@ import {
   Bot,
   ChartNoAxesCombined,
   ClipboardCheck,
+  CreditCard,
   LayoutDashboard,
   ListChecks,
   Radar,
   Settings,
   Share2,
+  TrendingUp,
   UsersRound,
 } from 'lucide-react'
 import { requireWorkspace } from '@/lib/workspace'
@@ -18,11 +20,13 @@ const navigation = [
   { href: '/dashboard', label: 'Cockpit', icon: LayoutDashboard },
   { href: '/accounts', label: 'Comptes clients', icon: UsersRound },
   { href: '/analysis', label: 'Analyse 360', icon: ChartNoAxesCombined },
+  { href: '/history', label: 'Historique', icon: TrendingUp },
   { href: '/alerts', label: 'Alertes', icon: BellRing },
   { href: '/agents', label: 'Vigies autonomes', icon: Bot },
   { href: '/approvals', label: 'Approbations', icon: ClipboardCheck },
   { href: '/reports', label: 'Rapports clients', icon: Share2 },
   { href: '/audit', label: 'Journal d’audit', icon: ListChecks },
+  { href: '/billing', label: 'Abonnement', icon: CreditCard },
   { href: '/settings', label: 'Réglages', icon: Settings },
 ]
 

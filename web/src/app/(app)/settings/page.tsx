@@ -1,10 +1,13 @@
-import { Cable, KeyRound, Palette, Plus, RefreshCw, ShieldCheck, Trash2, Unplug } from 'lucide-react'
+import { BellRing, Cable, Gauge, KeyRound, Palette, Plus, RefreshCw, ShieldCheck, Trash2, Unplug } from 'lucide-react'
 import {
   createAgencyApiKey,
+  createNotificationChannel,
+  disableNotificationChannel,
   disconnectGoogleAds,
   revokeAgencyApiKey,
   syncGoogleAdsAccounts,
   updateBranding,
+  updateSafetyRules,
 } from '@/app/actions'
 import { FlashMessage } from '@/components/flash-message'
 import { PageHeading } from '@/components/page-heading'
@@ -13,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getWorkspaceConnection, listApiKeys } from '@/lib/data'
+import { getWorkspaceConnection, listApiKeys, listNotificationChannels } from '@/lib/data'
 import { hasGoogleConfiguration } from '@/lib/env'
 import { formatCustomerId } from '@/lib/ids'
 import { requireWorkspace } from '@/lib/workspace'
@@ -25,7 +28,11 @@ export default async function SettingsPage({
 }) {
   const query = await searchParams
   const { workspace, isAdmin } = await requireWorkspace()
-  const [connection, keys] = await Promise.all([getWorkspaceConnection(workspace.id), listApiKeys(workspace.id)])
+  const [connection, keys, channels] = await Promise.all([
+    getWorkspaceConnection(workspace.id),
+    listApiKeys(workspace.id),
+    listNotificationChannels(workspace.id),
+  ])
   const googleReady = hasGoogleConfiguration()
   return (
     <>
@@ -176,6 +183,52 @@ export default async function SettingsPage({
                 </Button>
               )}
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#e8e5ef] shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 place-items-center rounded-xl bg-amber-50 text-amber-700"><Gauge className="size-5" /></span>
+              <div><CardTitle>Règles de sécurité</CardTitle><p className="mt-1 text-sm text-muted-foreground">Bloquez les budgets hors politique avant Google Ads.</p></div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form action={updateSafetyRules} className="space-y-4">
+              <div className="space-y-2"><Label htmlFor="maximumDailyBudget">Budget quotidien maximal (€)</Label><Input id="maximumDailyBudget" name="maximumDailyBudget" type="number" min="0.01" step="0.01" defaultValue={workspace.maximumDailyBudgetMicros ? Number(workspace.maximumDailyBudgetMicros) / 1_000_000 : ''} disabled={!isAdmin} /></div>
+              <div className="space-y-2"><Label htmlFor="maximumMonthlySpend">Dépense maximale sur 30 jours (€)</Label><Input id="maximumMonthlySpend" name="maximumMonthlySpend" type="number" min="0.01" step="0.01" defaultValue={workspace.maximumMonthlySpendMicros ? Number(workspace.maximumMonthlySpendMicros) / 1_000_000 : ''} disabled={!isAdmin} /></div>
+              <div className="space-y-2"><Label htmlFor="notificationEmail">Email opérationnel</Label><Input id="notificationEmail" name="notificationEmail" type="email" defaultValue={workspace.notificationEmail ?? ''} disabled={!isAdmin} /></div>
+              {isAdmin && <Button type="submit" variant="outline" className="w-full">Enregistrer les limites</Button>}
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#e8e5ef] shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 place-items-center rounded-xl bg-sky-50 text-sky-700"><BellRing className="size-5" /></span>
+              <div><CardTitle>Notifications</CardTitle><p className="mt-1 text-sm text-muted-foreground">Email, Slack, Teams ou webhook générique.</p></div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isAdmin && (
+              <form action={createNotificationChannel} className="grid gap-3 sm:grid-cols-2">
+                <Input name="label" aria-label="Nom du canal" placeholder="Ops agence" required />
+                <select name="kind" aria-label="Type de canal" className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="email">Email</option><option value="slack">Slack</option><option value="teams">Teams</option><option value="webhook">Webhook</option></select>
+                <Input name="destination" aria-label="Destination du canal" placeholder="email@agence.fr ou https://…" required className="sm:col-span-2" />
+                <select name="minimumSeverity" aria-label="Sévérité minimale" className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="warning">Alertes et critiques</option><option value="critical">Critiques uniquement</option></select>
+                <Button type="submit"><Plus className="mr-2 size-4" />Ajouter</Button>
+              </form>
+            )}
+            <div className="mt-5 space-y-2">
+              {channels.map((channel) => (
+                <div key={channel.id} className="flex items-center justify-between rounded-xl bg-[#f7f9fa] px-4 py-3">
+                  <div><p className="text-sm font-medium">{channel.label} · {channel.kind}</p><p className="mt-1 text-[11px] text-muted-foreground">{channel.destinationHint} · seuil {channel.minimumSeverity}{channel.lastError ? ` · erreur : ${channel.lastError}` : ''}</p></div>
+                  {isAdmin && <form action={disableNotificationChannel}><input type="hidden" name="channelId" value={channel.id} /><Button type="submit" size="sm" variant="ghost"><Trash2 className="size-4" /></Button></form>}
+                </div>
+              ))}
+              {channels.length === 0 && <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">Aucun canal actif. Les incidents restent disponibles dans le cockpit.</p>}
+            </div>
           </CardContent>
         </Card>
 

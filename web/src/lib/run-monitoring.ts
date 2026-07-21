@@ -5,6 +5,8 @@ import { getDb } from '@/db'
 import { alertIncidents, clients, monitoringAgents } from '@/db/schema'
 import { getWorkspaceConnection } from '@/lib/data'
 import { GoogleAdsGateway } from '@/lib/google-ads'
+import { dispatchIncidentNotifications } from '@/lib/notifications'
+import { storePerformanceSnapshot } from '@/lib/performance-history'
 import {
   analyzeAdsForMonitoring,
   analyzeCampaigns,
@@ -38,6 +40,8 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
   const trackingCache = new Map<string, Awaited<ReturnType<typeof gateway.conversionTrackingStatus>>>()
   let detected = 0
   let resolved = 0
+  let delivered = 0
+  let notificationFailures = 0
 
   for (const agent of agents) {
     const targets = agent.clientId
@@ -49,6 +53,12 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
       if (!campaigns) {
         campaigns = await gateway.campaignPerformance(client.googleCustomerId)
         campaignCache.set(client.id, campaigns)
+        await storePerformanceSnapshot({
+          workspaceId,
+          clientId: client.id,
+          currencyCode: client.currencyCode,
+          campaigns,
+        })
       }
       let findings
       if (agent.kind === 'wasted_search_terms') {
@@ -85,7 +95,7 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
       for (const finding of findings) {
         const fingerprint = `${finding.fingerprint}:${client.id}`
         activeFingerprints.add(fingerprint)
-        await db
+        const [incident] = await db
           .insert(alertIncidents)
           .values({
             workspaceId,
@@ -108,6 +118,18 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
               updatedAt: new Date(),
             },
           })
+          .returning({ id: alertIncidents.id })
+        const notificationResult = await dispatchIncidentNotifications({
+          workspaceId,
+          incidentId: incident.id,
+          eventKey: `${fingerprint}:${new Date().toISOString().slice(0, 10)}`,
+          severity: finding.severity,
+          title: finding.title,
+          description: finding.description,
+          clientName: client.name,
+        })
+        delivered += notificationResult.delivered
+        notificationFailures += notificationResult.failed
         detected += 1
       }
     }
@@ -133,5 +155,11 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
       .where(and(eq(monitoringAgents.id, agent.id), eq(monitoringAgents.workspaceId, workspaceId)))
   }
 
-  return { agents: agents.length, clients: campaignCache.size, detected, resolved }
+  return {
+    agents: agents.length,
+    clients: campaignCache.size,
+    detected,
+    resolved,
+    notifications: { delivered, failed: notificationFailures },
+  }
 }

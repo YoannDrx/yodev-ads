@@ -1,18 +1,34 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Activity, Eye, MousePointerClick, ReceiptText, ShieldCheck, Target } from 'lucide-react'
+import { Activity, Download, Eye, MousePointerClick, ReceiptText, ShieldCheck, Target } from 'lucide-react'
+import { submitClientApprovalFeedback } from '@/app/actions'
+import { FlashMessage } from '@/components/flash-message'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { getPublicShare } from '@/lib/data'
+import { Textarea } from '@/components/ui/textarea'
+import { getPublicShare, listPublicClientApprovals } from '@/lib/data'
 import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/format'
 import { GoogleAdsGateway } from '@/lib/google-ads'
 
 export const metadata: Metadata = { title: 'Rapport client', robots: { index: false, follow: false } }
 
-export default async function PublicReportPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function PublicReportPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>
+  searchParams: Promise<{ notice?: string; error?: string }>
+}) {
   const { token } = await params
+  const query = await searchParams
   const result = await getPublicShare(token)
   if (!result) notFound()
-  const campaigns = await new GoogleAdsGateway(result.connection).campaignPerformance(result.client.googleCustomerId)
+  const [campaigns, proposals] = await Promise.all([
+    new GoogleAdsGateway(result.connection).campaignPerformance(result.client.googleCustomerId),
+    result.share.allowFeedback
+      ? listPublicClientApprovals(result.share.workspaceId, result.client.id, result.share.id)
+      : Promise.resolve([]),
+  ])
   const totals = campaigns.reduce(
     (sum, campaign) => ({
       cost: sum.cost + Number(campaign.costMicros),
@@ -40,6 +56,7 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
         </div>
       </header>
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
+        <FlashMessage notice={query.notice} error={query.error} />
         <div className="flex flex-col gap-4 border-b border-black/8 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">Performance · 30 jours</p>
@@ -49,6 +66,11 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
           <div className="flex items-center gap-2 text-xs text-[#517163]">
             <ShieldCheck className="size-4" /> Aucun accès au compte n’est accordé au lecteur.
           </div>
+        </div>
+        <div className="mt-5 flex justify-end">
+          <a href={`/r/${token}/pdf`} className="inline-flex h-10 items-center rounded-lg bg-[#0d1722] px-4 text-sm font-medium text-white">
+            <Download className="mr-2 size-4" /> Télécharger le PDF
+          </a>
         </div>
         <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <ReportMetric
@@ -64,6 +86,30 @@ export default async function PublicReportPage({ params }: { params: Promise<{ t
             icon={Activity}
           />
         </section>
+        {proposals.length > 0 && (
+          <section className="mt-6 rounded-3xl border border-[#d7e3de] bg-white p-6">
+            <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">Décisions à valider</p><h2 className="mt-2 text-xl font-semibold">Propositions de votre agence</h2><p className="mt-1 text-sm text-[#63717d]">Votre retour est consultatif : seule l’agence peut exécuter le changement dans Google Ads.</p></div>
+            <div className="space-y-4">
+              {proposals.map(({ request, feedback }) => (
+                <div key={request.id} className="rounded-2xl border p-4">
+                  <h3 className="font-semibold">{request.title}</h3>
+                  {feedback ? (
+                    <p className="mt-2 text-sm text-[#517163]">Retour enregistré : {feedback.decision === 'approved' ? 'approuvé' : 'modifications demandées'} par {feedback.authorName}.</p>
+                  ) : (
+                    <form action={submitClientApprovalFeedback} className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <input type="hidden" name="token" value={token} />
+                      <input type="hidden" name="approvalId" value={request.id} />
+                      <input name="authorName" aria-label="Votre nom" placeholder="Votre nom" required minLength={2} maxLength={120} className="h-10 rounded-lg border px-3 text-sm" />
+                      <select name="decision" aria-label="Décision" className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="approved">J’approuve</option><option value="changes_requested">Je demande des modifications</option></select>
+                      <Textarea name="comment" aria-label="Commentaire facultatif" maxLength={2000} placeholder="Commentaire facultatif" className="sm:col-span-2" />
+                      <Button type="submit" className="sm:col-span-2">Transmettre mon retour</Button>
+                    </form>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         <Card className="mt-6 overflow-hidden border-black/8 shadow-none">
           <CardContent className="p-0">
             <div className="overflow-x-auto">

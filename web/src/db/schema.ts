@@ -30,6 +30,14 @@ export const workspaces = pgTable(
     accentColor: varchar('accent_color', { length: 16 }).default('#635BFF').notNull(),
     logoUrl: text('logo_url'),
     approvalMode: varchar('approval_mode', { length: 24 }).default('single').notNull(),
+    plan: varchar('plan', { length: 24 }).default('solo').notNull(),
+    subscriptionStatus: varchar('subscription_status', { length: 32 }).default('inactive').notNull(),
+    stripeCustomerId: varchar('stripe_customer_id', { length: 64 }),
+    stripeSubscriptionId: varchar('stripe_subscription_id', { length: 64 }),
+    subscriptionCurrentPeriodEnd: timestamp('subscription_current_period_end', { withTimezone: true }),
+    notificationEmail: varchar('notification_email', { length: 254 }),
+    maximumDailyBudgetMicros: numeric('maximum_daily_budget_micros', { precision: 22, scale: 0 }),
+    maximumMonthlySpendMicros: numeric('maximum_monthly_spend_micros', { precision: 22, scale: 0 }),
     ...timestamps,
   },
   (table) => [
@@ -214,6 +222,7 @@ export const shareLinks = pgTable(
     tokenHash: varchar('token_hash', { length: 64 }).notNull(),
     tokenPrefix: varchar('token_prefix', { length: 12 }).notNull(),
     active: boolean('active').default(true).notNull(),
+    allowFeedback: boolean('allow_feedback').default(true).notNull(),
     lastViewedAt: timestamp('last_viewed_at', { withTimezone: true }),
     expiresAt: timestamp('expires_at', { withTimezone: true }),
     ...timestamps,
@@ -242,5 +251,117 @@ export const apiKeys = pgTable(
   (table) => [
     uniqueIndex('api_keys_token_hash_idx').on(table.tokenHash),
     index('api_keys_workspace_idx').on(table.workspaceId),
+  ],
+)
+
+export const performanceSnapshots = pgTable(
+  'performance_snapshots',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id')
+      .references(() => workspaces.id, { onDelete: 'cascade' })
+      .notNull(),
+    clientId: uuid('client_id')
+      .references(() => clients.id, { onDelete: 'cascade' })
+      .notNull(),
+    snapshotDate: varchar('snapshot_date', { length: 10 }).notNull(),
+    currencyCode: varchar('currency_code', { length: 3 }).notNull(),
+    costMicros: numeric('cost_micros', { precision: 22, scale: 0 }).default('0').notNull(),
+    impressions: numeric('impressions', { precision: 22, scale: 0 }).default('0').notNull(),
+    clicks: numeric('clicks', { precision: 22, scale: 0 }).default('0').notNull(),
+    conversions: numeric('conversions', { precision: 22, scale: 4 }).default('0').notNull(),
+    activeCampaigns: integer('active_campaigns').default(0).notNull(),
+    sourceWindowDays: integer('source_window_days').default(30).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex('performance_snapshots_client_date_idx').on(table.clientId, table.snapshotDate),
+    index('performance_snapshots_workspace_date_idx').on(table.workspaceId, table.snapshotDate),
+  ],
+)
+
+export const notificationChannels = pgTable(
+  'notification_channels',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id')
+      .references(() => workspaces.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdBy: varchar('created_by', { length: 64 }).notNull(),
+    kind: varchar('kind', { length: 24 }).notNull(),
+    label: varchar('label', { length: 120 }).notNull(),
+    encryptedDestination: text('encrypted_destination').notNull(),
+    destinationHint: varchar('destination_hint', { length: 120 }).notNull(),
+    enabled: boolean('enabled').default(true).notNull(),
+    minimumSeverity: varchar('minimum_severity', { length: 24 }).default('warning').notNull(),
+    lastDeliveredAt: timestamp('last_delivered_at', { withTimezone: true }),
+    lastError: text('last_error'),
+    ...timestamps,
+  },
+  (table) => [index('notification_channels_workspace_idx').on(table.workspaceId, table.enabled)],
+)
+
+export const notificationDeliveries = pgTable(
+  'notification_deliveries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id')
+      .references(() => workspaces.id, { onDelete: 'cascade' })
+      .notNull(),
+    channelId: uuid('channel_id')
+      .references(() => notificationChannels.id, { onDelete: 'cascade' })
+      .notNull(),
+    incidentId: uuid('incident_id').references(() => alertIncidents.id, { onDelete: 'set null' }),
+    eventKey: varchar('event_key', { length: 180 }).notNull(),
+    status: varchar('status', { length: 24 }).notNull(),
+    providerMessageId: varchar('provider_message_id', { length: 128 }),
+    errorMessage: text('error_message'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('notification_deliveries_event_channel_idx').on(table.eventKey, table.channelId),
+    index('notification_deliveries_workspace_idx').on(table.workspaceId, table.createdAt),
+  ],
+)
+
+export const approvalComments = pgTable(
+  'approval_comments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id')
+      .references(() => workspaces.id, { onDelete: 'cascade' })
+      .notNull(),
+    approvalId: uuid('approval_id')
+      .references(() => approvalRequests.id, { onDelete: 'cascade' })
+      .notNull(),
+    authorUserId: varchar('author_user_id', { length: 64 }).notNull(),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('approval_comments_approval_idx').on(table.workspaceId, table.approvalId, table.createdAt)],
+)
+
+export const clientApprovalFeedback = pgTable(
+  'client_approval_feedback',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id')
+      .references(() => workspaces.id, { onDelete: 'cascade' })
+      .notNull(),
+    shareId: uuid('share_id')
+      .references(() => shareLinks.id, { onDelete: 'cascade' })
+      .notNull(),
+    approvalId: uuid('approval_id')
+      .references(() => approvalRequests.id, { onDelete: 'cascade' })
+      .notNull(),
+    authorName: varchar('author_name', { length: 120 }).notNull(),
+    decision: varchar('decision', { length: 24 }).notNull(),
+    comment: text('comment'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('client_feedback_share_approval_idx').on(table.shareId, table.approvalId),
+    index('client_feedback_workspace_idx').on(table.workspaceId, table.createdAt),
   ],
 )

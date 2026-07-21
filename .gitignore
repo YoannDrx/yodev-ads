@@ -9,3 +9,4 @@ credentials.json
 google-ads.yaml
 .vercel
 .env*
+!web/.env.example

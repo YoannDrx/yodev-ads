@@ -12,6 +12,7 @@ The Next.js application in [`web`](web) provides:
 - hosted Google OAuth with AES-256-GCM encryption of refresh tokens;
 - MCC account synchronization through the official Google Ads API v24;
 - live 30-day campaign performance;
+- durable daily performance history in Neon;
 - a live 360° analysis of search terms, keyword quality, responsive search ads and conversion tracking;
 - configurable monitoring agents with manual and daily execution;
 - eight explainable monitoring templates, including wasted queries, Quality Score, ad strength and tracking gaps;
@@ -19,6 +20,12 @@ The Next.js application in [`web`](web) provides:
 - Google `validate_only` checks before every proposed mutation;
 - approval and execution flows for campaign status and daily budgets;
 - revocable, read-only client reports backed by live Google Ads data;
+- downloadable, visually verified PDF reports and consultative client approvals;
+- encrypted email, Slack, Teams and generic webhook notifications;
+- weekly performance digests and deduplicated incident delivery;
+- workspace budget/spend guardrails enforced before Google validation;
+- Stripe subscription checkout, billing portal and signed webhook handling;
+- Vercel Web Analytics and Speed Insights;
 - one-time agency API keys for Codex and internal tooling;
 - an append-only operational audit trail;
 - Neon Postgres persistence and a Vercel deployment target.

@@ -20,6 +20,8 @@ Organization
   │     ├── Google Ads customer ID
   │     ├── currency and timezone
   │     └── approval policy
+  ├── Performance history and notification channels
+  ├── Subscription and plan limits
   └── Audit events
 ```
 
@@ -52,9 +54,12 @@ mutation reaches Google Ads.
 2. **Gateway**: tenant-aware Google Ads REST v24 commands inside the server runtime.
 3. **Postgres**: Neon workspaces, clients, encrypted connections, approvals and audit events.
 4. **Identity**: Clerk sessions, organizations, membership and roles.
-5. **Secret store**: Vercel environment secrets plus encrypted OAuth material in Postgres.
+5. **Secret store**: Vercel environment secrets plus encrypted OAuth and notification destinations in Postgres.
+6. **Billing**: Stripe Checkout, customer portal and signed subscription webhooks.
+7. **Delivery**: Resend email plus encrypted Slack, Teams and generic webhook endpoints.
 
-Scheduled monitoring, a durable worker/queue and billing remain commercial-phase work.
+Scheduled monitoring runs through Vercel Cron. Incident delivery is idempotent in
+Postgres; a dedicated durable queue remains an upgrade path for higher volume.
 
 The Google Ads gateway in `src/vigie_ads/google_api.py` should remain behind a
 small service interface. That prevents Google API version changes from leaking
@@ -77,13 +82,13 @@ into the web, CLI and worker layers.
 - client invitations and role-based access;
 - approval queue and audit log.
 
-### Phase 3 — commercial micro-SaaS
+### Phase 3 — commercial micro-SaaS (implemented foundation)
 
-- subscriptions and usage metering;
-- scheduled monitoring and alerts;
+- subscriptions, plan limits and usage metering schema;
+- scheduled monitoring, weekly digests and multichannel alerts;
 - reusable campaign blueprints;
 - agency white label and custom domain;
-- customer-facing reports;
+- customer-facing live/PDF reports and consultative approval feedback;
 - per-tenant data export and deletion workflows.
 
 ## Non-negotiable launch gates
@@ -94,3 +99,8 @@ into the web, CLI and worker layers.
 - encrypted backups and credential rotation runbook;
 - immutable mutation audit trail;
 - tested account offboarding, data export and deletion.
+
+External launch dependencies remain: custom-domain purchase, Clerk production
+keys, Google OAuth verification, Stripe price provisioning and a verified Resend
+sending domain. The application degrades safely when optional billing or email
+secrets are absent.

@@ -5,11 +5,14 @@ import { getDb } from '@/db'
 import {
   alertIncidents,
   apiKeys,
+  approvalComments,
   approvalRequests,
   auditEvents,
   clients,
+  clientApprovalFeedback,
   googleAdsConnections,
   monitoringAgents,
+  notificationChannels,
   shareLinks,
 } from '@/db/schema'
 import { hashToken } from '@/lib/tokens'
@@ -41,13 +44,33 @@ export async function getWorkspaceClient(workspaceId: string, clientId?: string)
 }
 
 export async function listApprovals(workspaceId: string) {
-  return getDb()
+  const rows = await getDb()
     .select({ request: approvalRequests, client: clients })
     .from(approvalRequests)
     .innerJoin(clients, eq(clients.id, approvalRequests.clientId))
     .where(eq(approvalRequests.workspaceId, workspaceId))
     .orderBy(desc(approvalRequests.createdAt))
     .limit(100)
+  const [comments, clientFeedback] = await Promise.all([
+    getDb().query.approvalComments.findMany({
+      where: eq(approvalComments.workspaceId, workspaceId),
+      orderBy: [approvalComments.createdAt],
+    }),
+    getDb().query.clientApprovalFeedback.findMany({
+      where: eq(clientApprovalFeedback.workspaceId, workspaceId),
+      orderBy: [desc(clientApprovalFeedback.createdAt)],
+    }),
+  ])
+  const commentsByApproval = new Map<string, typeof comments>()
+  for (const comment of comments) {
+    commentsByApproval.set(comment.approvalId, [...(commentsByApproval.get(comment.approvalId) ?? []), comment])
+  }
+  const feedbackByApproval = new Map(clientFeedback.map((feedback) => [feedback.approvalId, feedback]))
+  return rows.map((row) => ({
+    ...row,
+    comments: commentsByApproval.get(row.request.id) ?? [],
+    clientFeedback: feedbackByApproval.get(row.request.id),
+  }))
 }
 
 export async function listAuditEvents(workspaceId: string) {
@@ -99,9 +122,37 @@ export async function getPublicShare(token: string) {
   return result
 }
 
+export async function listPublicClientApprovals(workspaceId: string, clientId: string, shareId: string) {
+  return getDb()
+    .select({ request: approvalRequests, feedback: clientApprovalFeedback })
+    .from(approvalRequests)
+    .leftJoin(
+      clientApprovalFeedback,
+      and(
+        eq(clientApprovalFeedback.approvalId, approvalRequests.id),
+        eq(clientApprovalFeedback.shareId, shareId),
+      ),
+    )
+    .where(
+      and(
+        eq(approvalRequests.workspaceId, workspaceId),
+        eq(approvalRequests.clientId, clientId),
+        eq(approvalRequests.status, 'pending'),
+      ),
+    )
+    .orderBy(desc(approvalRequests.createdAt))
+}
+
 export async function listApiKeys(workspaceId: string) {
   return getDb().query.apiKeys.findMany({
     where: and(eq(apiKeys.workspaceId, workspaceId), isNull(apiKeys.revokedAt)),
     orderBy: [desc(apiKeys.createdAt)],
+  })
+}
+
+export async function listNotificationChannels(workspaceId: string) {
+  return getDb().query.notificationChannels.findMany({
+    where: and(eq(notificationChannels.workspaceId, workspaceId), eq(notificationChannels.enabled, true)),
+    orderBy: [desc(notificationChannels.createdAt)],
   })
 }

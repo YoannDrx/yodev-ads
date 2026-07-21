@@ -8,16 +8,20 @@ import { getDb } from '@/db'
 import {
   alertIncidents,
   apiKeys,
+  approvalComments,
   approvalRequests,
   auditEvents,
   clients,
+  clientApprovalFeedback,
   googleAdsConnections,
   monitoringAgents,
+  notificationChannels,
   shareLinks,
   workspaces,
 } from '@/db/schema'
-import { decryptSecret } from '@/lib/crypto'
-import { getWorkspaceClient, getWorkspaceConnection } from '@/lib/data'
+import { accountsWithinPlan, getStripe, isPlanId, planCatalog, priceIdForPlan, type PlanId } from '@/lib/billing'
+import { decryptSecret, encryptSecret } from '@/lib/crypto'
+import { getPublicShare, getWorkspaceClient, getWorkspaceConnection } from '@/lib/data'
 import { GoogleAdsGateway } from '@/lib/google-ads'
 import { normalizeCustomerId } from '@/lib/ids'
 import { agentTemplates } from '@/lib/monitoring'
@@ -42,8 +46,9 @@ export async function syncGoogleAdsAccounts() {
 
     const gateway = new GoogleAdsGateway(connection)
     const managedCustomers = await gateway.listManagedCustomers()
+    const { included, excluded, limit } = accountsWithinPlan(managedCustomers, workspace.plan)
     const db = getDb()
-    for (const customer of managedCustomers) {
+    for (const customer of included) {
       await db
         .insert(clients)
         .values({
@@ -66,19 +71,36 @@ export async function syncGoogleAdsAccounts() {
           },
         })
     }
+    for (const customer of excluded) {
+      await db
+        .update(clients)
+        .set({ active: false, updatedAt: new Date() })
+        .where(
+          and(
+            eq(clients.workspaceId, workspace.id),
+            eq(clients.googleCustomerId, normalizeCustomerId(customer.customerId)),
+          ),
+        )
+    }
     await db.insert(auditEvents).values({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       action: 'google_ads.accounts_synced',
       entityType: 'google_ads_connection',
       entityId: connection.id,
-      metadata: { count: managedCustomers.length },
+      metadata: { count: included.length, excludedCount: excluded.length, advertiserLimit: limit, plan: workspace.plan },
     })
     await db
       .update(googleAdsConnections)
       .set({ lastSuccessfulUseAt: new Date(), updatedAt: new Date() })
       .where(and(eq(googleAdsConnections.id, connection.id), eq(googleAdsConnections.workspaceId, workspace.id)))
-    target = toUrl('/accounts', 'notice', `${managedCustomers.length} comptes synchronisés.`)
+    target = toUrl(
+      '/accounts',
+      'notice',
+      excluded.length
+        ? `${included.length} comptes synchronisés. ${excluded.length} compte annonceur hors quota (${limit}) reste inactif.`
+        : `${included.length} comptes synchronisés.`,
+    )
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))
   }
@@ -159,6 +181,19 @@ export async function requestGoogleAdsChange(formData: FormData) {
       title = `${input.status === 'PAUSED' ? 'Suspendre' : 'Activer'} « ${input.campaignName} »`
     } else {
       const amountMicros = String(Math.round(input.dailyBudget * 1_000_000))
+      if (
+        workspace.maximumDailyBudgetMicros &&
+        BigInt(amountMicros) > BigInt(workspace.maximumDailyBudgetMicros)
+      ) {
+        throw new Error('Ce budget dépasse la limite quotidienne définie dans les règles de sécurité.')
+      }
+      if (workspace.maximumMonthlySpendMicros) {
+        const campaigns = await gateway.campaignPerformance(client.googleCustomerId)
+        const currentSpend = campaigns.reduce((sum, campaign) => sum + BigInt(campaign.costMicros), BigInt(0))
+        if (currentSpend >= BigInt(workspace.maximumMonthlySpendMicros)) {
+          throw new Error('Le plafond de dépense sur 30 jours est atteint. Les hausses de budget sont bloquées.')
+        }
+      }
       const validation = await gateway.validateBudget(client.googleCustomerId, input.budgetResourceName, amountMicros)
       requestId = validation.requestId
       payload = {
@@ -315,6 +350,39 @@ export async function rejectGoogleAdsChange(formData: FormData) {
       metadata: {},
     })
     target = toUrl('/approvals', 'notice', 'Demande rejetée.')
+  } catch (error) {
+    target = toUrl('/approvals', 'error', message(error))
+  }
+  revalidatePath('/approvals')
+  redirect(target)
+}
+
+export async function addApprovalComment(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireWorkspace()
+    const approvalId = z.string().uuid().parse(formData.get('approvalId'))
+    const body = z.string().trim().min(2).max(2000).parse(formData.get('body'))
+    const approval = await getDb().query.approvalRequests.findFirst({
+      where: and(eq(approvalRequests.id, approvalId), eq(approvalRequests.workspaceId, workspace.id)),
+      columns: { id: true },
+    })
+    if (!approval) throw new Error('Demande d’approbation introuvable.')
+    await getDb().insert(approvalComments).values({
+      workspaceId: workspace.id,
+      approvalId,
+      authorUserId: session.userId,
+      body,
+    })
+    await getDb().insert(auditEvents).values({
+      workspaceId: workspace.id,
+      actorUserId: session.userId,
+      action: 'approval.comment_added',
+      entityType: 'approval_request',
+      entityId: approvalId,
+      metadata: {},
+    })
+    target = toUrl('/approvals', 'notice', 'Commentaire ajouté.')
   } catch (error) {
     target = toUrl('/approvals', 'error', message(error))
   }
@@ -529,6 +597,62 @@ export async function revokeShareLink(formData: FormData) {
   redirect(target)
 }
 
+export async function submitClientApprovalFeedback(formData: FormData) {
+  const token = z.string().min(20).max(200).parse(formData.get('token'))
+  let target = `/r/${encodeURIComponent(token)}`
+  try {
+    const shareResult = await getPublicShare(token)
+    if (!shareResult || !shareResult.share.allowFeedback) throw new Error('Ce rapport n’accepte pas de retours.')
+    const input = z.object({
+      approvalId: z.string().uuid(),
+      authorName: z.string().trim().min(2).max(120),
+      decision: z.enum(['approved', 'changes_requested']),
+      comment: z.string().trim().max(2000),
+    }).parse(Object.fromEntries(formData))
+    const approval = await getDb().query.approvalRequests.findFirst({
+      where: and(
+        eq(approvalRequests.id, input.approvalId),
+        eq(approvalRequests.workspaceId, shareResult.share.workspaceId),
+        eq(approvalRequests.clientId, shareResult.share.clientId),
+        eq(approvalRequests.status, 'pending'),
+      ),
+    })
+    if (!approval) throw new Error('Cette proposition n’est plus en attente.')
+    await getDb()
+      .insert(clientApprovalFeedback)
+      .values({
+        workspaceId: shareResult.share.workspaceId,
+        shareId: shareResult.share.id,
+        approvalId: approval.id,
+        authorName: input.authorName,
+        decision: input.decision,
+        comment: input.comment || null,
+      })
+      .onConflictDoUpdate({
+        target: [clientApprovalFeedback.shareId, clientApprovalFeedback.approvalId],
+        set: {
+          authorName: input.authorName,
+          decision: input.decision,
+          comment: input.comment || null,
+          updatedAt: new Date(),
+        },
+      })
+    await getDb().insert(auditEvents).values({
+      workspaceId: shareResult.share.workspaceId,
+      actorUserId: `client:${shareResult.share.id}`,
+      action: 'approval.client_feedback_received',
+      entityType: 'approval_request',
+      entityId: approval.id,
+      metadata: { decision: input.decision, shareId: shareResult.share.id },
+    })
+    target += `?notice=${encodeURIComponent('Votre retour a été transmis à l’agence.')}`
+  } catch (error) {
+    target += `?error=${encodeURIComponent(message(error))}`
+  }
+  revalidatePath(`/r/${token}`)
+  redirect(target)
+}
+
 export async function createAgencyApiKey(formData: FormData) {
   let target: string
   try {
@@ -568,5 +692,166 @@ export async function revokeAgencyApiKey(formData: FormData) {
     target = toUrl('/settings', 'error', message(error))
   }
   revalidatePath('/settings')
+  redirect(target)
+}
+
+const safetyRulesSchema = z.object({
+  maximumDailyBudget: z.union([z.literal(''), z.coerce.number().positive().max(10_000_000)]),
+  maximumMonthlySpend: z.union([z.literal(''), z.coerce.number().positive().max(100_000_000)]),
+  notificationEmail: z.union([z.literal(''), z.string().trim().email().max(254)]),
+})
+
+export async function updateSafetyRules(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireAdminWorkspace()
+    const input = safetyRulesSchema.parse(Object.fromEntries(formData))
+    const micros = (value: number | '') => (value === '' ? null : String(Math.round(value * 1_000_000)))
+    await getDb()
+      .update(workspaces)
+      .set({
+        maximumDailyBudgetMicros: micros(input.maximumDailyBudget),
+        maximumMonthlySpendMicros: micros(input.maximumMonthlySpend),
+        notificationEmail: input.notificationEmail || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(workspaces.id, workspace.id))
+    await getDb().insert(auditEvents).values({
+      workspaceId: workspace.id,
+      actorUserId: session.userId,
+      action: 'workspace.safety_rules_updated',
+      entityType: 'workspace',
+      entityId: workspace.id,
+      metadata: {
+        maximumDailyBudget: input.maximumDailyBudget || null,
+        maximumMonthlySpend: input.maximumMonthlySpend || null,
+      },
+    })
+    target = toUrl('/settings', 'notice', 'Règles de sécurité enregistrées.')
+  } catch (error) {
+    target = toUrl('/settings', 'error', message(error))
+  }
+  revalidatePath('/settings')
+  redirect(target)
+}
+
+const notificationChannelSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('email'),
+    label: z.string().trim().min(2).max(120),
+    destination: z.string().trim().email().max(254),
+    minimumSeverity: z.enum(['warning', 'critical']),
+  }),
+  z.object({
+    kind: z.enum(['slack', 'teams', 'webhook']),
+    label: z.string().trim().min(2).max(120),
+    destination: z.string().url().startsWith('https://').max(2000),
+    minimumSeverity: z.enum(['warning', 'critical']),
+  }),
+])
+
+function destinationHint(kind: string, destination: string) {
+  if (kind === 'email') {
+    const [local, domain] = destination.split('@')
+    return `${local.slice(0, 2)}•••@${domain}`
+  }
+  const url = new URL(destination)
+  return `${url.hostname}/••••`
+}
+
+export async function createNotificationChannel(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireAdminWorkspace()
+    const input = notificationChannelSchema.parse(Object.fromEntries(formData))
+    await getDb().insert(notificationChannels).values({
+      workspaceId: workspace.id,
+      createdBy: session.userId,
+      kind: input.kind,
+      label: input.label,
+      encryptedDestination: encryptSecret(input.destination),
+      destinationHint: destinationHint(input.kind, input.destination),
+      minimumSeverity: input.minimumSeverity,
+    })
+    target = toUrl('/settings', 'notice', 'Canal de notification ajouté.')
+  } catch (error) {
+    target = toUrl('/settings', 'error', message(error))
+  }
+  revalidatePath('/settings')
+  redirect(target)
+}
+
+export async function disableNotificationChannel(formData: FormData) {
+  let target: string
+  try {
+    const { workspace } = await requireAdminWorkspace()
+    const channelId = z.string().uuid().parse(formData.get('channelId'))
+    const [channel] = await getDb()
+      .update(notificationChannels)
+      .set({ enabled: false, updatedAt: new Date() })
+      .where(and(eq(notificationChannels.id, channelId), eq(notificationChannels.workspaceId, workspace.id)))
+      .returning({ id: notificationChannels.id })
+    if (!channel) throw new Error('Canal introuvable.')
+    target = toUrl('/settings', 'notice', 'Canal désactivé.')
+  } catch (error) {
+    target = toUrl('/settings', 'error', message(error))
+  }
+  revalidatePath('/settings')
+  redirect(target)
+}
+
+export async function createCheckoutSession(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireAdminWorkspace()
+    const rawPlan = z.string().parse(formData.get('plan'))
+    if (!isPlanId(rawPlan)) throw new Error('Offre inconnue.')
+    const plan: PlanId = rawPlan
+    const price = priceIdForPlan(plan)
+    if (!price) throw new Error(`Le tarif Stripe ${planCatalog[plan].name} n’est pas encore configuré.`)
+    const stripe = getStripe()
+    let customerId = workspace.stripeCustomerId
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        name: workspace.name,
+        metadata: { workspaceId: workspace.id, clerkOrganizationId: workspace.clerkOrganizationId },
+      })
+      customerId = customer.id
+      await getDb().update(workspaces).set({ stripeCustomerId: customerId, updatedAt: new Date() }).where(eq(workspaces.id, workspace.id))
+    }
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://vigieads.vercel.app'
+    const checkout = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price, quantity: 1 }],
+      success_url: `${origin}/billing?notice=${encodeURIComponent('Abonnement activé.')}`,
+      cancel_url: `${origin}/billing?error=${encodeURIComponent('Souscription annulée.')}`,
+      allow_promotion_codes: true,
+      client_reference_id: workspace.id,
+      subscription_data: { metadata: { workspaceId: workspace.id, plan } },
+      metadata: { workspaceId: workspace.id, plan, requestedBy: session.userId },
+    })
+    if (!checkout.url) throw new Error('Stripe n’a pas renvoyé d’URL de paiement.')
+    target = checkout.url
+  } catch (error) {
+    target = toUrl('/billing', 'error', message(error))
+  }
+  redirect(target)
+}
+
+export async function openBillingPortal() {
+  let target: string
+  try {
+    const { workspace } = await requireAdminWorkspace()
+    if (!workspace.stripeCustomerId) throw new Error('Aucun client Stripe n’est associé à cet espace.')
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://vigieads.vercel.app'
+    const session = await getStripe().billingPortal.sessions.create({
+      customer: workspace.stripeCustomerId,
+      return_url: `${origin}/billing`,
+    })
+    target = session.url
+  } catch (error) {
+    target = toUrl('/billing', 'error', message(error))
+  }
   redirect(target)
 }
