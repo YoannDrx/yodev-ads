@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.theme import Theme
 
-from vigie_ads.google_api import CampaignRow
+from yodev_ads.google_api import CampaignRow
 
 console = Console(
     theme=Theme(

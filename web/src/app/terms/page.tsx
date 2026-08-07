@@ -6,12 +6,12 @@ export default function TermsPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <Link href="/" className="text-sm font-medium text-emerald-700">
-        ← Vigieads
+        ← Ads by Yodev
       </Link>
       <h1 className="mt-8 text-4xl font-semibold tracking-tight">Conditions d’utilisation</h1>
       <div className="mt-8 space-y-6 leading-7 text-muted-foreground">
         <p>
-          Vigieads est un outil d’assistance au pilotage Google Ads. L’utilisateur reste responsable de ses campagnes,
+          Ads by Yodev est un outil d’assistance au pilotage Google Ads. L’utilisateur reste responsable de ses campagnes,
           budgets, accès et validations.
         </p>
         <section>

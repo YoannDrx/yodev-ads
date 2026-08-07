@@ -2,12 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from vigie_ads.settings import (
+from yodev_ads.settings import (
     BrandSettings,
     ClientProfile,
     ConfigStore,
     ConfigurationError,
-    VigieConfig,
+    YodevAdsConfig,
     normalize_customer_id,
     normalize_profile_key,
 )
@@ -36,7 +36,7 @@ def test_config_round_trip(tmp_path: Path) -> None:
         manager_id="1234567890",
     )
     store.save(
-        VigieConfig(
+        YodevAdsConfig(
             brand=BrandSettings(
                 product_name="Campaign Desk",
                 tagline="One calm place for every account.",
@@ -53,7 +53,7 @@ def test_config_round_trip(tmp_path: Path) -> None:
     loaded = store.load()
 
     assert loaded.default_profile == "mail-certificate"
-    assert loaded.schema_version == 2
+    assert loaded.schema_version == 3
     assert loaded.brand.product_name == "Campaign Desk"
     assert loaded.brand.accent == "magenta"
     assert loaded.profile().customer_id == "4494392373"
@@ -74,11 +74,11 @@ def test_v1_config_is_migrated_with_default_brand(tmp_path: Path) -> None:
 
     config = ConfigStore(path).load()
 
-    assert config.schema_version == 2
-    assert config.brand.product_name == "Vigieads"
+    assert config.schema_version == 3
+    assert config.brand.product_name == "Ads by Yodev"
 
 
-def test_previous_product_names_are_migrated() -> None:
-    config = VigieConfig.from_dict({"brand": {"product_name": "Vigihat"}, "profiles": {}})
+def test_custom_product_name_is_preserved() -> None:
+    config = YodevAdsConfig.from_dict({"brand": {"product_name": "Campaign Desk"}, "profiles": {}})
 
-    assert config.brand.product_name == "Vigieads"
+    assert config.brand.product_name == "Campaign Desk"

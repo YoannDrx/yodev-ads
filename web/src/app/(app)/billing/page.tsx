@@ -88,8 +88,8 @@ export default async function BillingPage({
         })}
       </section>
       <div className="mt-6 flex gap-3 rounded-2xl bg-[#0d1722] p-5 text-sm text-white/70">
-        <ShieldCheck className="size-5 shrink-0 text-[#6af0b1]" />
-        Les données de carte ne transitent jamais par Vigieads. Le checkout, les renouvellements, factures et
+        <ShieldCheck className="size-5 shrink-0 text-[#19A58F]" />
+        Les données de carte ne transitent jamais par Ads by Yodev. Le checkout, les renouvellements, factures et
         annulations sont traités par Stripe.
       </div>
     </>

@@ -5,9 +5,9 @@ export function hashToken(token: string) {
 }
 
 export function createShareToken() {
-  return `vgh_share_${randomBytes(24).toString('base64url')}`
+  return `ya_share_${randomBytes(24).toString('base64url')}`
 }
 
 export function createApiToken() {
-  return `vgh_live_${randomBytes(28).toString('base64url')}`
+  return `ya_live_${randomBytes(28).toString('base64url')}`
 }

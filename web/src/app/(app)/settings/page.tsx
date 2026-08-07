@@ -256,7 +256,7 @@ export default async function SettingsPage({
               <div>
                 <h2 className="font-semibold">API d’agence</h2>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  Branchez Codex, Claude Code ou vos outils internes sur le portefeuille Vigieads via une clé révocable.
+                  Branchez Codex, Claude Code ou vos outils internes sur le portefeuille Ads by Yodev via une clé révocable.
                 </p>
               </div>
             </div>
@@ -301,7 +301,7 @@ export default async function SettingsPage({
             <div className="mt-5 rounded-xl border bg-white p-4">
               <p className="text-xs font-medium">Endpoint prêt à l’emploi</p>
               <code className="mt-2 block overflow-x-auto text-xs text-muted-foreground">
-                curl -H &quot;Authorization: Bearer $VIGIEADS_API_KEY&quot; https://vigieads.vercel.app/api/v1/portfolio
+                curl -H &quot;Authorization: Bearer $YODEV_ADS_API_KEY&quot; https://ads.yodev.fr/api/v1/portfolio
               </code>
             </div>
           </CardContent>

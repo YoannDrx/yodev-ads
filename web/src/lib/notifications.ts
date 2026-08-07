@@ -21,7 +21,7 @@ const severityRank = { warning: 1, critical: 2 } as const
 
 export function webhookBody(payload: NotificationPayload) {
   return {
-    text: `Vigieads · ${payload.eventType === 'digest' ? 'Synthèse hebdomadaire' : payload.severity === 'critical' ? 'Incident critique' : 'Alerte'} · ${payload.clientName}`,
+    text: `Ads by Yodev · ${payload.eventType === 'digest' ? 'Synthèse hebdomadaire' : payload.severity === 'critical' ? 'Incident critique' : 'Alerte'} · ${payload.clientName}`,
     title: payload.title,
     description: payload.description,
     severity: payload.severity,
@@ -33,7 +33,7 @@ export function alertEmailHtml(payload: NotificationPayload) {
   const escaped = [payload.clientName, payload.title, payload.description].map((value) =>
     value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character]!),
   )
-  return `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#12202b"><p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#39725d">Vigieads · ${payload.eventType === 'digest' ? 'Synthèse hebdomadaire' : payload.severity === 'critical' ? 'Incident critique' : 'Alerte'}</p><h1 style="font-size:24px">${escaped[1]}</h1><p style="color:#52626f">Compte : <strong>${escaped[0]}</strong></p><p style="line-height:1.65">${escaped[2]}</p><p style="margin-top:32px;font-size:12px;color:#80909b">Notification automatique et traçable envoyée par Vigieads.</p></div>`
+  return `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#12202b"><p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#19A58F">Ads by Yodev · ${payload.eventType === 'digest' ? 'Synthèse hebdomadaire' : payload.severity === 'critical' ? 'Incident critique' : 'Alerte'}</p><h1 style="font-size:24px">${escaped[1]}</h1><p style="color:#52626f">Compte : <strong>${escaped[0]}</strong></p><p style="line-height:1.65">${escaped[2]}</p><p style="margin-top:32px;font-size:12px;color:#80909b">Notification automatique et traçable envoyée par Ads by Yodev.</p></div>`
 }
 
 async function deliverChannel(
@@ -45,7 +45,7 @@ async function deliverChannel(
     if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY absent')
     const resend = new Resend(process.env.RESEND_API_KEY)
     const { data, error } = await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL ?? 'Vigieads <onboarding@resend.dev>',
+      from: process.env.NOTIFICATION_FROM_EMAIL ?? 'Ads by Yodev <onboarding@resend.dev>',
       to: destination,
       subject: payload.eventType === 'digest' ? payload.title : `[${payload.severity === 'critical' ? 'Critique' : 'Alerte'}] ${payload.title}`,
       html: alertEmailHtml(payload),

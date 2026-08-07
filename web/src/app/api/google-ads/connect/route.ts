@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const state = randomBytes(32).toString('base64url')
     const cookieStore = await cookies()
     cookieStore.set(
-      'vigieads_google_oauth',
+      'yodev_ads_google_oauth',
       Buffer.from(JSON.stringify({ state, workspaceId: workspace.id, userId: session.userId, managerCustomerId })).toString(
         'base64url',
       ),

@@ -6,12 +6,12 @@ export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <Link href="/" className="text-sm font-medium text-emerald-700">
-        ← Vigieads
+        ← Ads by Yodev
       </Link>
       <h1 className="mt-8 text-4xl font-semibold tracking-tight">Politique de confidentialité</h1>
       <div className="prose prose-neutral mt-8 max-w-none space-y-6 leading-7 text-muted-foreground">
         <p>
-          Vigieads traite uniquement les informations nécessaires à l’authentification, à l’organisation des espaces de
+          Ads by Yodev traite uniquement les informations nécessaires à l’authentification, à l’organisation des espaces de
           travail et à la gestion des comptes Google Ads explicitement connectés par ses utilisateurs.
         </p>
         <section>
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold text-foreground">Sécurité et contact</h2>
           <p>
             Les accès sont cloisonnés par organisation et les actions sensibles sont auditées. Pour toute demande
-            relative aux données personnelles, contactez l’administrateur de votre espace Vigieads.
+            relative aux données personnelles, contactez l’administrateur de votre espace Ads by Yodev.
           </p>
         </section>
         <p className="text-sm">Dernière mise à jour : 18 juillet 2026.</p>

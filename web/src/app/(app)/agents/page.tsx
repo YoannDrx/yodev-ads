@@ -37,7 +37,7 @@ export default async function AgentsPage({
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {agentTemplates.map((template) => (
           <Card key={template.kind} className="group overflow-hidden border-[#dde4e7] shadow-none">
-            <div className="h-1.5 bg-gradient-to-r from-[#6af0b1] to-[#65b8ff]" />
+            <div className="h-1.5 bg-gradient-to-r from-[#19A58F] to-[#315EFB]" />
             <CardContent className="p-5">
               <span className="grid size-10 place-items-center rounded-xl bg-[#e9fbf3] text-[#176646]">
                 <Bot className="size-5" />
@@ -100,7 +100,7 @@ export default async function AgentsPage({
           <Card key={agent.id} className="border-[#dde4e7] shadow-none">
             <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
               <div className="flex min-w-0 gap-4">
-                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#111e2b] text-[#6af0b1]">
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#111e2b] text-[#19A58F]">
                   <Gauge className="size-5" />
                 </span>
                 <div>

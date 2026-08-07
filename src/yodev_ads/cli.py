@@ -10,27 +10,27 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 
-from vigie_ads.auth import (
+from yodev_ads.auth import (
     adc_status,
     gcloud_path,
     get_developer_token,
     run_oauth_login,
     set_developer_token,
 )
-from vigie_ads.google_api import GoogleAdsGateway
-from vigie_ads.settings import (
+from yodev_ads.google_api import GoogleAdsGateway
+from yodev_ads.settings import (
     BrandSettings,
     ClientProfile,
     ConfigStore,
     ConfigurationError,
-    VigieConfig,
+    YodevAdsConfig,
     normalize_customer_id,
     normalize_profile_key,
 )
-from vigie_ads.ui import campaign_table, console, money
+from yodev_ads.ui import campaign_table, console, money
 
 app = typer.Typer(
-    name="vigie",
+    name="yads",
     help="Elegant, guarded Google Ads operations for several clients.",
     no_args_is_help=True,
     rich_markup_mode="rich",
@@ -39,7 +39,7 @@ auth_app = typer.Typer(help="Manage OAuth and the developer token.", no_args_is_
 accounts_app = typer.Typer(help="Discover Google Ads accounts.", no_args_is_help=True)
 clients_app = typer.Typer(help="Manage local client profiles.", no_args_is_help=True)
 campaigns_app = typer.Typer(help="Inspect and safely change campaigns.", no_args_is_help=True)
-config_app = typer.Typer(help="Inspect local Vigie configuration.", no_args_is_help=True)
+config_app = typer.Typer(help="Inspect local Ads by Yodev configuration.", no_args_is_help=True)
 brand_app = typer.Typer(
     help="Customize the product identity and white label.", no_args_is_help=True
 )
@@ -56,7 +56,7 @@ def _store() -> ConfigStore:
     return ConfigStore()
 
 
-def _profile(profile_key: str | None = None) -> tuple[VigieConfig, ClientProfile]:
+def _profile(profile_key: str | None = None) -> tuple[YodevAdsConfig, ClientProfile]:
     config = _store().load()
     return config, config.profile(profile_key)
 
@@ -88,12 +88,12 @@ def setup(
     name: Annotated[str, typer.Option(help="Initial client display name.")] = "Mail Certificate",
     profile: Annotated[str, typer.Option(help="Initial profile key.")] = "mail-certificate",
     currency: Annotated[str, typer.Option(help="ISO currency code.")] = "EUR",
-    product_name: Annotated[str, typer.Option(help="White-label product name.")] = "Vigieads",
+    product_name: Annotated[str, typer.Option(help="White-label product name.")] = "Ads by Yodev",
     tagline: Annotated[
         str, typer.Option(help="White-label tagline.")
     ] = "Google Ads, sous contrôle.",
     logo: Annotated[str, typer.Option(help="Short logo glyph or emoji.")] = "◆",
-    accent: Annotated[str, typer.Option(help="Rich terminal accent color.")] = "cyan",
+    accent: Annotated[str, typer.Option(help="Rich terminal accent color.")] = "green",
     developer_token: Annotated[
         str | None,
         typer.Option("--developer-token", help="Token; hidden when prompted if omitted."),
@@ -156,7 +156,7 @@ def doctor() -> None:
         config_detail = (
             f"{len(config.profiles)} profile(s), manager {config.default_manager_id}"
             if config_ok
-            else "Run `vigie setup`"
+            else "Run `yads setup`"
         )
     except Exception as error:
         config_ok, config_detail = False, str(error)

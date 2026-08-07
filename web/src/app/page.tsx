@@ -68,41 +68,41 @@ export default async function Home() {
                     Se connecter
                   </Button>
                 </SignInButton>
-                <Button asChild className="rounded-full bg-[#6af0b1] px-5 text-[#0d1722] hover:bg-[#8ff8c7]">
-                  <Link href="/sign-up">Essayer Vigieads</Link>
+                <Button asChild className="rounded-full bg-[#19A58F] px-5 text-[#0d1722] hover:bg-[#35BDA6]">
+                  <Link href="/sign-up">Essayer Ads by Yodev</Link>
                 </Button>
               </>
             ) : (
-              <Button asChild className="rounded-full bg-[#6af0b1] px-5 text-[#0d1722]">
-                <Link href="/dashboard">Ouvrir Vigieads</Link>
+              <Button asChild className="rounded-full bg-[#19A58F] px-5 text-[#0d1722]">
+                <Link href="/dashboard">Ouvrir Ads by Yodev</Link>
               </Button>
             )}
           </div>
         </nav>
         <div className="relative mx-auto grid max-w-7xl gap-14 px-6 pb-24 pt-20 lg:grid-cols-[1.06fr_.94fr] lg:px-8 lg:pb-32 lg:pt-28">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-[#a9f7cf]">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-[#67D8C4]">
               <Sparkles className="size-4" /> Google Ads, sans angle mort
             </p>
             <h1 className="mt-7 max-w-3xl text-balance text-5xl font-semibold leading-[1.01] tracking-[-.055em] sm:text-6xl lg:text-7xl">
               Le système d’exploitation des agences Google Ads.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-white/62 sm:text-xl">
-              Vigieads surveille chaque compte, explique les anomalies et sécurise les changements — pour gérer plus de
+              Ads by Yodev surveille chaque compte, explique les anomalies et sécurise les changements — pour gérer plus de
               clients sans perdre le contrôle.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Button
                 asChild
                 size="lg"
-                className="h-12 rounded-full bg-[#6af0b1] px-6 text-[#0d1722] shadow-xl shadow-emerald-500/10 hover:bg-[#8ff8c7]"
+                className="h-12 rounded-full bg-[#19A58F] px-6 text-[#0d1722] shadow-xl shadow-emerald-500/10 hover:bg-[#35BDA6]"
               >
                 <Link href="/sign-up">
                   Démarrer l’essai <ArrowRight className="ml-2 size-4" />
                 </Link>
               </Button>
               <span className="flex items-center gap-2 text-sm text-white/55">
-                <Check className="size-4 text-[#6af0b1]" /> API Google Ads officielle
+                <Check className="size-4 text-[#19A58F]" /> API Google Ads officielle
               </span>
             </div>
           </div>
@@ -128,12 +128,12 @@ export default async function Home() {
 
       <section className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
         <div className="max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[.2em] text-[#287656]">Un cycle de décision complet</p>
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-[#19A58F]">Un cycle de décision complet</p>
           <h2 className="mt-4 text-4xl font-semibold tracking-[-.045em] sm:text-5xl">
             De la donnée brute à l’action sûre.
           </h2>
           <p className="mt-5 text-lg leading-8 text-[#64717b]">
-            Vigieads ne se contente pas d’afficher des métriques. Il organise le travail quotidien de votre agence.
+            Ads by Yodev ne se contente pas d’afficher des métriques. Il organise le travail quotidien de votre agence.
           </p>
         </div>
         <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -154,7 +154,7 @@ export default async function Home() {
         <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.2em] text-[#287656]">Tarification transparente</p>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-[#19A58F]">Tarification transparente</p>
               <h2 className="mt-4 text-4xl font-semibold tracking-[-.045em] sm:text-5xl">
                 Payez pour les comptes gérés,
                 <br />
@@ -172,7 +172,7 @@ export default async function Home() {
                 className={`relative rounded-3xl border p-7 ${plan.featured ? 'border-[#0d1722] bg-[#0d1722] text-white shadow-2xl shadow-slate-900/15' : 'border-black/7 bg-white'}`}
               >
                 {plan.featured && (
-                  <span className="absolute right-6 top-6 rounded-full bg-[#6af0b1] px-3 py-1 text-xs font-semibold text-[#0d1722]">
+                  <span className="absolute right-6 top-6 rounded-full bg-[#19A58F] px-3 py-1 text-xs font-semibold text-[#0d1722]">
                     Recommandé
                   </span>
                 )}
@@ -185,14 +185,14 @@ export default async function Home() {
                     / mois
                   </span>
                 </p>
-                <p className={`mt-3 text-sm ${plan.featured ? 'text-[#a9f7cf]' : 'text-[#287656]'}`}>{plan.accounts}</p>
+                <p className={`mt-3 text-sm ${plan.featured ? 'text-[#67D8C4]' : 'text-[#19A58F]'}`}>{plan.accounts}</p>
                 <ul className="mt-7 space-y-3">
                   {plan.features.map((feature) => (
                     <li
                       key={feature}
                       className={`flex items-center gap-2 text-sm ${plan.featured ? 'text-white/72' : 'text-[#596771]'}`}
                     >
-                      <Check className="size-4 text-[#36b77d]" />
+                      <Check className="size-4 text-[#19A58F]" />
                       {feature}
                     </li>
                   ))}
@@ -200,7 +200,7 @@ export default async function Home() {
                 <Button
                   asChild
                   variant={plan.featured ? 'default' : 'outline'}
-                  className={`mt-8 w-full rounded-full ${plan.featured ? 'bg-[#6af0b1] text-[#0d1722] hover:bg-[#8ff8c7]' : ''}`}
+                  className={`mt-8 w-full rounded-full ${plan.featured ? 'bg-[#19A58F] text-[#0d1722] hover:bg-[#35BDA6]' : ''}`}
                 >
                   <Link href="/sign-up">Essayer gratuitement</Link>
                 </Button>
@@ -212,22 +212,22 @@ export default async function Home() {
 
       <section className="bg-[#0d1722] text-white">
         <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-24 text-center">
-          <BellRing className="size-9 text-[#6af0b1]" />
+          <BellRing className="size-9 text-[#19A58F]" />
           <h2 className="mt-6 text-4xl font-semibold tracking-[-.045em] sm:text-5xl">
             Votre prochain client ne devrait pas ajouter de chaos.
           </h2>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-white/58">
-            Ajoutez son compte à votre MCC. Vigieads s’occupe du reste : surveillance, garde-fous, reporting et
+            Ajoutez son compte à votre MCC. Ads by Yodev s’occupe du reste : surveillance, garde-fous, reporting et
             traçabilité.
           </p>
-          <Button asChild size="lg" className="mt-8 rounded-full bg-[#6af0b1] px-7 text-[#0d1722]">
+          <Button asChild size="lg" className="mt-8 rounded-full bg-[#19A58F] px-7 text-[#0d1722]">
             <Link href="/sign-up">
               Créer mon espace <ArrowRight className="ml-2 size-4" />
             </Link>
           </Button>
         </div>
         <footer className="mx-auto flex max-w-7xl flex-col gap-4 border-t border-white/8 px-6 py-8 text-sm text-white/42 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-          <span>© {new Date().getFullYear()} Vigieads. Google Ads, sous contrôle.</span>
+          <span>© {new Date().getFullYear()} Ads by Yodev. Google Ads, sous contrôle.</span>
           <div className="flex gap-5">
             <Link href="/privacy">Confidentialité</Link>
             <Link href="/terms">Conditions</Link>
@@ -241,11 +241,11 @@ export default async function Home() {
 function Brand() {
   return (
     <Link href="/" className="flex items-center gap-3 font-semibold tracking-tight">
-      <span className="relative grid size-10 place-items-center overflow-hidden rounded-xl bg-[#6af0b1] text-[#0d1722]">
+      <span className="relative grid size-10 place-items-center overflow-hidden rounded-xl bg-[#19A58F] text-[#0d1722]">
         <span className="absolute -top-2 h-5 w-7 rounded-full border-2 border-current" />
-        <span className="mt-2 text-sm font-black">V</span>
+        <span className="mt-2 text-sm font-black">A</span>
       </span>
-      <span className="text-xl">Vigieads</span>
+      <span className="inline-flex items-baseline gap-1.5"><span className="text-xl">Ads</span><span className="font-mono text-[10px] uppercase tracking-[.16em] text-white/50">by Yodev</span></span>
     </Link>
   )
 }
@@ -253,14 +253,14 @@ function Brand() {
 function ProductPreview() {
   return (
     <div className="relative min-h-[460px]">
-      <div className="absolute inset-0 rotate-2 rounded-[2.2rem] bg-[#6af0b1] opacity-10" />
+      <div className="absolute inset-0 rotate-2 rounded-[2.2rem] bg-[#19A58F] opacity-10" />
       <div className="relative rounded-[2rem] border border-white/10 bg-white/[.07] p-5 shadow-[0_45px_100px_-35px_rgba(0,0,0,.65)] backdrop-blur sm:p-6">
         <div className="flex items-center justify-between border-b border-white/10 pb-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[.18em] text-white/38">Vue portefeuille</p>
             <p className="mt-1 text-lg font-semibold">Santé de l’agence</p>
           </div>
-          <span className="rounded-full bg-[#6af0b1]/12 px-3 py-1.5 text-xs font-semibold text-[#9af7c9]">
+          <span className="rounded-full bg-[#19A58F]/12 px-3 py-1.5 text-xs font-semibold text-[#67D8C4]">
             92 / 100
           </span>
         </div>
@@ -288,7 +288,7 @@ function ProductPreview() {
                 key={String(title)}
                 className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[.04] p-3"
               >
-                <span className="grid size-9 place-items-center rounded-xl bg-[#6af0b1]/12 text-[#8af5c2]">
+                <span className="grid size-9 place-items-center rounded-xl bg-[#19A58F]/12 text-[#67D8C4]">
                   <I className="size-4" />
                 </span>
                 <div className="min-w-0 flex-1">

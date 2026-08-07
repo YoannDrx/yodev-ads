@@ -1,6 +1,6 @@
-# Vigieads
+# Ads by Yodev
 
-Vigieads is a multi-tenant Google Ads operating system for agencies and independent
+Ads by Yodev is a multi-tenant Google Ads operating system for agencies and independent
 media buyers. The repository contains both the hosted product and a safe local CLI.
 
 ## Hosted product
@@ -47,7 +47,7 @@ Vercel and must never be committed.
 The Python CLI uses Google's official client, Application Default Credentials for
 OAuth, and the macOS Keychain for the developer token.
 
-The `vigie` command is read-only by default. Mutations are first sent with
+The `yads` command is read-only by default. Mutations are first sent with
 `validate_only`; an actual change requires both `--apply` and `--yes`.
 
 ### What is included
@@ -70,14 +70,14 @@ Python 3.11 to 3.14 is supported by this package.
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[dev]'
-vigie --help
+yads --help
 ```
 
-Create a desktop OAuth client in the Google Cloud project, then let Vigieads
+Create a desktop OAuth client in the Google Cloud project, then let Ads by Yodev
 open the consent screen and create private local Application Default Credentials:
 
 ```bash
-vigie auth login --client-id 123456.apps.googleusercontent.com
+yads auth login --client-id 123456.apps.googleusercontent.com
 ```
 
 The OAuth secret is requested with hidden input and is never written to this
@@ -88,18 +88,18 @@ repository. The resulting local credentials are stored with `0600` permissions.
 The manager and customer IDs must be written without dashes.
 
 ```bash
-vigie setup \
+yads setup \
   --manager-id 1234567890 \
   --client-id 4494392373 \
   --name "Mail Certificate"
 
-vigie doctor
-vigie accounts list
-vigie campaigns list
-vigie dashboard --days 30
+yads doctor
+yads accounts list
+yads campaigns list
+yads dashboard --days 30
 ```
 
-`vigie setup` reuses the developer token from the system keychain, or asks for
+`yads setup` reuses the developer token from the system keychain, or asks for
 it using hidden input when none exists. As an alternative, set
 `GOOGLE_ADS_DEVELOPER_TOKEN` in the process environment. Do not commit a token
 or OAuth credentials.
@@ -107,10 +107,10 @@ or OAuth credentials.
 ### Multi-client profiles
 
 ```bash
-vigie clients add acme --name "Acme" --customer-id 1112223333
-vigie clients list
-vigie clients use acme
-vigie campaigns list --profile acme
+yads clients add acme --name "Acme" --customer-id 1112223333
+yads clients list
+yads clients use acme
+yads campaigns list --profile acme
 ```
 
 Each profile can override the manager ID with `--manager-id`, which supports
@@ -126,7 +126,7 @@ secrets.
 The terminal identity is data, not hard-coded UI:
 
 ```bash
-vigie brand set \
+yads brand set \
   --product-name "Campaign Desk" \
   --tagline "One calm place for every account." \
   --logo "◇" \
@@ -134,7 +134,7 @@ vigie brand set \
   --locale en-GB \
   --support-url https://example.com/support
 
-vigie brand show
+yads brand show
 ```
 
 Brand settings never contain OAuth credentials or developer tokens, so they can
@@ -150,20 +150,20 @@ The hosted and local security boundaries are documented in
 Preview and validate a pause without applying it:
 
 ```bash
-vigie campaigns status 987654321 paused
+yads campaigns status 987654321 paused
 ```
 
 Apply the validated operation explicitly:
 
 ```bash
-vigie campaigns status 987654321 paused --apply --yes
+yads campaigns status 987654321 paused --apply --yes
 ```
 
 Budget changes follow the same contract:
 
 ```bash
-vigie campaigns budget 987654321 25.00
-vigie campaigns budget 987654321 25.00 --apply --yes
+yads campaigns budget 987654321 25.00
+yads campaigns budget 987654321 25.00 --apply --yes
 ```
 
 ### CLI configuration and secrets
@@ -173,4 +173,19 @@ vigie campaigns budget 987654321 25.00 --apply --yes
 - OAuth credentials: Google Cloud Application Default Credentials;
 - no secret is stored inside this repository.
 
-Use `vigie config path` to display the exact profile file location.
+Use `yads config path` to display the exact profile file location.
+
+The rebrand is a hard cutover: existing local configuration and Keychain entries are
+not imported automatically. Run `yads setup` and `yads auth token-set` once after
+installing the renamed package.
+
+During the production cutover, rotate legacy API and share credentials with an
+absolute, pre-agreed output path outside the repository and CI logs:
+
+```bash
+cd web
+YODEV_ADS_ROTATION_OUTPUT=/secure/path/yodev-ads-rotation.json npm run rebrand:rotate-credentials
+```
+
+The command creates the file exclusively with mode `0600`, never prints secret
+values, and fails if the destination already exists.

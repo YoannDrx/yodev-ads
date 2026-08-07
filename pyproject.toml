@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "vigieads"
+name = "yodev-ads"
 version = "0.1.0"
 description = "A safe, multi-client command line cockpit for Google Ads"
 readme = "README.md"
@@ -26,10 +26,10 @@ dev = [
 ]
 
 [project.scripts]
-vigie = "vigie_ads.cli:app"
+yads = "yodev_ads.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/vigie_ads"]
+packages = ["src/yodev_ads"]
 
 [tool.pytest.ini_options]
 addopts = "-q"

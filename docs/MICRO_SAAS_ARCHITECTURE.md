@@ -1,9 +1,9 @@
-# Vigieads micro-SaaS architecture
+# Ads by Yodev micro-SaaS architecture
 
 ## Implemented product boundary
 
 The local CLI remains the trusted operator tool and automation client. The hosted
-Vigieads application in `web/` adds a multi-tenant control plane without putting
+The Ads by Yodev application in `web/` adds a multi-tenant control plane without putting
 shared credentials into CLI configuration.
 
 ## Tenant model
@@ -61,7 +61,7 @@ mutation reaches Google Ads.
 Scheduled monitoring runs through Vercel Cron. Incident delivery is idempotent in
 Postgres; a dedicated durable queue remains an upgrade path for higher volume.
 
-The Google Ads gateway in `src/vigie_ads/google_api.py` should remain behind a
+The Google Ads gateway in `src/yodev_ads/google_api.py` should remain behind a
 small service interface. That prevents Google API version changes from leaking
 into the web, CLI and worker layers.
 
