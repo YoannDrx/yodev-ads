@@ -15,7 +15,8 @@
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
-    "rebrand:rotate-credentials": "dotenv -e .env.local -- tsx scripts/rotate-yodev-credentials.ts"
+    "rebrand:rotate-credentials": "dotenv -e .env.local -- tsx scripts/rotate-yodev-credentials.ts",
+    "rebrand:remap-clerk": "dotenv -e .env.local -- tsx scripts/remap-clerk-identities.ts"
   },
   "dependencies": {
     "@clerk/localizations": "^4.13.5",
