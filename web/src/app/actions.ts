@@ -822,6 +822,13 @@ export async function createCheckoutSession(formData: FormData) {
     const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr'
     const checkout = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      branding_settings: {
+        background_color: '#F7F5F0',
+        border_style: 'rounded',
+        button_color: '#19A58F',
+        display_name: 'Ads by Yodev',
+        font_family: 'inter',
+      },
       customer: customerId,
       line_items: [{ price, quantity: 1 }],
       success_url: `${origin}/billing?notice=${encodeURIComponent('Abonnement activé.')}`,
