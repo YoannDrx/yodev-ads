@@ -9,8 +9,8 @@ from typing import Any
 from google.ads.googleads.client import GoogleAdsClient
 from google.api_core import protobuf_helpers
 
-from vigie_ads.auth import get_developer_token
-from vigie_ads.settings import ClientProfile, ConfigurationError, VigieConfig
+from yodev_ads.auth import get_developer_token
+from yodev_ads.settings import ClientProfile, ConfigurationError, YodevAdsConfig
 
 
 @dataclass(slots=True)
@@ -35,11 +35,11 @@ def decimal_to_micros(value: Decimal) -> int:
 
 
 class GoogleAdsGateway:
-    def __init__(self, config: VigieConfig, profile: ClientProfile | None = None) -> None:
+    def __init__(self, config: YodevAdsConfig, profile: ClientProfile | None = None) -> None:
         token = get_developer_token()
         if not token:
             raise ConfigurationError(
-                "Developer token missing. Run `vigie auth token-set` or set "
+                "Developer token missing. Run `yads auth token-set` or set "
                 "GOOGLE_ADS_DEVELOPER_TOKEN."
             )
         manager_id = config.manager_id_for(profile)

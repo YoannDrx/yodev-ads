@@ -9,7 +9,7 @@ from platformdirs import user_config_path
 
 
 class ConfigurationError(ValueError):
-    """Raised when Vigie Ads configuration is invalid or incomplete."""
+    """Raised when Ads by Yodev configuration is invalid or incomplete."""
 
 
 ALLOWED_ACCENTS = {"blue", "cyan", "green", "magenta", "red", "white", "yellow"}
@@ -54,10 +54,10 @@ class ClientProfile:
 
 @dataclass(slots=True)
 class BrandSettings:
-    product_name: str = "Vigieads"
+    product_name: str = "Ads by Yodev"
     tagline: str = "Google Ads, sous contrôle."
     logo: str = "◆"
-    accent: str = "cyan"
+    accent: str = "green"
     locale: str = "fr-FR"
     support_url: str | None = None
 
@@ -86,29 +86,27 @@ class BrandSettings:
     @classmethod
     def from_dict(cls, value: dict[str, object] | None) -> BrandSettings:
         value = value or {}
-        product_name = str(value.get("product_name", "Vigieads"))
-        if product_name in {"Vigihat", "VigieAds"}:
-            product_name = "Vigieads"
+        product_name = str(value.get("product_name", "Ads by Yodev"))
         return cls(
             product_name=product_name,
             tagline=str(value.get("tagline", "Google Ads, sous contrôle.")),
             logo=str(value.get("logo", "◆")),
-            accent=str(value.get("accent", "cyan")),
+            accent=str(value.get("accent", "green")),
             locale=str(value.get("locale", "fr-FR")),
             support_url=(str(value["support_url"]) if value.get("support_url") else None),
         ).validate()
 
 
 @dataclass(slots=True)
-class VigieConfig:
-    schema_version: int = 2
+class YodevAdsConfig:
+    schema_version: int = 3
     brand: BrandSettings = field(default_factory=BrandSettings)
     default_manager_id: str | None = None
     default_profile: str | None = None
     profiles: dict[str, ClientProfile] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, value: dict[str, object]) -> VigieConfig:
+    def from_dict(cls, value: dict[str, object]) -> YodevAdsConfig:
         raw_profiles = value.get("profiles", {})
         if not isinstance(raw_profiles, dict):
             raise ConfigurationError("The profiles configuration must be an object.")
@@ -123,7 +121,7 @@ class VigieConfig:
         if raw_brand is not None and not isinstance(raw_brand, dict):
             raise ConfigurationError("The brand configuration must be an object.")
         return cls(
-            schema_version=2,
+            schema_version=3,
             brand=BrandSettings.from_dict(raw_brand),
             default_manager_id=(normalize_customer_id(str(manager_id)) if manager_id else None),
             default_profile=(
@@ -135,7 +133,7 @@ class VigieConfig:
     def profile(self, key: str | None = None) -> ClientProfile:
         selected = normalize_profile_key(key) if key else self.default_profile
         if not selected:
-            raise ConfigurationError("No profile selected. Run `vigie clients use PROFILE`.")
+            raise ConfigurationError("No profile selected. Run `yads clients use PROFILE`.")
         try:
             return self.profiles[selected]
         except KeyError as error:
@@ -146,38 +144,30 @@ class VigieConfig:
             profile.manager_id if profile and profile.manager_id else self.default_manager_id
         )
         if not manager_id:
-            raise ConfigurationError("No manager ID configured. Run `vigie setup` first.")
+            raise ConfigurationError("No manager ID configured. Run `yads setup` first.")
         return manager_id
 
 
 class ConfigStore:
     def __init__(self, path: Path | None = None) -> None:
-        self.path = path or user_config_path("vigieads", appauthor=False) / "config.json"
-        self.legacy_path = (
-            None if path else user_config_path("vigie-ads", appauthor=False) / "config.json"
-        )
+        self.path = path or user_config_path("yodev-ads", appauthor=False) / "config.json"
 
-    def load(self) -> VigieConfig:
+    def load(self) -> YodevAdsConfig:
         source = self.path
-        if not source.exists() and self.legacy_path and self.legacy_path.exists():
-            source = self.legacy_path
         if not source.exists():
-            return VigieConfig()
+            return YodevAdsConfig()
         try:
             value = json.loads(source.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise ConfigurationError(f"Unable to read {source}: {error}") from error
         if not isinstance(value, dict):
-            raise ConfigurationError("The Vigie Ads configuration root must be an object.")
-        config = VigieConfig.from_dict(value)
-        if source != self.path:
-            self.save(config)
-        return config
+            raise ConfigurationError("The Ads by Yodev configuration root must be an object.")
+        return YodevAdsConfig.from_dict(value)
 
-    def save(self, config: VigieConfig) -> None:
+    def save(self, config: YodevAdsConfig) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
-            "schema_version": 2,
+            "schema_version": 3,
             "brand": asdict(config.brand.validate()),
             "default_manager_id": config.default_manager_id,
             "default_profile": config.default_profile,

@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "source": "yodev",
+  "colors": {
+    "dark": "#0C1117",
+    "light": "#F7F5F0",
+    "mail": "#315EFB",
+    "ads": "#19A58F"
+  },
+  "fonts": {
+    "body": "DM Sans",
+    "display": "Plus Jakarta Sans",
+    "mono": "Fira Code"
+  },
+  "products": {
+    "mail": { "name": "Mail by Yodev", "asset": "/brand/mail-by-yodev.svg", "sha256": "04b48e0adefc7f4619e99428f2bb0a081ec38c28ba445b88812bae866a7adec2" },
+    "ads": { "name": "Ads by Yodev", "asset": "/brand/ads-by-yodev.svg", "sha256": "d1c16f2d506806d0ff634a0d0c0ddc3068e95abb22f4d555ebd288938083b28d" }
+  }
+}

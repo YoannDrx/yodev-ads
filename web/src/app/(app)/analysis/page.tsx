@@ -61,7 +61,7 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
       <PageHeading
         eyebrow="Intelligence Google Ads · 30 jours"
         title="Analyse 360"
-        description="Vigieads croise les requêtes, le Quality Score, les annonces responsives et le tracking pour prioriser les actions qui comptent."
+        description="Ads by Yodev croise les requêtes, le Quality Score, les annonces responsives et le tracking pour prioriser les actions qui comptent."
         actions={
           clients.length ? (
             <form className="flex gap-2">
@@ -100,13 +100,13 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <Card className="border-0 bg-[#0d1722] text-white shadow-none sm:col-span-2 xl:col-span-1">
               <CardContent className="p-5">
-                <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#6af0b1]">Score d’opportunité</p>
+                <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">Score d’opportunité</p>
                 <div className="mt-5 flex items-end gap-2">
                   <span className="text-5xl font-semibold tracking-[-.06em]">{analysis.score}</span>
                   <span className="mb-1 text-sm text-white/45">/ 100</span>
                 </div>
                 <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-[#6af0b1]" style={{ width: `${analysis.score}%` }} />
+                  <div className="h-full rounded-full bg-[#19A58F]" style={{ width: `${analysis.score}%` }} />
                 </div>
                 <p className="mt-3 text-xs leading-5 text-white/50">Score explicable, calculé à partir des anomalies visibles ci-dessous.</p>
               </CardContent>
@@ -140,7 +140,7 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
           <section className="mt-6 rounded-3xl border border-[#dce5e8] bg-white p-5 sm:p-7">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#287656]">Plan d’action priorisé</p>
+                <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">Plan d’action priorisé</p>
                 <h2 className="mt-2 text-xl font-semibold tracking-tight">
                   {analysis.findings.length
                     ? `${analysis.findings.length} opportunité${analysis.findings.length > 1 ? 's' : ''} détectée${analysis.findings.length > 1 ? 's' : ''}`
@@ -216,7 +216,7 @@ function FindingList({ findings, currency }: { findings: AnalysisFinding[]; curr
         <article key={finding.id} className="rounded-2xl border border-[#e1e7e9] p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 gap-3">
-              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[#eef7f3] text-[#287656]">
+              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[#eef7f3] text-[#19A58F]">
                 <Lightbulb className="size-4" />
               </span>
               <div>
@@ -272,7 +272,7 @@ function SummaryCard({
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <Icon className="size-4 text-[#287656]" />
+          <Icon className="size-4 text-[#19A58F]" />
         </div>
         <p className="mt-4 text-2xl font-semibold tracking-tight">{value}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{note}</p>

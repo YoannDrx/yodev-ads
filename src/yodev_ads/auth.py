@@ -8,8 +8,7 @@ from pathlib import Path
 import keyring
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-KEYRING_SERVICE = "vigieads"
-LEGACY_KEYRING_SERVICE = "vigie-ads"
+KEYRING_SERVICE = "yodev-ads"
 KEYRING_USERNAME = "google-ads-developer-token"
 GOOGLE_ADS_SCOPES = ["https://www.googleapis.com/auth/adwords"]
 
@@ -19,10 +18,6 @@ def get_developer_token() -> str | None:
     if environment_token:
         return environment_token.strip()
     token = keyring.get_password(KEYRING_SERVICE, KEYRING_USERNAME)
-    if not token:
-        token = keyring.get_password(LEGACY_KEYRING_SERVICE, KEYRING_USERNAME)
-        if token:
-            keyring.set_password(KEYRING_SERVICE, KEYRING_USERNAME, token)
     return token.strip() if token else None
 
 
@@ -80,7 +75,7 @@ def run_oauth_login(client_id: str, client_secret: str) -> Path:
         host="localhost",
         port=0,
         authorization_prompt_message="Opening Google OAuth in your browser…",
-        success_message="Vigieads OAuth is ready. You can close this tab.",
+        success_message="Ads by Yodev OAuth is ready. You can close this tab.",
         open_browser=True,
     )
     if not credentials.refresh_token:

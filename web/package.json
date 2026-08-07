@@ -1,5 +1,5 @@
 {
-  "name": "@vigieads/web",
+  "name": "@yodev/ads",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,7 +14,8 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
-    "db:studio": "dotenv -e .env.local -- drizzle-kit studio"
+    "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
+    "rebrand:rotate-credentials": "dotenv -e .env.local -- tsx scripts/rotate-yodev-credentials.ts"
   },
   "dependencies": {
     "@clerk/localizations": "^4.13.5",

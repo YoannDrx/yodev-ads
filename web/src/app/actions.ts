@@ -819,7 +819,7 @@ export async function createCheckoutSession(formData: FormData) {
       customerId = customer.id
       await getDb().update(workspaces).set({ stripeCustomerId: customerId, updatedAt: new Date() }).where(eq(workspaces.id, workspace.id))
     }
-    const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://vigieads.vercel.app'
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr'
     const checkout = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
@@ -844,7 +844,7 @@ export async function openBillingPortal() {
   try {
     const { workspace } = await requireAdminWorkspace()
     if (!workspace.stripeCustomerId) throw new Error('Aucun client Stripe n’est associé à cet espace.')
-    const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://vigieads.vercel.app'
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr'
     const session = await getStripe().billingPortal.sessions.create({
       customer: workspace.stripeCustomerId,
       return_url: `${origin}/billing`,

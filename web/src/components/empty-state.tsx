@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 
 export function EmptyState({
   title = 'Connectez votre MCC Google Ads',
-  description = 'Une fois connecté, Vigieads synchronise vos comptes clients et affiche leurs performances en direct.',
+  description = 'Une fois connecté, Ads by Yodev synchronise vos comptes clients et affiche leurs performances en direct.',
 }: {
   title?: string
   description?: string

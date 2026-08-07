@@ -6,6 +6,9 @@ import { runWorkspaceMonitoring } from '@/lib/run-monitoring'
 import { dispatchWeeklyDigest } from '@/lib/notifications'
 
 export async function GET(request: Request) {
+  if (process.env.MAINTENANCE_MODE === '1') {
+    return NextResponse.json({ error: 'Maintenance mode' }, { status: 503, headers: { 'Retry-After': '900' } })
+  }
   const startedAt = Date.now()
   const secret = process.env.CRON_SECRET
   if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {

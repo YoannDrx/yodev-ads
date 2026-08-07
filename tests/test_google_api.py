@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from vigie_ads.google_api import decimal_to_micros, micros_to_decimal
+from yodev_ads.google_api import decimal_to_micros, micros_to_decimal
 
 
 def test_micros_to_decimal() -> None:

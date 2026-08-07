@@ -7,9 +7,9 @@ if (!secretKey.includes('_test_')) throw new Error('Refusing to provision produc
 
 const stripe = new Stripe(secretKey)
 const plans = [
-  { id: 'solo', name: 'Vigieads Solo', amount: 2_900 },
-  { id: 'studio', name: 'Vigieads Studio', amount: 8_900 },
-  { id: 'agency', name: 'Vigieads Agency', amount: 18_900 },
+  { id: 'solo', name: 'Ads by Yodev Solo', amount: 2_900 },
+  { id: 'studio', name: 'Ads by Yodev Studio', amount: 8_900 },
+  { id: 'agency', name: 'Ads by Yodev Agency', amount: 18_900 },
 ] as const
 
 function setVercelEnvironment(name: string, value: string, sensitive = false) {
@@ -34,10 +34,10 @@ async function main() {
   const existingProducts = await stripe.products.list({ active: true, limit: 100 })
   for (const plan of plans) {
     const product =
-      existingProducts.data.find((item) => item.metadata.vigieads_plan === plan.id) ??
+      existingProducts.data.find((item) => item.metadata.yodev_product === 'ads' && item.metadata.yodev_plan === plan.id) ??
       (await stripe.products.create({
         name: plan.name,
-        metadata: { vigieads_plan: plan.id },
+        metadata: { yodev_product: 'ads', yodev_plan: plan.id },
       }))
     const prices = await stripe.prices.list({ product: product.id, active: true, limit: 100 })
     const price =
@@ -52,18 +52,20 @@ async function main() {
         currency: 'eur',
         unit_amount: plan.amount,
         recurring: { interval: 'month' },
-        metadata: { vigieads_plan: plan.id },
+        lookup_key: `yodev_ads_${plan.id}_monthly_v1`,
+        transfer_lookup_key: true,
+        metadata: { yodev_product: 'ads', yodev_plan: plan.id },
       }))
     setVercelEnvironment(`STRIPE_PRICE_${plan.id.toUpperCase()}`, price.id)
   }
 
-  const endpointUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://vigieads.vercel.app'}/api/webhooks/stripe`
+  const endpointUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr'}/api/webhooks/stripe`
   const endpoints = await stripe.webhookEndpoints.list({ limit: 100 })
   const existingEndpoint = endpoints.data.find((endpoint) => endpoint.url === endpointUrl && endpoint.status === 'enabled')
   if (existingEndpoint && !process.env.STRIPE_WEBHOOK_SECRET) {
-    await stripe.webhookEndpoints.del(existingEndpoint.id)
+    throw new Error('The Ads by Yodev webhook already exists. Rotate its signing secret in Stripe before provisioning.')
   }
-  if (!existingEndpoint || !process.env.STRIPE_WEBHOOK_SECRET) {
+  if (!existingEndpoint) {
     const endpoint = await stripe.webhookEndpoints.create({
       url: endpointUrl,
       enabled_events: [
@@ -71,7 +73,7 @@ async function main() {
         'customer.subscription.updated',
         'customer.subscription.deleted',
       ],
-      description: 'Vigieads subscription lifecycle',
+      description: 'Ads by Yodev subscription lifecycle',
     })
     if (!endpoint.secret) throw new Error('Stripe did not return a webhook signing secret')
     setVercelEnvironment('STRIPE_WEBHOOK_SECRET', endpoint.secret, true)

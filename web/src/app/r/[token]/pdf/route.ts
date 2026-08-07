@@ -8,7 +8,7 @@ export async function GET(_request: Request, context: { params: Promise<{ token:
   if (!result) return new Response('Rapport introuvable', { status: 404 })
   const campaigns = await new GoogleAdsGateway(result.connection).campaignPerformance(result.client.googleCustomerId)
   const pdf = await createClientReportPdf({
-    brandName: 'Vigieads',
+    brandName: 'Ads by Yodev',
     clientName: result.client.name,
     currencyCode: result.client.currencyCode,
     campaigns,

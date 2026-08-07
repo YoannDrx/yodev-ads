@@ -19,7 +19,7 @@ describe('client PDF report', () => {
       conversions: 1.5,
     }))
     const bytes = await createClientReportPdf({
-      brandName: 'Vigieads',
+      brandName: 'Ads by Yodev',
       clientName: 'Mail Certificate',
       currencyCode: 'EUR',
       campaigns,
@@ -32,7 +32,7 @@ describe('client PDF report', () => {
     if (process.env.WRITE_PDF_FIXTURE === '1') {
       const directory = resolve(process.cwd(), 'tmp/pdfs')
       await mkdir(directory, { recursive: true })
-      await writeFile(resolve(directory, 'vigieads-report-fixture.pdf'), bytes)
+      await writeFile(resolve(directory, 'yodev-ads-report-fixture.pdf'), bytes)
     }
   })
 })

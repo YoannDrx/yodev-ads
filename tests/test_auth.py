@@ -5,7 +5,7 @@ import stat
 
 import pytest
 
-from vigie_ads import auth
+from yodev_ads import auth
 
 
 class FakeCredentials:

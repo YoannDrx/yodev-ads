@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             // eslint-disable-next-line @next/next/no-img-element
             <img src={workspace.logoUrl} alt="" className="size-9 rounded-xl object-cover" />
           ) : (
-            <span className="grid size-9 place-items-center rounded-xl bg-[#6af0b1] text-[#0d1722] shadow-lg shadow-emerald-500/10">
+            <span className="grid size-9 place-items-center rounded-xl bg-[#19A58F] text-[#0d1722] shadow-lg shadow-emerald-500/10">
               <Radar className="size-5" />
             </span>
           )}
@@ -62,7 +62,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
         <div className="mt-auto rounded-2xl border border-white/8 bg-white/5 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#6af0b1]">Votre vigie</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#19A58F]">Votre vigie</p>
           <p className="mt-2 text-sm font-medium text-white/80">{workspace.brandTagline}</p>
         </div>
       </aside>

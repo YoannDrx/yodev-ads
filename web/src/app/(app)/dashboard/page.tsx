@@ -134,7 +134,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
             <Card className="overflow-hidden border-[#dce5e7] bg-[#0d1722] text-white shadow-none">
               <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#6af0b1]">Score de vigilance</p>
+                  <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">Score de vigilance</p>
                   <p className="mt-3 text-4xl font-semibold tracking-tight">
                     {healthScore}
                     <span className="text-lg text-white/35"> / 100</span>
@@ -144,8 +144,8 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                   </p>
                 </div>
                 <div className="relative grid size-28 shrink-0 place-items-center rounded-full border-[10px] border-white/8">
-                  <Gauge className="size-9 text-[#6af0b1]" />
-                  <span className="absolute inset-[-10px] rounded-full border-[10px] border-[#6af0b1] border-l-transparent border-b-transparent" />
+                  <Gauge className="size-9 text-[#19A58F]" />
+                  <span className="absolute inset-[-10px] rounded-full border-[10px] border-[#19A58F] border-l-transparent border-b-transparent" />
                 </div>
               </CardContent>
             </Card>

@@ -36,6 +36,13 @@
       "when": 1784632477747,
       "tag": "0004_classy_zemo",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786127642128,
+      "tag": "0005_yodev_rebrand",
+      "breakpoints": true
     }
   ]
 }

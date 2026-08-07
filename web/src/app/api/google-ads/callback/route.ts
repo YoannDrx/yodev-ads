@@ -19,8 +19,8 @@ export async function GET(request: Request) {
     if (!code || !returnedState) throw new Error('Réponse OAuth incomplète.')
 
     const cookieStore = await cookies()
-    const encoded = cookieStore.get('vigieads_google_oauth')?.value
-    cookieStore.delete('vigieads_google_oauth')
+    const encoded = cookieStore.get('yodev_ads_google_oauth')?.value
+    cookieStore.delete('yodev_ads_google_oauth')
     if (!encoded) throw new Error('La session OAuth a expiré. Relancez la connexion.')
     const state = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as OAuthState
     if (

@@ -44,9 +44,9 @@ export default async function PublicReportPage({
       <header className="border-b border-black/5 bg-[#0d1722] text-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
           <div className="flex items-center gap-3">
-            <VigieadsMark />
+            <YodevAdsMark />
             <div>
-              <p className="font-semibold">Vigieads</p>
+              <p className="font-semibold">Ads by Yodev</p>
               <p className="text-xs text-white/55">Rapport sécurisé</p>
             </div>
           </div>
@@ -145,7 +145,7 @@ export default async function PublicReportPage({
           </CardContent>
         </Card>
         <p className="mt-6 text-center text-xs text-[#8a959e]">
-          Rapport généré par Vigieads · L’operating system Google Ads des agences
+          Rapport généré par Ads by Yodev · L’operating system Google Ads des agences
         </p>
       </div>
     </main>
@@ -170,11 +170,11 @@ function ReportMetric({ label, value, icon: Icon }: { label: string; value: stri
   )
 }
 
-function VigieadsMark() {
+function YodevAdsMark() {
   return (
-    <span className="relative grid size-10 place-items-center overflow-hidden rounded-xl bg-[#76f1b3] text-[#0d1722]">
+    <span className="relative grid size-10 place-items-center overflow-hidden rounded-xl bg-[#19A58F] text-[#0d1722]">
       <span className="absolute -top-2 h-5 w-7 rounded-full border-2 border-current" />
-      <span className="mt-2 text-sm font-black">V</span>
+      <span className="mt-2 text-sm font-black">A</span>
     </span>
   )
 }

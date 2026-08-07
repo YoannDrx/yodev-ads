@@ -7,7 +7,7 @@ import { hashToken } from '@/lib/tokens'
 export async function GET(request: Request) {
   const authorization = request.headers.get('authorization')
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : ''
-  if (!token.startsWith('vgh_live_')) return NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
+  if (!token.startsWith('ya_live_')) return NextResponse.json({ error: 'Invalid API key' }, { status: 401 })
 
   const db = getDb()
   const [credential] = await db
