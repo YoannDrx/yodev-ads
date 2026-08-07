@@ -45,7 +45,7 @@ async function deliverChannel(
     if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY absent')
     const resend = new Resend(process.env.RESEND_API_KEY)
     const { data, error } = await resend.emails.send({
-      from: process.env.NOTIFICATION_FROM_EMAIL ?? 'Ads by Yodev <onboarding@resend.dev>',
+      from: process.env.NOTIFICATION_FROM_EMAIL ?? 'Ads by Yodev <ads@yodev.fr>',
       to: destination,
       subject: payload.eventType === 'digest' ? payload.title : `[${payload.severity === 'critical' ? 'Critique' : 'Alerte'}] ${payload.title}`,
       html: alertEmailHtml(payload),
