@@ -14,6 +14,10 @@ const sections = [
       'SIREN : 803 272 590. SIRET : 803 272 590 00024. Activité principale : programmation informatique (code NAF/APE 62.01Z).',
   },
   {
+    title: 'Régime de TVA',
+    content: 'TVA non applicable, article 293 B du Code général des impôts.',
+  },
+  {
     title: 'Adresse professionnelle',
     content: '11 rue de la Chine, 75020 Paris, France.',
   },
