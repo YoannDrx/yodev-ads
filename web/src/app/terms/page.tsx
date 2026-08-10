@@ -35,7 +35,14 @@ export default function TermsPage() {
             signalées avec les identifiants de requête disponibles pour faciliter le diagnostic.
           </p>
         </section>
-        <p className="text-sm">Dernière mise à jour : 18 juillet 2026.</p>
+        <section>
+          <h2 className="text-xl font-semibold text-foreground">Éditeur et contact</h2>
+          <p>
+            Le service est édité sous le nom commercial Yodev par Yoann Andrieux, entrepreneur individuel (EI), SIREN
+            803 272 590. Contact : hello@yodev.fr.
+          </p>
+        </section>
+        <p className="text-sm">Dernière mise à jour : 10 août 2026.</p>
       </div>
     </main>
   )

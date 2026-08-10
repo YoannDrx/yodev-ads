@@ -229,6 +229,7 @@ export default async function Home() {
         <footer className="mx-auto flex max-w-7xl flex-col gap-4 border-t border-white/8 px-6 py-8 text-sm text-white/42 sm:flex-row sm:items-center sm:justify-between lg:px-8">
           <span>© {new Date().getFullYear()} Ads by Yodev. Google Ads, sous contrôle.</span>
           <div className="flex gap-5">
+            <Link href="/legal">Mentions légales</Link>
             <Link href="/privacy">Confidentialité</Link>
             <Link href="/terms">Conditions</Link>
           </div>
