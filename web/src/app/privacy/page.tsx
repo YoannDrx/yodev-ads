@@ -10,6 +10,13 @@ export default function PrivacyPage() {
       </Link>
       <h1 className="mt-8 text-4xl font-semibold tracking-tight">Politique de confidentialité</h1>
       <div className="prose prose-neutral mt-8 max-w-none space-y-6 leading-7 text-muted-foreground">
+        <section>
+          <h2 className="text-xl font-semibold text-foreground">Responsable du traitement</h2>
+          <p>
+            Yodev, édité par Yoann Andrieux, entrepreneur individuel (EI), SIREN 803 272 590, est responsable du
+            traitement des données de ses propres utilisateurs. Pour exercer vos droits, écrivez à hello@yodev.fr.
+          </p>
+        </section>
         <p>
           Ads by Yodev traite uniquement les informations nécessaires à l’authentification, à l’organisation des espaces de
           travail et à la gestion des comptes Google Ads explicitement connectés par ses utilisateurs.
@@ -34,10 +41,11 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold text-foreground">Sécurité et contact</h2>
           <p>
             Les accès sont cloisonnés par organisation et les actions sensibles sont auditées. Pour toute demande
-            relative aux données personnelles, contactez l’administrateur de votre espace Ads by Yodev.
+            relative aux données personnelles, contactez l’administrateur de votre espace Ads by Yodev ou écrivez à
+            hello@yodev.fr.
           </p>
         </section>
-        <p className="text-sm">Dernière mise à jour : 18 juillet 2026.</p>
+        <p className="text-sm">Dernière mise à jour : 10 août 2026.</p>
       </div>
     </main>
   )
