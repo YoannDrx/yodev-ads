@@ -2,18 +2,59 @@ import type Stripe from 'stripe'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   accountLimitForPlan,
+  accessStateForSubscription,
   accountsWithinPlan,
+  checkoutTaxConfiguration,
+  chargeRefundRecord,
+  planFeaturesForLocale,
   planFromPriceId,
+  shouldNotifyInvoiceEvent,
   subscriptionIsActive,
   subscriptionRecord,
+  taxCheckoutCopy,
 } from '@/lib/billing'
 
 describe('billing plans', () => {
   const originalStudioPrice = process.env.STRIPE_PRICE_STUDIO
+  const originalTaxMode = process.env.STRIPE_TAX_MODE
+  const originalTaxValidation = process.env.STRIPE_TAX_CONFIGURATION_VALIDATED
 
   afterEach(() => {
     if (originalStudioPrice) process.env.STRIPE_PRICE_STUDIO = originalStudioPrice
     else delete process.env.STRIPE_PRICE_STUDIO
+    if (originalTaxMode) process.env.STRIPE_TAX_MODE = originalTaxMode
+    else delete process.env.STRIPE_TAX_MODE
+    if (originalTaxValidation) process.env.STRIPE_TAX_CONFIGURATION_VALIDATED = originalTaxValidation
+    else delete process.env.STRIPE_TAX_CONFIGURATION_VALIDATED
+  })
+
+  it('provides plan features in both supported commercial locales', () => {
+    expect(planFeaturesForLocale('solo', 'fr')).toContain('Vigies quotidiennes')
+    expect(planFeaturesForLocale('solo', 'en')).toContain('Daily monitors')
+    expect(planFeaturesForLocale('agency', 'en')).toContain('White label')
+  })
+
+  it('blocks checkout until the tax mode is explicitly and safely configured', () => {
+    delete process.env.STRIPE_TAX_MODE
+    expect(() => checkoutTaxConfiguration()).toThrow('STRIPE_TAX_MODE')
+
+    process.env.STRIPE_TAX_MODE = 'exempt_293b'
+    expect(checkoutTaxConfiguration()).toEqual({ mode: 'exempt_293b', automaticTax: { enabled: false } })
+
+    process.env.STRIPE_TAX_MODE = 'stripe_tax'
+    delete process.env.STRIPE_TAX_CONFIGURATION_VALIDATED
+    expect(() => checkoutTaxConfiguration()).toThrow('validé juridiquement')
+    process.env.STRIPE_TAX_CONFIGURATION_VALIDATED = '1'
+    expect(checkoutTaxConfiguration()).toEqual({ mode: 'stripe_tax', automaticTax: { enabled: true } })
+  })
+
+  it('provides explicit checkout and invoice wording for each tax mode', () => {
+    expect(taxCheckoutCopy('exempt_293b', 'fr')).toMatchObject({
+      checkoutMessage: expect.stringContaining('293 B'),
+      invoiceFooter: expect.stringContaining('TVA non applicable'),
+    })
+    expect(taxCheckoutCopy('exempt_293b', 'en').checkoutMessage).toContain('VAT not applicable')
+    expect(taxCheckoutCopy('stripe_tax', 'en')).toMatchObject({ checkoutMessage: expect.stringContaining('calculated'), invoiceFooter: '' })
   })
 
   it('applies deterministic account limits and active states', () => {
@@ -22,6 +63,16 @@ describe('billing plans', () => {
     expect(accountLimitForPlan('unknown')).toBe(3)
     expect(subscriptionIsActive('trialing')).toBe(true)
     expect(subscriptionIsActive('past_due')).toBe(false)
+  })
+
+  it('maps Stripe lifecycle states without cutting access before cancellation completes', () => {
+    const at = new Date('2026-08-12T10:00:00Z')
+    expect(accessStateForSubscription('active', at)).toEqual({ accessState: 'active', graceEndsAt: null })
+    expect(accessStateForSubscription('past_due', at)).toEqual({
+      accessState: 'grace',
+      graceEndsAt: new Date('2026-08-19T10:00:00Z'),
+    })
+    expect(accessStateForSubscription('canceled', at)).toEqual({ accessState: 'suspended', graceEndsAt: null })
   })
 
   it('keeps manager accounts while enforcing the advertiser quota deterministically', () => {
@@ -62,5 +113,41 @@ describe('billing plans', () => {
       stripeSubscriptionId: 'sub_123',
       subscriptionStatus: 'active',
     })
+  })
+
+  it('maps successful partial and full refunds without changing subscription access', () => {
+    expect(chargeRefundRecord({
+      id: 'ch_partial',
+      customer: 'cus_123',
+      payment_intent: 'pi_123',
+      currency: 'eur',
+      amount: 8900,
+      amount_refunded: 2900,
+      refunded: false,
+    } as Stripe.Charge)).toEqual({
+      customerId: 'cus_123',
+      chargeId: 'ch_partial',
+      paymentIntentId: 'pi_123',
+      currency: 'EUR',
+      originalAmount: 8900,
+      refundedAmount: 2900,
+      fullyRefunded: false,
+    })
+    expect(chargeRefundRecord({
+      id: 'ch_full', customer: 'cus_123', payment_intent: null, currency: 'eur', amount: 2900,
+      amount_refunded: 2900, refunded: true,
+    } as Stripe.Charge)?.fullyRefunded).toBe(true)
+    expect(chargeRefundRecord({
+      id: 'ch_none', customer: null, currency: 'eur', amount: 2900, amount_refunded: 0, refunded: false,
+    } as Stripe.Charge)).toBeNull()
+  })
+
+  it('suppresses stale invoice notifications unless they match the authoritative subscription state', () => {
+    const eventCreatedAt = new Date('2026-08-12T10:00:00Z')
+    const stateAppliedAt = new Date('2026-08-12T10:00:05Z')
+    expect(shouldNotifyInvoiceEvent({ type: 'invoice.payment_failed', eventCreatedAt, stateAppliedAt, subscriptionStatus: 'active' })).toBe(false)
+    expect(shouldNotifyInvoiceEvent({ type: 'invoice.payment_failed', eventCreatedAt, stateAppliedAt, subscriptionStatus: 'past_due' })).toBe(true)
+    expect(shouldNotifyInvoiceEvent({ type: 'invoice.paid', eventCreatedAt, stateAppliedAt, subscriptionStatus: 'active' })).toBe(true)
+    expect(shouldNotifyInvoiceEvent({ type: 'invoice.paid', eventCreatedAt, stateAppliedAt: null, subscriptionStatus: 'past_due' })).toBe(true)
   })
 })

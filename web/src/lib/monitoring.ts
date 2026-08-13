@@ -63,9 +63,41 @@ export const agentTemplates = [
     threshold: 50,
     unit: '€ sans conversion',
   },
+  {
+    kind: 'pacing_variance',
+    name: 'Sentinelle de pacing',
+    description: 'Alerte lorsque la dépense du mois s’écarte durablement du rythme attendu.',
+    threshold: 10,
+    unit: '% d’écart au rythme',
+  },
+  {
+    kind: 'forecast_overrun',
+    name: 'Garde forecast',
+    description: 'Alerte lorsque la projection de fin de mois dépasse le budget client configuré.',
+    threshold: 10,
+    unit: '% de dépassement prévisionnel',
+  },
 ] as const
 
 export type AgentKind = (typeof agentTemplates)[number]['kind']
+
+const englishAgentTemplates = {
+  no_delivery: { name: 'Delivery sentinel', description: 'Detects active campaigns with no impressions over 30 days.', unit: 'impressions' },
+  spend_without_conversion: { name: 'Wasted spend hunter', description: 'Flags campaigns with no conversion once spend exceeds the selected threshold.', unit: 'spent' },
+  high_cpa: { name: 'CPA guard', description: 'Alerts when a campaign cost per conversion exceeds your limit.', unit: 'per conversion' },
+  budget_pressure: { name: 'Budget monitor', description: 'Detects campaigns whose 30-day spend approaches their extrapolated daily budget.', unit: '% of budget' },
+  wasted_search_terms: { name: 'Wasted query radar', description: 'Finds costly non-converting search terms and suggests exclusions to review.', unit: 'without conversion' },
+  low_quality_keywords: { name: 'Quality Score coach', description: 'Monitors active keywords whose relevance, expected CTR or landing page constrain performance.', unit: 'maximum score / 10' },
+  weak_responsive_ads: { name: 'Ad studio', description: 'Detects disapproved, weak or insufficiently diverse responsive ads.', unit: 'recommended headlines' },
+  tracking_gap: { name: 'Tracking guardian', description: 'Alerts when spend grows without conversions or Google Ads tracking is inactive.', unit: 'without conversion' },
+  pacing_variance: { name: 'Pacing sentinel', description: 'Alerts when monthly spend persistently diverges from the expected pace.', unit: '% pacing variance' },
+  forecast_overrun: { name: 'Forecast guard', description: 'Alerts when the end-of-month projection exceeds the configured client budget.', unit: '% forecast overrun' },
+} as const satisfies Record<AgentKind, { name: string; description: string; unit: string }>
+
+export function agentTemplatesForLocale(locale: 'fr' | 'en') {
+  if (locale === 'fr') return agentTemplates
+  return agentTemplates.map((template) => ({ ...template, ...englishAgentTemplates[template.kind] }))
+}
 
 export type MonitoringAgentInput = {
   id: string
@@ -81,6 +113,42 @@ export type MonitoringFinding = {
   campaignId?: string
   campaignName?: string
   value: number
+}
+
+export function analyzePacingForMonitoring(agent: MonitoringAgentInput, context: {
+  goal: { monthlyBudgetMicros: number } | null
+  pacing: { status: 'under' | 'on_track' | 'over' | 'missing_data'; variancePercent: number | null; forecastMicros: number | null } | null
+  observedDays: number
+  year: number
+  month: number
+}) {
+  if (!context.goal || !context.pacing || context.pacing.status === 'missing_data' || context.observedDays < 3) return []
+  const threshold = Number(agent.threshold)
+  const period = `${context.year}-${String(context.month).padStart(2, '0')}`
+  if (agent.kind === 'pacing_variance') {
+    const variancePercent = Math.abs((context.pacing.variancePercent ?? 0) * 100)
+    if (context.pacing.status === 'on_track' || variancePercent < threshold) return []
+    const direction = context.pacing.status === 'under' ? 'sous le rythme' : 'au-dessus du rythme'
+    return [{
+      fingerprint: `${agent.id}:pacing:${period}`,
+      severity: variancePercent >= threshold * 2 ? 'critical' as const : 'warning' as const,
+      title: context.pacing.status === 'under' ? 'Sous-pacing mensuel' : 'Sur-pacing mensuel',
+      description: `La dépense est ${direction} attendu de ${variancePercent.toFixed(1)} % après ${context.observedDays} jours collectés.`,
+      value: variancePercent,
+    }]
+  }
+  if (agent.kind === 'forecast_overrun' && context.pacing.forecastMicros !== null && context.goal.monthlyBudgetMicros > 0) {
+    const overrun = ((context.pacing.forecastMicros - context.goal.monthlyBudgetMicros) / context.goal.monthlyBudgetMicros) * 100
+    if (overrun < threshold) return []
+    return [{
+      fingerprint: `${agent.id}:forecast:${period}`,
+      severity: overrun >= threshold * 2 ? 'critical' as const : 'warning' as const,
+      title: 'Forecast supérieur au budget mensuel',
+      description: `La projection de fin de mois dépasse le budget configuré de ${overrun.toFixed(1)} %.`,
+      value: overrun,
+    }]
+  }
+  return []
 }
 
 export function analyzeSearchTermsForMonitoring(agent: MonitoringAgentInput, terms: SearchTermPerformance[]) {

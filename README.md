@@ -7,10 +7,10 @@ media buyers. The repository contains both the hosted product and a safe local C
 
 The Next.js application in [`web`](web) provides:
 
-- Clerk organizations and organization-scoped roles;
+- self-hosted Better Auth sessions, passkeys, organizations and organization-scoped roles;
 - an isolated workspace, branding and client portfolio for every tenant;
 - hosted Google OAuth with AES-256-GCM encryption of refresh tokens;
-- MCC account synchronization through the official Google Ads API v24;
+- MCC account synchronization through the official Google Ads API v25;
 - live 30-day campaign performance;
 - durable daily performance history in Neon;
 - a live 360° analysis of search terms, keyword quality, responsive search ads and conversion tracking;
@@ -18,13 +18,18 @@ The Next.js application in [`web`](web) provides:
 - eight explainable monitoring templates, including wasted queries, Quality Score, ad strength and tracking gaps;
 - explainable alert incidents and acknowledgement workflows;
 - Google `validate_only` checks before every proposed mutation;
-- approval and execution flows for campaign status and daily budgets;
+- approval and execution flows for campaign status/budgets, keywords, ads and paused
+  responsive-search-ad drafts;
 - revocable, read-only client reports backed by live Google Ads data;
 - downloadable, visually verified PDF reports and consultative client approvals;
-- encrypted email, Slack, Teams and generic webhook notifications;
+- encrypted email, OAuth-provisioned Slack, native Microsoft Graph Teams and SSRF-safe generic webhook notifications;
 - weekly performance digests and deduplicated incident delivery;
 - workspace budget/spend guardrails enforced before Google validation;
 - Stripe subscription checkout, billing portal and signed webhook handling;
+- FR/EN legal, consent and commercial-readiness gates;
+- public subprocessor register with enforced 15-day bilingual, durable change notices;
+- scoped public API v1, asynchronous private exports and J+30 deletion workflows;
+- Agency custom report domains with DNS and Vercel verification;
 - Vercel Web Analytics and Speed Insights;
 - one-time agency API keys for Codex and internal tooling;
 - an append-only operational audit trail;
@@ -144,6 +149,10 @@ later be reused by a hosted web interface, desktop app or customer portal.
 
 The hosted and local security boundaries are documented in
 [`docs/MICRO_SAAS_ARCHITECTURE.md`](docs/MICRO_SAAS_ARCHITECTURE.md).
+The current implementation and external launch gates are tracked separately in
+[`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md). The hosted product
+must remain internal until the staging, legal, provider, restore, load and private-beta
+evidence listed there has been completed.
 
 ### Guarded CLI mutations
 

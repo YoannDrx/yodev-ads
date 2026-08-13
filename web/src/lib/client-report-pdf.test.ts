@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createClientReportPdf } from '@/lib/client-report-pdf'
+import { buildClientReportModel } from '@/lib/client-report-model'
 
 describe('client PDF report', () => {
   it('creates a valid paginated A4 PDF', async () => {
@@ -17,14 +18,17 @@ describe('client PDF report', () => {
       clicks: '50',
       costMicros: '25000000',
       conversions: 1.5,
+      conversionValueMicros: '75000000',
+      searchBudgetLostImpressionShare: index === 0 ? 0.2 : null,
+      searchRankLostImpressionShare: index === 0 ? 0.1 : null,
     }))
-    const bytes = await createClientReportPdf({
+    const bytes = await createClientReportPdf(buildClientReportModel({
       brandName: 'Ads by Yodev',
       clientName: 'Mail Certificate',
       currencyCode: 'EUR',
       campaigns,
       generatedAt: new Date('2026-07-21T12:00:00Z'),
-    })
+    }))
     expect(Buffer.from(bytes).subarray(0, 4).toString()).toBe('%PDF')
     const pdf = await PDFDocument.load(bytes)
     expect(pdf.getPageCount()).toBe(2)

@@ -1,15 +1,7 @@
 import 'server-only'
 
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
-import type { CampaignPerformance } from '@/lib/google-ads'
-
-type ClientReportInput = {
-  brandName: string
-  clientName: string
-  currencyCode: string
-  campaigns: CampaignPerformance[]
-  generatedAt?: Date
-}
+import type { ClientReportModel } from '@/lib/client-report-model'
 
 const colors = {
   ink: rgb(0.05, 0.09, 0.13),
@@ -53,27 +45,38 @@ function header(page: PDFPage, bold: PDFFont, brandName: string, clientName: str
   page.drawText(generatedAt.toLocaleDateString('fr-FR'), { x: 465, y: 775, size: 8, font: bold, color: rgb(0.65, 0.72, 0.76) })
 }
 
-function footer(page: PDFPage, font: PDFFont, pageNumber: number, pageCount: number) {
+function footer(page: PDFPage, font: PDFFont, pageNumber: number, pageCount: number, poweredByYodev: boolean, periodDays: number) {
   page.drawLine({ start: { x: 38, y: 36 }, end: { x: 557, y: 36 }, color: rgb(0.86, 0.89, 0.9), thickness: 0.7 })
-  page.drawText('Donnees Google Ads - fenetre glissante de 30 jours', { x: 38, y: 20, size: 7, font, color: colors.muted })
+  page.drawText(`Donnees Google Ads - fenetre glissante de ${periodDays} jours`, { x: 38, y: 20, size: 7, font, color: colors.muted })
   page.drawText(`${pageNumber} / ${pageCount}`, { x: 526, y: 20, size: 7, font, color: colors.muted })
+  if (poweredByYodev) page.drawText('Powered by Ads by Yodev', { x: 230, y: 20, size: 7, font, color: colors.muted })
 }
 
-export async function createClientReportPdf(input: ClientReportInput) {
+function wrapLines(text: string, font: PDFFont, size: number, width: number) {
+  const lines: string[] = []
+  for (const paragraph of safe(text).split('\n')) {
+    let current = ''
+    for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+      const candidate = current ? `${current} ${word}` : word
+      if (font.widthOfTextAtSize(candidate, size) <= width) current = candidate
+      else {
+        if (current) lines.push(current)
+        current = word
+      }
+    }
+    if (current) lines.push(current)
+    if (!paragraph.trim()) lines.push('')
+  }
+  return lines
+}
+
+export async function createClientReportPdf(input: ClientReportModel) {
   const pdf = await PDFDocument.create()
   const regular = await pdf.embedFont(StandardFonts.Helvetica)
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
-  const generatedAt = input.generatedAt ?? new Date()
-  const totals = input.campaigns.reduce(
-    (sum, campaign) => ({
-      cost: sum.cost + Number(campaign.costMicros),
-      impressions: sum.impressions + Number(campaign.impressions),
-      clicks: sum.clicks + Number(campaign.clicks),
-      conversions: sum.conversions + campaign.conversions,
-    }),
-    { cost: 0, impressions: 0, clicks: 0, conversions: 0 },
-  )
-  const chunks: CampaignPerformance[][] = []
+  const generatedAt = input.generatedAt
+  const totals = input.totals
+  const chunks: ClientReportModel['campaigns'][] = []
   for (let index = 0; index < input.campaigns.length; index += 10) chunks.push(input.campaigns.slice(index, index + 10))
   if (chunks.length === 0) chunks.push([])
 
@@ -82,7 +85,7 @@ export async function createClientReportPdf(input: ClientReportInput) {
     header(page, bold, input.brandName, input.clientName, generatedAt)
     if (pageIndex === 0) {
       const metrics = [
-        ['Investissement', money(totals.cost, input.currencyCode)],
+        ['Investissement', money(totals.costMicros, input.currencyCode)],
         ['Conversions', totals.conversions.toLocaleString('fr-FR', { maximumFractionDigits: 1 })],
         ['Clics', totals.clicks.toLocaleString('fr-FR')],
         ['CTR', totals.impressions ? `${((totals.clicks / totals.impressions) * 100).toFixed(1)} %` : '-'],
@@ -117,8 +120,24 @@ export async function createClientReportPdf(input: ClientReportInput) {
       page.drawText(safe(campaign.conversions.toLocaleString('fr-FR', { maximumFractionDigits: 1 })), { x: 515, y: y + 6, size: 8, font: regular, color: colors.ink })
     })
   }
+  if (input.editorialComment || input.actionPlan) {
+    const page = pdf.addPage([595, 842])
+    header(page, bold, input.brandName, input.clientName, generatedAt)
+    let y = 700
+    for (const [label, content] of [['Commentaire de la periode', input.editorialComment], ['Plan d action', input.actionPlan]] as const) {
+      if (!content) continue
+      page.drawText(label, { x: 38, y, size: 12, font: bold, color: colors.ink })
+      y -= 24
+      for (const line of wrapLines(content, regular, 9, 510)) {
+        if (y < 65) break
+        page.drawText(line, { x: 38, y, size: 9, font: regular, color: colors.muted })
+        y -= 15
+      }
+      y -= 20
+    }
+  }
   const pages = pdf.getPages()
-  pages.forEach((page, index) => footer(page, regular, index + 1, pages.length))
+  pages.forEach((page, index) => footer(page, regular, index + 1, pages.length, input.poweredByYodev, input.periodDays))
   pdf.setTitle(`Rapport Google Ads - ${safe(input.clientName)}`)
   pdf.setAuthor(input.brandName)
   pdf.setCreationDate(generatedAt)

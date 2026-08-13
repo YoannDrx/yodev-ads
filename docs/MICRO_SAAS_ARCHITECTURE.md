@@ -34,7 +34,8 @@ mutation reaches Google Ads.
 - Encrypt OAuth refresh tokens with an envelope-encryption key outside the
   database.
 - Keep developer tokens in a managed secret store and reference them by opaque ID.
-- Support both a platform-owned developer token and bring-your-own-token mode.
+- Use only the Yodev-owned developer token for the hosted product; it remains in the
+  deployment secret store and is never persisted in tenant data.
 - Never return refresh tokens, client secrets or developer tokens to the browser.
 - Record token creation, rotation, revocation and last successful use.
 
@@ -51,15 +52,18 @@ mutation reaches Google Ads.
 ## Services
 
 1. **Web application**: Next.js organization, brand, clients, reports and approvals.
-2. **Gateway**: tenant-aware Google Ads REST v24 commands inside the server runtime.
+2. **Gateway**: tenant-aware Google Ads REST v25 commands inside the server runtime.
 3. **Postgres**: Neon workspaces, clients, encrypted connections, approvals and audit events.
-4. **Identity**: Clerk sessions, organizations, membership and roles.
+4. **Identity**: self-hosted Better Auth sessions, organizations, memberships,
+   email verification, Google sign-in and passkeys. Authentication tables use a
+   dedicated least-privilege Postgres credential.
 5. **Secret store**: Vercel environment secrets plus encrypted OAuth and notification destinations in Postgres.
 6. **Billing**: Stripe Checkout, customer portal and signed subscription webhooks.
-7. **Delivery**: Resend email plus encrypted Slack, Teams and generic webhook endpoints.
+7. **Delivery**: Resend email, OAuth-provisioned Slack incoming webhooks, delegated Microsoft Graph Teams posting and SSRF-safe legacy/generic webhooks. Provider-bound signed state protects every OAuth callback; Teams selection uses a short-lived actor-bound encrypted session and PKCE.
 
-Scheduled monitoring runs through Vercel Cron. Incident delivery is idempotent in
-Postgres; a dedicated durable queue remains an upgrade path for higher volume.
+Vercel Cron seeds and drains a durable Postgres queue with leases, bounded retries,
+backoff and dead-letter handling. Monitoring and incident delivery are isolated per
+workspace and idempotent; a managed external queue remains only a future scale option.
 
 The Google Ads gateway in `src/yodev_ads/google_api.py` should remain behind a
 small service interface. That prevents Google API version changes from leaking
@@ -100,7 +104,8 @@ into the web, CLI and worker layers.
 - immutable mutation audit trail;
 - tested account offboarding, data export and deletion.
 
-External launch dependencies remain: custom-domain purchase, Clerk production
-keys, Google OAuth verification, Stripe price provisioning and a verified Resend
+External launch dependencies remain: custom-domain purchase, Better Auth secret and
+Google OAuth client provisioning, Google Ads OAuth verification, Stripe live price
+provisioning and a verified Resend
 sending domain. The application degrades safely when optional billing or email
 secrets are absent.

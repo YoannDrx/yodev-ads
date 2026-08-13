@@ -1,59 +1,22 @@
 import Link from 'next/link'
-import { SignInButton } from '@clerk/nextjs'
-import { auth } from '@clerk/nextjs/server'
 import { ArrowRight, BellRing, Bot, Check, Eye, Gauge, ShieldCheck, Sparkles, UsersRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-const pillars = [
-  {
-    icon: Eye,
-    title: 'Détecter',
-    description: 'Requêtes, Quality Score, annonces, tracking et budget analysés sur les données Google Ads réelles.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Expliquer',
-    description: 'Chaque signal montre sa preuve, son impact, sa priorité et l’action concrète à examiner.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Approuver',
-    description: 'Les écritures sont validées par Google, approuvées par un humain puis consignées.',
-  },
-  {
-    icon: Bot,
-    title: 'Agir',
-    description: 'Des vigies quotidiennes, une API d’agence et des rapports clients qui travaillent sans vous.',
-  },
-]
-
-const plans = [
-  {
-    name: 'Solo',
-    price: '29 €',
-    note: 'Pour démarrer proprement',
-    accounts: '3 comptes clients',
-    features: ['Cockpit Google Ads', 'Analyse 360', '8 vigies autonomes', 'Approbations sécurisées'],
-  },
-  {
-    name: 'Studio',
-    price: '89 €',
-    note: 'Le choix des consultants',
-    accounts: '15 comptes clients',
-    featured: true,
-    features: ['Tout Solo', '15 comptes et rapports clients', 'Marque blanche', 'API d’agence et audit'],
-  },
-  {
-    name: 'Agency',
-    price: '189 €',
-    note: 'Pour les équipes en croissance',
-    accounts: '50 comptes clients',
-    features: ['Tout Studio', '50 comptes et portails illimités', 'Rôles avancés', 'Support prioritaire'],
-  },
-]
+import { getLocale } from '@/lib/locale'
 
 export default async function Home() {
-  const { userId } = await auth()
+  const locale = await getLocale()
+  const english = locale === 'en'
+  const pillars = [
+    { icon: Eye, title: english ? 'Detect' : 'Détecter', description: english ? 'Search terms, Quality Score, ads, tracking and budgets analyzed from actual Google Ads data.' : 'Requêtes, Quality Score, annonces, tracking et budget analysés sur les données Google Ads réelles.' },
+    { icon: Sparkles, title: english ? 'Explain' : 'Expliquer', description: english ? 'Every signal shows its evidence, impact, priority and the concrete action to review.' : 'Chaque signal montre sa preuve, son impact, sa priorité et l’action concrète à examiner.' },
+    { icon: ShieldCheck, title: english ? 'Approve' : 'Approuver', description: english ? 'Writes are validated by Google, approved by a human and then recorded.' : 'Les écritures sont validées par Google, approuvées par un humain puis consignées.' },
+    { icon: Bot, title: english ? 'Act' : 'Agir', description: english ? 'Daily monitors, an agency API and client reports that work without you.' : 'Des vigies quotidiennes, une API d’agence et des rapports clients qui travaillent sans vous.' },
+  ]
+  const plans = [
+    { name: 'Solo', price: '29 €', note: english ? 'A clean start' : 'Pour démarrer proprement', accounts: english ? '3 client accounts' : '3 comptes clients', features: english ? ['Google Ads cockpit', '360 analysis', '5 autonomous monitors', 'Secure approvals'] : ['Cockpit Google Ads', 'Analyse 360', '5 vigies autonomes', 'Approbations sécurisées'] },
+    { name: 'Studio', price: '89 €', note: english ? 'The consultant choice' : 'Le choix des consultants', accounts: english ? '15 client accounts' : '15 comptes clients', featured: true, features: english ? ['Everything in Solo', '25 active reports', '5 members', 'Read-only agency API'] : ['Tout Solo', '25 rapports actifs', '5 membres', 'API d’agence en lecture'] },
+    { name: 'Agency', price: '189 €', note: english ? 'For growing teams' : 'Pour les équipes en croissance', accounts: english ? '50 client accounts' : '50 comptes clients', features: english ? ['Everything in Studio', '100 active reports', '15 members', 'Proposal API and white label'] : ['Tout Studio', '100 rapports actifs', '15 membres', 'API de proposition et marque blanche'] },
+  ]
   return (
     <main className="min-h-screen overflow-hidden bg-[#f4f7f7] text-[#0d1722]">
       <section className="relative bg-[#0d1722] text-white">
@@ -61,35 +24,26 @@ export default async function Home() {
         <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
           <Brand />
           <div className="flex items-center gap-3">
-            {!userId ? (
-              <>
-                <SignInButton mode="modal">
-                  <Button variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
-                    Se connecter
-                  </Button>
-                </SignInButton>
-                <Button asChild className="rounded-full bg-[#19A58F] px-5 text-[#0d1722] hover:bg-[#35BDA6]">
-                  <Link href="/sign-up">Essayer Ads by Yodev</Link>
-                </Button>
-              </>
-            ) : (
-              <Button asChild className="rounded-full bg-[#19A58F] px-5 text-[#0d1722]">
-                <Link href="/dashboard">Ouvrir Ads by Yodev</Link>
-              </Button>
-            )}
+            <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
+              <Link href="/sign-in">
+                {english ? 'Sign in' : 'Se connecter'}
+              </Link>
+            </Button>
+            <Button asChild className="rounded-full bg-[#19A58F] px-5 text-[#0d1722] hover:bg-[#35BDA6]">
+              <Link href="/sign-up">{english ? 'Try Ads by Yodev' : 'Essayer Ads by Yodev'}</Link>
+            </Button>
           </div>
         </nav>
         <div className="relative mx-auto grid max-w-7xl gap-14 px-6 pb-24 pt-20 lg:grid-cols-[1.06fr_.94fr] lg:px-8 lg:pb-32 lg:pt-28">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-[#67D8C4]">
-              <Sparkles className="size-4" /> Google Ads, sans angle mort
+              <Sparkles className="size-4" /> {english ? 'Google Ads, with no blind spots' : 'Google Ads, sans angle mort'}
             </p>
             <h1 className="mt-7 max-w-3xl text-balance text-5xl font-semibold leading-[1.01] tracking-[-.055em] sm:text-6xl lg:text-7xl">
-              Le système d’exploitation des agences Google Ads.
+              {english ? 'The operating system for Google Ads agencies.' : 'Le système d’exploitation des agences Google Ads.'}
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-white/62 sm:text-xl">
-              Ads by Yodev surveille chaque compte, explique les anomalies et sécurise les changements — pour gérer plus de
-              clients sans perdre le contrôle.
+              {english ? 'Ads by Yodev monitors every account, explains anomalies and secures changes—so you can manage more clients without losing control.' : 'Ads by Yodev surveille chaque compte, explique les anomalies et sécurise les changements — pour gérer plus de clients sans perdre le contrôle.'}
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Button
@@ -98,25 +52,25 @@ export default async function Home() {
                 className="h-12 rounded-full bg-[#19A58F] px-6 text-[#0d1722] shadow-xl shadow-emerald-500/10 hover:bg-[#35BDA6]"
               >
                 <Link href="/sign-up">
-                  Démarrer l’essai <ArrowRight className="ml-2 size-4" />
+                  {english ? 'Start free trial' : 'Démarrer l’essai'} <ArrowRight className="ml-2 size-4" />
                 </Link>
               </Button>
               <span className="flex items-center gap-2 text-sm text-white/55">
-                <Check className="size-4 text-[#19A58F]" /> API Google Ads officielle
+                <Check className="size-4 text-[#19A58F]" /> {english ? 'Official Google Ads API' : 'API Google Ads officielle'}
               </span>
             </div>
           </div>
-          <ProductPreview />
+          <ProductPreview locale={locale} />
         </div>
       </section>
 
       <section className="border-b border-black/6 bg-white">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-y-8 px-6 py-10 text-center sm:grid-cols-4 lg:px-8">
           {[
-            ['100 %', 'traçable'],
-            ['24 h', 'validité des approbations'],
-            ['AES-256', 'chiffrement des jetons'],
-            ['0', 'écriture sans validation'],
+            ['100 %', english ? 'traceable' : 'traçable'],
+            ['24 h', english ? 'approval validity' : 'validité des approbations'],
+            ['AES-256', english ? 'token encryption' : 'chiffrement des jetons'],
+            ['0', english ? 'write without validation' : 'écriture sans validation'],
           ].map(([value, label]) => (
             <div key={label}>
               <p className="text-2xl font-semibold tracking-tight">{value}</p>
@@ -128,12 +82,12 @@ export default async function Home() {
 
       <section className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
         <div className="max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-[.2em] text-[#19A58F]">Un cycle de décision complet</p>
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-[#19A58F]">{english ? 'A complete decision cycle' : 'Un cycle de décision complet'}</p>
           <h2 className="mt-4 text-4xl font-semibold tracking-[-.045em] sm:text-5xl">
-            De la donnée brute à l’action sûre.
+            {english ? 'From raw data to safe action.' : 'De la donnée brute à l’action sûre.'}
           </h2>
           <p className="mt-5 text-lg leading-8 text-[#64717b]">
-            Ads by Yodev ne se contente pas d’afficher des métriques. Il organise le travail quotidien de votre agence.
+            {english ? 'Ads by Yodev does more than display metrics. It organizes your agency’s daily work.' : 'Ads by Yodev ne se contente pas d’afficher des métriques. Il organise le travail quotidien de votre agence.'}
           </p>
         </div>
         <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -154,15 +108,15 @@ export default async function Home() {
         <div className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.2em] text-[#19A58F]">Tarification transparente</p>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-[#19A58F]">{english ? 'Transparent pricing' : 'Tarification transparente'}</p>
               <h2 className="mt-4 text-4xl font-semibold tracking-[-.045em] sm:text-5xl">
-                Payez pour les comptes gérés,
+                {english ? 'Pay for managed accounts,' : 'Payez pour les comptes gérés,'}
                 <br />
-                pas pour des clics dans l’outil.
+                {english ? 'not clicks in the tool.' : 'pas pour des clics dans l’outil.'}
               </h2>
             </div>
             <p className="max-w-md text-sm leading-6 text-[#64717b]">
-              14 jours d’essai. Deux mois offerts en paiement annuel. Aucune commission sur vos dépenses publicitaires.
+              {english ? '14-day trial without a card, then monthly billing in euros. No commission on your advertising spend.' : '14 jours d’essai sans carte, puis facturation mensuelle en euros. Aucune commission sur vos dépenses publicitaires.'}
             </p>
           </div>
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
@@ -173,7 +127,7 @@ export default async function Home() {
               >
                 {plan.featured && (
                   <span className="absolute right-6 top-6 rounded-full bg-[#19A58F] px-3 py-1 text-xs font-semibold text-[#0d1722]">
-                    Recommandé
+                    {english ? 'Recommended' : 'Recommandé'}
                   </span>
                 )}
                 <p className="text-sm font-semibold">{plan.name}</p>
@@ -182,7 +136,7 @@ export default async function Home() {
                   {plan.price}
                   <span className={`text-sm font-normal ${plan.featured ? 'text-white/45' : 'text-[#89939b]'}`}>
                     {' '}
-                    / mois
+                    / {english ? 'month' : 'mois'}
                   </span>
                 </p>
                 <p className={`mt-3 text-sm ${plan.featured ? 'text-[#67D8C4]' : 'text-[#19A58F]'}`}>{plan.accounts}</p>
@@ -202,7 +156,7 @@ export default async function Home() {
                   variant={plan.featured ? 'default' : 'outline'}
                   className={`mt-8 w-full rounded-full ${plan.featured ? 'bg-[#19A58F] text-[#0d1722] hover:bg-[#35BDA6]' : ''}`}
                 >
-                  <Link href="/sign-up">Essayer gratuitement</Link>
+                  <Link href="/sign-up">{english ? 'Try for free' : 'Essayer gratuitement'}</Link>
                 </Button>
               </article>
             ))}
@@ -214,24 +168,25 @@ export default async function Home() {
         <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-24 text-center">
           <BellRing className="size-9 text-[#19A58F]" />
           <h2 className="mt-6 text-4xl font-semibold tracking-[-.045em] sm:text-5xl">
-            Votre prochain client ne devrait pas ajouter de chaos.
+            {english ? 'Your next client should not add chaos.' : 'Votre prochain client ne devrait pas ajouter de chaos.'}
           </h2>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-white/58">
-            Ajoutez son compte à votre MCC. Ads by Yodev s’occupe du reste : surveillance, garde-fous, reporting et
-            traçabilité.
+            {english ? 'Add their account to your MCC. Ads by Yodev handles the rest: monitoring, safeguards, reporting and traceability.' : 'Ajoutez son compte à votre MCC. Ads by Yodev s’occupe du reste : surveillance, garde-fous, reporting et traçabilité.'}
           </p>
           <Button asChild size="lg" className="mt-8 rounded-full bg-[#19A58F] px-7 text-[#0d1722]">
             <Link href="/sign-up">
-              Créer mon espace <ArrowRight className="ml-2 size-4" />
+              {english ? 'Create my workspace' : 'Créer mon espace'} <ArrowRight className="ml-2 size-4" />
             </Link>
           </Button>
         </div>
         <footer className="mx-auto flex max-w-7xl flex-col gap-4 border-t border-white/8 px-6 py-8 text-sm text-white/42 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-          <span>© {new Date().getFullYear()} Ads by Yodev. Google Ads, sous contrôle.</span>
-          <div className="flex gap-5">
-            <Link href="/legal">Mentions légales</Link>
-            <Link href="/privacy">Confidentialité</Link>
-            <Link href="/terms">Conditions</Link>
+          <span>© {new Date().getFullYear()} Ads by Yodev. {english ? 'Google Ads, under control.' : 'Google Ads, sous contrôle.'}</span>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link href="/legal">{english ? 'Legal notice' : 'Mentions légales'}</Link>
+            <Link href="/privacy">{english ? 'Privacy' : 'Confidentialité'}</Link>
+            <Link href="/terms">{english ? 'Terms' : 'Conditions'}</Link>
+            <Link href="/cookies">Cookies</Link>
+            <Link href="/subprocessors">{english ? 'Subprocessors' : 'Sous-traitants'}</Link>
           </div>
         </footer>
       </section>
@@ -251,15 +206,16 @@ function Brand() {
   )
 }
 
-function ProductPreview() {
+function ProductPreview({ locale }: { locale: 'fr' | 'en' }) {
+  const english = locale === 'en'
   return (
     <div className="relative min-h-[460px]">
       <div className="absolute inset-0 rotate-2 rounded-[2.2rem] bg-[#19A58F] opacity-10" />
       <div className="relative rounded-[2rem] border border-white/10 bg-white/[.07] p-5 shadow-[0_45px_100px_-35px_rgba(0,0,0,.65)] backdrop-blur sm:p-6">
         <div className="flex items-center justify-between border-b border-white/10 pb-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[.18em] text-white/38">Vue portefeuille</p>
-            <p className="mt-1 text-lg font-semibold">Santé de l’agence</p>
+            <p className="text-xs font-semibold uppercase tracking-[.18em] text-white/38">{english ? 'Portfolio view' : 'Vue portefeuille'}</p>
+            <p className="mt-1 text-lg font-semibold">{english ? 'Agency health' : 'Santé de l’agence'}</p>
           </div>
           <span className="rounded-full bg-[#19A58F]/12 px-3 py-1.5 text-xs font-semibold text-[#67D8C4]">
             92 / 100
@@ -267,10 +223,10 @@ function ProductPreview() {
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3">
           {[
-            ['Comptes suivis', '12'],
-            ['Investissement', '48 260 €'],
-            ['Alertes ouvertes', '3'],
-            ['Approbations', '1'],
+            [english ? 'Monitored accounts' : 'Comptes suivis', '12'],
+            [english ? 'Spend' : 'Investissement', '48 260 €'],
+            [english ? 'Open alerts' : 'Alertes ouvertes', '3'],
+            [english ? 'Approvals' : 'Approbations', '1'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-white/8 bg-black/10 p-4">
               <p className="text-xs text-white/38">{label}</p>
@@ -280,8 +236,8 @@ function ProductPreview() {
         </div>
         <div className="mt-4 space-y-2">
           {[
-            [Gauge, 'CPA au-dessus du plafond', 'Mail Certificate', 'Critique'],
-            [UsersRound, 'Budget proche du seuil', 'Client Atlas', 'À vérifier'],
+            [Gauge, english ? 'CPA above limit' : 'CPA au-dessus du plafond', 'Mail Certificate', english ? 'Critical' : 'Critique'],
+            [UsersRound, english ? 'Budget near threshold' : 'Budget proche du seuil', 'Client Atlas', english ? 'Review' : 'À vérifier'],
           ].map(([Icon, title, client, status]) => {
             const I = Icon as typeof Gauge
             return (

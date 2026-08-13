@@ -1,0 +1,1 @@
+ALTER TABLE "report_schedules" ADD COLUMN "delivery_lease_until" timestamp with time zone;

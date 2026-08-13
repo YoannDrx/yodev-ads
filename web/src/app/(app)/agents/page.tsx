@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { listMonitoringAgents, listWorkspaceClients } from '@/lib/data'
-import { agentTemplates } from '@/lib/monitoring'
+import { agentTemplatesForLocale } from '@/lib/monitoring'
 import { requireWorkspace } from '@/lib/workspace'
 
 export default async function AgentsPage({
@@ -17,23 +17,26 @@ export default async function AgentsPage({
 }) {
   const query = await searchParams
   const { workspace, isAdmin } = await requireWorkspace()
+  const english = workspace.locale === 'en'
+  const locale = english ? 'en' : 'fr'
+  const agentTemplates = agentTemplatesForLocale(locale)
   const [agents, clients] = await Promise.all([listMonitoringAgents(workspace.id), listWorkspaceClients(workspace.id)])
   return (
     <>
       <PageHeading
-        eyebrow="Automatisation sûre"
-        title="Vigies autonomes"
-        description="Des agents spécialisés surveillent vos comptes chaque matin. Ils détectent et expliquent ; toute modification Google Ads reste soumise à approbation."
+        eyebrow={english ? 'Safe automation' : 'Automatisation sûre'}
+        title={english ? 'Autonomous monitors' : 'Vigies autonomes'}
+        description={english ? 'Specialized agents monitor your accounts every morning. They detect and explain; every Google Ads change still requires approval.' : 'Des agents spécialisés surveillent vos comptes chaque matin. Ils détectent et expliquent ; toute modification Google Ads reste soumise à approbation.'}
         actions={
           <form action={runMonitoringScan}>
             <Button type="submit">
               <Play className="mr-2 size-4" />
-              Analyser maintenant
+              {english ? 'Analyze now' : 'Analyser maintenant'}
             </Button>
           </form>
         }
       />
-      <FlashMessage notice={query.notice} error={query.error} />
+      <FlashMessage notice={query.notice} error={query.error} locale={locale} />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {agentTemplates.map((template) => (
           <Card key={template.kind} className="group overflow-hidden border-[#dde4e7] shadow-none">
@@ -50,9 +53,9 @@ export default async function AgentsPage({
                   <select
                     name="clientId"
                     className="h-9 w-full rounded-lg border bg-white px-2 text-xs"
-                    aria-label="Périmètre"
+                    aria-label={english ? 'Scope' : 'Périmètre'}
                   >
-                    <option value="all">Tous les comptes</option>
+                    <option value="all">{english ? 'All accounts' : 'Tous les comptes'}</option>
                     {clients
                       .filter((client) => !client.isManager)
                       .map((client) => (
@@ -69,14 +72,21 @@ export default async function AgentsPage({
                       step="0.01"
                       defaultValue={template.threshold}
                       className="h-9"
-                      aria-label={`Seuil en ${template.unit}`}
+                      aria-label={`${english ? 'Threshold in' : 'Seuil en'} ${template.unit}`}
                     />
                     <Button type="submit" size="sm" variant="outline">
                       <Plus className="mr-1 size-3.5" />
-                      Activer
+                      {english ? 'Enable' : 'Activer'}
                     </Button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">Seuil · {template.unit}</p>
+                  <select name="reminderIntervalHours" defaultValue="" className="h-9 w-full rounded-lg border bg-white px-2 text-xs" aria-label={english ? 'Unresolved alert reminders' : 'Rappel des alertes non traitées'}>
+                    <option value="">{english ? 'No reminder' : 'Aucun rappel'}</option>
+                    <option value="4">{english ? 'Every 4 hours' : 'Rappel toutes les 4 h'}</option>
+                    <option value="12">{english ? 'Every 12 hours' : 'Rappel toutes les 12 h'}</option>
+                    <option value="24">{english ? 'Every day' : 'Rappel chaque jour'}</option>
+                    <option value="168">{english ? 'Every week' : 'Rappel chaque semaine'}</option>
+                  </select>
+                  <p className="text-[11px] text-muted-foreground">{english ? 'Threshold' : 'Seuil'} · {template.unit}</p>
                 </form>
               )}
             </CardContent>
@@ -86,13 +96,13 @@ export default async function AgentsPage({
 
       <div className="mt-9 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Vigies installées</h2>
+          <h2 className="text-xl font-semibold tracking-tight">{english ? 'Installed monitors' : 'Vigies installées'}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {agents.length} configuration{agents.length > 1 ? 's' : ''} dans cet espace.
+            {english ? `${agents.length} configuration${agents.length === 1 ? '' : 's'} in this workspace.` : `${agents.length} configuration${agents.length > 1 ? 's' : ''} dans cet espace.`}
           </p>
         </div>
         <span className="flex items-center gap-2 text-xs text-emerald-700">
-          <ShieldCheck className="size-4" /> Approbation obligatoire
+          <ShieldCheck className="size-4" /> {english ? 'Approval required' : 'Approbation obligatoire'}
         </span>
       </div>
       <div className="mt-4 space-y-3">
@@ -106,16 +116,17 @@ export default async function AgentsPage({
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-semibold">{agent.name}</h3>
-                    <StatusBadge status={agent.enabled ? 'active' : 'paused'} />
+                    <StatusBadge status={agent.enabled ? 'active' : 'paused'} locale={locale} />
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {client?.name ?? 'Tous les comptes'} · seuil {Number(agent.threshold).toLocaleString('fr-FR')}
+                    {client?.name ?? (english ? 'All accounts' : 'Tous les comptes')} · {english ? 'threshold' : 'seuil'} {Number(agent.threshold).toLocaleString(english ? 'en-GB' : 'fr-FR')}
+                    {agent.reminderIntervalHours ? ` · ${english ? 'reminder' : 'rappel'} ${agent.reminderIntervalHours < 24 ? `${agent.reminderIntervalHours} h` : `${agent.reminderIntervalHours / 24} ${english ? 'd' : 'j'}`}` : english ? ' · no reminder' : ' · sans rappel'}
                   </p>
                   <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Clock3 className="size-3.5" />
                     {agent.lastRunAt
-                      ? `Dernière analyse ${agent.lastRunAt.toLocaleString('fr-FR')}`
-                      : 'Première analyse en attente'}
+                      ? `${english ? 'Last analysis' : 'Dernière analyse'} ${agent.lastRunAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}`
+                      : english ? 'First analysis pending' : 'Première analyse en attente'}
                   </p>
                 </div>
               </div>
@@ -124,14 +135,14 @@ export default async function AgentsPage({
                   <form action={runMonitoringScan}>
                     <input type="hidden" name="agentId" value={agent.id} />
                     <Button type="submit" size="sm" variant="outline">
-                      Exécuter
+                      {english ? 'Run' : 'Exécuter'}
                     </Button>
                   </form>
                   <form action={toggleMonitoringAgent}>
                     <input type="hidden" name="agentId" value={agent.id} />
                     <input type="hidden" name="enabled" value={String(!agent.enabled)} />
                     <Button type="submit" size="sm" variant="ghost">
-                      {agent.enabled ? 'Mettre en pause' : 'Réactiver'}
+                      {agent.enabled ? english ? 'Pause' : 'Mettre en pause' : english ? 'Reactivate' : 'Réactiver'}
                     </Button>
                   </form>
                 </div>
@@ -141,7 +152,7 @@ export default async function AgentsPage({
         ))}
         {agents.length === 0 && (
           <div className="rounded-3xl border border-dashed bg-white p-12 text-center text-muted-foreground">
-            Activez une première vigie depuis le catalogue ci-dessus.
+            {english ? 'Enable your first monitor from the catalog above.' : 'Activez une première vigie depuis le catalogue ci-dessus.'}
           </div>
         )}
       </div>
