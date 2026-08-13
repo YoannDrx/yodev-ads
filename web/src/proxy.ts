@@ -4,7 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Server Action boundary. The proxy owns maintenance routing and per-request CSP.
 const maintenanceAllowedPaths = [
   '/maintenance', '/legal', '/privacy', '/terms', '/cookies', '/subprocessors',
-  '/dpa', '/withdrawal', '/status', '/api/health', '/api/webhooks/stripe', '/api/auth',
+  '/dpa', '/withdrawal', '/status', '/api/health', '/api/webhooks/stripe',
+  '/api/webhooks/yodev-mail', '/api/auth',
 ]
 
 function contentSecurityPolicy(nonce: string) {
