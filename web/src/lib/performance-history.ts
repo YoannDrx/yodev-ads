@@ -1,8 +1,8 @@
 import 'server-only'
 
 import { and, asc, eq, gte } from 'drizzle-orm'
-import { getDb } from '@/db'
 import { performanceSnapshots } from '@/db/schema'
+import { withSystemTransaction, withTenantTransaction } from '@/db/transactions'
 import type { CampaignPerformance } from '@/lib/google-ads'
 
 export function aggregateCampaignPerformance(campaigns: CampaignPerformance[]) {
@@ -27,7 +27,7 @@ export async function storePerformanceSnapshot(input: {
 }) {
   const totals = aggregateCampaignPerformance(input.campaigns)
   const snapshotDate = (input.date ?? new Date()).toISOString().slice(0, 10)
-  await getDb()
+  await withSystemTransaction((db) => db
     .insert(performanceSnapshots)
     .values({
       workspaceId: input.workspaceId,
@@ -50,17 +50,17 @@ export async function storePerformanceSnapshot(input: {
         activeCampaigns: totals.activeCampaigns,
         updatedAt: new Date(),
       },
-    })
+    }))
 }
 
 export async function listPerformanceHistory(workspaceId: string, clientId: string, days = 90) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-  return getDb().query.performanceSnapshots.findMany({
+  return withTenantTransaction({ workspaceId, userId: 'repository:performance-history' }, (db) => db.query.performanceSnapshots.findMany({
     where: and(
       eq(performanceSnapshots.workspaceId, workspaceId),
       eq(performanceSnapshots.clientId, clientId),
       gte(performanceSnapshots.snapshotDate, since),
     ),
     orderBy: [asc(performanceSnapshots.snapshotDate)],
-  })
+  }))
 }

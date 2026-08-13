@@ -8,6 +8,7 @@ const serverEnvSchema = z.object({
   GOOGLE_OAUTH_CLIENT_ID: z.string().min(8),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(8),
   GOOGLE_OAUTH_REDIRECT_URI: z.string().url().optional(),
+  GOOGLE_ADS_API_VERSION: z.string().regex(/^v\d+$/).default('v25'),
 })
 
 export function getServerEnv() {

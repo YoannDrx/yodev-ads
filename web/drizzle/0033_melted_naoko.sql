@@ -1,0 +1,1 @@
+ALTER TABLE "job_attempts" ADD COLUMN "provider_message_id" varchar(128);

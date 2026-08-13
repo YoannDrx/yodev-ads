@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "stripe_state_applied_at" timestamp with time zone;

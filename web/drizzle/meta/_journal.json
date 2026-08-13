@@ -43,6 +43,209 @@
       "when": 1786127642128,
       "tag": "0005_yodev_rebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786539059443,
+      "tag": "0006_groovy_kang",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786539396241,
+      "tag": "0007_wonderful_rafael_vega",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786539882246,
+      "tag": "0008_rapid_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786540197380,
+      "tag": "0009_perpetual_zuras",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786540619831,
+      "tag": "0010_sloppy_madelyne_pryor",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786540771149,
+      "tag": "0011_next_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786541324742,
+      "tag": "0012_majestic_rhino",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786541750674,
+      "tag": "0013_dear_sunfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786542630333,
+      "tag": "0014_long_ezekiel",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1786546681799,
+      "tag": "0015_google_diagnostics_checkout_domains",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786547891538,
+      "tag": "0016_pacing_objective_targets",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786548173488,
+      "tag": "0017_offline_conversion_diagnostics",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786548905358,
+      "tag": "0018_report_editorial_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786550070036,
+      "tag": "0019_agency_tasks_sla",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786550620598,
+      "tag": "0020_scheduled_report_workflows",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786550852247,
+      "tag": "0021_report_delivery_lease",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786551285278,
+      "tag": "0022_member_task_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786551789385,
+      "tag": "0023_activation_milestones",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786552961539,
+      "tag": "0024_platform_support_operations",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786555348597,
+      "tag": "0025_mutation_batches_observations",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786557044166,
+      "tag": "0026_alert_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786557243712,
+      "tag": "0027_report_template_versions",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1786564332795,
+      "tag": "0028_warm_fixer",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786571203968,
+      "tag": "0029_teams_notification_oauth",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1786575614913,
+      "tag": "0030_subprocessor_change_notices",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1786614979428,
+      "tag": "0031_better_auth_expansion",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786619779523,
+      "tag": "0032_daffy_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1786620901053,
+      "tag": "0033_melted_naoko",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786621384844,
+      "tag": "0034_auth_workspace_entitlements",
+      "breakpoints": true
     }
   ]
 }

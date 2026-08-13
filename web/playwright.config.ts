@@ -12,7 +12,7 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        command: 'npm run dev -- --port 3017',
+        command: 'BETTER_AUTH_SECRET=playwright-only-secret-at-least-32-characters npm run dev -- --port 3017',
         url: 'http://localhost:3017',
         reuseExistingServer: !process.env.CI,
       },

@@ -1,57 +1,24 @@
-import Link from 'next/link'
+import { LegalDocument } from '@/components/legal-document'
+import { getLocale } from '@/lib/locale'
 
-export const metadata = { title: 'Mentions légales' }
+export const metadata = { title: 'Mentions légales · Legal notice' }
 
-const sections = [
-  {
-    title: 'Éditeur',
-    content:
-      'Ads by Yodev est édité sous le nom commercial Yodev par Yoann Andrieux, entrepreneur individuel (EI).',
-  },
-  {
-    title: 'Immatriculation et activité',
-    content:
-      'SIREN : 803 272 590. SIRET : 803 272 590 00024. Activité principale : programmation informatique (code NAF/APE 62.01Z).',
-  },
-  {
-    title: 'Régime de TVA',
-    content: 'TVA non applicable, article 293 B du Code général des impôts.',
-  },
-  {
-    title: 'Adresse professionnelle',
-    content: '11 rue de la Chine, 75020 Paris, France.',
-  },
-  {
-    title: 'Directeur de la publication',
-    content: 'Yoann Andrieux.',
-  },
-  {
-    title: 'Contact',
-    content: 'hello@yodev.fr',
-  },
-  {
-    title: 'Hébergement',
-    content:
-      "L'application est hébergée par Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, États-Unis. Neon fournit l'hébergement de la base de données.",
-  },
-]
-
-export default function LegalPage() {
+export default async function LegalPage() {
+  const locale = await getLocale()
+  const fr = locale === 'fr'
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
-      <Link href="/" className="text-sm font-medium text-emerald-700">
-        ← Ads by Yodev
-      </Link>
-      <h1 className="mt-8 text-4xl font-semibold tracking-tight">Mentions légales</h1>
-      <div className="mt-8 space-y-6 leading-7 text-muted-foreground">
-        {sections.map((section) => (
-          <section key={section.title}>
-            <h2 className="text-xl font-semibold text-foreground">{section.title}</h2>
-            <p>{section.content}</p>
-          </section>
-        ))}
-        <p className="text-sm">Dernière mise à jour : 10 août 2026.</p>
-      </div>
-    </main>
+    <LegalDocument locale={locale} title={fr ? 'Mentions légales' : 'Legal notice'}>
+      <section><h2>{fr ? 'Éditeur' : 'Publisher'}</h2><p>{fr
+        ? 'Ads by Yodev est édité sous le nom commercial Yodev par Yoann Andrieux, entrepreneur individuel (EI). SIREN : 803 272 590. SIRET : 803 272 590 00024. Activité principale : programmation informatique (NAF/APE 62.01Z).'
+        : 'Ads by Yodev is published under the Yodev trade name by Yoann Andrieux, a French sole trader (entrepreneur individuel). SIREN: 803 272 590. SIRET: 803 272 590 00024. Main business activity: computer programming (NAF/APE 62.01Z).'}</p></section>
+      <section><h2>{fr ? 'Adresse et contact' : 'Address and contact'}</h2><p>11 rue de la Chine, 75020 Paris, France · <a href="mailto:hello@yodev.fr">hello@yodev.fr</a>.</p></section>
+      <section><h2>{fr ? 'Directeur de la publication' : 'Publication director'}</h2><p>Yoann Andrieux.</p></section>
+      <section><h2>{fr ? 'TVA' : 'VAT'}</h2><p>{fr
+        ? 'Lorsque le régime exempt_293b est activé et applicable : « TVA non applicable, article 293 B du Code général des impôts ». Le régime effectivement applicable figure au Checkout et sur la facture.'
+        : 'When the exempt_293b scheme is enabled and applicable: “VAT not applicable, Article 293 B of the French General Tax Code”. The scheme actually applicable is shown at Checkout and on the invoice.'}</p></section>
+      <section><h2>{fr ? 'Hébergement' : 'Hosting'}</h2><p>{fr
+        ? 'L’application et ses artefacts sont hébergés par Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, États-Unis. La base de données est fournie par Neon, Inc. La liste à jour des prestataires est publiée sur la page Sous-traitants.'
+        : 'The application and its artifacts are hosted by Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, USA. The database is provided by Neon, Inc. The current vendor list is published on the Subprocessors page.'}</p></section>
+    </LegalDocument>
   )
 }

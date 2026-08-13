@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -51,14 +52,23 @@ class GoogleAdsGateway:
                 "use_proto_plus": True,
             }
         )
+        self.api_version = os.environ.get("GOOGLE_ADS_API_VERSION", "v25")
+        if self.api_version != "v25":
+            raise ConfigurationError("GOOGLE_ADS_API_VERSION must be v25 for this release.")
+
+    def _service(self, name: str) -> Any:
+        return self.client.get_service(name, version=self.api_version)
+
+    def _type(self, name: str) -> Any:
+        return self.client.get_type(name, version=self.api_version)
 
     def list_accessible_customers(self) -> list[str]:
-        service = self.client.get_service("CustomerService")
+        service = self._service("CustomerService")
         response = service.list_accessible_customers()
         return [resource_name.rsplit("/", 1)[-1] for resource_name in response.resource_names]
 
     def _search(self, customer_id: str, query: str) -> Iterable[Any]:
-        service = self.client.get_service("GoogleAdsService")
+        service = self._service("GoogleAdsService")
         for batch in service.search_stream(customer_id=customer_id, query=query):
             yield from batch.results
 
@@ -127,8 +137,8 @@ class GoogleAdsGateway:
         *,
         apply: bool,
     ) -> None:
-        campaign_service = self.client.get_service("CampaignService")
-        operation = self.client.get_type("CampaignOperation")
+        campaign_service = self._service("CampaignService")
+        operation = self._type("CampaignOperation")
         campaign = operation.update
         campaign.resource_name = campaign_service.campaign_path(customer_id, campaign_id)
         campaign.status = getattr(self.client.enums.CampaignStatusEnum, status.upper())
@@ -156,8 +166,8 @@ class GoogleAdsGateway:
         rows = list(self._search(customer_id, query))
         if not rows:
             raise ConfigurationError(f"Campaign {campaign_id} was not found.")
-        budget_service = self.client.get_service("CampaignBudgetService")
-        operation = self.client.get_type("CampaignBudgetOperation")
+        budget_service = self._service("CampaignBudgetService")
+        operation = self._type("CampaignBudgetOperation")
         budget = operation.update
         budget.resource_name = rows[0].campaign.campaign_budget
         budget.amount_micros = decimal_to_micros(amount)
