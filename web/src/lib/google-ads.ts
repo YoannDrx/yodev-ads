@@ -813,28 +813,86 @@ export class GoogleAdsGateway {
     return response.token
   }
 
+  async verifyOAuthAccess() {
+    try {
+      await this.accessToken()
+      return { valid: true as const }
+    } catch (error) {
+      const responseData = error && typeof error === 'object' && 'response' in error
+        ? (error.response as { data?: unknown } | undefined)?.data
+        : undefined
+      const rawCode = responseData && typeof responseData === 'object' && 'error' in responseData
+        ? responseData.error
+        : undefined
+      const code = typeof rawCode === 'string' && ['invalid_grant', 'invalid_client', 'unauthorized_client', 'access_denied'].includes(rawCode)
+        ? rawCode
+        : 'oauth_refresh_unavailable'
+      throw new GoogleAdsError(
+        code === 'invalid_grant'
+          ? 'Le jeton Google OAuth est révoqué ou expiré. Reconnectez le compte Google Ads.'
+          : `Le renouvellement Google OAuth a échoué (${code}).`,
+        code === 'oauth_refresh_unavailable' ? 503 : 401,
+        null,
+      )
+    }
+  }
+
   private async request<T>(path: string, init: RequestInit = {}, retryable = false): Promise<ApiResult<T>> {
     const env = getServerEnv()
     const delays = [250, 1_000, 4_000]
     for (let attempt = 0; ; attempt += 1) {
-      const response = await fetch(`https://googleads.googleapis.com/${env.GOOGLE_ADS_API_VERSION}${path}`, {
-        ...init,
-        cache: 'no-store',
-        signal: init.signal ?? AbortSignal.timeout(25_000),
-        headers: {
-          Authorization: `Bearer ${await this.accessToken()}`,
-          'Content-Type': 'application/json',
-          'developer-token': env.GOOGLE_ADS_DEVELOPER_TOKEN,
-          'login-customer-id': this.managerCustomerId,
-          ...init.headers,
-        },
-      })
+      let response: Response
+      try {
+        response = await fetch(`https://googleads.googleapis.com/${env.GOOGLE_ADS_API_VERSION}${path}`, {
+          ...init,
+          cache: 'no-store',
+          signal: init.signal ?? AbortSignal.timeout(25_000),
+          headers: {
+            Authorization: `Bearer ${await this.accessToken()}`,
+            'Content-Type': 'application/json',
+            'developer-token': env.GOOGLE_ADS_DEVELOPER_TOKEN,
+            'login-customer-id': this.managerCustomerId,
+            ...init.headers,
+          },
+        })
+      } catch (error) {
+        if (retryable && attempt < delays.length) {
+          await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+          continue
+        }
+        throw new GoogleAdsError(
+          error instanceof Error && error.name === 'TimeoutError'
+            ? 'La requête Google Ads a expiré.'
+            : 'Google Ads est momentanément injoignable.',
+          0,
+          null,
+        )
+      }
       const requestId = response.headers.get('request-id')
-      const data = (await response.json()) as T & GoogleAdsFailurePayload
-      if (response.ok) return { data, requestId }
+      const responseText = await response.text()
+      let data: (T & GoogleAdsFailurePayload) | null = null
+      try {
+        const parsed = JSON.parse(responseText) as unknown
+        if (parsed !== null && typeof parsed === 'object') data = parsed as T & GoogleAdsFailurePayload
+      } catch {
+        // Google and intermediary gateways may return an empty or HTML body.
+        // Never leak that body to users or logs because it can contain proxy details.
+      }
+
       if (retryable && (response.status === 429 || response.status >= 500) && attempt < delays.length) {
         await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
         continue
+      }
+      if (response.ok) {
+        if (data) return { data, requestId }
+        if (retryable && attempt < delays.length) {
+          await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+          continue
+        }
+        throw new GoogleAdsError('Google Ads a renvoyé une réponse invalide ou incomplète.', 502, requestId)
+      }
+      if (!data) {
+        throw new GoogleAdsError(`Google Ads a répondu avec le statut ${response.status}.`, response.status, requestId)
       }
       const failure = parseGoogleAdsFailure(data)
       throw new GoogleAdsError(

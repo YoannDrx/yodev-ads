@@ -16,6 +16,8 @@ import {
   workspaces,
 } from '../src/db/schema'
 import { withSystemTransaction } from '../src/db/transactions'
+
+const loadApplicationName = `yodev_database_load_runtime_${process.pid}`
 import { listApiApprovals } from '../src/lib/api-v1-repository'
 import { voteAndClaimGoogleApproval } from '../src/lib/google-approval-management'
 import { seedScheduledJobs } from '../src/lib/job-scheduler'
@@ -218,8 +220,8 @@ async function verifyBoundedPool(ownerConnectionString: string) {
         select count(*)::int as count
         from pg_stat_activity
         where datname = current_database()
-          and application_name = 'yodev_database_load_runtime'
-      `)
+          and application_name = $1
+      `, [loadApplicationName])
       peak = Math.max(peak, result.rows[0]?.count ?? 0)
       await new Promise((resolve) => setTimeout(resolve, 10))
     }
@@ -333,7 +335,7 @@ async function main() {
   invariant(ownerConnectionString, 'DATABASE_URL is required')
   for (const name of ['DATABASE_URL', 'DATABASE_AUTHENTICATED_URL', 'DATABASE_SYSTEM_URL', 'DATABASE_PURGE_URL'] as const) {
     const connectionString = process.env[name] ?? ownerConnectionString
-    process.env[name] = taggedConnectionString(connectionString, 'yodev_database_load_runtime')
+    process.env[name] = taggedConnectionString(connectionString, loadApplicationName)
   }
 
   await cleanup()

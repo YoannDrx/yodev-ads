@@ -2,6 +2,7 @@ import 'server-only'
 
 export type Permission =
   | 'workspace:read'
+  | 'portfolio:read'
   | 'workspace:admin'
   | 'billing:manage'
   | 'members:manage'
@@ -19,10 +20,11 @@ export type Permission =
   | 'workspace:export'
   | 'workspace:delete'
 
-export type WorkspaceRole = 'owner' | 'admin' | 'operator' | 'analyst' | 'viewer'
+export type WorkspaceRole = 'owner' | 'admin' | 'strategist' | 'analyst' | 'client'
 
 const allPermissions: readonly Permission[] = [
   'workspace:read',
+  'portfolio:read',
   'workspace:admin',
   'billing:manage',
   'members:manage',
@@ -45,6 +47,7 @@ const rolePermissions: Record<WorkspaceRole, ReadonlySet<Permission>> = {
   owner: new Set(allPermissions),
   admin: new Set([
     'workspace:read',
+    'portfolio:read',
     'workspace:admin',
     'members:manage',
     'google:connect',
@@ -58,9 +61,9 @@ const rolePermissions: Record<WorkspaceRole, ReadonlySet<Permission>> = {
     'support:contact',
     'reports:manage',
   ]),
-  operator: new Set(['workspace:read', 'google:propose', 'monitoring:run', 'alerts:manage', 'tasks:manage', 'tasks:comment', 'support:read', 'support:contact']),
-  analyst: new Set(['workspace:read', 'reports:manage', 'tasks:comment', 'support:read', 'support:contact']),
-  viewer: new Set(['workspace:read', 'support:read']),
+  strategist: new Set(['workspace:read', 'portfolio:read', 'google:propose', 'monitoring:run', 'alerts:manage', 'tasks:manage', 'tasks:comment', 'support:read', 'support:contact']),
+  analyst: new Set(['workspace:read', 'portfolio:read', 'reports:manage', 'tasks:comment', 'support:read', 'support:contact']),
+  client: new Set(['workspace:read', 'support:read', 'support:contact']),
 }
 
 export function permissionsForRole(role: WorkspaceRole) {
@@ -78,6 +81,8 @@ export function requirePermission(role: WorkspaceRole, permission: Permission) {
 export function authRoleToWorkspaceRole(authRole: string | null | undefined, isOwner: boolean): WorkspaceRole {
   if (isOwner) return 'owner'
   const role = authRole?.replace(/^org:/, '')
-  if (role === 'admin' || role === 'operator' || role === 'analyst' || role === 'viewer') return role
-  return 'viewer'
+  if (role === 'operator') return 'strategist'
+  if (role === 'viewer') return 'client'
+  if (role === 'admin' || role === 'strategist' || role === 'analyst' || role === 'client') return role
+  return 'client'
 }

@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCustomerId } from '@/lib/ids'
 import { listWorkspaceClients } from '@/lib/data'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function AccountsPage({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string }> }) {
   const query = await searchParams
-  const { workspace } = await requireWorkspace()
+  const { workspace } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const accounts = await listWorkspaceClients(workspace.id)
   return <>

@@ -70,7 +70,9 @@ function verifiedEmail(user: ClerkUser) {
 function migratedRole(value: string, owner: boolean) {
   if (owner) return 'owner'
   const role = value.replace(/^org:/, '')
-  return ['admin', 'operator', 'analyst', 'viewer'].includes(role) ? role : 'viewer'
+  if (role === 'operator') return 'strategist'
+  if (role === 'viewer') return 'client'
+  return ['admin', 'strategist', 'analyst', 'client'].includes(role) ? role : 'client'
 }
 
 neonConfig.webSocketConstructor = ws

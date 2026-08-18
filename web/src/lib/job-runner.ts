@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, eq, gte, isNotNull, lt } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNotNull, lt, or } from 'drizzle-orm'
 import { z } from 'zod'
 import {
   alertIncidents,
@@ -12,13 +12,16 @@ import {
   googleAdsConnections,
   googleChangeEvents,
   conversionActionSnapshots,
+  jobs,
   mutationExecutions,
   notificationDeliveries,
   notificationOAuthSessions,
   offlineConversionDiagnostics,
+  performanceSnapshots,
   rateLimitBuckets,
   secretRevelations,
   shareLinks,
+  transactionalEmailDeliveries,
   workspaces,
   yodevMailEvents,
 } from '@/db/schema'
@@ -35,7 +38,12 @@ import {
 } from '@/lib/jobs'
 import { reconcileGoogleMutation } from '@/lib/reconcile-google-mutation'
 import { runWorkspaceMonitoring } from '@/lib/run-monitoring'
-import { purgeWorkspace } from '@/lib/workspace-deletion'
+import {
+  purgeWorkspace,
+  recordWorkspaceDeletionStripeCancellation,
+  revokeWorkspaceGoogleConnection,
+  runWorkspaceExternalCleanup,
+} from '@/lib/workspace-deletion'
 import { accountLimitForPlan, getStripe } from '@/lib/billing'
 import { GoogleAdsGateway } from '@/lib/google-ads'
 import { pacingCalendar } from '@/lib/pacing'
@@ -56,13 +64,25 @@ import { currentEncryptionKeyId } from '@/lib/crypto'
 import { rotateWorkspaceSecrets } from '@/lib/secret-rotation'
 import { persistSystemGoogleAccountInventory } from '@/lib/google-account-sync'
 import { deliverAuthInvitation } from '@/lib/auth-invitations'
+import { deliverQueuedAuthEmail } from '@/lib/auth-emails'
+import { reconcileStripeWorkspace } from '@/lib/stripe-reconciliation'
+import { runWithTransactionalEmailRetryGeneration } from '@/lib/transactional-email-context'
+import { completeOperationalRun, failOperationalRun, startOperationalRun } from '@/lib/operational-runs'
+import { RETENTION_POLICY, retentionCutoff } from '@/lib/retention-policy'
 
 const workspacePayload = z.object({ workspaceId: z.string().uuid() })
 const authInvitationPayload = z.object({ invitationId: z.string().uuid(), workspaceId: z.string().uuid() })
+const authEmailPayload = z.object({ envelope: z.string().min(1).max(50_000) }).strict()
 const approvalPayload = z.object({ approvalId: z.string().uuid() })
 const mutationObservationPayload = z.object({ observationId: z.string().uuid() })
 const notificationPayload = z.object({ deliveryId: z.string().uuid() })
 const stripeSubscriptionPayload = z.object({ subscriptionId: z.string().min(3) })
+const deletionStripeSubscriptionPayload = stripeSubscriptionPayload.extend({ workspaceId: z.string().uuid().optional() })
+const externalCleanupPayload = z.object({
+  workspaceHash: z.string().regex(/^[a-f0-9]{64}$/),
+  logoUrl: z.string().url().nullable(),
+  hostnames: z.array(z.string().min(1).max(253)).max(100),
+})
 const metricsPayload = z.object({ workspaceId: z.string().uuid(), clientId: z.string().uuid() })
 const exportPayload = z.object({ workspaceId: z.string().uuid(), exportJobId: z.string().uuid() })
 const scheduledReportPayload = z.object({ scheduleId: z.string().uuid(), runKey: z.string().min(10).max(32) })
@@ -100,6 +120,8 @@ import { localScheduleParts } from '@/lib/job-scheduler'
 
 async function executeJob(job: ClaimedJob) {
   switch (job.type) {
+    case 'auth.email_deliver':
+      return deliverQueuedAuthEmail(authEmailPayload.parse(job.payload))
     case 'auth.invitation_deliver':
       return deliverAuthInvitation(authInvitationPayload.parse(job.payload))
     case 'monitoring.scan': {
@@ -164,14 +186,37 @@ async function executeJob(job: ClaimedJob) {
       const { workspaceId } = workspacePayload.parse(job.payload)
       return purgeWorkspace(workspaceId)
     }
+    case 'workspace.external_cleanup':
+      return runWorkspaceExternalCleanup(externalCleanupPayload.parse(job.payload))
+    case 'google.revoke_connection': {
+      const { workspaceId } = workspacePayload.parse(job.payload)
+      return revokeWorkspaceGoogleConnection(workspaceId)
+    }
     case 'workspace.export': {
       const { workspaceId, exportJobId } = exportPayload.parse(job.payload)
       return runWorkspaceExport(exportJobId, workspaceId)
     }
     case 'stripe.cancel_subscription': {
-      const { subscriptionId } = stripeSubscriptionPayload.parse(job.payload)
-      await getStripe().subscriptions.update(subscriptionId, { cancel_at_period_end: true })
+      const { subscriptionId, workspaceId } = deletionStripeSubscriptionPayload.parse(job.payload)
+      try {
+        const subscription = await getStripe().subscriptions.update(subscriptionId, { cancel_at_period_end: true })
+        if (subscription.status !== 'canceled' && !subscription.cancel_at_period_end) {
+          throw new Error('Stripe did not confirm cancellation at period end')
+        }
+        if (workspaceId) {
+          await recordWorkspaceDeletionStripeCancellation({ workspaceId, subscriptionId, state: 'confirmed' })
+        }
+      } catch (error) {
+        if (workspaceId) {
+          await recordWorkspaceDeletionStripeCancellation({ workspaceId, subscriptionId, state: 'failed', error })
+        }
+        throw error
+      }
       return { cancelledAtPeriodEnd: true }
+    }
+    case 'stripe.reconcile': {
+      const payload = workspacePayload.parse(job.payload)
+      return reconcileStripeWorkspace(payload.workspaceId, getStripe())
     }
     case 'secrets.rotate': {
       const payload = secretRotationPayload.parse(job.payload)
@@ -208,6 +253,38 @@ async function executeJob(job: ClaimedJob) {
         recordActivation: false,
       })
       return { accessibleCount: managedCustomers.length, activeCount: included.length, excludedCount: excluded.length, limit }
+    }
+    case 'google.read_drill': {
+      const payload = metricsPayload.parse(job.payload)
+      const context = await googleSyncContext(payload.workspaceId, payload.clientId)
+      const gateway = new GoogleAdsGateway(context.connection)
+      await gateway.verifyOAuthAccess()
+      const managed = await gateway.listManagedCustomers()
+      const campaigns = await gateway.campaignPerformance(context.client.googleCustomerId)
+      const pmaxPlacements = await gateway.performanceMaxPlacements(context.client.googleCustomerId)
+      const assetGroups = await gateway.assetGroupPerformance(context.client.googleCustomerId)
+      const shoppingProducts = await gateway.shoppingProductPerformance(context.client.googleCustomerId)
+      const conversionActions = await gateway.conversionActions(context.client.googleCustomerId)
+      const offlineDiagnostics = await gateway.offlineConversionDiagnostics(context.client.googleCustomerId)
+      const summary = {
+        managedAccounts: managed.length,
+        campaigns: campaigns.length,
+        channelTypes: [...new Set(campaigns.map((campaign) => campaign.channelType))].sort(),
+        pmaxPlacements: pmaxPlacements.length,
+        assetGroups: assetGroups.length,
+        shoppingProducts: shoppingProducts.length,
+        conversionActions: conversionActions.length,
+        offlineDiagnostics: offlineDiagnostics.length,
+      }
+      await withSystemTransaction((db) => db.insert(auditEvents).values({
+        workspaceId: payload.workspaceId,
+        actorUserId: 'system:google-read-drill',
+        action: 'google_ads.read_drill_completed',
+        entityType: 'client',
+        entityId: payload.clientId,
+        metadata: summary,
+      }))
+      return summary
     }
     case 'metrics.daily_sync': {
       const payload = metricsPayload.parse(job.payload)
@@ -426,28 +503,62 @@ async function executeJob(job: ClaimedJob) {
       return { conversionActions: actions.length, offlineDiagnostics: offlineDiagnostics.length, snapshotDate }
     }
     case 'retention.run': {
+      const startedAt = Date.now()
       const now = new Date()
-      const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60_000)
-      const exports = await deleteExpiredExportArtifacts(now)
-      const database = await withSystemTransaction(async (db) => {
-        const results: Array<Array<{ id: string }>> = []
-        results.push(await db.delete(notificationDeliveries).where(lt(notificationDeliveries.createdAt, daysAgo(90))).returning({ id: notificationDeliveries.id }))
-        results.push(await db.delete(rateLimitBuckets).where(lt(rateLimitBuckets.expiresAt, now)).returning({ id: rateLimitBuckets.id }))
-        results.push(await db.delete(secretRevelations).where(lt(secretRevelations.expiresAt, now)).returning({ id: secretRevelations.id }))
-        results.push(await db.delete(notificationOAuthSessions).where(lt(notificationOAuthSessions.expiresAt, now)).returning({ id: notificationOAuthSessions.id }))
-        results.push(await db.update(shareLinks).set({ active: false, updatedAt: now }).where(and(eq(shareLinks.active, true), lt(shareLinks.expiresAt, now))).returning({ id: shareLinks.id }))
-        results.push(await db.delete(dailyAccountMetrics).where(lt(dailyAccountMetrics.metricDate, daysAgo(730).toISOString().slice(0, 10))).returning({ id: dailyAccountMetrics.id }))
-        results.push(await db.delete(dailyCampaignMetrics).where(lt(dailyCampaignMetrics.metricDate, daysAgo(730).toISOString().slice(0, 10))).returning({ id: dailyCampaignMetrics.id }))
-        results.push(await db.delete(offlineConversionDiagnostics).where(lt(offlineConversionDiagnostics.snapshotDate, daysAgo(730).toISOString().slice(0, 10))).returning({ id: offlineConversionDiagnostics.id }))
-        results.push(await db.delete(googleChangeEvents).where(lt(googleChangeEvents.changedAt, daysAgo(730))).returning({ id: googleChangeEvents.id }))
-        results.push(await db.delete(mutationExecutions).where(lt(mutationExecutions.createdAt, daysAgo(730))).returning({ id: mutationExecutions.id }))
-        results.push(await db.delete(alertIncidents).where(lt(alertIncidents.createdAt, daysAgo(730))).returning({ id: alertIncidents.id }))
-        results.push(await db.delete(approvalRequests).where(lt(approvalRequests.createdAt, daysAgo(730))).returning({ id: approvalRequests.id }))
-        results.push(await db.delete(auditEvents).where(lt(auditEvents.createdAt, daysAgo(730))).returning({ id: auditEvents.id }))
-        results.push(await db.delete(yodevMailEvents).where(lt(yodevMailEvents.receivedAt, daysAgo(90))).returning({ id: yodevMailEvents.eventId }))
-        return { affectedRows: results.map((rows) => rows.length).reduce((sum, count) => sum + count, 0) }
-      })
-      return { ...database, exports }
+      const runKey = `${job.id}:${job.attemptCount}`
+      const nextRunAt = new Date(now.getTime() + 24 * 60 * 60_000)
+      await startOperationalRun({ component: 'retention', runKey, startedAt: now, nextExpectedAt: nextRunAt })
+      const daysAgo = (days: number) => retentionCutoff(now, days)
+      try {
+        const exports = await deleteExpiredExportArtifacts(now)
+        const database = await withSystemTransaction(async (db) => {
+          const counts: Record<string, number> = {}
+          const remove = async (category: string, operation: Promise<Array<{ id: string }>>) => {
+            counts[category] = (await operation).length
+          }
+          await remove('notificationDeliveries', db.delete(notificationDeliveries).where(and(
+            inArray(notificationDeliveries.status, ['delivered', 'dead_letter']),
+            isNotNull(notificationDeliveries.terminalAt),
+            lt(notificationDeliveries.terminalAt, daysAgo(RETENTION_POLICY.deliveryEvidenceDays)),
+          )).returning({ id: notificationDeliveries.id }))
+          await remove('transactionalEmailDeliveries', db.delete(transactionalEmailDeliveries).where(and(
+            lt(transactionalEmailDeliveries.updatedAt, daysAgo(RETENTION_POLICY.deliveryEvidenceDays)),
+            inArray(transactionalEmailDeliveries.status, ['delivered', 'failed', 'suppressed', 'hard_bounced', 'complained']),
+          )).returning({ id: transactionalEmailDeliveries.id }))
+          await remove('terminalJobs', db.delete(jobs).where(or(
+            and(eq(jobs.status, 'completed'), lt(jobs.completedAt, daysAgo(RETENTION_POLICY.terminalJobsDays))),
+            and(eq(jobs.status, 'cancelled'), lt(jobs.updatedAt, daysAgo(RETENTION_POLICY.terminalJobsDays))),
+          )).returning({ id: jobs.id }))
+          await remove('rateLimitBuckets', db.delete(rateLimitBuckets).where(lt(rateLimitBuckets.expiresAt, now)).returning({ id: rateLimitBuckets.id }))
+          await remove('secretRevelations', db.delete(secretRevelations).where(lt(secretRevelations.expiresAt, now)).returning({ id: secretRevelations.id }))
+          await remove('notificationOAuthSessions', db.delete(notificationOAuthSessions).where(lt(notificationOAuthSessions.expiresAt, now)).returning({ id: notificationOAuthSessions.id }))
+          await remove('expiredShareLinks', db.update(shareLinks).set({ active: false, updatedAt: now }).where(and(eq(shareLinks.active, true), lt(shareLinks.expiresAt, now))).returning({ id: shareLinks.id }))
+          const historyCutoff = daysAgo(RETENTION_POLICY.productHistoryDays)
+          const historyDate = historyCutoff.toISOString().slice(0, 10)
+          await remove('dailyAccountMetrics', db.delete(dailyAccountMetrics).where(lt(dailyAccountMetrics.metricDate, historyDate)).returning({ id: dailyAccountMetrics.id }))
+          await remove('dailyCampaignMetrics', db.delete(dailyCampaignMetrics).where(lt(dailyCampaignMetrics.metricDate, historyDate)).returning({ id: dailyCampaignMetrics.id }))
+          await remove('performanceSnapshots', db.delete(performanceSnapshots).where(lt(performanceSnapshots.snapshotDate, historyDate)).returning({ id: performanceSnapshots.id }))
+          await remove('conversionActionSnapshots', db.delete(conversionActionSnapshots).where(lt(conversionActionSnapshots.snapshotDate, historyDate)).returning({ id: conversionActionSnapshots.id }))
+          await remove('offlineConversionDiagnostics', db.delete(offlineConversionDiagnostics).where(lt(offlineConversionDiagnostics.snapshotDate, historyDate)).returning({ id: offlineConversionDiagnostics.id }))
+          await remove('googleChangeEvents', db.delete(googleChangeEvents).where(lt(googleChangeEvents.changedAt, historyCutoff)).returning({ id: googleChangeEvents.id }))
+          await remove('mutationExecutions', db.delete(mutationExecutions).where(lt(mutationExecutions.createdAt, historyCutoff)).returning({ id: mutationExecutions.id }))
+          await remove('alertIncidents', db.delete(alertIncidents).where(lt(alertIncidents.createdAt, historyCutoff)).returning({ id: alertIncidents.id }))
+          await remove('approvalRequests', db.delete(approvalRequests).where(lt(approvalRequests.createdAt, historyCutoff)).returning({ id: approvalRequests.id }))
+          await remove('auditEvents', db.delete(auditEvents).where(lt(auditEvents.createdAt, historyCutoff)).returning({ id: auditEvents.id }))
+          await remove('yodevMailEvents', db.delete(yodevMailEvents).where(lt(yodevMailEvents.receivedAt, daysAgo(RETENTION_POLICY.deliveryEvidenceDays))).returning({ id: yodevMailEvents.eventId }))
+          return { counts, affectedRows: Object.values(counts).reduce((sum, count) => sum + count, 0) }
+        })
+        const durationMs = Date.now() - startedAt
+        await completeOperationalRun({
+          component: 'retention', runKey, startedAt: now, nextExpectedAt: nextRunAt,
+          workCount: database.affectedRows + exports.expired,
+          details: { counts: database.counts, exports },
+        })
+        return { ...database, exports, durationMs, nextRunAt: nextRunAt.toISOString() }
+      } catch (error) {
+        await failOperationalRun({ component: 'retention', runKey, startedAt: now, nextExpectedAt: nextRunAt, error })
+        throw error
+      }
     }
     default:
       throw new NonRetryableJobError(`No worker registered for job type ${job.type}`)
@@ -485,7 +596,7 @@ export async function runAvailableJobs(options: {
     )
     if (!job) break
     try {
-      const result = await executeJob(job)
+      const result = await runWithTransactionalEmailRetryGeneration(job.payload, () => executeJob(job))
       const providerMessageId = result && typeof result === 'object' && 'providerMessageId' in result && typeof result.providerMessageId === 'string'
         ? result.providerMessageId.slice(0, 128)
         : null

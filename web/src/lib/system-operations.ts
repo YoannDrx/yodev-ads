@@ -1,8 +1,9 @@
 import 'server-only'
 
-import { count, desc, eq, inArray, notInArray, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm'
 import {
   activationMilestones,
+  auditEvents,
   jobs,
   mutationExecutions,
   platformIncidentUpdates,
@@ -11,10 +12,85 @@ import {
   subprocessorChangeNotices,
   supportMessages,
   supportTickets,
+  transactionalEmailDeliveries,
   workspaces,
 } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { activationCohorts } from '@/lib/activation-analytics'
+
+export async function scheduleStripeReconciliation(input: {
+  workspaceId: string
+  actorUserId: string
+  generation: string
+  now?: Date
+}) {
+  const now = input.now ?? new Date()
+  return withSystemTransaction(async (db) => {
+    const workspace = await db.query.workspaces.findFirst({
+      where: eq(workspaces.id, input.workspaceId),
+      columns: { id: true, stripeSubscriptionId: true },
+    })
+    if (!workspace?.stripeSubscriptionId) throw new Error('Workspace Stripe subscription missing')
+    const [job] = await db.insert(jobs).values({
+      workspaceId: workspace.id,
+      type: 'stripe.reconcile',
+      payload: { workspaceId: workspace.id },
+      priority: 5,
+      deduplicationKey: `stripe.reconcile:${workspace.id}:manual:${input.generation}`,
+      maximumAttempts: 3,
+    }).returning({ id: jobs.id })
+    await db.insert(auditEvents).values({
+      workspaceId: workspace.id,
+      actorUserId: input.actorUserId,
+      action: 'billing.reconciliation_requested',
+      entityType: 'workspace',
+      entityId: workspace.id,
+      metadata: { jobId: job?.id ?? null, requestedAt: now.toISOString() },
+    })
+    return job
+  })
+}
+
+export async function retryGlobalDeadLetter(input: {
+  operatorWorkspaceId: string
+  actorUserId: string
+  jobId: string
+  now?: Date
+}) {
+  const now = input.now ?? new Date()
+  return withSystemTransaction(async (db) => {
+    const [job] = await db.update(jobs).set({
+      status: 'queued',
+      payload: sql`coalesce(${jobs.payload}, '{}'::jsonb) || jsonb_build_object(
+        'manualRetryGeneration',
+        coalesce((${jobs.payload}->>'manualRetryGeneration')::int, 0) + 1
+      )`,
+      availableAt: now,
+      maximumAttempts: sql`${jobs.attemptCount} + 5`,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      deadLetteredAt: null,
+      lastError: null,
+      updatedAt: now,
+    }).where(and(eq(jobs.id, input.jobId), isNull(jobs.workspaceId), eq(jobs.status, 'dead_letter')))
+      .returning({ id: jobs.id, type: jobs.type, payload: jobs.payload })
+    if (!job) throw new Error('Job système en dead-letter introuvable.')
+    await db.insert(auditEvents).values({
+      workspaceId: input.operatorWorkspaceId,
+      actorUserId: input.actorUserId,
+      action: 'system_job.manual_retry_requested',
+      entityType: 'job',
+      entityId: job.id,
+      metadata: {
+        type: job.type,
+        manualRetryGeneration: job.payload && typeof job.payload === 'object' && 'manualRetryGeneration' in job.payload
+          ? job.payload.manualRetryGeneration
+          : null,
+      },
+    })
+    return job
+  })
+}
 
 export async function getSystemOperationsSnapshot() {
   return withSystemTransaction(async (db) => {
@@ -48,6 +124,19 @@ export async function getSystemOperationsSnapshot() {
       .limit(100)
     const failedStripeCount = await db.select({ total: count() }).from(stripeWebhookEvents).where(eq(stripeWebhookEvents.status, 'failed'))
     const failedStripeEvents = await db.query.stripeWebhookEvents.findMany({ where: eq(stripeWebhookEvents.status, 'failed'), orderBy: [desc(stripeWebhookEvents.updatedAt)], limit: 100 })
+    const billingReconciliationCount = await db.select({ total: count() }).from(workspaces).where(eq(workspaces.billingReconciliationRequired, true))
+    const billingReconciliations = await db.query.workspaces.findMany({
+      where: eq(workspaces.billingReconciliationRequired, true),
+      columns: { id: true, name: true, billingReconciliationReason: true, updatedAt: true },
+      orderBy: [desc(workspaces.updatedAt)],
+      limit: 100,
+    })
+    const failedEmailCount = await db.select({ total: count() }).from(transactionalEmailDeliveries).where(inArray(transactionalEmailDeliveries.status, ['failed', 'hard_bounced', 'complained', 'ambiguous']))
+    const failedEmailDeliveries = await db.query.transactionalEmailDeliveries.findMany({
+      where: inArray(transactionalEmailDeliveries.status, ['failed', 'hard_bounced', 'complained', 'ambiguous']),
+      orderBy: [desc(transactionalEmailDeliveries.updatedAt)],
+      limit: 100,
+    })
     const ambiguousMutationCount = await db.select({ total: count() }).from(mutationExecutions).where(inArray(mutationExecutions.state, ['ambiguous', 'failed']))
     const ambiguousMutations = await db.select({ execution: mutationExecutions, workspace: { id: workspaces.id, name: workspaces.name } })
       .from(mutationExecutions)
@@ -71,6 +160,10 @@ export async function getSystemOperationsSnapshot() {
       deadLetterCount: deadLetterCount[0]?.total ?? 0,
       failedStripeEvents,
       failedStripeCount: failedStripeCount[0]?.total ?? 0,
+      billingReconciliations,
+      billingReconciliationCount: billingReconciliationCount[0]?.total ?? 0,
+      failedEmailDeliveries,
+      failedEmailCount: failedEmailCount[0]?.total ?? 0,
       ambiguousMutations,
       ambiguousMutationCount: ambiguousMutationCount[0]?.total ?? 0,
       checkedAt: new Date(),

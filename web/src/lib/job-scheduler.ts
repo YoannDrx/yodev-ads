@@ -41,7 +41,7 @@ export function localScheduleParts(date: Date, timezone: string) {
 
 export async function seedScheduledJobs(now = new Date()) {
   const currentKid = currentEncryptionKeyId()
-  const { monitoredWorkspaces, ambiguousApprovals, dueDeletions, metricClients, queuedExports, scheduledReports, digestPreferences, trialWorkspaces, rotationWorkspaces, subprocessorNotices } = await withSystemTransaction(async (db) => {
+  const { monitoredWorkspaces, billingWorkspaces, ambiguousApprovals, dueDeletions, metricClients, queuedExports, scheduledReports, digestPreferences, trialWorkspaces, rotationWorkspaces, subprocessorNotices } = await withSystemTransaction(async (db) => {
     const monitored = await db
         .select({ workspaceId: workspaces.id, timezone: workspaces.timezone })
         .from(monitoringAgents)
@@ -130,6 +130,9 @@ export async function seedScheduledJobs(now = new Date()) {
     const notices = await db.select({ id: subprocessorChangeNotices.id })
       .from(subprocessorChangeNotices)
       .where(and(eq(subprocessorChangeNotices.status, 'scheduled'), isNull(subprocessorChangeNotices.notifiedAt)))
+    const billing = await db.select({ workspaceId: workspaces.id })
+      .from(workspaces)
+      .where(isNotNull(workspaces.stripeSubscriptionId))
     const expiredIds = trials
       .filter((workspace) => workspace.accessState === 'trial' && workspace.trialEndsAt && workspace.trialEndsAt <= now)
       .map((workspace) => workspace.id)
@@ -149,6 +152,7 @@ export async function seedScheduledJobs(now = new Date()) {
     }
     return {
       monitoredWorkspaces: [...new Map(monitored.map((item) => [item.workspaceId, item])).values()],
+      billingWorkspaces: billing,
       ambiguousApprovals: ambiguous,
       dueDeletions: deletions.filter((request) => request.purgeAt <= now),
       metricClients: accounts,
@@ -169,6 +173,16 @@ export async function seedScheduledJobs(now = new Date()) {
     priority: 150,
     deduplicationKey: `retention.run:${now.toISOString().slice(0, 10)}`,
   })
+  for (const workspace of billingWorkspaces) {
+    pending.push({
+      workspaceId: workspace.workspaceId,
+      type: 'stripe.reconcile',
+      payload: { workspaceId: workspace.workspaceId },
+      priority: 35,
+      deduplicationKey: `stripe.reconcile:${workspace.workspaceId}:${now.toISOString().slice(0, 10)}`,
+      maximumAttempts: 3,
+    })
+  }
   if (currentKid) {
     for (const workspace of rotationWorkspaces) {
       pending.push({

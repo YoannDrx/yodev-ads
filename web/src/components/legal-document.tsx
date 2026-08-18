@@ -32,11 +32,9 @@ export function LegalDocument({
           <Link href="/cookies">Cookies</Link>
           <Link href="/subprocessors">{locale === 'fr' ? 'Sous-traitants' : 'Subprocessors'}</Link>
           <Link href="/dpa">DPA</Link>
-          <Link href="/withdrawal">{locale === 'fr' ? 'Rétractation' : 'Withdrawal'}</Link>
         </nav>
         <p className="text-sm">{messages.lastUpdated}: {locale === 'fr' ? updated : updatedEn}.</p>
       </div>
     </main>
   )
 }
-

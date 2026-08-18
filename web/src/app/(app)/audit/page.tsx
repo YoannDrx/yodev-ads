@@ -4,7 +4,7 @@ import { Fingerprint } from 'lucide-react'
 import { PageHeading } from '@/components/page-heading'
 import { Card, CardContent } from '@/components/ui/card'
 import { listAuditEvents } from '@/lib/data'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 const actionLabels: Record<'fr' | 'en', Record<string, string>> = {
   fr: {
@@ -20,7 +20,7 @@ const actionLabels: Record<'fr' | 'en', Record<string, string>> = {
 }
 
 export default async function AuditPage() {
-  const { workspace } = await requireWorkspace()
+  const { workspace } = await requireWorkspacePermission('workspace:admin')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const events = await listAuditEvents(workspace.id)

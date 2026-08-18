@@ -27,6 +27,16 @@ export function featureEnabled(flag: FeatureFlag) {
   return booleanFlagSchema.parse(value) === '1'
 }
 
+export function privateApiWorkspaceAllowed(workspaceId: string, accessState: string) {
+  if (!featureEnabled('publicApi')) return false
+  if (accessState === 'internal') return true
+  const allowlist = new Set((process.env.PRIVATE_API_WORKSPACE_IDS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean))
+  return allowlist.has(workspaceId)
+}
+
 export function requireFeature(flag: FeatureFlag, message: string) {
   if (!featureEnabled(flag)) throw new Error(message)
 }

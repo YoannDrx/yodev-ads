@@ -26,24 +26,25 @@ import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
 import { getPublicPlatformStatus } from '@/lib/public-status'
 import { workspaceAccessAllowsPath } from '@/lib/workspace-access'
 import { AccountMenu } from '@/components/account-menu'
+import { permissionsForRole, type Permission } from '@/lib/permissions'
 
 const navigation = [
-  { href: '/getting-started', key: 'gettingStarted', icon: Rocket },
-  { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard },
-  { href: '/accounts', key: 'accounts', icon: UsersRound },
-  { href: '/analysis', key: 'analysis', icon: ChartNoAxesCombined },
-  { href: '/insights', key: 'insights', icon: Crosshair },
-  { href: '/history', key: 'history', icon: TrendingUp },
-  { href: '/alerts', key: 'alerts', icon: BellRing },
-  { href: '/tasks', key: 'tasks', icon: ListTodo },
-  { href: '/agents', key: 'agents', icon: Bot },
-  { href: '/approvals', key: 'approvals', icon: ClipboardCheck },
-  { href: '/reports', key: 'reports', icon: Share2 },
-  { href: '/support', key: 'support', icon: LifeBuoy },
-  { href: '/audit', key: 'audit', icon: ListChecks },
-  { href: '/billing', key: 'billing', icon: CreditCard },
-  { href: '/settings', key: 'settings', icon: Settings },
-] as const
+  { href: '/getting-started', key: 'gettingStarted', icon: Rocket, permission: 'portfolio:read' },
+  { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard, permission: 'portfolio:read' },
+  { href: '/accounts', key: 'accounts', icon: UsersRound, permission: 'portfolio:read' },
+  { href: '/analysis', key: 'analysis', icon: ChartNoAxesCombined, permission: 'portfolio:read' },
+  { href: '/insights', key: 'insights', icon: Crosshair, permission: 'portfolio:read' },
+  { href: '/history', key: 'history', icon: TrendingUp, permission: 'portfolio:read' },
+  { href: '/alerts', key: 'alerts', icon: BellRing, permission: 'portfolio:read' },
+  { href: '/tasks', key: 'tasks', icon: ListTodo, permission: 'portfolio:read' },
+  { href: '/agents', key: 'agents', icon: Bot, permission: 'portfolio:read' },
+  { href: '/approvals', key: 'approvals', icon: ClipboardCheck, permission: 'portfolio:read' },
+  { href: '/reports', key: 'reports', icon: Share2, permission: 'portfolio:read' },
+  { href: '/support', key: 'support', icon: LifeBuoy, permission: 'support:read' },
+  { href: '/audit', key: 'audit', icon: ListChecks, permission: 'workspace:admin' },
+  { href: '/billing', key: 'billing', icon: CreditCard, permission: 'billing:manage' },
+  { href: '/settings', key: 'settings', icon: Settings, permission: 'workspace:admin' },
+] as const satisfies ReadonlyArray<{ href: string; key: string; icon: typeof Rocket; permission: Permission }>
 
 const navigationLabels = {
   fr: { gettingStarted: 'Démarrage', dashboard: 'Cockpit', accounts: 'Comptes clients', analysis: 'Analyse 360', insights: 'Insights étendus', history: 'Historique', alerts: 'Alertes', tasks: 'Tâches', agents: 'Vigies autonomes', approvals: 'Approbations', reports: 'Rapports clients', support: 'Support', audit: 'Journal d’audit', billing: 'Abonnement', settings: 'Réglages' },
@@ -54,14 +55,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Authenticated pages require a real request. This also prevents build-time
   // authentication/database access during Next.js prerender validation.
   await connection()
-  const [{ workspace }, status, requestHeaders] = await Promise.all([
+  const [{ workspace, role }, status, requestHeaders] = await Promise.all([
     requireWorkspace(),
     getPublicPlatformStatus().catch(() => null),
     headers(),
   ])
   const pathname = requestHeaders.get('x-yodev-pathname') ?? '/dashboard'
+  const rolePermissions = permissionsForRole(role)
   if (!workspaceAccessAllowsPath(workspace.accessState, pathname)) {
     redirect(`/billing?notice=${encodeURIComponent(workspace.locale === 'en' ? 'Your current access is limited to billing and stored data.' : 'Votre accès actuel est limité à la facturation et aux données stockées.')}`)
+  }
+  const requestedNavigation = navigation.find(({ href }) => pathname === href || pathname.startsWith(`${href}/`))
+  if (requestedNavigation && !rolePermissions.has(requestedNavigation.permission)) {
+    redirect('/support?error=Accès%20non%20autorisé')
   }
   const locale = workspace.locale === 'en' ? 'en' : 'fr'
   const labels = navigationLabels[locale]
@@ -72,7 +78,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         ? `${status.summary.activeIncidentCount} active incident${status.summary.activeIncidentCount === 1 ? '' : 's'}`
         : `${status.summary.activeIncidentCount} incident${status.summary.activeIncidentCount > 1 ? 's' : ''} actif${status.summary.activeIncidentCount > 1 ? 's' : ''}`
       : locale === 'en' ? 'Status unavailable' : 'Statut indisponible'
-  const accessibleNavigation = navigation.filter(({ href }) => workspaceAccessAllowsPath(workspace.accessState, href))
+  const accessibleNavigation = navigation.filter(({ href, permission }) =>
+    workspaceAccessAllowsPath(workspace.accessState, href) && rolePermissions.has(permission),
+  )
+  const homeHref = rolePermissions.has('portfolio:read') ? '/dashboard' : '/support'
   const mobileNavigation = accessibleNavigation.filter(({ href }) => ['/dashboard', '/analysis', '/alerts', '/approvals', '/billing', '/settings'].includes(href))
   return (
     <div
@@ -80,7 +89,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       style={{ '--brand-accent': workspace.accentColor } as React.CSSProperties}
     >
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-white/8 bg-[#0d1722] px-4 py-5 text-white lg:flex lg:flex-col">
-        <Link href="/dashboard" className="flex items-center gap-3 px-2 font-semibold tracking-tight">
+        <Link href={homeHref} className="flex items-center gap-3 px-2 font-semibold tracking-tight">
           {isControlledBrandLogoUrl(workspace.logoUrl) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={workspace.logoUrl!} alt="" className="size-9 rounded-xl object-cover" />
@@ -112,7 +121,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-black/6 bg-white/90 px-4 backdrop-blur sm:px-7">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold lg:hidden">
+          <Link href={homeHref} className="flex items-center gap-2 font-semibold lg:hidden">
             <Radar className="size-5 text-[var(--brand-accent)]" />
             {workspace.brandName}
           </Link>

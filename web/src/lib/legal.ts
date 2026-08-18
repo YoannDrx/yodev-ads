@@ -3,20 +3,15 @@ import 'server-only'
 import { createHmac } from 'node:crypto'
 
 export const LEGAL_VERSIONS = {
-  terms: '2026-08-12',
-  privacy: '2026-08-12',
-  dpa: '2026-08-12',
-  cookies: '2026-08-12',
+  terms: '2026-08-16-b2b',
+  privacy: '2026-08-16-b2b',
+  dpa: '2026-08-16-b2b',
+  cookies: '2026-08-16-b2b',
 } as const
 
-export function requireCommercialLegalReadiness(customerType: 'individual' | 'business') {
+export function requireCommercialLegalReadiness() {
   if (process.env.LEGAL_DOCUMENTS_APPROVED !== '1') {
     throw new Error('Le checkout est bloqué tant que les documents commerciaux FR/EN ne sont pas validés par un professionnel compétent.')
-  }
-  if (customerType === 'individual') {
-    if (!process.env.CONSUMER_MEDIATOR_NAME || !process.env.CONSUMER_MEDIATOR_URL) {
-      throw new Error('Le checkout consommateur est bloqué tant que le médiateur de la consommation n’est pas configuré.')
-    }
   }
 }
 

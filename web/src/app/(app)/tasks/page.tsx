@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { listTaskMentionDirectory, listWorkspaceClients, listWorkspaceTasks } from '@/lib/data'
 import { permissionsForRole } from '@/lib/permissions'
 import { taskTiming } from '@/lib/task-workflow'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 const statusLabels: Record<'fr' | 'en', Record<string, string>> = {
   fr: { todo: 'À faire', in_progress: 'En cours', blocked: 'Bloquée', done: 'Terminée', cancelled: 'Annulée' },
@@ -25,7 +25,7 @@ const priorityLabels: Record<'fr' | 'en', Record<string, string>> = {
 
 export default async function TasksPage({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string; status?: string }> }) {
   const query = await searchParams
-  const { workspace, role, session } = await requireWorkspace()
+  const { workspace, role, session } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [rows, clients, mentionDirectory] = await Promise.all([

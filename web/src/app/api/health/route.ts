@@ -1,9 +1,9 @@
-import { verifyDatabaseReachability } from '@/lib/system-health'
+import { systemHealthSnapshot } from '@/lib/system-health'
 
 export async function GET() {
   try {
-    await verifyDatabaseReachability()
-    return Response.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() })
+    const health = await systemHealthSnapshot()
+    return Response.json(health, { status: health.status === 'ok' ? 200 : 503 })
   } catch {
     return Response.json({ status: 'degraded', database: 'unavailable', timestamp: new Date().toISOString() }, { status: 503 })
   }

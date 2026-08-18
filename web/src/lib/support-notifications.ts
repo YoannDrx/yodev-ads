@@ -51,7 +51,9 @@ export async function deliverSupportEmail(input: {
     subject: email.subject,
     html: email.html,
     idempotencyKey,
-    tag: `support_${input.kind}`,
+    category: `support_${input.kind}`,
+    workspaceId: context.workspace.id,
+    referenceId: input.referenceKey,
   })
   await withSystemTransaction((db) => db.insert(auditEvents).values({
     workspaceId: context.workspace.id,

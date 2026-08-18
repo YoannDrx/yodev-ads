@@ -145,7 +145,10 @@ async function verifyJobLease() {
     workspaceId,
     type: 'retention.run',
     payload: {},
-    priority: 1,
+    // Keep the verifier deterministic on a non-empty staging clone. Existing
+    // production-like jobs must not be mistaken for the lease fixture.
+    priority: -2_147_483_648,
+    availableAt: new Date(0),
     deduplicationKey: jobKey,
   })
   const results = await Promise.all([

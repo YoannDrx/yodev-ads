@@ -9,7 +9,8 @@ const vendors = [
   ['Neon', 'PostgreSQL managé / Managed PostgreSQL', 'Union européenne configurée / Configured European Union region'],
   ['Vercel', 'Hébergement, fonctions, artefacts et métriques consenties / Hosting, functions, artifacts and consented metrics', 'Union européenne et États-Unis / European Union and United States'],
   ['Stripe', 'Paiement, facturation et fiscalité / Payment, billing and tax', 'Union européenne et États-Unis / European Union and United States'],
-  ['Resend', 'Emails transactionnels / Transactional email', 'États-Unis / United States'],
+  ['Amazon Web Services (SES via YoDevMail)', 'Acheminement des emails transactionnels / Transactional email delivery', 'Union européenne configurée / Configured European Union region'],
+  ['ActiveCampaign (Postmark via YoDevMail)', 'Acheminement secondaire des emails transactionnels / Secondary transactional email delivery', 'États-Unis / United States'],
   ['Sentry', 'Erreurs techniques expurgées / Redacted technical errors', 'Région à configurer avant production / Region to configure before production'],
 ] as const
 

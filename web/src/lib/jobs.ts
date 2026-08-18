@@ -8,6 +8,7 @@ export const JOB_BACKOFF_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 60 * 60_000,
 export const DEFAULT_JOB_LEASE_MS = 5 * 60_000
 
 export type JobType =
+  | 'auth.email_deliver'
   | 'auth.invitation_deliver'
   | 'monitoring.scan'
   | 'monitoring.weekly_digest'
@@ -24,15 +25,20 @@ export type JobType =
   | 'notification.deliver'
   | 'metrics.daily_sync'
   | 'google.accounts_sync'
+  | 'google.read_drill'
   | 'google.change_sync'
   | 'conversion.actions_sync'
   | 'workspace.export'
   | 'workspace.purge'
+  | 'workspace.external_cleanup'
+  | 'google.revoke_connection'
   | 'stripe.cancel_subscription'
+  | 'stripe.reconcile'
   | 'retention.run'
   | 'secrets.rotate'
 
 export const NOTIFICATION_JOB_TYPES: JobType[] = [
+  'auth.email_deliver',
   'auth.invitation_deliver',
   'monitoring.weekly_digest',
   'report.schedule_deliver',

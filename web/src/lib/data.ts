@@ -348,10 +348,13 @@ export async function listWorkspaceTasks(workspaceId: string) {
   })
 }
 
-export async function listWorkspaceSupportTickets(workspaceId: string) {
+export async function listWorkspaceSupportTickets(workspaceId: string, requestedBy?: string) {
   return tenantRead(workspaceId, async (db) => {
     const tickets = await db.query.supportTickets.findMany({
-      where: eq(supportTickets.workspaceId, workspaceId),
+      where: and(
+        eq(supportTickets.workspaceId, workspaceId),
+        requestedBy ? eq(supportTickets.requestedBy, requestedBy) : undefined,
+      ),
       orderBy: [desc(supportTickets.lastMessageAt)],
       limit: 100,
     })

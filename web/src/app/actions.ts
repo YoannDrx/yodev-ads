@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { del, put } from '@vercel/blob'
 import {
+  billingPortalConfigurationId,
   checkoutIntegrationIdentifier,
   checkoutTaxConfiguration,
   getStripe,
@@ -20,7 +21,7 @@ import { decryptSecret } from '@/lib/crypto'
 import { getPublicShare, getWorkspaceClient, getWorkspaceConnection } from '@/lib/data'
 import { requireCapability } from '@/lib/entitlements'
 import { authUser } from '@/lib/auth-identities'
-import { featureEnabled, requireFeature, requireGoogleMutationKind, requireWritableProduct } from '@/lib/feature-flags'
+import { featureEnabled, privateApiWorkspaceAllowed, requireFeature, requireGoogleMutationKind, requireWritableProduct } from '@/lib/feature-flags'
 import { GoogleAdsError, GoogleAdsGateway, revokeGoogleOAuthToken, type AtomicGoogleAdsOperation } from '@/lib/google-ads'
 import {
   currentKeywordCreationContext,
@@ -61,6 +62,7 @@ import {
   normalizeCustomHostname,
 } from '@/lib/vercel-domains'
 import { requireWorkspacePermission } from '@/lib/workspace'
+import { expectedWorkspaceDeletionConfirmation } from '@/lib/workspace-deletion'
 import {
   inviteWorkspaceMemberWithQuota,
   manageableWorkspaceRoles,
@@ -130,11 +132,14 @@ import {
 } from '@/lib/workspace-lifecycle-management'
 import {
   persistWorkspaceStripeCustomer,
+  recordPlanChangeCanceled,
+  recordPlanChangeRequested,
   recordSubscriptionCancellationRequested,
   recordSubscriptionCancellationRevoked,
   releaseWorkspaceCheckoutReservation,
   reserveWorkspaceCheckout,
 } from '@/lib/billing-management'
+import { cancelStripeScheduledPlanChange, requestStripePlanChange } from '@/lib/stripe-plan-change'
 import {
   addSystemSupportReply,
   addTenantSupportMessage,
@@ -147,9 +152,11 @@ import {
 } from '@/lib/platform-incident-management'
 import { scheduleSubprocessorChangeNotice } from '@/lib/subprocessor-change-management'
 import { SUBPROCESSOR_CHANGE_TYPES } from '@/lib/subprocessor-change-model'
+import { retryGlobalDeadLetter, scheduleStripeReconciliation } from '@/lib/system-operations'
 import { accessTeamsOAuthSession, completeTeamsOAuthSession } from '@/lib/notification-oauth-management'
 import { openOAuthState } from '@/lib/oauth-state'
-import { resolveTeamsDestination } from '@/lib/teams-oauth'
+import { hasTeamsOAuthConfiguration, resolveTeamsDestination } from '@/lib/teams-oauth'
+import { hasSlackOAuthConfiguration } from '@/lib/slack-oauth'
 import {
   addGoogleApprovalComment,
   completeGoogleMutationExecution,
@@ -333,6 +340,7 @@ export async function uploadWorkspaceLogo(formData: FormData) {
   let target: string
   let uploadedUrl: string | null = null
   try {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('Le stockage des logos est temporairement indisponible.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'reports.white_label')
     const file = formData.get('logo')
@@ -384,6 +392,7 @@ export async function removeWorkspaceLogo() {
 export async function updateMyTaskNotificationPreferences(formData: FormData) {
   let target: string
   try {
+    requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
     const { workspace, session } = await requireWorkspacePermission('workspace:read')
     const input = z.object({
       mentionHandle: z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9_-]{1,31}$/, 'Identifiant de mention invalide.'),
@@ -1633,6 +1642,8 @@ export async function deactivateReportTemplate(formData: FormData) {
 export async function createReportSchedule(formData: FormData) {
   let target: string
   try {
+    requireFeature('scheduler', 'Les rapports programmés sont temporairement désactivés.')
+    requireFeature('notifications', 'La livraison des rapports programmés est temporairement désactivée.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('reports:manage')
     const input = z.object({
       name: z.string().trim().min(2).max(160),
@@ -1678,6 +1689,10 @@ export async function toggleReportSchedule(formData: FormData) {
     const { workspace, session, entitlements } = await requireWorkspacePermission('reports:manage')
     const scheduleId = z.string().uuid().parse(formData.get('scheduleId'))
     const enabled = z.enum(['enable', 'disable']).parse(formData.get('operation')) === 'enable'
+    if (enabled) {
+      requireFeature('scheduler', 'Les rapports programmés sont temporairement désactivés.')
+      requireFeature('notifications', 'La livraison des rapports programmés est temporairement désactivée.')
+    }
     const replacementToken = enabled ? createShareToken() : null
     await setWorkspaceReportScheduleEnabled({
       workspaceId: workspace.id,
@@ -1698,6 +1713,8 @@ export async function toggleReportSchedule(formData: FormData) {
 export async function rotateScheduledReportToken(formData: FormData) {
   let target: string
   try {
+    requireFeature('scheduler', 'Les rapports programmés sont temporairement désactivés.')
+    requireFeature('notifications', 'La livraison des rapports programmés est temporairement désactivée.')
     const { workspace, session } = await requireWorkspacePermission('reports:manage')
     const scheduleId = z.string().uuid().parse(formData.get('scheduleId'))
     const token = createShareToken()
@@ -1809,7 +1826,14 @@ export async function requestReportFeedbackOtp(formData: FormData) {
       email,
       otp,
     })
-    await sendReportOtpEmail({ email, otp, clientName: shareResult.client.name, locale: shareResult.share.locale === 'en' ? 'en' : 'fr' })
+    await sendReportOtpEmail({
+      email,
+      otp,
+      clientName: shareResult.client.name,
+      locale: shareResult.share.locale === 'en' ? 'en' : 'fr',
+      workspaceId: shareResult.share.workspaceId,
+      referenceId: recipient.id,
+    })
     const cookieStore = await cookies()
     cookieStore.set('yodev_report_feedback_pending', recipient.id, {
       httpOnly: true,
@@ -1910,6 +1934,7 @@ export async function createAgencyApiKey(formData: FormData) {
   let target: string
   try {
     const { workspace, session, entitlements } = await requireWorkspacePermission('api_keys:manage')
+    if (!privateApiWorkspaceAllowed(workspace.id, workspace.accessState)) throw new Error('La bêta privée de l’API n’est pas activée pour cet espace.')
     requireCapability(entitlements, 'api.read')
     const name = z.string().trim().min(2).max(120).parse(formData.get('name'))
     const token = createApiToken()
@@ -1944,6 +1969,7 @@ export async function revokeAgencyApiKey(formData: FormData) {
   let target: string
   try {
     const { workspace, session } = await requireWorkspacePermission('api_keys:manage')
+    if (!privateApiWorkspaceAllowed(workspace.id, workspace.accessState)) throw new Error('La bêta privée de l’API n’est pas activée pour cet espace.')
     const keyId = z.string().uuid().parse(formData.get('keyId'))
     await revokeWorkspaceApiKey({ workspaceId: workspace.id, actorUserId: session.userId, keyId })
     target = toUrl('/settings', 'notice', 'Clé API révoquée.')
@@ -2016,8 +2042,11 @@ const notificationChannelSchema = z.discriminatedUnion('kind', [
 export async function createNotificationChannel(formData: FormData) {
   let target: string
   try {
+    requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     const input = notificationChannelSchema.parse(Object.fromEntries(formData))
+    if (input.kind === 'slack' && !hasSlackOAuthConfiguration()) throw new Error('La configuration OAuth Slack est indisponible.')
+    if (input.kind === 'teams' && !hasTeamsOAuthConfiguration()) throw new Error('La configuration OAuth Microsoft Teams est indisponible.')
     if (input.kind !== 'email') {
       requireCapability(entitlements, 'notifications.webhook')
       await assertSafeWebhookUrl(input.destination)
@@ -2056,6 +2085,7 @@ export async function disableNotificationChannel(formData: FormData) {
 export async function completeTeamsNotificationConnection(formData: FormData) {
   let target: string
   try {
+    requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'notifications.webhook')
     const input = z.object({
@@ -2113,6 +2143,40 @@ export async function retryDeadLetterJob(formData: FormData) {
   redirect(target)
 }
 
+export async function requestStripeReconciliation(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireWorkspacePermission('workspace:admin')
+    if (workspace.accessState !== 'internal') throw new Error('Cette action est réservée à l’exploitation Yodev.')
+    const workspaceId = z.string().uuid().parse(formData.get('workspaceId'))
+    await scheduleStripeReconciliation({ workspaceId, actorUserId: session.userId, generation: crypto.randomUUID() })
+    target = toUrl('/operations', 'notice', 'Réconciliation Stripe ajoutée à la file auditée.')
+  } catch (error) {
+    target = toUrl('/operations', 'error', message(error))
+  }
+  revalidatePath('/operations')
+  redirect(target)
+}
+
+export async function retryGlobalDeadLetterJob(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireWorkspacePermission('workspace:admin')
+    if (workspace.accessState !== 'internal') throw new Error('Cette action est réservée à l’exploitation Yodev.')
+    const jobId = z.string().uuid().parse(formData.get('jobId'))
+    await retryGlobalDeadLetter({
+      operatorWorkspaceId: workspace.id,
+      actorUserId: session.userId,
+      jobId,
+    })
+    target = toUrl('/operations', 'notice', 'Le job système sera repris par le prochain worker disponible.')
+  } catch (error) {
+    target = toUrl('/operations', 'error', message(error))
+  }
+  revalidatePath('/operations')
+  redirect(target)
+}
+
 export async function createCheckoutSession(formData: FormData) {
   let target: string
   let reservedWorkspaceId: string | undefined
@@ -2125,13 +2189,13 @@ export async function createCheckoutSession(formData: FormData) {
     const checkoutInput = z.object({
       plan: z.string(),
       checkoutAttemptId: z.string().uuid(),
-      customerType: z.enum(['individual', 'business']),
       billingEmail: z.string().trim().toLowerCase().email().max(254),
+      billingLegalName: z.string().trim().min(2).max(180),
       countryCode: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/),
       acceptLegal: z.literal('on'),
       startImmediately: z.literal('on'),
     }).parse(Object.fromEntries(formData))
-    requireCommercialLegalReadiness(checkoutInput.customerType)
+    requireCommercialLegalReadiness()
     reservedWorkspaceId = workspace.id
     reservedAttemptId = checkoutInput.checkoutAttemptId
     const rawPlan = checkoutInput.plan
@@ -2145,8 +2209,9 @@ export async function createCheckoutSession(formData: FormData) {
       workspaceId: workspace.id,
       actorUserId: session.userId,
       checkoutAttemptId: checkoutInput.checkoutAttemptId,
-      customerType: checkoutInput.customerType,
+      customerType: 'business',
       billingEmail: checkoutInput.billingEmail,
+      billingLegalName: checkoutInput.billingLegalName,
       countryCode: checkoutInput.countryCode,
       locale: workspace.locale,
       requestFingerprint: legalRequestFingerprint(requestHeaders),
@@ -2154,11 +2219,11 @@ export async function createCheckoutSession(formData: FormData) {
     let customerId = workspace.stripeCustomerId
     if (!customerId) {
       const customer = await stripe.customers.create({
-        name: workspace.name,
+        name: checkoutInput.billingLegalName,
         email: checkoutInput.billingEmail,
         address: { country: checkoutInput.countryCode },
         ...(taxCopy.invoiceFooter ? { invoice_settings: { footer: taxCopy.invoiceFooter } } : {}),
-        metadata: { workspaceId: workspace.id, authOrganizationId: workspace.authOrganizationId ?? '', customerType: checkoutInput.customerType },
+        metadata: { workspaceId: workspace.id, authOrganizationId: workspace.authOrganizationId ?? '', customerType: 'business' },
       }, { idempotencyKey: `customer:${workspace.id}` })
       customerId = customer.id
       await persistWorkspaceStripeCustomer({
@@ -2168,10 +2233,11 @@ export async function createCheckoutSession(formData: FormData) {
       })
     } else {
       await stripe.customers.update(customerId, {
+        name: checkoutInput.billingLegalName,
         email: checkoutInput.billingEmail,
         address: { country: checkoutInput.countryCode },
         invoice_settings: { footer: taxCopy.invoiceFooter },
-        metadata: { workspaceId: workspace.id, authOrganizationId: workspace.authOrganizationId ?? '', customerType: checkoutInput.customerType },
+        metadata: { workspaceId: workspace.id, authOrganizationId: workspace.authOrganizationId ?? '', customerType: 'business' },
       })
     }
     const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr'
@@ -2188,22 +2254,23 @@ export async function createCheckoutSession(formData: FormData) {
       custom_text: { submit: { message: taxCopy.checkoutMessage } },
       integration_identifier: checkoutIntegrationIdentifier(),
       line_items: [{ price, quantity: 1 }],
-      success_url: `${origin}/billing?notice=${encodeURIComponent('Abonnement activé.')}`,
+      success_url: `${origin}/billing?checkout=processing&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/billing?error=${encodeURIComponent('Souscription annulée.')}`,
-      allow_promotion_codes: true,
+      allow_promotion_codes: process.env.STRIPE_PROMOTION_CODES_ENABLED === '1',
       automatic_tax: tax.automaticTax,
       tax_id_collection: { enabled: true },
       customer_update: { address: 'auto', name: 'auto' },
       ...(tax.mode === 'exempt_293b' ? { billing_address_collection: 'required' as const } : {}),
       client_reference_id: workspace.id,
-      subscription_data: { metadata: { workspaceId: workspace.id, plan } },
+      subscription_data: { metadata: { workspaceId: workspace.id } },
       metadata: {
         workspaceId: workspace.id,
         plan,
         requestedBy: session.userId,
         termsVersion: LEGAL_VERSIONS.terms,
         privacyVersion: LEGAL_VERSIONS.privacy,
-        customerType: checkoutInput.customerType,
+        dpaVersion: LEGAL_VERSIONS.dpa,
+        customerType: 'business',
         immediatePerformanceAccepted: 'true',
       },
     }, { idempotencyKey: `checkout:${workspace.id}:${checkoutInput.checkoutAttemptId}` })
@@ -2238,14 +2305,80 @@ export async function openBillingPortal() {
     const session = await getStripe().billingPortal.sessions.create({
       customer: workspace.stripeCustomerId,
       return_url: `${origin}/billing`,
-      ...(process.env.STRIPE_PORTAL_CONFIGURATION_ID
-        ? { configuration: process.env.STRIPE_PORTAL_CONFIGURATION_ID }
-        : {}),
+      configuration: billingPortalConfigurationId(),
     })
     target = session.url
   } catch (error) {
     target = toUrl('/billing', 'error', message(error))
   }
+  redirect(target)
+}
+
+export async function changeSubscriptionPlan(formData: FormData) {
+  let target: string
+  try {
+    requireFeature('stripeCheckout', 'Les changements de formule sont temporairement désactivés.')
+    const { workspace, session } = await requireWorkspacePermission('billing:manage')
+    if (workspace.billingReconciliationRequired) throw new Error('La facturation doit d’abord être réconciliée.')
+    if (!workspace.stripeSubscriptionId || !subscriptionIsActive(workspace.subscriptionStatus)) {
+      throw new Error('Aucun abonnement actif à modifier.')
+    }
+    if (!isPlanId(workspace.plan)) throw new Error('Le forfait courant doit être réconcilié avant modification.')
+    const rawPlan = z.string().parse(formData.get('plan'))
+    if (!isPlanId(rawPlan)) throw new Error('Offre inconnue.')
+    const result = await requestStripePlanChange({
+      stripe: getStripe(),
+      subscriptionId: workspace.stripeSubscriptionId,
+      workspaceId: workspace.id,
+      currentPlan: workspace.plan,
+      targetPlan: rawPlan,
+    })
+    try {
+      await recordPlanChangeRequested({
+        workspaceId: workspace.id,
+        actorUserId: session.userId,
+        currentPlan: workspace.plan,
+        requestedPlan: rawPlan,
+        ...result,
+      })
+    } catch (persistenceError) {
+      await scheduleStripeReconciliation({
+        workspaceId: workspace.id,
+        actorUserId: session.userId,
+        generation: crypto.randomUUID(),
+      })
+      throw persistenceError
+    }
+    target = result.mode === 'upgrade'
+      ? toUrl('/billing', 'notice', result.paymentPending
+          ? 'Paiement du prorata en attente. Les nouveaux droits seront appliqués uniquement après confirmation Stripe.'
+          : 'Paiement du prorata confirmé par Stripe. Activation des nouveaux droits en cours.')
+      : toUrl('/billing', 'notice', `Changement programmé au ${result.effectiveAt?.toLocaleDateString(workspace.locale === 'en' ? 'en-GB' : 'fr-FR')}.`)
+  } catch (error) {
+    target = toUrl('/billing', 'error', message(error))
+  }
+  revalidatePath('/billing')
+  redirect(target)
+}
+
+export async function cancelScheduledSubscriptionPlanChange() {
+  let target: string
+  try {
+    const { workspace, session } = await requireWorkspacePermission('billing:manage')
+    if (!workspace.stripeSubscriptionId || !subscriptionIsActive(workspace.subscriptionStatus)) {
+      throw new Error('Aucun abonnement actif.')
+    }
+    const stripeReference = await cancelStripeScheduledPlanChange({
+      stripe: getStripe(),
+      subscriptionId: workspace.stripeSubscriptionId,
+      workspaceId: workspace.id,
+    })
+    await recordPlanChangeCanceled({ workspaceId: workspace.id, actorUserId: session.userId, stripeReference })
+    target = toUrl('/billing', 'notice', 'Le changement de formule programmé a été annulé.')
+  } catch (error) {
+    target = toUrl('/billing', 'error', message(error))
+  }
+  revalidatePath('/billing')
   redirect(target)
 }
 
@@ -2323,36 +2456,45 @@ export async function requestWorkspaceDeletion(formData: FormData) {
   let target: string
   try {
     const { workspace, session } = await requireWorkspacePermission('workspace:delete')
-    z.literal('SUPPRIMER').parse(formData.get('confirmation'))
+    const expectedConfirmation = expectedWorkspaceDeletionConfirmation(workspace.locale)
+    z.literal(expectedConfirmation).parse(formData.get('confirmation'))
     if (workspace.accessState === 'internal') throw new Error('Un espace interne doit être supprimé par la procédure administrateur auditée.')
     if (workspace.accessState === 'deletion_pending') throw new Error('La suppression est déjà programmée.')
     const now = new Date()
     const purgeAt = new Date(now.getTime() + 30 * 24 * 60 * 60_000)
     const connection = await getWorkspaceConnection(workspace.id)
-    let googleRevocationConfirmed = false
+    let googleRevocationState: 'not_required' | 'pending' | 'confirmed' = connection ? 'pending' : 'not_required'
     if (connection) {
       try {
-        googleRevocationConfirmed = (await revokeGoogleRefreshToken(connection.encryptedRefreshToken)).ok
+        const response = await revokeGoogleRefreshToken(connection.encryptedRefreshToken)
+        googleRevocationState = response.ok || response.status === 400 ? 'confirmed' : 'pending'
       } catch {
-        googleRevocationConfirmed = false
+        googleRevocationState = 'pending'
       }
     }
+    const googleRevocationConfirmed = googleRevocationState !== 'pending'
 
-    let stripeCancellationQueued = false
+    let stripeCancellationState: 'not_required' | 'pending' | 'confirmed' = 'not_required'
     if (workspace.stripeSubscriptionId && subscriptionIsActive(workspace.subscriptionStatus)) {
+      stripeCancellationState = 'pending'
       try {
-        await getStripe().subscriptions.update(workspace.stripeSubscriptionId, { cancel_at_period_end: true })
+        const subscription = await getStripe().subscriptions.update(workspace.stripeSubscriptionId, { cancel_at_period_end: true })
+        if (subscription.status === 'canceled' || subscription.cancel_at_period_end) stripeCancellationState = 'confirmed'
       } catch {
-        stripeCancellationQueued = true
+        stripeCancellationState = 'pending'
       }
     }
+    const stripeCancellationQueued = stripeCancellationState === 'pending'
 
     await markWorkspaceDeletionPending({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       previousAccessState: z.enum(['internal', 'trial', 'active', 'grace', 'suspended', 'deletion_pending', 'deleted']).parse(workspace.accessState),
       googleRevocationConfirmed,
+      googleRevocationState,
       stripeCancellationQueued,
+      stripeCancellationState,
+      stripeSubscriptionId: workspace.stripeSubscriptionId,
       now,
     })
     await enqueueJob({
@@ -2379,9 +2521,18 @@ export async function requestWorkspaceDeletion(formData: FormData) {
       await enqueueJob({
         workspaceId: null,
         type: 'stripe.cancel_subscription',
-        payload: { subscriptionId: workspace.stripeSubscriptionId },
+        payload: { workspaceId: workspace.id, subscriptionId: workspace.stripeSubscriptionId },
         priority: 5,
         deduplicationKey: `stripe.cancel_subscription:${workspace.stripeSubscriptionId}`,
+      })
+    }
+    if (googleRevocationState === 'pending') {
+      await enqueueJob({
+        workspaceId: null,
+        type: 'google.revoke_connection',
+        payload: { workspaceId: workspace.id },
+        priority: 5,
+        deduplicationKey: `google.revoke_connection:${workspace.id}:${now.toISOString()}`,
       })
     }
     target = toUrl('/billing', 'notice', `Suppression programmée au ${purgeAt.toLocaleDateString('fr-FR')}. Les accès et secrets ont été révoqués.`)
@@ -2468,7 +2619,7 @@ export async function createSupportTicket(formData: FormData) {
 export async function addSupportMessage(formData: FormData) {
   let target: string
   try {
-    const { workspace, session } = await requireWorkspacePermission('support:contact')
+    const { workspace, session, role } = await requireWorkspacePermission('support:contact')
     const input = z.object({
       ticketId: z.string().uuid(),
       body: z.string().trim().min(1).max(8000),
@@ -2481,7 +2632,12 @@ export async function addSupportMessage(formData: FormData) {
       windowMs: 60 * 60_000,
     })
     if (!limit.allowed) throw new Error(`Trop de messages. Réessayez dans ${limit.retryAfterSeconds} secondes.`)
-    await addTenantSupportMessage({ workspaceId: workspace.id, actorUserId: session.userId, ...input })
+    await addTenantSupportMessage({
+      workspaceId: workspace.id,
+      actorUserId: session.userId,
+      requesterOnly: role === 'client',
+      ...input,
+    })
     target = toUrl('/support', 'notice', 'Réponse envoyée au support.')
   } catch (error) {
     target = toUrl('/support', 'error', message(error))

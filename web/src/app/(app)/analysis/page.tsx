@@ -23,14 +23,14 @@ import { analyzeAccount, type AnalysisCategory, type AnalysisFinding } from '@/l
 import { getWorkspaceClient, getWorkspaceConnection, listWorkspaceClients } from '@/lib/data'
 import { formatInteger, formatMoneyFromMicros } from '@/lib/format'
 import { GoogleAdsGateway, type AccountAnalysisData } from '@/lib/google-ads'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 import { recordActivationMilestone } from '@/lib/activation'
 
 type AnalysisPageProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string }> }
 
 export default async function AnalysisPage({ searchParams }: AnalysisPageProps) {
   const query = await searchParams
-  const { workspace, entitlements, session } = await requireWorkspace()
+  const { workspace, entitlements, session } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const categories: Array<{ value: AnalysisCategory | 'all'; label: string; icon: typeof SearchCheck }> = [

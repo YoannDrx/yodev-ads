@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getWorkspaceClient, getWorkspaceConnection, listWorkspaceClients } from '@/lib/data'
 import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/format'
 import { GoogleAdsGateway, type BreakdownPerformance } from '@/lib/google-ads'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 type InsightsPageProps = { searchParams: Promise<{ client?: string }> }
 
@@ -33,7 +33,7 @@ function SectionError({ message, locale }: { message?: string; locale: 'fr' | 'e
 
 export default async function InsightsPage({ searchParams }: InsightsPageProps) {
   const query = await searchParams
-  const { workspace } = await requireWorkspace()
+  const { workspace } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [connection, clients] = await Promise.all([getWorkspaceConnection(workspace.id), listWorkspaceClients(workspace.id)])

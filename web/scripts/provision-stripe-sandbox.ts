@@ -36,13 +36,14 @@ function setVercelEnvironment(name: string, value: string, sensitive = false) {
 
 async function main() {
   const existingProducts = await stripe.products.list({ active: true, limit: 100 })
+  const product = existingProducts.data.find(
+    (item) => item.metadata.yodev_product === 'ads' && item.metadata.yodev_catalog === 'commercial_v1',
+  ) ?? await stripe.products.create({
+    name: 'Ads by Yodev',
+    metadata: { yodev_product: 'ads', yodev_catalog: 'commercial_v1' },
+  })
+  const configuredPrices: string[] = []
   for (const plan of plans) {
-    const product =
-      existingProducts.data.find((item) => item.metadata.yodev_product === 'ads' && item.metadata.yodev_plan === plan.id) ??
-      (await stripe.products.create({
-        name: plan.name,
-        metadata: { yodev_product: 'ads', yodev_plan: plan.id },
-      }))
     const prices = await stripe.prices.list({ product: product.id, active: true, limit: 100 })
     const price =
       prices.data.find(
@@ -60,6 +61,7 @@ async function main() {
         transfer_lookup_key: true,
         metadata: { yodev_product: 'ads', yodev_plan: plan.id },
       }))
+    configuredPrices.push(price.id)
     setVercelEnvironment(`STRIPE_PRICE_${plan.id.toUpperCase()}`, price.id)
   }
 
@@ -85,22 +87,12 @@ async function main() {
         options: ['too_expensive', 'missing_features', 'switched_service', 'unused', 'customer_service', 'other'],
       },
     },
-    subscription_update: {
-      enabled: true,
-      default_allowed_updates: ['price'],
-      proration_behavior: 'create_prorations',
-      products: await Promise.all(plans.map(async (plan) => {
-        const product = existingProducts.data.find(
-          (item) => item.metadata.yodev_product === 'ads' && item.metadata.yodev_plan === plan.id,
-        )
-        if (!product) throw new Error(`Missing Stripe product for ${plan.id}`)
-        const price = (await stripe.prices.list({ product: product.id, active: true, limit: 100 })).data.find(
-          (item) => item.currency === 'eur' && item.unit_amount === plan.amount && item.recurring?.interval === 'month',
-        )
-        if (!price) throw new Error(`Missing Stripe monthly EUR price for ${plan.id}`)
-        return { product: product.id, prices: [price.id] }
-      })),
-    },
+    // Stripe's hosted portal rejects several prices with the same recurring
+    // interval on a single product. YoDevAds deliberately keeps one commercial
+    // product and handles upgrades/downgrades through its audited billing
+    // actions, so the portal is limited to payment details, invoices and
+    // cancellation.
+    subscription_update: { enabled: false },
   }
   const portal = existingPortal
     ? await stripe.billingPortal.configurations.update(existingPortal.id, {
@@ -129,11 +121,19 @@ async function main() {
   const existingEndpoint = endpoints.data.find((endpoint) => endpoint.url === endpointUrl && endpoint.status === 'enabled')
   const enabledEvents: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
     'charge.refunded',
+    'checkout.session.completed',
     'customer.subscription.created',
     'customer.subscription.updated',
     'customer.subscription.deleted',
+    'customer.subscription.pending_update_applied',
+    'customer.subscription.pending_update_expired',
+    'subscription_schedule.created',
+    'subscription_schedule.updated',
+    'subscription_schedule.completed',
+    'subscription_schedule.canceled',
     'invoice.paid',
     'invoice.payment_failed',
+    'invoice.payment_action_required',
   ]
   if (existingEndpoint && !process.env.STRIPE_WEBHOOK_SECRET) {
     throw new Error('The Ads by Yodev webhook already exists. Rotate its signing secret in Stripe before provisioning.')
