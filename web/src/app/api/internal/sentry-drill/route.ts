@@ -39,6 +39,23 @@ async function indexedEvent(eventId: string) {
   return null
 }
 
+function indexedEventEnvironment(event: Record<string, unknown>) {
+  if (typeof event.environment === 'string') return event.environment
+  if (!Array.isArray(event.tags)) return null
+  const environmentTag = event.tags.find((tag) => (
+    tag
+    && typeof tag === 'object'
+    && 'key' in tag
+    && tag.key === 'environment'
+  ))
+  return environmentTag
+    && typeof environmentTag === 'object'
+    && 'value' in environmentTag
+    && typeof environmentTag.value === 'string'
+    ? environmentTag.value
+    : null
+}
+
 export async function POST(request: Request) {
   if (!authorized(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401, headers: noStoreHeaders })
@@ -70,7 +87,7 @@ export async function POST(request: Request) {
   }
   const serialized = JSON.stringify(event)
   if (
-    event.environment !== 'staging'
+    indexedEventEnvironment(event) !== 'staging'
     ||
     serialized.includes(syntheticEmail)
     || serialized.includes(syntheticToken)

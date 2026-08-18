@@ -38,7 +38,7 @@ beforeEach(() => {
   mocks.scope.setUser.mockClear()
   mocks.scope.setContext.mockClear()
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
-    environment: 'staging',
+    tags: [{ key: 'environment', value: 'staging' }],
     title: 'ads-by-yodev-sentry-drill: [REDACTED_API_KEY]',
   })))
 })
