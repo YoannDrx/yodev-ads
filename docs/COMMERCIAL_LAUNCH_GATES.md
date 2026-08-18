@@ -30,7 +30,7 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
   sauvegarde et comptages avant/après. Preuve du 2026-08-17 : branche de restauration
   conservée `backup-pre-0041-20260817` (`br-wandering-firefly-b2brmy7p`), historique
   passé de 35 à 42 migrations et comptages métier inchangés.
-- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 778 Vitest
+- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 780 Vitest
   dans 118 fichiers, une couverture de 92,30 % statements / 85,53 % branches /
   93,29 % fonctions / 94,72 % lignes, 6 E2E publics locaux, 15 pytest, Ruff, les audits
   npm/Python, le SBOM web et toutes les vérifications PostgreSQL. La preuve staging
@@ -47,9 +47,10 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
 - [x] Le contrôle de configuration est exécuté dans le runtime Vercel ciblé via
   `/api/internal/release-readiness`, protégé par un jeton dédié, non mis en cache et
   limité aux codes de diagnostic. Les secrets fournisseurs sensibles ne sont pas
-  dupliqués dans GitHub Actions. Le déclenchement staging du 2026-08-18 a bien échoué
-  en 503 sur les 14 prérequis runtime encore ouverts, après réussite des quatre jobs
-  standards : [run 32135480450](https://github.com/YoannDrx/yodev-ads/actions/runs/32135480450).
+  dupliqués dans GitHub Actions. Il exige aussi une exécution récente réussie du
+  scheduler et de la rétention. Le déclenchement staging du 2026-08-18 a bien échoué
+  en 503 sur les 16 prérequis runtime encore ouverts, après réussite des quatre jobs
+  standards : [run 32136356134](https://github.com/YoannDrx/yodev-ads/actions/runs/32136356134).
 - [x] Zéro appel ou dépendance directe Postmark/Resend dans YoDevAds ; les anciennes
   variables ont également été retirées du staging Vercel.
 - [x] Webhooks Stripe et YoDevMail idempotents, rejouables et corrélés à leur registre
@@ -142,9 +143,9 @@ YoDevAds.
 - [ ] Ancienne production conservée en lecture seule pendant la fenêtre approuvée.
 - [ ] Surveillance renforcée pendant 24 heures avec responsables identifiés.
 - [x] Les jobs GitHub Actions `web`, `database`, `cli` et `secrets` ont réellement
-  démarré puis réussi sur le commit `a7b1b92`; la gate runtime distincte a ensuite
+  démarré puis réussi sur le commit `2bb079c`; la gate runtime distincte a ensuite
   refusé le staging incomplet :
-  [run 32135480450](https://github.com/YoannDrx/yodev-ads/actions/runs/32135480450).
+  [run 32136356134](https://github.com/YoannDrx/yodev-ads/actions/runs/32136356134).
 
 Rollback immédiat si authentification indisponible, fuite inter-tenant, incohérence
 Checkout/webhook, migration incomplète, email critique non soumis ou mutation Google

@@ -316,7 +316,7 @@ Evidence consolidated on 2026-08-17:
 - repository evidence on 2026-08-17: lint, types, data-boundary and transaction verifiers, 682 Vitest tests across 116 files, 6 public Playwright scenarios and the 52-route Next.js production build passed; a fresh PostgreSQL 17 applied migrations through `0041` and passed RLS, tenant constraints/invariants, concurrency and targeted load protocols.
 
 Repository stabilization evidence on 2026-08-18 is separate from the historical
-staging proof: `npm run check` passed with 778 tests across 118 files and coverage above every configured
+staging proof: `npm run check` passed with 780 tests across 118 files and coverage above every configured
 threshold, the runtime audit and web SBOM passed, 15 Python tests/Ruff/`pip-audit`
 passed, and a fresh PostgreSQL 17 repeated migrations, RLS, constraints, invariants,
 concurrency and load with a 10/10 observed pool peak. A new Stripe sandbox drill again
@@ -327,13 +327,13 @@ deployment remains in maintenance and is therefore not counted as a fresh open-a
 acceptance run.
 
 The current candidate is deployed separately as
-`dpl_7uSwwtHgut2hPBn8HqmKftSSxpb7` (`946e25d`). Its health endpoint returns HTTP 503
+`dpl_EUxHCcAEQQaXKbHsZD6ux4zusjRG` (`2bb079c`). Its health endpoint returns HTTP 503
 with `status=maintenance`, a connected database and scheduler/retention marked overdue.
-The authenticated runtime probe returned fourteen issue codes: two Better Auth Google,
-four YoDevMail, five Sentry, scheduler, notifications and maintenance. Manual GitHub
-Actions run `32135480450` passed the web, PostgreSQL, Python/CLI and secrets jobs on
-commit `a7b1b92`, then failed exactly on this negative runtime proof before accessing
-the missing authenticated browser states.
+The authenticated runtime probe returned sixteen issue codes: two Better Auth Google,
+four YoDevMail, five Sentry, scheduler, notifications, maintenance and explicit missing
+recent scheduler/retention evidence. Manual GitHub Actions run `32136356134` passed the
+web, PostgreSQL, Python/CLI and secrets jobs on commit `2bb079c`, then failed exactly on
+this negative runtime proof before accessing the missing authenticated browser states.
 
 This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email delivery, Sentry delivery, direct role action/API coverage, fresh Google reads and controlled mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.
 
