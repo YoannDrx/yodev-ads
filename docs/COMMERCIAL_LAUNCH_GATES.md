@@ -30,9 +30,9 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
   sauvegarde et comptages avant/après. Preuve du 2026-08-17 : branche de restauration
   conservée `backup-pre-0041-20260817` (`br-wandering-firefly-b2brmy7p`), historique
   passé de 35 à 42 migrations et comptages métier inchangés.
-- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 770 Vitest
-  dans 117 fichiers, 52 routes, une couverture de 92,24 % statements / 85,42 % branches /
-  93,29 % fonctions / 94,71 % lignes, 6 E2E publics locaux, 15 pytest, Ruff, les audits
+- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 775 Vitest
+  dans 118 fichiers, une couverture de 92,26 % statements / 85,46 % branches /
+  93,29 % fonctions / 94,74 % lignes, 6 E2E publics locaux, 15 pytest, Ruff, les audits
   npm/Python, le SBOM web et toutes les vérifications PostgreSQL. La preuve staging
   authentifiée 5/5 du 2026-08-17 reste historique : le workflow de promotion exige
   désormais cinq nouveaux storage states éphémères et échoue s'ils sont absents.
@@ -44,6 +44,10 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
 - [x] `release:verify` et le workflow manuel `release-readiness.yml` bloquent une
   promotion en maintenance, sans scheduler/notifications, sans Google Sign-In,
   YoDevMail, Sentry, Stripe ou sans matrice Playwright authentifiée complète.
+- [x] Le contrôle de configuration est exécuté dans le runtime Vercel ciblé via
+  `/api/internal/release-readiness`, protégé par un jeton dédié, non mis en cache et
+  limité aux codes de diagnostic. Les secrets fournisseurs sensibles ne sont pas
+  dupliqués dans GitHub Actions.
 - [x] Zéro appel ou dépendance directe Postmark/Resend dans YoDevAds ; les anciennes
   variables ont également été retirées du staging Vercel.
 - [x] Webhooks Stripe et YoDevMail idempotents, rejouables et corrélés à leur registre
@@ -135,6 +139,8 @@ YoDevAds.
   candidate, smoke tests, domaine et fenêtre de rollback exécutés dans cet ordre.
 - [ ] Ancienne production conservée en lecture seule pendant la fenêtre approuvée.
 - [ ] Surveillance renforcée pendant 24 heures avec responsables identifiés.
+- [ ] La facturation GitHub Actions est régularisée et les jobs `web`, `database`,
+  `cli` et `secrets` ont réellement démarré puis réussi sur le commit candidat.
 
 Rollback immédiat si authentification indisponible, fuite inter-tenant, incohérence
 Checkout/webhook, migration incomplète, email critique non soumis ou mutation Google

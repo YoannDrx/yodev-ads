@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const maintenanceAllowedPaths = [
   '/maintenance', '/legal', '/privacy', '/terms', '/cookies', '/subprocessors',
   '/dpa', '/withdrawal', '/status', '/api/health', '/api/webhooks/stripe',
-  '/api/webhooks/yodev-mail', '/api/auth',
+  '/api/webhooks/yodev-mail', '/api/auth', '/api/internal/release-readiness',
 ]
 
 function contentSecurityPolicy(nonce: string) {

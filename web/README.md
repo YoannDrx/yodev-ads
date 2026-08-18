@@ -10,7 +10,7 @@ Ads REST API.
 npm run dev          # local Next.js server
 npm run check        # CI-equivalent lint, types, coverage, build and runtime audit
 npm run test:e2e     # Playwright public-route smoke tests
-npm run release:verify # full code/config/authenticated promotion gate
+npm run release:verify # full code/runtime-config/authenticated promotion gate
 npm run db:generate  # generate a reviewed Drizzle migration
 npm run db:migrate   # apply committed migrations
 npm run db:verify-rls # verify RLS, runtime roles and cross-tenant isolation
@@ -72,6 +72,13 @@ cutover. The detailed and deliberately conservative readiness ledger is
 [`docs/IMPLEMENTATION_STATUS.md`](../docs/IMPLEMENTATION_STATUS.md).
 The exact identity migration and rollback sequence is documented in
 [`docs/BETTER_AUTH_CUTOVER.md`](../docs/BETTER_AUTH_CUTOVER.md).
+
+Release configuration is audited inside the deployed Vercel runtime through
+`/api/internal/release-readiness`. The route requires a dedicated 32+ character
+`RELEASE_VERIFICATION_TOKEN`, remains reachable during maintenance, never returns
+secret values and answers 503 until every target-specific requirement is satisfied.
+CI provides only `RELEASE_VERIFICATION_BASE_URL` and the matching GitHub Environment
+token instead of duplicating every sensitive provider credential outside Vercel.
 
 CI also migrates a disposable PostgreSQL 17 database, seeds two isolated tenants,
 and executes the RLS, role, composite-constraint and tenant-invariant verifiers.

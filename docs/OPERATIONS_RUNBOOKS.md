@@ -316,7 +316,7 @@ Evidence consolidated on 2026-08-17:
 - repository evidence on 2026-08-17: lint, types, data-boundary and transaction verifiers, 682 Vitest tests across 116 files, 6 public Playwright scenarios and the 52-route Next.js production build passed; a fresh PostgreSQL 17 applied migrations through `0041` and passed RLS, tenant constraints/invariants, concurrency and targeted load protocols.
 
 Repository stabilization evidence on 2026-08-18 is separate from the historical
-staging proof: `npm run check` passed with 770 tests across 117 files and coverage above every configured
+staging proof: `npm run check` passed with 775 tests across 118 files and coverage above every configured
 threshold, the runtime audit and web SBOM passed, 15 Python tests/Ruff/`pip-audit`
 passed, and a fresh PostgreSQL 17 repeated migrations, RLS, constraints, invariants,
 concurrency and load with a 10/10 observed pool peak. A new Stripe sandbox drill again
@@ -327,3 +327,16 @@ deployment remains in maintenance and is therefore not counted as a fresh open-a
 acceptance run.
 
 This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email delivery, Sentry delivery, direct role action/API coverage, fresh Google reads and controlled mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.
+
+## Runtime release-readiness probe
+
+Vercel variables marked Sensitive cannot be exported as release evidence. Configure a
+unique `RELEASE_VERIFICATION_TOKEN` of at least 32 characters in the target Vercel
+project and in the matching GitHub Environment. The manual release workflow calls
+`/api/internal/release-readiness` with that bearer token. The endpoint remains reachable
+during maintenance, sets `Cache-Control: no-store`, compares the credential in constant
+time and returns only readiness issue codes, target, release SHA and timestamp.
+
+Never reuse this token between staging and production. Rotate it after an operator
+departure or suspected disclosure. A 401 is an authentication failure; a 503 is a valid
+negative readiness proof and must be resolved before removing maintenance.

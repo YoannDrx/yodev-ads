@@ -40,6 +40,7 @@ export function auditProductionConfiguration(
     'APP_ENCRYPTION_KEY',
     'OAUTH_STATE_KEY',
     'CRON_SECRET',
+    'RELEASE_VERIFICATION_TOKEN',
     'YODEV_MAIL_API_URL',
     'YODEV_MAIL_API_KEY',
     'YODEV_MAIL_WEBHOOK_SECRET',
@@ -57,7 +58,7 @@ export function auditProductionConfiguration(
     'STRIPE_PORTAL_CONFIGURATION_ID',
   ])
 
-  for (const [name, minimum] of [['BETTER_AUTH_SECRET', 32], ['OAUTH_STATE_KEY', 32], ['CRON_SECRET', 32], ['YODEV_MAIL_WEBHOOK_SECRET', 32], ['YODEV_MAIL_RECIPIENT_HASH_SECRET', 32]] as const) {
+  for (const [name, minimum] of [['BETTER_AUTH_SECRET', 32], ['OAUTH_STATE_KEY', 32], ['CRON_SECRET', 32], ['RELEASE_VERIFICATION_TOKEN', 32], ['YODEV_MAIL_WEBHOOK_SECRET', 32], ['YODEV_MAIL_RECIPIENT_HASH_SECRET', 32]] as const) {
     if (configured(env, name) && !configured(env, name, minimum)) {
       issues.push({ code: `weak.${name}`, message: `${name} must contain at least ${minimum} characters` })
     }
