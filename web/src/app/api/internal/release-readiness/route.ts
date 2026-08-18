@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import { auditProductionConfiguration, type ReleaseTarget } from '@/lib/production-readiness'
+import { systemHealthSnapshot } from '@/lib/system-health'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,6 +20,31 @@ function releaseTarget(value: string | undefined): ReleaseTarget | null {
   return value === 'staging' || value === 'private_beta' || value === 'public' ? value : null
 }
 
+async function operationalIssues() {
+  try {
+    const health = await systemHealthSnapshot()
+    const issues: Array<{ code: string; message: string }> = []
+    if (health.scheduler.status !== 'completed' || health.scheduler.overdue) {
+      issues.push({
+        code: 'health.scheduler_unhealthy',
+        message: 'Scheduler must have a recent completed operational run',
+      })
+    }
+    if (health.retention.status !== 'completed' || health.retention.overdue) {
+      issues.push({
+        code: 'health.retention_unhealthy',
+        message: 'Retention must have a recent completed operational run',
+      })
+    }
+    return issues
+  } catch {
+    return [{
+      code: 'health.database_unavailable',
+      message: 'Database and operational health evidence must be reachable',
+    }]
+  }
+}
+
 export async function GET(request: Request) {
   if (!authorized(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401, headers: noStoreHeaders })
@@ -34,11 +60,14 @@ export async function GET(request: Request) {
     }, { status: 503, headers: noStoreHeaders })
   }
 
-  const result = auditProductionConfiguration(process.env, target)
+  const configuration = auditProductionConfiguration(process.env, target)
+  const issues = [...configuration.issues, ...await operationalIssues()]
+  const ready = issues.length === 0
   return Response.json({
-    ...result,
+    ready,
+    issues,
     target,
     release: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.NEXT_PUBLIC_RELEASE_SHA ?? null,
     checkedAt: new Date().toISOString(),
-  }, { status: result.ready ? 200 : 503, headers: noStoreHeaders })
+  }, { status: ready ? 200 : 503, headers: noStoreHeaders })
 }
