@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
 
-import { getSystemOperationsSnapshot } from './system-operations'
+import { getSystemOperationsSnapshot, retryGlobalDeadLetter, scheduleStripeReconciliation } from './system-operations'
 
 function queryMap(input: Record<string, unknown[]> = {}) {
   return new Proxy({}, {
@@ -36,6 +36,8 @@ describe('system operations snapshot', () => {
         [{ job: { id: 'job-1' }, workspace: { id: 'workspace-1', name: 'ACME' } }],
         [{ total: 2 }],
         [{ total: 1 }],
+        [{ total: 3 }],
+        [{ total: 1 }],
         [{ execution: { id: 'execution-1' }, workspace: { id: 'workspace-1', name: 'ACME' } }],
       ],
       query: queryMap({
@@ -43,6 +45,8 @@ describe('system operations snapshot', () => {
         platformIncidents: [incident],
         platformIncidentUpdates: [{ id: 'update-1', incidentId: incident.id }],
         stripeWebhookEvents: [{ id: 'event-1', status: 'failed' }],
+        workspaces: [{ id: 'workspace-1', name: 'ACME', billingReconciliationReason: 'unknown_price' }],
+        transactionalEmailDeliveries: [{ id: 'delivery-1', status: 'ambiguous' }],
       }),
     })
     mocks.database = database.db
@@ -54,15 +58,63 @@ describe('system operations snapshot', () => {
       incidents: [{ incident, updates: [{ id: 'update-1', incidentId: incident.id }] }],
       deadLetterCount: 4,
       failedStripeCount: 2,
+      billingReconciliationCount: 1,
+      failedEmailCount: 3,
       ambiguousMutationCount: 1,
     })
   })
 
   it('returns explicit zero counts and empty groupings on a healthy empty system', async () => {
-    mocks.database = databaseDouble({ statementResults: Array.from({ length: 11 }, () => []), query: queryMap() }).db
+    mocks.database = databaseDouble({ statementResults: Array.from({ length: 13 }, () => []), query: queryMap() }).db
     await expect(getSystemOperationsSnapshot()).resolves.toMatchObject({
       workspaceStates: {}, activationFunnel: {}, supportStatusCounts: {}, tickets: [], incidents: [],
-      deadLetterCount: 0, failedStripeCount: 0, ambiguousMutationCount: 0,
+      deadLetterCount: 0, failedStripeCount: 0, billingReconciliationCount: 0, failedEmailCount: 0, ambiguousMutationCount: 0,
+    })
+  })
+
+  it('queues and audits a controlled manual Stripe reconciliation', async () => {
+    const database = databaseDouble({
+      statementResults: [[{ id: 'job-1' }]],
+      query: { workspaces: { findFirst: vi.fn(async () => ({ id: '00000000-0000-4000-8000-000000000001', stripeSubscriptionId: 'sub_1' })) } },
+    })
+    mocks.database = database.db
+    await expect(scheduleStripeReconciliation({
+      workspaceId: '00000000-0000-4000-8000-000000000001',
+      actorUserId: 'operator-1',
+      generation: 'generation-1',
+      now: new Date('2026-08-16T12:00:00.000Z'),
+    })).resolves.toEqual({ id: 'job-1' })
+    expect(database.capture.values[0]).toMatchObject({
+      type: 'stripe.reconcile',
+      deduplicationKey: 'stripe.reconcile:00000000-0000-4000-8000-000000000001:manual:generation-1',
+    })
+    expect(database.capture.values[1]).toMatchObject({
+      action: 'billing.reconciliation_requested',
+      actorUserId: 'operator-1',
+    })
+  })
+
+  it('requeues only global dead-letters and records an operator audit event', async () => {
+    const now = new Date('2026-08-17T12:00:00.000Z')
+    const database = databaseDouble({ statementResults: [[{
+      id: '00000000-0000-4000-8000-000000000010',
+      type: 'workspace.external_cleanup',
+      payload: { manualRetryGeneration: 2 },
+    }]] })
+    mocks.database = database.db
+    await expect(retryGlobalDeadLetter({
+      operatorWorkspaceId: '00000000-0000-4000-8000-000000000001',
+      actorUserId: 'operator-1',
+      jobId: '00000000-0000-4000-8000-000000000010',
+      now,
+    })).resolves.toMatchObject({ type: 'workspace.external_cleanup' })
+    expect(database.capture.sets[0]).toMatchObject({
+      status: 'queued', availableAt: now, deadLetteredAt: null, lastError: null,
+    })
+    expect(database.capture.values[0]).toMatchObject({
+      workspaceId: '00000000-0000-4000-8000-000000000001',
+      actorUserId: 'operator-1',
+      action: 'system_job.manual_retry_requested',
     })
   })
 })

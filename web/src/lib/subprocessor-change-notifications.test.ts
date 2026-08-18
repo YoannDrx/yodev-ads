@@ -15,7 +15,7 @@ vi.mock('@/lib/jobs', async (importOriginal) => ({
   enqueueJobs: mocks.enqueueJobs,
 }))
 vi.mock('@/lib/auth-identities', () => ({ verifiedAuthUserEmail: mocks.verifiedAuthUserEmail }))
-vi.mock('resend', () => ({ Resend: class { emails = { send: mocks.send } } }))
+vi.mock('@/lib/transactional-email', () => ({ sendTransactionalEmail: mocks.send }))
 
 import { deliverSubprocessorChangeNotice, fanOutSubprocessorChangeNotice } from './subprocessor-change-notifications'
 
@@ -39,8 +39,7 @@ describe('subprocessor change notifications', () => {
     vi.clearAllMocks()
     mocks.databases = []
     mocks.enqueueJobs.mockImplementation(async (items: unknown[]) => ({ requested: items.length, created: items.length }))
-    mocks.send.mockResolvedValue({ data: { id: 'email-1' }, error: null })
-    process.env.RESEND_API_KEY = 'test-key'
+    mocks.send.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
     process.env.NEXT_PUBLIC_APP_URL = 'https://ads.example.test'
   })
 
@@ -89,7 +88,8 @@ describe('subprocessor change notifications', () => {
       to: 'billing@example.com',
       subject: expect.stringContaining('Subprocessor change notice'),
       html: expect.stringContaining('Provider addition for transactional email.'),
-    }), { idempotencyKey: `subprocessor:${noticeId}:${workspaceId}` })
+      idempotencyKey: `subprocessor:${noticeId}:${workspaceId}`, category: 'subprocessor_change', workspaceId,
+    }))
     expect(audit.capture.values[0]).toMatchObject({
       workspaceId,
       action: 'subprocessor.notice_delivered',
@@ -124,6 +124,6 @@ describe('subprocessor change notifications', () => {
     expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({
       to: 'owner@example.com',
       subject: expect.stringContaining('Notification de changement'),
-    }), expect.any(Object))
+    }))
   })
 })

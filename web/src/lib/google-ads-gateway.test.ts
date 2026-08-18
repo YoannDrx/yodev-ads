@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const getAccessTokenMock = vi.hoisted(() => vi.fn())
+
 vi.mock('google-auth-library', () => ({
   OAuth2Client: class {
     setCredentials() {}
-    async getAccessToken() { return { token: 'access-token' } }
+    getAccessToken() { return getAccessTokenMock() }
     generateAuthUrl() { return 'https://accounts.google.test/oauth' }
   },
 }))
@@ -28,7 +30,36 @@ function googleResponse(results: unknown[], requestId = 'google-request') {
 }
 
 describe('GoogleAdsGateway v25 contracts', () => {
-  beforeEach(() => vi.restoreAllMocks())
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    getAccessTokenMock.mockReset().mockResolvedValue({ token: 'access-token' })
+  })
+
+  it('verifies OAuth refresh access without issuing a Google Ads request', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.verifyOAuthAccess()).resolves.toEqual({ valid: true })
+    expect(getAccessTokenMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('classifies a revoked refresh token with a safe reconnect diagnostic', async () => {
+    getAccessTokenMock.mockRejectedValue({ response: { data: { error: 'invalid_grant', error_description: 'provider detail must stay private' } } })
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    const error = await gateway.verifyOAuthAccess().catch((failure) => failure)
+    expect(error).toBeInstanceOf(GoogleAdsError)
+    expect(error).toMatchObject({ status: 401, requestId: null, message: expect.stringContaining('Reconnectez') })
+    expect(error.message).not.toContain('provider detail')
+  })
+
+  it('classifies unknown OAuth refresh failures as temporarily unavailable', async () => {
+    getAccessTokenMock.mockRejectedValue(new Error('sensitive network detail'))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    const error = await gateway.verifyOAuthAccess().catch((failure) => failure)
+    expect(error).toBeInstanceOf(GoogleAdsError)
+    expect(error).toMatchObject({ status: 503, requestId: null, message: 'Le renouvellement Google OAuth a échoué (oauth_refresh_unavailable).' })
+    expect(error.message).not.toContain('sensitive network detail')
+  })
 
   it('revokes orphaned OAuth grants without putting the refresh token in the URL', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 200 }))
@@ -488,6 +519,39 @@ describe('GoogleAdsGateway v25 contracts', () => {
     const error = await gateway.mutateCampaignStatus('1234567890', '42', 'PAUSED').catch((failure) => failure)
     expect(error).toBeInstanceOf(GoogleAdsError)
     expect(error).toMatchObject({ status: 400, requestId: 'header-request', message: expect.stringContaining('INVALID_INPUT') })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('fails safely on non-JSON mutation responses without retrying or exposing the body', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<html>upstream secret details</html>', {
+      status: 503,
+      headers: { 'Content-Type': 'text/html', 'request-id': 'proxy-request' },
+    }))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    const error = await gateway.mutateCampaignStatus('1234567890', '42', 'PAUSED').catch((failure) => failure)
+    expect(error).toBeInstanceOf(GoogleAdsError)
+    expect(error).toMatchObject({ status: 503, requestId: 'proxy-request' })
+    expect(error.message).not.toContain('upstream secret details')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('retries an invalid read response but accepts the next valid Google payload', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('', { status: 502, headers: { 'request-id': 'proxy-failure' } }))
+      .mockResolvedValueOnce(googleResponse([{ customerClient: { clientCustomer: 'customers/1234567890', descriptiveName: 'Acme' } }], 'google-success'))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.listManagedCustomers()).resolves.toEqual([
+      { customerId: '1234567890', name: 'Acme', currencyCode: 'EUR', timezone: 'Europe/Paris', isManager: false },
+    ])
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('classifies a network failure as ambiguous-capable without retrying a mutation', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('socket closed after upload'))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    const error = await gateway.mutateCampaignStatus('1234567890', '42', 'PAUSED').catch((failure) => failure)
+    expect(error).toBeInstanceOf(GoogleAdsError)
+    expect(error).toMatchObject({ status: 0, requestId: null, message: 'Google Ads est momentanément injoignable.' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 

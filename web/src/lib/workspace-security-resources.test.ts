@@ -161,14 +161,14 @@ describe('workspace security resources', () => {
   })
 
   it('requeues and audits a dead-letter job in one transaction', async () => {
-    const database = databaseDouble({ statementResults: [[{ id: resourceId, type: 'notification.deliver' }]] })
+    const database = databaseDouble({ statementResults: [[{ id: resourceId, type: 'notification.deliver', payload: { manualRetryGeneration: 1 } }]] })
     mocks.databases.push(database.db)
     await retryWorkspaceDeadLetterJob({ workspaceId, actorUserId, jobId: resourceId, now })
     expect(database.capture.sets[0]).toMatchObject({
       status: 'queued', availableAt: now, leaseOwner: null, deadLetteredAt: null, lastError: null, updatedAt: now,
     })
     expect(database.capture.values[0]).toMatchObject({
-      action: 'job.manual_retry_requested', metadata: { type: 'notification.deliver' },
+      action: 'job.manual_retry_requested', metadata: { type: 'notification.deliver', manualRetryGeneration: 1 },
     })
   })
 

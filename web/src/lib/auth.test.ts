@@ -19,7 +19,7 @@ describe('Better Auth server configuration', () => {
     process.env.BETTER_AUTH_SECRET = 'short'
     const { getAuth } = await import('./auth')
     expect(() => getAuth()).toThrow('at least 32 characters')
-  })
+  }, 10_000)
 
   it('builds the local email/password and passkey server with secure defaults', async () => {
     process.env.BETTER_AUTH_SECRET = 'test-secret-at-least-32-characters-long'

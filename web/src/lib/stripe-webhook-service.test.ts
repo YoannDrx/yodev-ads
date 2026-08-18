@@ -34,6 +34,8 @@ describe('Stripe webhook durable service', () => {
     mocks.databases = []
     vi.clearAllMocks()
     mocks.enqueueJob.mockResolvedValue({ created: true })
+    process.env.STRIPE_PRICE_SOLO = 'price_solo'
+    process.env.STRIPE_PRICE_STUDIO = 'price_studio'
   })
 
   it('returns duplicate without applying the provider event twice', async () => {
@@ -112,7 +114,7 @@ describe('Stripe webhook durable service', () => {
     }))
     const processing = databaseDouble({
       statementResults: [[{ id: workspaceId }]],
-      query: queryMap({ workspace: { id: workspaceId }, clients: accounts }),
+      query: queryMap({ workspace: { id: workspaceId, plan: 'studio', accessState: 'active' }, clients: accounts }),
     })
     mocks.databases.push(claim.db, processing.db)
     const subscription = {
@@ -120,8 +122,8 @@ describe('Stripe webhook durable service', () => {
       customer: 'cus_1',
       status: 'active',
       cancel_at_period_end: false,
-      metadata: { workspaceId, plan: 'solo' },
-      items: { data: [{ price: { id: 'price_solo' }, current_period_end: 1_800_000_000 }] },
+      metadata: { workspaceId, plan: 'agency' },
+      items: { data: [{ price: { id: 'price_solo', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 }] },
     }
     await expect(processStripeWebhookEvent(event('customer.subscription.updated', subscription)))
       .resolves.toEqual({ duplicate: false })
@@ -140,6 +142,114 @@ describe('Stripe webhook durable service', () => {
       action: 'billing.customer.subscription.updated',
       metadata: expect.objectContaining({ inactiveAdvertiserAccounts: 1 }),
     }))
+  })
+
+  it('keeps current rights on upgrade until an authoritative paid invoice confirms the new Price', async () => {
+    const subscription = {
+      id: 'sub_1',
+      customer: 'cus_1',
+      status: 'active',
+      cancel_at_period_end: false,
+      metadata: { workspaceId, plan: 'solo' },
+      items: { data: [{ price: { id: 'price_studio', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 }] },
+    } as unknown as Stripe.Subscription
+    const upgradeClaim = databaseDouble({ statementResults: [[{ id: 'upgrade-event-row' }]] })
+    const upgrade = databaseDouble({
+      statementResults: [[{ id: workspaceId }]],
+      query: queryMap({ workspace: { id: workspaceId, plan: 'solo', accessState: 'active' } }),
+    })
+    mocks.databases.push(upgradeClaim.db, upgrade.db)
+    await processStripeWebhookEvent(event('customer.subscription.updated', subscription, 'evt_upgrade'))
+    expect(upgrade.capture.sets[0]).toMatchObject({ requestedPlan: 'studio' })
+    expect(upgrade.capture.sets[0]).not.toHaveProperty('plan')
+
+    const invoiceClaim = databaseDouble({ statementResults: [[{ id: 'invoice-event-row' }]] })
+    const invoice = databaseDouble({ statementResults: [[{ id: workspaceId }]], query: queryMap({
+      workspace: {
+        id: workspaceId,
+        plan: 'solo',
+        graceEndsAt: null,
+        stripeStateAppliedAt: null,
+        subscriptionStatus: 'active',
+        requestedPlan: 'studio',
+      },
+      clients: [],
+    }) })
+    mocks.databases.push(invoiceClaim.db, invoice.db)
+    const stripe = {
+      subscriptions: { retrieve: vi.fn(async () => subscription) },
+      subscriptionSchedules: { retrieve: vi.fn() },
+    } as unknown as Stripe
+    await processStripeWebhookEvent(event('invoice.paid', {
+      id: 'in_upgrade',
+      customer: 'cus_1',
+      parent: { subscription_details: { subscription: 'sub_1' } },
+    }, 'evt_invoice_paid'), { stripe })
+    expect(invoice.capture.sets[0]).toMatchObject({
+      plan: 'studio',
+      requestedPlan: null,
+      billingReconciliationRequired: false,
+      accessState: 'active',
+    })
+  })
+
+  it('does not reapply plan quotas when an older paid invoice loses the workspace compare-and-set', async () => {
+    const subscription = {
+      id: 'sub_1', customer: 'cus_1', status: 'active', cancel_at_period_end: false,
+      metadata: { workspaceId },
+      items: { data: [{ price: { id: 'price_studio', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 }] },
+    } as unknown as Stripe.Subscription
+    const claim = databaseDouble({ statementResults: [[{ id: 'event-row' }]] })
+    const clientsFindMany = vi.fn(async () => [])
+    const processing = databaseDouble({
+      statementResults: [[]],
+      query: {
+        workspaces: { findFirst: vi.fn(async () => ({
+          id: workspaceId,
+          plan: 'solo',
+          graceEndsAt: null,
+          stripeStateAppliedAt: new Date('2030-01-01T00:00:00.000Z'),
+          subscriptionStatus: 'active',
+          requestedPlan: 'studio',
+        })) },
+        clients: { findMany: clientsFindMany },
+      },
+    })
+    mocks.databases.push(claim.db, processing.db)
+    const stripe = {
+      subscriptions: { retrieve: vi.fn(async () => subscription) },
+      subscriptionSchedules: { retrieve: vi.fn() },
+    } as unknown as Stripe
+
+    await processStripeWebhookEvent(event('invoice.paid', {
+      id: 'in_stale', customer: 'cus_1', parent: { subscription_details: { subscription: 'sub_1' } },
+    }, 'evt_stale_paid'), { stripe })
+
+    expect(clientsFindMany).not.toHaveBeenCalled()
+    expect(processing.capture.values).not.toContainEqual(expect.objectContaining({ type: 'google.accounts_sync' }))
+  })
+
+  it('uses the authoritative schedule so a stale schedule event cannot restore an obsolete downgrade', async () => {
+    const stale = {
+      id: 'sub_sched_1',
+      subscription: 'sub_1',
+      current_phase: { start_date: 1_780_000_000, end_date: 1_800_000_000 },
+      phases: [{ start_date: 1_800_000_000, end_date: 1_900_000_000, items: [{ price: 'price_solo' }] }],
+    } as unknown as Stripe.SubscriptionSchedule
+    const authoritative = { ...stale, phases: [] } as unknown as Stripe.SubscriptionSchedule
+    const claim = databaseDouble({ statementResults: [[{ id: 'schedule-event-row' }]] })
+    const processing = databaseDouble({ query: queryMap({ workspace: { id: workspaceId } }) })
+    mocks.databases.push(claim.db, processing.db)
+    const stripe = {
+      subscriptions: { retrieve: vi.fn() },
+      subscriptionSchedules: { retrieve: vi.fn(async () => authoritative) },
+    } as unknown as Stripe
+    await processStripeWebhookEvent(event('subscription_schedule.updated', stale, 'evt_stale_schedule'), { stripe })
+    expect(processing.capture.sets[0]).toMatchObject({ requestedPlan: null, requestedPlanEffectiveAt: null })
+    expect(processing.capture.values[0]).toMatchObject({
+      action: 'billing.subscription_schedule.updated',
+      metadata: expect.objectContaining({ requestedPlan: null }),
+    })
   })
 
   it('acknowledges subscription events belonging to another Stripe product', async () => {

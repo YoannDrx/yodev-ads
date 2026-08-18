@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { featureEnabled, featureFlagEnvironment, requireFeature, requireGoogleMutationKind, requireWritableProduct } from '@/lib/feature-flags'
+import { featureEnabled, featureFlagEnvironment, privateApiWorkspaceAllowed, requireFeature, requireGoogleMutationKind, requireWritableProduct } from '@/lib/feature-flags'
 
 describe('feature flags', () => {
   const originalValues = Object.fromEntries(
@@ -12,6 +12,7 @@ describe('feature flags', () => {
       if (original === undefined) delete process.env[name]
       else process.env[name] = original
     }
+    delete process.env.PRIVATE_API_WORKSPACE_IDS
   })
 
   it('fails closed when a flag is absent', () => {
@@ -25,6 +26,16 @@ describe('feature flags', () => {
     expect(featureEnabled('publicApi')).toBe(true)
     process.env.PUBLIC_API_ENABLED = 'true'
     expect(() => featureEnabled('publicApi')).toThrow()
+  })
+
+  it('keeps API v1 private even when its global beta switch is enabled', () => {
+    process.env.PUBLIC_API_ENABLED = '1'
+    process.env.PRIVATE_API_WORKSPACE_IDS = 'workspace-a, workspace-b'
+    expect(privateApiWorkspaceAllowed('internal-workspace', 'internal')).toBe(true)
+    expect(privateApiWorkspaceAllowed('workspace-a', 'active')).toBe(true)
+    expect(privateApiWorkspaceAllowed('workspace-c', 'active')).toBe(false)
+    process.env.PUBLIC_API_ENABLED = '0'
+    expect(privateApiWorkspaceAllowed('internal-workspace', 'internal')).toBe(false)
   })
 
   it('lets the emergency read-only switch override mutation enablement', () => {

@@ -47,6 +47,7 @@ describe('billing management', () => {
       subscriptionStatus: null,
       checkoutAttemptId: null,
       checkoutReservedAt: null,
+      billingReconciliationRequired: false,
     }]] })
     mocks.databases.push(database.db)
 
@@ -56,6 +57,7 @@ describe('billing management', () => {
       checkoutAttemptId,
       customerType: 'business',
       billingEmail: 'billing@example.test',
+      billingLegalName: 'ACME SAS',
       countryCode: 'FR',
       locale: 'fr',
       requestFingerprint: 'fingerprint',
@@ -66,7 +68,7 @@ describe('billing management', () => {
     expect(database.capture.values[0]).toMatchObject({
       workspaceId,
       userId: actorUserId,
-      dpaVersion: '2026-08-12',
+      dpaVersion: '2026-08-16-b2b',
       context: 'checkout_business',
       requestFingerprint: 'fingerprint',
     })
@@ -74,25 +76,25 @@ describe('billing management', () => {
       workspaceId, milestone: 'legal_accepted', actorUserId,
     })
     expect(database.capture.sets[0]).toMatchObject({
-      billingEmail: 'billing@example.test', countryCode: 'FR', checkoutAttemptId, checkoutReservedAt: now,
+      billingEmail: 'billing@example.test', billingLegalName: 'ACME SAS', countryCode: 'FR', checkoutAttemptId, checkoutReservedAt: now,
     })
   })
 
   it('rejects active subscriptions and concurrent fresh checkout attempts', async () => {
     mocks.databases.push(
       billingDatabase({ statementResults: [[{
-        stripeSubscriptionId: 'sub_active', subscriptionStatus: 'active', checkoutAttemptId: null, checkoutReservedAt: null,
+        stripeSubscriptionId: 'sub_active', subscriptionStatus: 'active', checkoutAttemptId: null, checkoutReservedAt: null, billingReconciliationRequired: false,
       }]] }).db,
       billingDatabase({ statementResults: [[{
         stripeSubscriptionId: null,
         subscriptionStatus: null,
         checkoutAttemptId: '00000000-0000-4000-8000-000000000099',
-        checkoutReservedAt: new Date('2026-08-12T07:45:00.000Z'),
+        checkoutReservedAt: new Date('2026-08-12T07:45:00.000Z'), billingReconciliationRequired: false,
       }]] }).db,
     )
     const input = {
-      workspaceId, actorUserId, checkoutAttemptId, customerType: 'individual' as const,
-      billingEmail: 'billing@example.test', countryCode: 'FR', locale: 'fr', requestFingerprint: 'fp', now,
+      workspaceId, actorUserId, checkoutAttemptId, customerType: 'business' as const,
+      billingEmail: 'billing@example.test', billingLegalName: 'ACME SAS', countryCode: 'FR', locale: 'fr', requestFingerprint: 'fp', now,
     }
     await expect(reserveWorkspaceCheckout(input)).rejects.toThrow('abonnement actif existe déjà')
     await expect(reserveWorkspaceCheckout(input)).rejects.toThrow('souscription est déjà en cours')
@@ -108,10 +110,11 @@ describe('billing management', () => {
         subscriptionStatus: null,
         checkoutAttemptId,
         checkoutReservedAt,
+        billingReconciliationRequired: false,
       }]] })
       mocks.databases.push(database.db)
       await expect(reserveWorkspaceCheckout({
-        workspaceId, actorUserId, checkoutAttemptId, customerType: 'individual', billingEmail: 'a@example.test',
+        workspaceId, actorUserId, checkoutAttemptId, customerType: 'business', billingEmail: 'a@example.test', billingLegalName: 'ACME SAS',
         countryCode: 'FR', locale: 'fr', requestFingerprint: 'fp', now,
       })).resolves.toBeUndefined()
     }

@@ -1,18 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ send: vi.fn() }))
-vi.mock('resend', () => ({ Resend: class { emails = { send: mocks.send } } }))
+const mocks = vi.hoisted(() => ({ send: vi.fn(), configured: true }))
+vi.mock('@/lib/transactional-email', () => ({
+  hasTransactionalEmailTransport: () => mocks.configured,
+  sendTransactionalEmail: mocks.send,
+}))
 
 import { escapeHtml, reportOtpEmailHtml, sendReportOtpEmail } from './report-otp'
 
 describe('report OTP email', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.RESEND_API_KEY = 're_test'
-    mocks.send.mockResolvedValue({ data: { id: 'email-1' }, error: null })
+    mocks.configured = true
+    mocks.send.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
   })
   afterEach(() => {
-    delete process.env.RESEND_API_KEY
     delete process.env.NOTIFICATION_FROM_EMAIL
   })
 
@@ -33,12 +35,12 @@ describe('report OTP email', () => {
     }))
     await sendReportOtpEmail({ email: 'client@example.test', otp: '123456', clientName: 'ACME', locale: 'en' })
     expect(mocks.send).toHaveBeenLastCalledWith(expect.objectContaining({ subject: 'Verification code · ACME' }))
-    mocks.send.mockResolvedValueOnce({ data: null, error: { message: 'provider down' } })
+    mocks.send.mockRejectedValueOnce(new Error('provider down'))
     await expect(sendReportOtpEmail({ email: 'client@example.test', otp: '123456', clientName: 'ACME' })).rejects.toThrow('provider down')
   })
 
   it('fails closed without email transport configuration', async () => {
-    delete process.env.RESEND_API_KEY
+    mocks.configured = false
     await expect(sendReportOtpEmail({ email: 'client@example.test', otp: '123456', clientName: 'ACME' })).rejects.toThrow('configuré')
     await expect(sendReportOtpEmail({ email: 'client@example.test', otp: '123456', clientName: 'ACME', locale: 'en' })).rejects.toThrow('configured')
   })
