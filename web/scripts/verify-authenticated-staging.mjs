@@ -26,11 +26,11 @@ try {
   await page.goto(`${baseUrl}/dashboard`, { waitUntil: 'networkidle' })
   checks.dashboard = page.url().includes('/dashboard')
 
-  await page.goto(`${baseUrl}/settings/accounts`, { waitUntil: 'networkidle' })
-  checks.accounts = page.url().includes('/settings/accounts')
+  await page.goto(`${baseUrl}/accounts`, { waitUntil: 'networkidle' })
+  checks.accounts = page.url().includes('/accounts')
 
-  await page.goto(`${baseUrl}/settings/billing`, { waitUntil: 'networkidle' })
-  checks.billing = page.url().includes('/settings/billing')
+  await page.goto(`${baseUrl}/billing`, { waitUntil: 'networkidle' })
+  checks.billing = page.url().includes('/billing')
 
   process.stdout.write(`${JSON.stringify(checks)}\n`)
   if (Object.values(checks).some((passed) => !passed)) process.exitCode = 1

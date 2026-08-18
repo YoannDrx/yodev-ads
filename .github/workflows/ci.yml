@@ -43,13 +43,7 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run verify:data-boundary
-      - run: npm run verify:transaction-serialization
-      - run: npm run test:coverage
-      - run: npm run build
-      - run: npm run audit:runtime
+      - run: npm run check
       - name: Generate web runtime SBOM
         run: npm sbom --omit=dev --sbom-format=cyclonedx > ads-web.cdx.json
       - uses: actions/upload-artifact@v7
