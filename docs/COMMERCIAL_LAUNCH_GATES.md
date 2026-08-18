@@ -31,7 +31,7 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
   sauvegarde et comptages avant/après. Preuve du 2026-08-17 : branche de restauration
   conservée `backup-pre-0041-20260817` (`br-wandering-firefly-b2brmy7p`), historique
   passé de 35 à 42 migrations et comptages métier inchangés.
-- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 792 Vitest
+- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 797 Vitest
   dans 120 fichiers, une couverture de 92,36 % statements / 85,58 % branches /
   93,30 % fonctions / 94,76 % lignes, 6 E2E publics locaux, 15 pytest, Ruff, les audits
   npm/Python, le SBOM web et toutes les vérifications PostgreSQL. La preuve staging
@@ -53,7 +53,7 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
   aucune réconciliation billing, livraison email problématique ou mutation Google non
   résolue. Le déclenchement staging du 2026-08-18 a bien échoué en 503 sur exactement
   14 prérequis externes/configuration encore ouverts, après réussite des quatre jobs
-  standards : [run 32139256436](https://github.com/YoannDrx/yodev-ads/actions/runs/32139256436).
+  standards : [run 32140448381](https://github.com/YoannDrx/yodev-ads/actions/runs/32140448381).
 - [x] Zéro appel ou dépendance directe Postmark/Resend dans YoDevAds ; les anciennes
   variables ont également été retirées du staging Vercel.
 - [x] Webhooks Stripe et YoDevMail idempotents, rejouables et corrélés à leur registre
@@ -66,6 +66,9 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
   suivante, avec zéro dead letter nouvelle. Treize anciens jobs fournisseur ont été
   explicitement annulés sans suppression de leur audit ; la file contient désormais zéro
   job dû/dead-letter et aucun job Google/notification n'a été créé depuis l'activation.
+- [x] Slack, Teams, uploads Blob et domaines personnalisés disposent de switches serveur
+  indépendants, explicitement fixés à `0` et imposés par la gate tant que leurs drills
+  fournisseurs ne sont pas certifiés.
 - [ ] Purge FR/EN, annulation concurrente, tombstone et restauration exercés.
 - [ ] Aucun P0/P1 ouvert ; chaque P2 restant possède un contournement accepté.
 
@@ -153,9 +156,9 @@ YoDevAds.
 - [ ] Ancienne production conservée en lecture seule pendant la fenêtre approuvée.
 - [ ] Surveillance renforcée pendant 24 heures avec responsables identifiés.
 - [x] Les jobs GitHub Actions `web`, `database`, `cli` et `secrets` ont réellement
-  démarré puis réussi sur le commit `9b217d2`; la gate runtime distincte a ensuite
+  démarré puis réussi sur le commit `4037913`; la gate runtime distincte a ensuite
   refusé le staging incomplet :
-  [run 32139256436](https://github.com/YoannDrx/yodev-ads/actions/runs/32139256436).
+  [run 32140448381](https://github.com/YoannDrx/yodev-ads/actions/runs/32140448381).
 
 Rollback immédiat si authentification indisponible, fuite inter-tenant, incohérence
 Checkout/webhook, migration incomplète, email critique non soumis ou mutation Google
