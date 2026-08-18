@@ -25,7 +25,7 @@ async function indexedEvent(eventId: string) {
   if (!organization || !project || !authToken) return null
   const eventUrl = new URL(
     `/api/0/projects/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/events/${eventId}/`,
-    process.env.SENTRY_API_BASE_URL ?? 'https://sentry.io',
+    process.env.SENTRY_API_BASE_URL ?? 'https://de.sentry.io',
   )
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const response = await fetch(eventUrl, {

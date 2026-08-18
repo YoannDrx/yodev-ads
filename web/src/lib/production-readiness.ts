@@ -50,6 +50,7 @@ export function auditProductionConfiguration(
     'NEXT_PUBLIC_SENTRY_DSN',
     'SENTRY_AUTH_TOKEN',
     'SENTRY_EVENT_READ_AUTH_TOKEN',
+    'SENTRY_API_BASE_URL',
     'SENTRY_ORG',
     'SENTRY_PROJECT',
     'GOOGLE_ADS_DEVELOPER_TOKEN',
@@ -96,6 +97,9 @@ export function auditProductionConfiguration(
   }
   if (env.PRODUCTION_DATA_REGION !== 'eu') {
     issues.push({ code: 'database.region_unconfirmed', message: 'PRODUCTION_DATA_REGION must explicitly be eu' })
+  }
+  if (configured(env, 'SENTRY_API_BASE_URL') && env.SENTRY_API_BASE_URL !== 'https://de.sentry.io') {
+    issues.push({ code: 'sentry.region_not_eu', message: 'SENTRY_API_BASE_URL must be https://de.sentry.io' })
   }
 
   const stripeKey = env.STRIPE_SECRET_KEY ?? ''

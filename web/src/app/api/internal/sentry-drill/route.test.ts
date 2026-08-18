@@ -29,6 +29,7 @@ beforeEach(() => {
   process.env.RELEASE_VERIFICATION_TOKEN = token
   process.env.SENTRY_DSN = 'https://public@example.invalid/1'
   process.env.SENTRY_EVENT_READ_AUTH_TOKEN = 'sentry-read-token'
+  process.env.SENTRY_API_BASE_URL = 'https://de.sentry.io'
   process.env.SENTRY_ORG = 'yodev'
   process.env.SENTRY_PROJECT = 'ads-by-yodev'
   mocks.flush.mockReset().mockResolvedValue(true)
@@ -67,6 +68,10 @@ describe('deployed Sentry drill route', () => {
       eventId: 'a'.repeat(32),
     })
     expect(mocks.scope.setUser).toHaveBeenCalledWith({ email: 'sentry-drill-person@example.invalid' })
+    expect(fetch).toHaveBeenCalledWith(
+      new URL(`https://de.sentry.io/api/0/projects/yodev/ads-by-yodev/events/${'a'.repeat(32)}/`),
+      expect.any(Object),
+    )
     expect(response.headers.get('cache-control')).toContain('no-store')
   })
 
