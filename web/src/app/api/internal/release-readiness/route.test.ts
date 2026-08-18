@@ -2,9 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   health: vi.fn(),
+  operationalIssues: vi.fn(),
 }))
 
 vi.mock('@/lib/system-health', () => ({ systemHealthSnapshot: mocks.health }))
+vi.mock('@/lib/release-operational-readiness', () => ({ releaseOperationalIssues: mocks.operationalIssues }))
 
 import { GET } from './route'
 
@@ -26,6 +28,8 @@ beforeEach(() => {
     scheduler: { status: 'completed', overdue: false },
     retention: { status: 'completed', overdue: false },
   })
+  mocks.operationalIssues.mockReset()
+  mocks.operationalIssues.mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -82,6 +86,16 @@ describe('runtime release readiness route', () => {
       expect.objectContaining({ code: 'health.scheduler_unhealthy' }),
       expect.objectContaining({ code: 'health.retention_unhealthy' }),
     ]))
+  })
+
+  it('includes unresolved durable work in the deployed release decision', async () => {
+    mocks.operationalIssues.mockResolvedValue([
+      { code: 'queue.dead_letters', message: 'All dead-letter jobs must be resolved or explicitly cancelled' },
+    ])
+    const response = await request(process.env.RELEASE_VERIFICATION_TOKEN)
+    const body = await response.json()
+    expect(response.status).toBe(503)
+    expect(body.issues).toContainEqual(expect.objectContaining({ code: 'queue.dead_letters' }))
   })
 
   it('does not disclose infrastructure errors when health evidence is unreachable', async () => {

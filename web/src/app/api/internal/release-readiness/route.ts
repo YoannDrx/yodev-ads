@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import { auditProductionConfiguration, type ReleaseTarget } from '@/lib/production-readiness'
+import { releaseOperationalIssues } from '@/lib/release-operational-readiness'
 import { systemHealthSnapshot } from '@/lib/system-health'
 
 export const dynamic = 'force-dynamic'
@@ -36,7 +37,7 @@ async function operationalIssues() {
         message: 'Retention must have a recent completed operational run',
       })
     }
-    return issues
+    return [...issues, ...await releaseOperationalIssues()]
   } catch {
     return [{
       code: 'health.database_unavailable',
