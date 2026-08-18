@@ -181,6 +181,12 @@ export default async function SettingsPage({
                         {english ? 'Sync accounts' : 'Synchroniser les comptes'}
                       </Button>
                     </form>
+                    <Button asChild variant="outline">
+                      <a href={`/api/google-ads/connect?managerCustomerId=${encodeURIComponent(connection.managerCustomerId)}`}>
+                        <KeyRound className="mr-2 size-4" />
+                        {english ? 'Reconnect Google Ads' : 'Reconnecter Google Ads'}
+                      </a>
+                    </Button>
                     <form action={disconnectGoogleAds}>
                       <Button type="submit" variant="outline">
                         <Unplug className="mr-2 size-4" />
