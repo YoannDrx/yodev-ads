@@ -69,9 +69,9 @@ export default async function SettingsPage({
   ])
   const safetyPolicy = safetyPolicies.find((policy) => !policy.clientId && !policy.campaignId)
   const googleReady = hasGoogleConfiguration()
-  const slackReady = hasSlackOAuthConfiguration()
-  const teamsReady = hasTeamsOAuthConfiguration()
-  const blobReady = Boolean(process.env.BLOB_READ_WRITE_TOKEN)
+  const slackReady = featureEnabled('slackConnector') && hasSlackOAuthConfiguration()
+  const teamsReady = featureEnabled('teamsConnector') && hasTeamsOAuthConfiguration()
+  const blobReady = featureEnabled('blobUploads') && Boolean(process.env.BLOB_READ_WRITE_TOKEN)
   return (
     <>
       <PageHeading

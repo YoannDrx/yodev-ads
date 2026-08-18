@@ -5,6 +5,7 @@ import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireCapability } from '@/lib/entitlements'
+import { featureEnabled } from '@/lib/feature-flags'
 import { accessTeamsOAuthSession } from '@/lib/notification-oauth-management'
 import { openOAuthState } from '@/lib/oauth-state'
 import { listJoinedTeams, listTeamChannels } from '@/lib/teams-oauth'
@@ -18,6 +19,7 @@ export default async function TeamsDestinationPage({
   searchParams: Promise<{ teamId?: string }>
 }) {
   const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
+  if (!featureEnabled('teamsConnector')) redirect('/settings?error=Le%20connecteur%20Microsoft%20Teams%20est%20temporairement%20désactivé.')
   requireCapability(entitlements, 'notifications.webhook')
   const english = workspace.locale === 'en'
   const sealed = (await cookies()).get(SESSION_COOKIE_NAME)?.value

@@ -59,4 +59,14 @@ describe('feature flags', () => {
     process.env.GOOGLE_READS_ENABLED = '1'
     expect(featureEnabled('googleReads')).toBe(true)
   })
+
+  it('keeps uncertified optional integrations independently fail closed', () => {
+    process.env.NOTIFICATIONS_ENABLED = '1'
+    process.env.CUSTOM_DOMAINS_ENABLED = '1'
+    expect(featureEnabled('notifications')).toBe(true)
+    expect(featureEnabled('customDomains')).toBe(true)
+    expect(featureEnabled('blobUploads')).toBe(false)
+    expect(featureEnabled('slackConnector')).toBe(false)
+    expect(featureEnabled('teamsConnector')).toBe(false)
+  })
 })

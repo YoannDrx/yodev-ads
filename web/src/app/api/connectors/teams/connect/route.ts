@@ -13,6 +13,7 @@ const COOKIE_NAME = 'yodev_ads_teams_oauth'
 export async function GET(request: Request) {
   try {
     requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
+    requireFeature('teamsConnector', 'Le connecteur Microsoft Teams est temporairement désactivé.')
     if (!hasTeamsOAuthConfiguration()) throw new Error('La configuration OAuth Microsoft Teams est incomplète.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'notifications.webhook')

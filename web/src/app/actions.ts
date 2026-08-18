@@ -340,6 +340,7 @@ export async function uploadWorkspaceLogo(formData: FormData) {
   let target: string
   let uploadedUrl: string | null = null
   try {
+    requireFeature('blobUploads', 'Le stockage des logos est temporairement indisponible.')
     if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('Le stockage des logos est temporairement indisponible.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'reports.white_label')
@@ -2045,8 +2046,14 @@ export async function createNotificationChannel(formData: FormData) {
     requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     const input = notificationChannelSchema.parse(Object.fromEntries(formData))
-    if (input.kind === 'slack' && !hasSlackOAuthConfiguration()) throw new Error('La configuration OAuth Slack est indisponible.')
-    if (input.kind === 'teams' && !hasTeamsOAuthConfiguration()) throw new Error('La configuration OAuth Microsoft Teams est indisponible.')
+    if (input.kind === 'slack') {
+      requireFeature('slackConnector', 'Le connecteur Slack est temporairement désactivé.')
+      if (!hasSlackOAuthConfiguration()) throw new Error('La configuration OAuth Slack est indisponible.')
+    }
+    if (input.kind === 'teams') {
+      requireFeature('teamsConnector', 'Le connecteur Microsoft Teams est temporairement désactivé.')
+      if (!hasTeamsOAuthConfiguration()) throw new Error('La configuration OAuth Microsoft Teams est indisponible.')
+    }
     if (input.kind !== 'email') {
       requireCapability(entitlements, 'notifications.webhook')
       await assertSafeWebhookUrl(input.destination)
@@ -2086,6 +2093,7 @@ export async function completeTeamsNotificationConnection(formData: FormData) {
   let target: string
   try {
     requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
+    requireFeature('teamsConnector', 'Le connecteur Microsoft Teams est temporairement désactivé.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'notifications.webhook')
     const input = z.object({

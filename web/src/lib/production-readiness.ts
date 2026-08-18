@@ -114,6 +114,16 @@ export function auditProductionConfiguration(
   if (env.PUBLIC_API_ENABLED !== '0') {
     issues.push({ code: 'flags.public_api', message: 'PUBLIC_API_ENABLED must remain 0 for the initial commercial release' })
   }
+  for (const [name, code] of [
+    ['CUSTOM_DOMAINS_ENABLED', 'custom_domains'],
+    ['BLOB_UPLOADS_ENABLED', 'blob_uploads'],
+    ['SLACK_CONNECTOR_ENABLED', 'slack_connector'],
+    ['TEAMS_CONNECTOR_ENABLED', 'teams_connector'],
+  ] as const) {
+    if (env[name] !== '0') {
+      issues.push({ code: `flags.${code}`, message: `${name} must remain 0 until its provider drill is certified` })
+    }
+  }
   if (env.GOOGLE_READS_ENABLED !== '1') issues.push({ code: 'flags.google_reads', message: 'GOOGLE_READS_ENABLED must be 1' })
   if (env.SCHEDULER_ENABLED !== '1') issues.push({ code: 'flags.scheduler', message: 'SCHEDULER_ENABLED must be 1' })
   if (env.NOTIFICATIONS_ENABLED !== '1') issues.push({ code: 'flags.notifications', message: 'NOTIFICATIONS_ENABLED must be 1' })

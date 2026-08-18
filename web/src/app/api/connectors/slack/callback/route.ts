@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   try {
     requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
+    requireFeature('slackConnector', 'Le connecteur Slack est temporairement désactivé.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'notifications.webhook')
     const code = url.searchParams.get('code')
