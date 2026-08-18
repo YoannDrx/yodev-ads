@@ -6,6 +6,7 @@ function validEnvironment(target: 'staging' | 'private_beta' | 'public'): NodeJS
   return {
     NODE_ENV: 'production',
     NEXT_PUBLIC_APP_URL: 'https://ads.example.test',
+    NEXT_PUBLIC_RELEASE_TARGET: target,
     DATABASE_AUTHENTICATED_URL: 'postgresql://app@db.example.test/ads',
     DATABASE_SYSTEM_URL: 'postgresql://system@db.example.test/ads',
     DATABASE_PURGE_URL: 'postgresql://purge@db.example.test/ads',
@@ -46,6 +47,7 @@ describe('production configuration audit', () => {
 
   it.each([
     ['NEXT_PUBLIC_APP_URL'],
+    ['NEXT_PUBLIC_RELEASE_TARGET'],
     ['DATABASE_AUTHENTICATED_URL'],
     ['BETTER_AUTH_GOOGLE_CLIENT_ID'],
     ['YODEV_MAIL_RECIPIENT_HASH_SECRET'],
@@ -92,6 +94,12 @@ describe('production configuration audit', () => {
     expect(auditProductionConfiguration(env, 'staging').issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
       'stripe.duplicate_prices', 'stripe.invalid_portal_configuration', 'flags.maintenance',
     ]))
+  })
+
+  it('rejects a public release target that does not match the audited target', () => {
+    const env = validEnvironment('staging')
+    env.NEXT_PUBLIC_RELEASE_TARGET = 'public'
+    expect(auditProductionConfiguration(env, 'staging').issues.map((issue) => issue.code)).toContain('release.target_mismatch')
   })
 
   it('rejects an invalid or unvalidated Stripe tax configuration', () => {

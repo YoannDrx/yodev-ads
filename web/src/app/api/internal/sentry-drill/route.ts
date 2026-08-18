@@ -27,7 +27,6 @@ async function indexedEvent(eventId: string) {
     `/api/0/projects/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/events/${eventId}/`,
     process.env.SENTRY_API_BASE_URL ?? 'https://sentry.io',
   )
-  eventUrl.searchParams.append('environment', 'staging')
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const response = await fetch(eventUrl, {
       headers: { authorization: `Bearer ${authToken}` },
@@ -71,11 +70,13 @@ export async function POST(request: Request) {
   }
   const serialized = JSON.stringify(event)
   if (
+    event.environment !== 'staging'
+    ||
     serialized.includes(syntheticEmail)
     || serialized.includes(syntheticToken)
     || !serialized.includes('[REDACTED_API_KEY]')
   ) {
-    return Response.json({ verified: false, code: 'redaction_failed' }, { status: 502, headers: noStoreHeaders })
+    return Response.json({ verified: false, code: 'event_verification_failed' }, { status: 502, headers: noStoreHeaders })
   }
 
   return Response.json({

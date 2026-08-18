@@ -30,6 +30,7 @@ export function auditProductionConfiguration(
   const issues: ReadinessIssue[] = []
   addMissing(issues, env, [
     'NEXT_PUBLIC_APP_URL',
+    'NEXT_PUBLIC_RELEASE_TARGET',
     'DATABASE_AUTHENTICATED_URL',
     'DATABASE_SYSTEM_URL',
     'DATABASE_PURGE_URL',
@@ -62,6 +63,10 @@ export function auditProductionConfiguration(
     'STRIPE_PORTAL_CONFIGURATION_ID',
     'STRIPE_TAX_MODE',
   ])
+
+  if (configured(env, 'NEXT_PUBLIC_RELEASE_TARGET') && env.NEXT_PUBLIC_RELEASE_TARGET !== target) {
+    issues.push({ code: 'release.target_mismatch', message: `NEXT_PUBLIC_RELEASE_TARGET must be ${target}` })
+  }
 
   for (const [name, minimum] of [['BETTER_AUTH_SECRET', 32], ['OAUTH_STATE_KEY', 32], ['CRON_SECRET', 32], ['RELEASE_VERIFICATION_TOKEN', 32], ['YODEV_MAIL_WEBHOOK_SECRET', 32], ['YODEV_MAIL_RECIPIENT_HASH_SECRET', 32]] as const) {
     if (configured(env, name) && !configured(env, name, minimum)) {

@@ -49,8 +49,6 @@ async function main() {
     `/api/0/projects/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/events/${eventId}/`,
     apiBaseUrl,
   )
-  eventUrl.searchParams.append('environment', environment)
-
   let indexedEvent: unknown
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const response = await fetch(eventUrl, {
@@ -67,6 +65,9 @@ async function main() {
 
   if (!indexedEvent) throw new Error(`Sentry did not index synthetic event ${eventId}`)
   const serializedEvent = JSON.stringify(indexedEvent)
+  if ((indexedEvent as { environment?: unknown }).environment !== environment) {
+    throw new Error('Sentry indexed the event under the wrong environment')
+  }
   if (serializedEvent.includes(syntheticEmail) || serializedEvent.includes(syntheticToken)) {
     throw new Error('Sentry indexed unredacted synthetic data')
   }

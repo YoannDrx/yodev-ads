@@ -37,6 +37,7 @@ beforeEach(() => {
   mocks.scope.setUser.mockClear()
   mocks.scope.setContext.mockClear()
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
+    environment: 'staging',
     title: 'ads-by-yodev-sentry-drill: [REDACTED_API_KEY]',
   })))
 })
@@ -76,7 +77,10 @@ describe('deployed Sentry drill route', () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 500 }))
     expect(await (await request()).json()).toMatchObject({ code: 'indexing_failed' })
 
-    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ title: 'ya_live_syntheticredactionmarker' }))
-    expect(await (await request()).json()).toMatchObject({ code: 'redaction_failed' })
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ environment: 'staging', title: 'ya_live_syntheticredactionmarker' }))
+    expect(await (await request()).json()).toMatchObject({ code: 'event_verification_failed' })
+
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ environment: 'production', title: '[REDACTED_API_KEY]' }))
+    expect(await (await request()).json()).toMatchObject({ code: 'event_verification_failed' })
   })
 })
