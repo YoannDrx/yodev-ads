@@ -61,6 +61,7 @@ async function main() {
     shoppingProducts: shoppingProducts.length,
     conversionActions: conversions.length,
     offlineDiagnostics: offlineDiagnostics.length,
+    requestIds: gateway.collectedRequestIds(),
   }, null, 2)}\n`)
 }
 

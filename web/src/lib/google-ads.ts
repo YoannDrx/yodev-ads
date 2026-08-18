@@ -820,6 +820,7 @@ function googleOAuthRefreshError(error: unknown) {
 export class GoogleAdsGateway {
   private readonly managerCustomerId: string
   private readonly oauthClient: OAuth2Client
+  private readonly observedRequestIds: string[] = []
 
   constructor(credentials: GoogleAdsConnectionCredentials) {
     this.managerCustomerId = normalizeCustomerId(credentials.managerCustomerId)
@@ -841,6 +842,10 @@ export class GoogleAdsGateway {
     } catch (error) {
       throw googleOAuthRefreshError(error)
     }
+  }
+
+  collectedRequestIds() {
+    return [...this.observedRequestIds]
   }
 
   private async request<T>(path: string, init: RequestInit = {}, retryable = false): Promise<ApiResult<T>> {
@@ -882,6 +887,7 @@ export class GoogleAdsGateway {
         )
       }
       const requestId = response.headers.get('request-id')
+      if (requestId) this.observedRequestIds.push(requestId)
       const responseText = await response.text()
       let data: (T & GoogleAdsFailurePayload) | null = null
       try {
