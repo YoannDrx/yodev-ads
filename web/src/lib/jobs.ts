@@ -52,6 +52,18 @@ export const NOTIFICATION_JOB_TYPES: JobType[] = [
   'notification.deliver',
 ]
 
+export const GOOGLE_READ_JOB_TYPES: JobType[] = [
+  'monitoring.scan',
+  'monitoring.weekly_digest',
+  'google.mutation.reconcile',
+  'mutation.observe',
+  'metrics.daily_sync',
+  'google.accounts_sync',
+  'google.read_drill',
+  'google.change_sync',
+  'conversion.actions_sync',
+]
+
 export type ClaimedJob = typeof jobs.$inferSelect
 export type EnqueueJobInput = {
   workspaceId?: string | null

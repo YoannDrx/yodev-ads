@@ -12,7 +12,7 @@ import {
 export const maxDuration = 60
 
 export async function GET(request: Request) {
-  if (process.env.MAINTENANCE_MODE === '1' || !featureEnabled('scheduler')) {
+  if (!featureEnabled('scheduler')) {
     return NextResponse.json({ error: 'Scheduler disabled' }, { status: 503, headers: { 'Retry-After': '300' } })
   }
   const secret = process.env.CRON_SECRET

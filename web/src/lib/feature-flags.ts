@@ -5,6 +5,7 @@ import { z } from 'zod'
 const booleanFlagSchema = z.enum(['0', '1']).default('0')
 
 export const featureFlagEnvironment = {
+  googleReads: 'GOOGLE_READS_ENABLED',
   googleMutations: 'GOOGLE_MUTATIONS_ENABLED',
   stripeCheckout: 'STRIPE_CHECKOUT_ENABLED',
   publicApi: 'PUBLIC_API_ENABLED',

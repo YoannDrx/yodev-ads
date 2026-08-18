@@ -50,4 +50,13 @@ describe('feature flags', () => {
     expect(() => requireGoogleMutationKind('campaign_status')).toThrow('campaign_status')
     expect(() => requireGoogleMutationKind('budget_reallocation')).toThrow('budget_reallocation')
   })
+
+  it('keeps Google reads independent from scheduler and mutations', () => {
+    process.env.SCHEDULER_ENABLED = '1'
+    process.env.GOOGLE_MUTATIONS_ENABLED = '1'
+    delete process.env.GOOGLE_READS_ENABLED
+    expect(featureEnabled('googleReads')).toBe(false)
+    process.env.GOOGLE_READS_ENABLED = '1'
+    expect(featureEnabled('googleReads')).toBe(true)
+  })
 })

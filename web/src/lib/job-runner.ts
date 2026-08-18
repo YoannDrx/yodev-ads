@@ -32,6 +32,7 @@ import {
   completeJob,
   enqueueJob,
   failJob,
+  GOOGLE_READ_JOB_TYPES,
   NOTIFICATION_JOB_TYPES,
   NonRetryableJobError,
   type ClaimedJob,
@@ -587,12 +588,16 @@ export async function runAvailableJobs(options: {
   const maximumJobs = options.maximumJobs ?? 25
   const maximumRuntimeMs = options.maximumRuntimeMs ?? 45_000
   const results: Array<{ jobId: string; type: string; status: string; error?: string }> = []
+  const excludedTypes = new Set([
+    ...(featureEnabled('notifications') ? [] : NOTIFICATION_JOB_TYPES),
+    ...(featureEnabled('googleReads') ? [] : GOOGLE_READ_JOB_TYPES),
+  ])
   while (results.length < maximumJobs && Date.now() - startedAt < maximumRuntimeMs) {
     const job = await claimNextJob(
       options.workerId,
       new Date(),
       undefined,
-      featureEnabled('notifications') ? [] : NOTIFICATION_JOB_TYPES,
+      [...excludedTypes],
     )
     if (!job) break
     try {

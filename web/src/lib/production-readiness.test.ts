@@ -18,7 +18,7 @@ function validEnvironment(target: 'staging' | 'private_beta' | 'public'): NodeJS
     GOOGLE_ADS_DEVELOPER_TOKEN: 'developer', GOOGLE_OAUTH_CLIENT_ID: 'client-id', GOOGLE_OAUTH_CLIENT_SECRET: 'client-secret',
     STRIPE_SECRET_KEY: target === 'staging' ? 'sk_test_secret' : 'sk_live_secret', STRIPE_WEBHOOK_SECRET: 'whsec_secret',
     STRIPE_PRICE_SOLO: 'price_solo', STRIPE_PRICE_STUDIO: 'price_studio', STRIPE_PRICE_AGENCY: 'price_agency', STRIPE_PORTAL_CONFIGURATION_ID: 'bpc_portal', STRIPE_TAX_MODE: 'exempt_293b',
-    PUBLIC_API_ENABLED: '0', SCHEDULER_ENABLED: '1', NOTIFICATIONS_ENABLED: '1',
+    PUBLIC_API_ENABLED: '0', GOOGLE_READS_ENABLED: '1', SCHEDULER_ENABLED: '1', NOTIFICATIONS_ENABLED: '1',
     MAINTENANCE_MODE: '0',
     PUBLIC_BETA_ENABLED: publicLaunch ? '1' : '0', STRIPE_CHECKOUT_ENABLED: target === 'staging' ? '0' : '1', LEGAL_DOCUMENTS_APPROVED: target === 'staging' ? '0' : '1',
     GOOGLE_MUTATIONS_ENABLED: '0', FORCE_READ_ONLY: '1',
@@ -113,6 +113,7 @@ describe('production configuration audit', () => {
   })
 
   it.each([
+    ['GOOGLE_READS_ENABLED', '0', 'flags.google_reads'],
     ['SCHEDULER_ENABLED', '0', 'flags.scheduler'],
     ['NOTIFICATIONS_ENABLED', '0', 'flags.notifications'],
     ['PUBLIC_BETA_ENABLED', '1', 'flags.public_beta'],

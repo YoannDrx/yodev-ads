@@ -76,7 +76,10 @@ The exact identity migration and rollback sequence is documented in
 Release configuration is audited inside the deployed Vercel runtime through
 `/api/internal/release-readiness`. The route requires a dedicated 32+ character
 `RELEASE_VERIFICATION_TOKEN`, remains reachable during maintenance, never returns
-secret values and answers 503 until every target-specific requirement is satisfied.
+secret values and answers 503 until every target-specific requirement plus recent
+scheduler and retention evidence is satisfied. `GOOGLE_READS_ENABLED` is independent
+from the scheduler and mutation switches: keep it at `0` until the read-only MCC drill
+passes, including while rehearsing provider-independent scheduler work in maintenance.
 CI provides only `RELEASE_VERIFICATION_BASE_URL` and the matching GitHub Environment
 token instead of duplicating every sensitive provider credential outside Vercel.
 

@@ -33,6 +33,16 @@ describe('GoogleAdsGateway v25 contracts', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     getAccessTokenMock.mockReset().mockResolvedValue({ token: 'access-token' })
+    process.env.GOOGLE_READS_ENABLED = '1'
+  })
+
+  it('fails closed before OAuth or HTTP when the Google read switch is off', async () => {
+    process.env.GOOGLE_READS_ENABLED = '0'
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.verifyOAuthAccess()).rejects.toThrow('lectures Google Ads sont temporairement désactivées')
+    expect(getAccessTokenMock).not.toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('verifies OAuth refresh access without issuing a Google Ads request', async () => {

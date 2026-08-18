@@ -14,6 +14,7 @@ PUBLIC_BETA_ENABLED=0
 PUBLIC_API_ENABLED=0
 PRIVATE_API_WORKSPACE_IDS=
 STRIPE_CHECKOUT_ENABLED=0
+GOOGLE_READS_ENABLED=0
 GOOGLE_MUTATIONS_ENABLED=0
 FORCE_READ_ONLY=1
 ```
@@ -30,9 +31,9 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
   sauvegarde et comptages avant/après. Preuve du 2026-08-17 : branche de restauration
   conservée `backup-pre-0041-20260817` (`br-wandering-firefly-b2brmy7p`), historique
   passé de 35 à 42 migrations et comptages métier inchangés.
-- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 780 Vitest
-  dans 118 fichiers, une couverture de 92,30 % statements / 85,53 % branches /
-  93,29 % fonctions / 94,72 % lignes, 6 E2E publics locaux, 15 pytest, Ruff, les audits
+- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 788 Vitest
+  dans 119 fichiers, une couverture de 92,32 % statements / 85,63 % branches /
+  93,29 % fonctions / 94,73 % lignes, 6 E2E publics locaux, 15 pytest, Ruff, les audits
   npm/Python, le SBOM web et toutes les vérifications PostgreSQL. La preuve staging
   authentifiée 5/5 du 2026-08-17 reste historique : le workflow de promotion exige
   désormais cinq nouveaux storage states éphémères et échoue s'ils sont absents.
@@ -56,6 +57,9 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
 - [x] Webhooks Stripe et YoDevMail idempotents, rejouables et corrélés à leur registre
   dans le code et les tests automatisés. Les canaries fournisseurs réelles restent une
   condition distincte de la Gate 2.
+- [x] `GOOGLE_READS_ENABLED` coupe toute obtention de jeton et tout appel Google Ads,
+  y compris les jobs déjà en file. Le scheduler peut ainsi valider rétention et tâches
+  internes avant la reconnexion Google, sans lancer de lecture ou d’email fournisseur.
 - [ ] Purge FR/EN, annulation concurrente, tombstone et restauration exercés.
 - [ ] Aucun P0/P1 ouvert ; chaque P2 restant possède un contournement accepté.
 

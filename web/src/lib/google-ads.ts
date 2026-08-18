@@ -5,6 +5,7 @@ import { decryptSecret } from '@/lib/crypto'
 import { getServerEnv } from '@/lib/env'
 import { normalizeCustomerId } from '@/lib/ids'
 import { creativeFatigueSignal, type CreativePeriodMetrics } from '@/lib/creative-fatigue'
+import { requireFeature } from '@/lib/feature-flags'
 
 export const GOOGLE_ADS_API_VERSION = 'v25'
 export const GOOGLE_ADS_SCOPE = 'https://www.googleapis.com/auth/adwords'
@@ -814,6 +815,7 @@ export class GoogleAdsGateway {
   }
 
   async verifyOAuthAccess() {
+    requireFeature('googleReads', 'Les lectures Google Ads sont temporairement désactivées.')
     try {
       await this.accessToken()
       return { valid: true as const }
@@ -838,6 +840,7 @@ export class GoogleAdsGateway {
   }
 
   private async request<T>(path: string, init: RequestInit = {}, retryable = false): Promise<ApiResult<T>> {
+    requireFeature('googleReads', 'Les lectures Google Ads sont temporairement désactivées.')
     const env = getServerEnv()
     const delays = [250, 1_000, 4_000]
     for (let attempt = 0; ; attempt += 1) {

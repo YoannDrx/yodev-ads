@@ -198,9 +198,25 @@ describe('durable job runner orchestration', () => {
   })
 
   it('excludes notification jobs when the notification kill switch is off', async () => {
-    mocks.featureEnabled.mockReturnValue(false)
+    mocks.featureEnabled.mockImplementation((flag) => flag !== 'notifications')
     await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
     expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining(['notification.deliver']))
+  })
+
+  it('excludes every Google read job when its independent kill switch is off', async () => {
+    mocks.featureEnabled.mockImplementation((flag) => flag !== 'googleReads')
+    await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
+    expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining([
+      'monitoring.scan',
+      'monitoring.weekly_digest',
+      'google.mutation.reconcile',
+      'mutation.observe',
+      'metrics.daily_sync',
+      'google.accounts_sync',
+      'google.read_drill',
+      'google.change_sync',
+      'conversion.actions_sync',
+    ]))
   })
 
   it('applies notification retry semantics and non-retryable dead-letter semantics', async () => {
@@ -380,5 +396,36 @@ describe('durable job runner orchestration', () => {
       deduplicationKey: `secrets.rotate:${workspaceId}:kid-2`,
     }))
     expect(pending.every((item) => item.deduplicationKey.length > 5)).toBe(true)
+  })
+
+  it('seeds only provider-independent work while Google reads and notifications are disabled', async () => {
+    const now = new Date('2026-08-10T08:00:00Z')
+    const trialStartedAt = new Date('2026-08-03T08:00:00Z')
+    const trialEndsAt = new Date('2026-08-17T08:00:00Z')
+    mocks.featureEnabled.mockReturnValue(false)
+    mocks.trialDue.mockReturnValue(['welcome', 'trial_day_7'])
+    const schedulerDb = databaseDouble({ statementResults: [
+      [{ workspaceId, timezone: 'Europe/Paris' }],
+      [{ approvalId: entityId, workspaceId }],
+      [{ workspaceId, purgeAt: new Date('2026-08-09T00:00:00Z') }],
+      [{ workspaceId, clientId, timezone: 'Europe/Paris' }],
+      [{ exportJobId: entityId, workspaceId }],
+      [{ id: entityId, workspaceId, cadence: 'weekly', scheduleWeekday: 1, scheduleMonthday: null, sendHour: 8, timezone: 'Europe/Paris', lastRunKey: null }],
+      [{ id: clientId, workspaceId, cadence: 'daily', digestHour: 8, timezone: 'Europe/Paris', lastDigestKey: null }],
+      [{ id: workspaceId, accessState: 'trial', trialStartedAt, trialEndsAt }],
+      [],
+      [{ id: entityId }],
+      [{ workspaceId }],
+    ] })
+    mocks.databases.push(schedulerDb.db)
+    await seedScheduledJobs(now)
+    const [pending] = mocks.enqueueJobs.mock.calls[0] as [Array<{ type: string }>]
+    expect(new Set(pending.map((item) => item.type))).toEqual(new Set([
+      'retention.run',
+      'stripe.reconcile',
+      'workspace.purge',
+      'workspace.export',
+    ]))
+    expect(mocks.trialDue).not.toHaveBeenCalled()
   })
 })

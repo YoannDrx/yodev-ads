@@ -43,6 +43,7 @@ procedures and professional legal advice.
 | Risk | Immediate switch |
 | --- | --- |
 | Any Google write risk | `FORCE_READ_ONLY=1`, `GOOGLE_MUTATIONS_ENABLED=0` |
+| Any Google read or quota risk | `GOOGLE_READS_ENABLED=0` |
 | One write family | corresponding `GOOGLE_MUTATION_*_ENABLED=0` |
 | Scheduler amplification | `SCHEDULER_ENABLED=0` |
 | Notification leak or storm | `NOTIFICATIONS_ENABLED=0` |
@@ -85,7 +86,8 @@ commander approval. Resume one internal tenant before broader access.
 
 ## OAuth refresh-token leak
 
-1. Disable the affected connector and scheduler. For Google Ads, also force read-only.
+1. Disable the affected connector and scheduler. For Google Ads, also set
+   `GOOGLE_READS_ENABLED=0` and force read-only.
 2. Revoke the affected grant at the provider. Delete the encrypted local connection or
    notification channel; disabling a notification channel destroys its local secret.
 3. If logs or monitoring may contain the value, rotate the logging/Sentry access and
@@ -99,7 +101,8 @@ every envelope readable by that key as exposed.
 
 ## Yodev Google Ads developer-token leak
 
-1. Set `FORCE_READ_ONLY=1`, `GOOGLE_MUTATIONS_ENABLED=0` and `SCHEDULER_ENABLED=0`.
+1. Set `GOOGLE_READS_ENABLED=0`, `FORCE_READ_ONLY=1`,
+   `GOOGLE_MUTATIONS_ENABLED=0` and `SCHEDULER_ENABLED=0`.
 2. Remove the compromised secret from every Vercel environment and local operator
    store. Never put the replacement in Postgres.
 3. Contact Google Ads API support and follow the current token-compromise procedure;
@@ -113,6 +116,7 @@ every envelope readable by that key as exposed.
 ## Google Ads outage or quota exhaustion
 
 1. Keep stored-data views available; do not turn provider failures into empty metrics.
+   Set `GOOGLE_READS_ENABLED=0` when reads themselves must be contained.
 2. Disable mutations if Google reports elevated mutation errors or timeouts. A mutation
    timeout after submission is `ambiguous` and must never be retried automatically.
 3. Allow retry/backoff only for reads, HTTP 429 and 5xx according to the bounded job
@@ -316,7 +320,7 @@ Evidence consolidated on 2026-08-17:
 - repository evidence on 2026-08-17: lint, types, data-boundary and transaction verifiers, 682 Vitest tests across 116 files, 6 public Playwright scenarios and the 52-route Next.js production build passed; a fresh PostgreSQL 17 applied migrations through `0041` and passed RLS, tenant constraints/invariants, concurrency and targeted load protocols.
 
 Repository stabilization evidence on 2026-08-18 is separate from the historical
-staging proof: `npm run check` passed with 780 tests across 118 files and coverage above every configured
+staging proof: `npm run check` passed with 788 tests across 119 files and coverage above every configured
 threshold, the runtime audit and web SBOM passed, 15 Python tests/Ruff/`pip-audit`
 passed, and a fresh PostgreSQL 17 repeated migrations, RLS, constraints, invariants,
 concurrency and load with a 10/10 observed pool peak. A new Stripe sandbox drill again

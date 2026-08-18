@@ -195,45 +195,49 @@ export async function seedScheduledJobs(now = new Date()) {
       })
     }
   }
-  for (const workspace of trialWorkspaces) {
-    if (!workspace.trialStartedAt || !workspace.trialEndsAt) continue
-    const referenceKey = workspace.trialStartedAt.toISOString().slice(0, 10)
-    const lifecycle = (kind: 'welcome' | 'trial_day_7' | 'trial_day_12' | 'trial_expired', effectiveAt?: Date) => pending.push({
-      workspaceId: workspace.id,
-      type: 'lifecycle.email',
-      payload: { workspaceId: workspace.id, kind, referenceKey, effectiveAt: effectiveAt?.toISOString() },
-      priority: kind === 'trial_expired' ? 20 : 90,
-      deduplicationKey: `lifecycle.email:${workspace.id}:${kind}:${referenceKey}`,
-    })
-    for (const kind of trialLifecycleDue({
-      accessState: workspace.accessState,
-      trialStartedAt: workspace.trialStartedAt,
-      trialEndsAt: workspace.trialEndsAt,
-      now,
-    })) lifecycle(kind, workspace.trialEndsAt)
-  }
-  for (const workspace of monitoredWorkspaces) {
-    const local = localScheduleParts(now, workspace.timezone)
-    if (local.hour >= 6) {
-      pending.push({
-        workspaceId: workspace.workspaceId,
-        type: 'monitoring.scan',
-        payload: { workspaceId: workspace.workspaceId },
-        priority: 50,
-        deduplicationKey: `monitoring.scan:${workspace.workspaceId}:${local.date}`,
-      })
-    }
-    if (local.weekday === 'Mon' && local.hour >= 7) {
-      pending.push({
-        workspaceId: workspace.workspaceId,
-        type: 'monitoring.weekly_digest',
-        payload: { workspaceId: workspace.workspaceId },
-        priority: 80,
-        deduplicationKey: `monitoring.weekly_digest:${workspace.workspaceId}:${local.date}`,
-      })
+  const googleReadsEnabled = featureEnabled('googleReads')
+  const notificationsEnabled = featureEnabled('notifications')
+  if (googleReadsEnabled) {
+    for (const workspace of monitoredWorkspaces) {
+      const local = localScheduleParts(now, workspace.timezone)
+      if (local.hour >= 6) {
+        pending.push({
+          workspaceId: workspace.workspaceId,
+          type: 'monitoring.scan',
+          payload: { workspaceId: workspace.workspaceId },
+          priority: 50,
+          deduplicationKey: `monitoring.scan:${workspace.workspaceId}:${local.date}`,
+        })
+      }
+      if (notificationsEnabled && local.weekday === 'Mon' && local.hour >= 7) {
+        pending.push({
+          workspaceId: workspace.workspaceId,
+          type: 'monitoring.weekly_digest',
+          payload: { workspaceId: workspace.workspaceId },
+          priority: 80,
+          deduplicationKey: `monitoring.weekly_digest:${workspace.workspaceId}:${local.date}`,
+        })
+      }
     }
   }
-  if (featureEnabled('notifications')) {
+  if (notificationsEnabled) {
+    for (const workspace of trialWorkspaces) {
+      if (!workspace.trialStartedAt || !workspace.trialEndsAt) continue
+      const referenceKey = workspace.trialStartedAt.toISOString().slice(0, 10)
+      const lifecycle = (kind: 'welcome' | 'trial_day_7' | 'trial_day_12' | 'trial_expired', effectiveAt?: Date) => pending.push({
+        workspaceId: workspace.id,
+        type: 'lifecycle.email',
+        payload: { workspaceId: workspace.id, kind, referenceKey, effectiveAt: effectiveAt?.toISOString() },
+        priority: kind === 'trial_expired' ? 20 : 90,
+        deduplicationKey: `lifecycle.email:${workspace.id}:${kind}:${referenceKey}`,
+      })
+      for (const kind of trialLifecycleDue({
+        accessState: workspace.accessState,
+        trialStartedAt: workspace.trialStartedAt,
+        trialEndsAt: workspace.trialEndsAt,
+        now,
+      })) lifecycle(kind, workspace.trialEndsAt)
+    }
     for (const notice of subprocessorNotices) {
       pending.push({
         workspaceId: null,
@@ -266,40 +270,44 @@ export async function seedScheduledJobs(now = new Date()) {
       })
     }
   }
-  for (const account of metricClients) {
-    const local = localScheduleParts(now, account.timezone)
-    if (local.hour >= 5) pending.push({
-      workspaceId: account.workspaceId,
-      type: 'metrics.daily_sync',
-      payload: { workspaceId: account.workspaceId, clientId: account.clientId },
-      priority: 40,
-      deduplicationKey: `metrics.daily_sync:${account.clientId}:${local.date}`,
-    })
-    if (local.hour >= 4) {
-      pending.push({
+  if (googleReadsEnabled) {
+    for (const account of metricClients) {
+      const local = localScheduleParts(now, account.timezone)
+      if (local.hour >= 5) pending.push({
         workspaceId: account.workspaceId,
-        type: 'google.change_sync',
+        type: 'metrics.daily_sync',
         payload: { workspaceId: account.workspaceId, clientId: account.clientId },
-        priority: 45,
-        deduplicationKey: `google.change_sync:${account.clientId}:${local.date}`,
+        priority: 40,
+        deduplicationKey: `metrics.daily_sync:${account.clientId}:${local.date}`,
       })
-      pending.push({
-        workspaceId: account.workspaceId,
-        type: 'conversion.actions_sync',
-        payload: { workspaceId: account.workspaceId, clientId: account.clientId },
-        priority: 46,
-        deduplicationKey: `conversion.actions_sync:${account.clientId}:${local.date}`,
-      })
+      if (local.hour >= 4) {
+        pending.push({
+          workspaceId: account.workspaceId,
+          type: 'google.change_sync',
+          payload: { workspaceId: account.workspaceId, clientId: account.clientId },
+          priority: 45,
+          deduplicationKey: `google.change_sync:${account.clientId}:${local.date}`,
+        })
+        pending.push({
+          workspaceId: account.workspaceId,
+          type: 'conversion.actions_sync',
+          payload: { workspaceId: account.workspaceId, clientId: account.clientId },
+          priority: 46,
+          deduplicationKey: `conversion.actions_sync:${account.clientId}:${local.date}`,
+        })
+      }
     }
   }
-  for (const approval of ambiguousApprovals) {
-    pending.push({
-      workspaceId: approval.workspaceId,
-      type: 'google.mutation.reconcile',
-      payload: { approvalId: approval.approvalId },
-      priority: 10,
-      deduplicationKey: `google.mutation.reconcile:${approval.approvalId}`,
-    })
+  if (googleReadsEnabled) {
+    for (const approval of ambiguousApprovals) {
+      pending.push({
+        workspaceId: approval.workspaceId,
+        type: 'google.mutation.reconcile',
+        payload: { approvalId: approval.approvalId },
+        priority: 10,
+        deduplicationKey: `google.mutation.reconcile:${approval.approvalId}`,
+      })
+    }
   }
   for (const deletion of dueDeletions) {
     pending.push({

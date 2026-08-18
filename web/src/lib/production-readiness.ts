@@ -114,6 +114,7 @@ export function auditProductionConfiguration(
   if (env.PUBLIC_API_ENABLED !== '0') {
     issues.push({ code: 'flags.public_api', message: 'PUBLIC_API_ENABLED must remain 0 for the initial commercial release' })
   }
+  if (env.GOOGLE_READS_ENABLED !== '1') issues.push({ code: 'flags.google_reads', message: 'GOOGLE_READS_ENABLED must be 1' })
   if (env.SCHEDULER_ENABLED !== '1') issues.push({ code: 'flags.scheduler', message: 'SCHEDULER_ENABLED must be 1' })
   if (env.NOTIFICATIONS_ENABLED !== '1') issues.push({ code: 'flags.notifications', message: 'NOTIFICATIONS_ENABLED must be 1' })
   if (target !== 'public' && env.PUBLIC_BETA_ENABLED !== '0') {
