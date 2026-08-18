@@ -1,6 +1,6 @@
 # Ads by Yodev — operational runbooks
 
-Last reviewed: 2026-08-13. These procedures are mandatory before private beta and
+Last reviewed: 2026-08-17. These procedures are mandatory before private beta and
 must be rehearsed in staging. They complement, but do not replace, provider incident
 procedures and professional legal advice.
 
@@ -140,6 +140,85 @@ and zero unexplained ambiguous mutation.
 Exit requires no failed Stripe webhook, no duplicate subscription, a reconciled sample
 of all affected workspaces and a successful Test Clock lifecycle replay in staging.
 
+## YoDevMail outage, ambiguity or deliverability incident
+
+1. Keep `NOTIFICATIONS_ENABLED=0` if the incident can duplicate messages, expose a
+   recipient or trigger a delivery storm. Authentication emails are also YoDevMail
+   traffic: publish the user-facing impact immediately if login or password reset is
+   affected.
+2. Inspect the local `transactional_email_deliveries` row by business key or YoDevMail
+   message UUID. Never search logs by raw recipient address.
+3. A timeout, network rupture or malformed 2xx is `ambiguous`. Retry only with the exact
+   same idempotency key and unchanged content. A manual retry after a definitive failure
+   requires a new `:manual-retry:N` generation and an audit record.
+4. Retry 429/5xx with the durable job backoff. Do not retry 400/401/403/404/409/422,
+   suppressions, hard bounces or complaints automatically.
+5. Correlate queued/sent/delivered/failed/bounce/complaint webhooks. A complaint or hard
+   bounce supersedes a previous delivered state. Investigate every orphan message ID.
+6. If YoDevMail is unavailable beyond the authentication recovery objective, keep the
+   product in private beta and provide a documented operator-assisted recovery channel;
+   never enable a direct Postmark, Resend or SES fallback inside YoDevAds.
+
+Exit requires a successful same-key ambiguity replay with one delivered message, a
+drained retry queue, zero orphan event and confirmation that terminal recipients cannot
+be retried automatically.
+
+## Failed migration or Vercel rollback
+
+1. Stop Checkout, scheduler, notifications and mutations; set maintenance and forced
+   read-only before touching the database.
+2. Record the deployment ID, migration number, target Neon branch and row counts. Do not
+   edit Drizzle history or manually mark a failed migration as applied.
+3. If the migration is forward-fixable without data loss, prepare and test a new
+   migration on a clone. Otherwise restore the verified pre-cutover backup to a new
+   branch and repoint only after RLS, constraints, auth and tombstones pass.
+4. Roll Vercel back to the artifact compatible with the restored schema. Never deploy
+   an old binary against a schema whose compatibility has not been proven.
+5. Smoke-test health, Better Auth, one tenant-isolation denial, Stripe webhook receipt,
+   YoDevMail submission and a read-only Google request before lifting maintenance.
+
+## Refund and billing repair
+
+1. Verify workspace, Stripe customer, subscription, invoice and charge IDs in the
+   restricted operations console. Do not infer the customer from an email address.
+2. Obtain the approval required by the refund policy and record amount, currency,
+   reason and approver.
+3. Issue the refund in Stripe. Do not change workspace access merely because a charge
+   is refunded; access follows the authoritative subscription lifecycle.
+4. Confirm `charge.refunded`, immutable audit evidence, lifecycle email and daily
+   reconciliation. Partial and full refunds must be distinguishable.
+5. If local state diverges, enqueue the audited reconciliation action. Checkout remains
+   blocked for that workspace until the divergence is resolved.
+
+## RGPD request and urgent deletion
+
+1. Verify requester authority proportionately and record the legal basis, scope and
+   deadline in the restricted support record.
+2. Export before deletion when required. Never include secrets, raw OAuth tokens or
+   internal support notes in the customer archive.
+3. Standard deletion revokes access immediately and purges product data at J+30. Legal,
+   accounting and refund evidence follows the approved retention schedule.
+4. An urgent purge requires legal/security approval, a fresh backup reference and an
+   operator independent of the requester. Never bypass the atomic purge claim or remove
+   tombstones.
+5. Confirm provider revocation, Blob/domain cleanup, Better Auth organization deletion,
+   workspace absence and tombstone presence. A purged workspace cannot be restored.
+
+## Scheduler, retention and missed execution
+
+1. The authenticated Vercel cron runs every five minutes and seeds deterministic jobs.
+   Inspect structured `scheduler.run.completed` logs, processed counts, duration and
+   dead-letter count.
+2. Two missed passages are an incident. Check Vercel cron delivery, `CRON_SECRET`, the
+   scheduler flag, database availability and lease backlog before a manual invocation.
+3. Never run multiple ad-hoc loops. One authenticated invocation is safe because job
+   claims and deduplication are atomic.
+4. Retention must complete at least every 48 hours. Review deleted counts per category,
+   duration, errors and `nextRunAt`; pending, ambiguous and dead-letter jobs must remain.
+5. After recovery, verify reports, digests, lifecycle mail, Stripe reconciliation,
+   mutation observations and retention independently rather than relying on a single
+   global success response.
+
 ## Incorrect or unauthorized Google mutation
 
 1. Force read-only and disable the specific mutation family.
@@ -222,17 +301,29 @@ Every rehearsal or incident record must contain:
 
 ## Latest staging rehearsal evidence
 
-Evidence recorded on 2026-08-13:
+Evidence consolidated on 2026-08-17:
 
 - environment: isolated `yodev-ads-staging` Vercel project and EU Neon PostgreSQL 17 project `snowy-king-69942334` in AWS Frankfurt;
-- deployed artifact: `dpl_Fm6VoKPCvBcU8J36JM5oGvK7rXgN`, migrations through `0034`;
+- deployed artifact: `dpl_Gay5erHLEULCSfvxC2WEdz29aYCE`, returned to maintenance with explicit fail-closed flags after controlled drills; migrations through `0041`;
 - database boundary: 46 RLS/FORCE RLS tables, four restricted no-`BYPASSRLS` runtime roles, 33 validated composite constraints and 15 tenant/auth invariants;
 - concurrency: single winners for quota consumption, approval execution claim, job lease, Stripe webhook claim and purge claim;
-- load fixture: 100 workspaces, 149 advertiser accounts, 200 monitors, 10,000 notification deliveries, 100 approvals and 1,000 report reads; fixtures were purged afterward;
-- restore: a temporary Neon restore branch recovered two workspaces, one Better Auth user, the then-current migration history and zero unprocessed Stripe events, then was deleted;
-- external reads: one real Google Ads API v25 inventory request returned three accessible customers with a request ID;
-- billing: a Stripe sandbox Test Clock completed activation, payment failure, seven-day grace, recovery, cancellation scheduling, cancellation reversal and final cancellation with no unprocessed webhook;
-- HTTP: six public Playwright tests, one ephemeral Better Auth credential journey and one separately consumed real Postmark magic link passed through sign-in, dashboard, advertiser accounts and billing on the live staging alias; all temporary credentials and sessions were removed;
-- repository: lint, types, data-boundary and transaction verifiers, 636 Vitest tests across 109 files and the 52-route Next.js production build passed.
+- load fixture: 100 workspaces, 149 advertiser accounts, 200 monitors, 10,000 notification deliveries, 100 approvals and 1,000 report reads; the database pool peaked at 10/10, the burst completed in 8,254 ms with p95 7,853 ms, rate limiting stopped at 60 and scheduler discovery produced 543 jobs; fixtures were purged afterward;
+- restore: the pre-migration branch `backup-pre-0041-20260817` (`br-wandering-firefly-b2brmy7p`) retains the staging state before `0035`–`0041`; 35 migrations and table counts matched before the controlled migration;
+- external reads: an older real Google Ads API v25 inventory request returned three accessible customers; the current runtime drill reached OAuth but classified the refresh token as revoked/expired. A controlled Chrome window then proved that the staging owner has no active YoDevAds session and that Google Sign-In is not exposed, so a fresh owner session is required before the Google Ads consent;
+- billing: the active sandbox catalogue is one `Ads by Yodev` product and three EUR monthly Prices; a real drill completed Solo activation, paid immediate Studio upgrade, end-of-period Solo downgrade scheduling and schedule cancellation. The two legacy sandbox webhook endpoints were disabled, leaving only the complete staging endpoint active. The available Stripe account is test/US and not live-enabled;
+- email infrastructure: read-only AWS inventory found healthy protected YoDevMail prod/dev/foundation stacks, four enabled SQS consumers and empty queues/DLQs, with Postmark active behind YoDevMail. Database migration, project-key provisioning and delivery canaries remain unproven;
+- HTTP: six public Playwright tests plus five isolated authenticated owner/admin/strategist/analyst/client page-authorisation scenarios passed against the staging alias; all temporary identities, sessions and credentials were removed;
+- repository evidence on 2026-08-17: lint, types, data-boundary and transaction verifiers, 682 Vitest tests across 116 files, 6 public Playwright scenarios and the 52-route Next.js production build passed; a fresh PostgreSQL 17 applied migrations through `0041` and passed RLS, tenant constraints/invariants, concurrency and targeted load protocols.
 
-This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email, Sentry delivery, the five-role authenticated matrix, controlled Google mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.
+Repository stabilization evidence on 2026-08-18 is separate from the historical
+staging proof: `npm run check` passed with 767 tests and coverage above every configured
+threshold, the runtime audit and web SBOM passed, 15 Python tests/Ruff/`pip-audit`
+passed, and a fresh PostgreSQL 17 repeated migrations, RLS, constraints, invariants,
+concurrency and load with a 10/10 observed pool peak. A new Stripe sandbox drill again
+proved Solo activation, immediate paid Studio upgrade, end-of-period Solo downgrade
+and schedule cancellation. The six public E2E pass locally; five authenticated tests
+remain intentionally skipped outside the release workflow. The current remote staging
+deployment remains in maintenance and is therefore not counted as a fresh open-app
+acceptance run.
+
+This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email delivery, Sentry delivery, direct role action/API coverage, fresh Google reads and controlled mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.

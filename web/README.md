@@ -8,8 +8,9 @@ Ads REST API.
 
 ```bash
 npm run dev          # local Next.js server
-npm run check        # lint + types + unit tests + production build
+npm run check        # CI-equivalent lint, types, coverage, build and runtime audit
 npm run test:e2e     # Playwright public-route smoke tests
+npm run release:verify # full code/config/authenticated promotion gate
 npm run db:generate  # generate a reviewed Drizzle migration
 npm run db:migrate   # apply committed migrations
 npm run db:verify-rls # verify RLS, runtime roles and cross-tenant isolation
@@ -24,9 +25,8 @@ development values are managed with `vercel env`.
 All commercial or externally mutating capabilities fail closed. Enable their
 documented environment flags deliberately per environment; `FORCE_READ_ONLY=1`
 overrides Google Ads writes immediately. Checkout also requires an explicit
-`STRIPE_TAX_MODE`, approved legal-document versions and, for consumer sales, a
-configured consumer mediator. Stripe Tax remains blocked until its validation flag
-is set.
+`STRIPE_TAX_MODE` and approved B2B legal-document versions. No consumer Checkout is
+available. Stripe Tax remains blocked until its validation flag is set.
 
 ## Security contract
 

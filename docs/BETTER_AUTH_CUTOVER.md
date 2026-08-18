@@ -11,7 +11,7 @@ identity cutover.
 2. Provision independent 32-byte-or-longer `BETTER_AUTH_SECRET` values per environment.
 3. Create a dedicated Google OAuth web client for Better Auth. Register
    `/api/auth/callback/google` on the exact staging and production origins.
-4. Verify the Resend sending domain and configure `AUTH_FROM_EMAIL`.
+4. Provision the dedicated YoDevMail project key/webhook, verify the sending domain and configure `AUTH_FROM_EMAIL`.
 5. Provision four restricted database login credentials whose memberships are
    respectively `yodev_app`, `yodev_system`, `yodev_purge` and `yodev_auth`; store
    their URLs only as `DATABASE_AUTHENTICATED_URL`, `DATABASE_SYSTEM_URL`,
@@ -31,8 +31,8 @@ npm run db:verify-rls
 npm run db:verify-concurrency
 ```
 
-The migration ledger must contain every migration through
-`0031_better_auth_expansion.sql`. The RLS verifier must report four runtime roles and
+The migration ledger must contain every committed migration through
+`0041_bored_stardust.sql`. The RLS verifier must report four runtime roles and
 the tenant verifier must report zero violations for every identity invariant.
 
 ## Identity import
@@ -64,7 +64,7 @@ Before production cutover, exercise in both French and English:
 - registration, mandatory e-mail verification and one-time trial;
 - Google login, password reset, passkey registration and session revocation;
 - organization switching and invitation acceptance;
-- owner, admin, operator, analyst and viewer permissions through direct Server Actions;
+- owner, admin, strategist, analyst and client permissions through direct Server Actions;
 - member quota under concurrent invitations;
 - revocation, ownership transfer and workspace deletion;
 - suspended/grace/deletion lifecycle access;
@@ -73,7 +73,7 @@ Before production cutover, exercise in both French and English:
 ## Production sequence
 
 1. Enter maintenance/read-only mode and stop scheduler and notification workers.
-2. Create a fresh restore point, then apply migrations through `0031`.
+2. Create a fresh restore point, then apply all committed migrations through `0041`.
 3. Run the importer dry-run, compare counts, then run the guarded apply once.
 4. Run tenant, constraint and RLS verifiers against production.
 5. Deploy Better Auth secrets and restricted DB URLs, then deploy the new application.
