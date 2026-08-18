@@ -341,42 +341,37 @@ workspace and child client, and retained the expected completed-cleanup tombston
 container and all fixtures were removed after the run. This is not a substitute for the
 still-pending authenticated FR/EN staging UI and backup-restore drill.
 
-The current candidate is deployed separately as
-`dpl_FEqPCv2Pzy4N7K7tosWuWpFu8PLw` (`4037913`). Its health endpoint returns HTTP 503
-with `status=maintenance` and a connected database, while scheduler and retention both
-have recent successful non-overdue runs. The scheduler was first triggered under
-maintenance through Vercel, then repeated automatically on its five-minute cadence. Its
-controlled run requested three jobs, created one, processed four and produced zero dead
-letters; database evidence shows only retention and secret-rotation attempts, with zero
-new Google or notification jobs. Thirteen historical provider jobs were explicitly
-cancelled without deletion, retaining their attempts/errors plus an auditable cancellation
-reason; the live queue then contained zero due jobs and zero dead letters.
+The current candidate is deployed as `dpl_EWREMoBqVWLZsdceyfgzmTkqzuPc`
+(`9cad4b1`). Its health endpoint returns HTTP 200 with `status=ok`, a connected database
+and recent, non-overdue scheduler and retention runs. The authenticated runtime probe
+fails closed on unresolved durable work, failed Stripe webhooks, billing reconciliations,
+problematic email deliveries and ambiguous or failed Google mutations; it currently
+returns `ready=true` with no issue. The operations console has zero due/dead-letter job,
+failed Stripe webhook, billing reconciliation, problematic email delivery or unresolved
+Google mutation.
 
-The authenticated runtime probe now also fails closed on unresolved durable work, failed
-Stripe webhooks, billing reconciliations, problematic email deliveries and ambiguous or
-failed Google mutations. Manual GitHub Actions run `32140448381` passed the web,
-PostgreSQL, Python/CLI and secrets jobs on commit `4037913`, then returned exactly fourteen
-remaining external/configuration issues: two Better Auth Google, four YoDevMail, five
-Sentry, Google reads, notifications and maintenance. Optional Slack, Teams, Blob uploads
-and custom domains remain independently fail-closed. No queue, scheduler, retention,
-Stripe, email or mutation-health issue remained.
+Manual GitHub Actions run
+[32177451921](https://github.com/YoannDrx/yodev-ads/actions/runs/32177451921)
+passed web, PostgreSQL, Python/CLI, Gitleaks/SBOM and the release gate on that exact
+deployment. The release gate re-read a synthetic Sentry event, completed a protected
+Google Ads read-only drill with eight provider request IDs, then passed 17 authenticated
+owner/admin/strategist/analyst/client scenarios without skip. Optional Slack, Teams,
+Blob uploads and custom domains remain independently fail-closed and hidden from the
+initial offer.
 
-This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email delivery, Sentry delivery, direct role action/API coverage, fresh Google reads and controlled mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.
+The Google Cloud project still has a legacy immutable project identifier, but its OAuth
+branding is Ads by Yodev. The obsolete authorized domains `vigihat.com`,
+`vigie-ads.vercel.app` and `vigieads.vercel.app` have been removed; only Yodev-controlled
+domains and the current staging callback remain. YoDevMail is healthy, its dedicated
+runtime key and hybrid/raw policy are active, and both template and exact application
+payload canaries reached the provider. Operations alerts now target the verified
+`support@yodev.fr` alias.
 
-Provider-account audit on 2026-08-18 added three constraints to this evidence. The
-shared Google Cloud project `app-oauth-481214` has generic, unverified `App OAuth`
-branding and must not receive the new Ads by Yodev staging client. The dedicated
-`vigieads` project is the correct boundary and already carries the Ads by Yodev
-product, but its OAuth audience is still in Test with one test user. Its Better Auth
-staging client form was prepared with the exact staging origin and callback but not
-submitted pending operator confirmation; publishing and the resulting branding/scope
-review remain separate commercial gates. An `aws login` attempt explicitly approved
-for a new `yodev-staging` profile authenticated as the account root instead of a
-non-root operator; the newly created local profile was immediately removed and no AWS
-resource was changed. Finally, `https://api.mail.yodev.fr/api/health` returned HTTP 200
-with `database=ok` on version `c0d4a80`, and the production project exposes the expected
-Postmark/AWS-OIDC configuration names. The hardened YoDevMail candidate remains the
-green draft PR `YoannDrx/yodev-mail#19` and is not yet the version served in production.
+This is technical private-beta evidence, not yet the formal RPO/RTO or 30-day SLO record.
+Exhaustive bilingual email/bounce/complaint drills, external missed-cron alert delivery,
+provider outage and restore rehearsals, French live Stripe/legal/tax approval and the
+30-day beta record remain commercial-public gates. Google mutations are intentionally
+outside the initial read-only beta and keep every global/per-family kill switch disabled.
 
 ## Runtime release-readiness probe
 

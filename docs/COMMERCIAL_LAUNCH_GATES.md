@@ -25,20 +25,22 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
 
 ## Gate 1 — code
 
-- [x] Migrations `0035` à `0041` appliquées et vérifiées sur une base PostgreSQL 17
+- [x] Migrations `0035` à `0043` appliquées et vérifiées sur une base PostgreSQL 17
   jetable.
-- [x] Migrations `0035` à `0041` appliquées sur la base staging européenne, avec
+- [x] Migrations `0035` à `0043` appliquées sur la base staging européenne, avec
   sauvegarde et comptages avant/après. Preuve du 2026-08-17 : branche de restauration
   conservée `backup-pre-0041-20260817` (`br-wandering-firefly-b2brmy7p`), historique
-  passé de 35 à 42 migrations et comptages métier inchangés.
-- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 797 Vitest
-  dans 120 fichiers, une couverture de 92,36 % statements / 85,58 % branches /
-  93,30 % fonctions / 94,76 % lignes, 6 E2E publics locaux, 15 pytest, Ruff, les audits
-  npm/Python, le SBOM web et toutes les vérifications PostgreSQL. La preuve staging
-  authentifiée 5/5 du 2026-08-17 reste historique : le workflow de promotion exige
-  désormais cinq nouveaux storage states éphémères et échoue s'ils sont absents.
-- [ ] Matrice owner/admin/strategist/analyst/client testée par UI, Server Actions et
-  routes directes en FR et EN, y compris l’isolation inter-workspace.
+  passé de 35 à 44 migrations et comptages métier inchangés. `0042` durcit les preuves
+  de configuration et `0043` ajoute l'état opérationnel `reviewed` sans supprimer les
+  échecs historiques.
+- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 818 Vitest
+  dans 123 fichiers, une couverture de 92,27 % statements / 85,53 % branches /
+  93,26 % fonctions / 94,64 % lignes, 6 E2E publics, 15 pytest, Ruff, les audits
+  npm/Python, le SBOM web et toutes les vérifications PostgreSQL.
+- [x] Matrice owner/admin/strategist/analyst/client testée sur le staging ouvert :
+  17 scénarios Playwright sans skip couvrent pages, vraie Server Action, route API,
+  permissions et isolation non énumérable d'un second workspace. Les cinq identités
+  et sessions de recette sont recréées puis supprimées par la gate de promotion.
 - [x] La route directe d'export renvoie 403 aux rôles sans permission et 404 au owner
   pour l'UUID d'un export appartenant au workspace fixture étranger. Un onzième scénario
   capture la vraie requête `updateWorkspaceLocale`, exclut explicitement le cookie owner,
@@ -53,9 +55,9 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
   dupliqués dans GitHub Actions. Il exige aussi une exécution récente réussie du
   scheduler et de la rétention, zéro dead-letter/job dû, aucun webhook Stripe échoué,
   aucune réconciliation billing, livraison email problématique ou mutation Google non
-  résolue. Le déclenchement staging du 2026-08-18 a bien échoué en 503 sur exactement
-  14 prérequis externes/configuration encore ouverts, après réussite des quatre jobs
-  standards : [run 32140448381](https://github.com/YoannDrx/yodev-ads/actions/runs/32140448381).
+  résolue. Le staging ouvert du commit `9cad4b1` répond `ready: true` avec une liste
+  d'issues vide. La preuve canonique est le workflow complet vert
+  [32177451921](https://github.com/YoannDrx/yodev-ads/actions/runs/32177451921).
 - [x] Zéro appel ou dépendance directe Postmark/Resend dans YoDevAds ; les anciennes
   variables ont également été retirées du staging Vercel.
 - [x] Webhooks Stripe et YoDevMail idempotents, rejouables et corrélés à leur registre
@@ -85,20 +87,26 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
 
 ### YoDevMail
 
-- [ ] Le projet YoDevAds possède une clé dédiée avec les scopes d’envoi brut requis.
-- [ ] `POST /v1/emails` accepte le contrat YoDevAds, notamment
+- [x] Le projet Ads by Yodev possède une clé dédiée active avec les scopes d’envoi brut
+  requis ; les clés de transition ont été révoquées.
+- [x] `POST /v1/emails` accepte le contrat Ads by Yodev, notamment
   `metadata.workspaceId`, et conserve le même UUID pour une même clé d’idempotence.
-- [ ] Tous les profils transactionnels utilisés par les catégories YoDevAds sont
-  approuvés côté YoDevMail.
-- [ ] Le domaine `yodev.fr`, l’adresse `ads@yodev.fr`, SES/Postmark et le webhook de
-  retour sont validés dans les environnements staging et production.
+- [x] Les profils transactionnels requis sont approuvés côté YoDevMail, en mode
+  hybride/raw contrôlé.
+- [x] Le domaine `yodev.fr`, l'identité d'envoi et le webhook de retour sont validés
+  pour le staging ; la clé dédiée a réussi une livraison fournisseur réelle. Le gate
+  live puis le gate raw ont été ouverts séparément après un baseline fournisseur vert.
 - [ ] Une livraison FR et EN de chaque famille critique a été reçue ; timeout, doublon,
   hard bounce, plainte, suppression et signature invalide ont été exercés.
 
-Le dépôt YoDevMail présent localement accepte le contenu brut, le contrat
-d’idempotence et `metadata.workspaceId`, conservé comme tag interne. Le schéma ciblé,
-ses tests et le typecheck passent. La gate reste ouverte jusqu’au provisioning des
-environnements et aux preuves de livraison, de corrélation et d’incident réelles.
+Le contrat brut, l'idempotence et `metadata.workspaceId` sont prouvés en code et chez
+le fournisseur. Un canari template (`1e86ef51…`) puis le payload brut exact de
+l'application (`80f30483…`) ont atteint `delivered`. Le retry audité de la vraie alerte
+`google.change_sync` a ensuite été accepté (`5dbc76a3…`). Les anciens échecs ont été
+revus explicitement et le staging ne conserve aucune livraison problématique. La gate
+exhaustive reste ouverte pour la matrice FR/EN et les canaries hard bounce/complaint.
+Les alertes opérationnelles sont désormais adressées à `support@yodev.fr`, alias dont
+la réception a été vérifiée, au lieu de l'ancienne boîte du sous-domaine Ads.
 
 ### Stripe
 
@@ -115,16 +123,17 @@ environnements et aux preuves de livraison, de corrélation et d’incident rée
 - [ ] Achat Solo live interne, facture/TVA, portail, changement annulé et remboursement
   réel vérifiés sans webhook échoué.
 
-Preuve sandbox complémentaire du 2026-08-17 : le catalogue actif contient un seul
+Preuve sandbox complémentaire du 2026-08-18 : le catalogue actif contient un seul
 produit `prod_V5f47E2LQeHq1p` et trois Prices EUR mensuels 29/89/189 ; un drill réel a
-validé activation Solo, upgrade Studio payé et appliqué, downgrade Solo programmé à
-l'échéance puis annulation du schedule. Le compte inspecté reste cependant un compte
+validé activation Solo, upgrade Studio payé et appliqué, downgrade programmé,
+annulation, impayé initial, événements hors ordre, remboursement partiel et complet.
+Le compte inspecté reste cependant un compte
 test américain non activé (`charges_enabled=false`, `payouts_enabled=false`) et ne
 constitue donc aucune preuve Stripe live française.
 
 ### Google, stockage, OAuth et observabilité
 
-- [ ] Lectures Google Search/PMax/Shopping/conversions et erreurs réelles exercées sur
+- [x] Lectures Google Search/PMax/Shopping/conversions et diagnostics réels exercés sur
   un MCC contrôlé, request IDs conservés.
 - [ ] Chaque famille de mutation activée dans l’ordre prévu avec `validateOnly`, vote,
   envoi unique, relecture, observation et rollback manuel.
@@ -135,17 +144,21 @@ constitue donc aucune preuve Stripe live française.
 - [ ] Scheduler, rétention et réconciliation Stripe ont une preuve de dernière réussite
   et une alerte externe après deux passages manqués.
 
-Le drill runtime du 2026-08-17 a atteint le fournisseur depuis le staging, puis a été
-classé en dead-letter avec un jeton OAuth Google révoqué/expiré. Il prouve le chemin
-d'erreur, pas les lectures métier ; le propriétaire doit reconnecter le MCC avant la
-recette read-only puis toute mutation contrôlée.
+Le drill runtime du 2026-08-17 avait atteint le fournisseur avec un ancien jeton révoqué.
+Le 2026-08-18, le propriétaire a reconnecté le MCC avec succès et la synchronisation
+staging a importé deux comptes accessibles. Les mutations restent désactivées et le
+nouveau drill de promotion refuse de s'exécuter si `FORCE_READ_ONLY=1` et
+`GOOGLE_MUTATIONS_ENABLED=0` ne sont pas tous deux prouvés. Le run
+[32177451921](https://github.com/YoannDrx/yodev-ads/actions/runs/32177451921) a renouvelé
+le refresh token, relu 2 comptes, 6 campagnes Search/PMax, 443 placements PMax,
+2 asset groups, Shopping, 23 actions de conversion et les diagnostics offline. Il a
+conservé 8 request IDs répartis entre les six familles du drill.
 
-L'audit Google Cloud du 2026-08-18 confirme que le projet produit `vigieads` est encore
-publié en mode Test avec un seul utilisateur de test. Le projet OAuth mutualisé voisin
-affiche un branding générique et n'est pas une solution commerciale acceptable. Le
-client Better Auth staging doit donc être créé dans `vigieads`, puis le branding Ads by
-Yodev et la publication/validation des scopes doivent être terminés avant de considérer
-un nouveau refresh token comme durable.
+Le client Better Auth staging, le branding Ads by Yodev et les domaines OAuth Yodev
+sont configurés. Les anciens domaines `vigihat.com`, `vigie-ads.vercel.app` et
+`vigieads.vercel.app` ont été supprimés. Le grant propriétaire est renouvelé ; le drill
+read-only conserve désormais les request IDs par famille avant toute décision de
+publication des scopes ou d'ouverture d'une mutation.
 
 ## Gate 3 — juridique et fiscal
 
@@ -172,9 +185,11 @@ YoDevAds.
 - [ ] Ancienne production conservée en lecture seule pendant la fenêtre approuvée.
 - [ ] Surveillance renforcée pendant 24 heures avec responsables identifiés.
 - [x] Les jobs GitHub Actions `web`, `database`, `cli` et `secrets` ont réellement
-  démarré puis réussi sur le commit `4037913`; la gate runtime distincte a ensuite
-  refusé le staging incomplet :
-  [run 32140448381](https://github.com/YoannDrx/yodev-ads/actions/runs/32140448381).
+  réussi sur `9cad4b1` dans le run
+  [32177451921](https://github.com/YoannDrx/yodev-ads/actions/runs/32177451921) ; la gate
+  de promotion vérifie en plus le runtime
+  déployé, Sentry, Google read-only et la matrice authentifiée avant de pouvoir conclure
+  au succès.
 
 Rollback immédiat si authentification indisponible, fuite inter-tenant, incohérence
 Checkout/webhook, migration incomplète, email critique non soumis ou mutation Google
