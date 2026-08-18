@@ -71,6 +71,17 @@ describe('GoogleAdsGateway v25 contracts', () => {
     expect(error.message).not.toContain('sensitive network detail')
   })
 
+  it('does not misclassify a revoked refresh token as a Google Ads network failure', async () => {
+    getAccessTokenMock.mockRejectedValue({ response: { data: { error: 'invalid_grant', error_description: 'provider detail must stay private' } } })
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    const error = await gateway.listManagedCustomers().catch((failure) => failure)
+    expect(error).toBeInstanceOf(GoogleAdsError)
+    expect(error).toMatchObject({ status: 401, requestId: null, message: expect.stringContaining('Reconnectez') })
+    expect(error.message).not.toContain('provider detail')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('revokes orphaned OAuth grants without putting the refresh token in the URL', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 200 }))
     await expect(revokeGoogleOAuthToken('refresh-token-to-revoke')).resolves.toMatchObject({ ok: true })

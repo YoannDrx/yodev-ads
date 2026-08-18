@@ -798,6 +798,25 @@ export function revokeGoogleOAuthToken(refreshToken: string) {
   })
 }
 
+function googleOAuthRefreshError(error: unknown) {
+  const responseData = error && typeof error === 'object' && 'response' in error
+    ? (error.response as { data?: unknown } | undefined)?.data
+    : undefined
+  const rawCode = responseData && typeof responseData === 'object' && 'error' in responseData
+    ? responseData.error
+    : undefined
+  const code = typeof rawCode === 'string' && ['invalid_grant', 'invalid_client', 'unauthorized_client', 'access_denied'].includes(rawCode)
+    ? rawCode
+    : 'oauth_refresh_unavailable'
+  return new GoogleAdsError(
+    code === 'invalid_grant'
+      ? 'Le jeton Google OAuth est révoqué ou expiré. Reconnectez le compte Google Ads.'
+      : `Le renouvellement Google OAuth a échoué (${code}).`,
+    code === 'oauth_refresh_unavailable' ? 503 : 401,
+    null,
+  )
+}
+
 export class GoogleAdsGateway {
   private readonly managerCustomerId: string
   private readonly oauthClient: OAuth2Client
@@ -820,22 +839,7 @@ export class GoogleAdsGateway {
       await this.accessToken()
       return { valid: true as const }
     } catch (error) {
-      const responseData = error && typeof error === 'object' && 'response' in error
-        ? (error.response as { data?: unknown } | undefined)?.data
-        : undefined
-      const rawCode = responseData && typeof responseData === 'object' && 'error' in responseData
-        ? responseData.error
-        : undefined
-      const code = typeof rawCode === 'string' && ['invalid_grant', 'invalid_client', 'unauthorized_client', 'access_denied'].includes(rawCode)
-        ? rawCode
-        : 'oauth_refresh_unavailable'
-      throw new GoogleAdsError(
-        code === 'invalid_grant'
-          ? 'Le jeton Google OAuth est révoqué ou expiré. Reconnectez le compte Google Ads.'
-          : `Le renouvellement Google OAuth a échoué (${code}).`,
-        code === 'oauth_refresh_unavailable' ? 503 : 401,
-        null,
-      )
+      throw googleOAuthRefreshError(error)
     }
   }
 
@@ -844,6 +848,12 @@ export class GoogleAdsGateway {
     const env = getServerEnv()
     const delays = [250, 1_000, 4_000]
     for (let attempt = 0; ; attempt += 1) {
+      let accessToken: string
+      try {
+        accessToken = await this.accessToken()
+      } catch (error) {
+        throw googleOAuthRefreshError(error)
+      }
       let response: Response
       try {
         response = await fetch(`https://googleads.googleapis.com/${env.GOOGLE_ADS_API_VERSION}${path}`, {
@@ -851,7 +861,7 @@ export class GoogleAdsGateway {
           cache: 'no-store',
           signal: init.signal ?? AbortSignal.timeout(25_000),
           headers: {
-            Authorization: `Bearer ${await this.accessToken()}`,
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
             'developer-token': env.GOOGLE_ADS_DEVELOPER_TOKEN,
             'login-customer-id': this.managerCustomerId,
