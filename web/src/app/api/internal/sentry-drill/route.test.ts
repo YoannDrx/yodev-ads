@@ -28,7 +28,7 @@ beforeEach(() => {
   process.env.RELEASE_TARGET = 'staging'
   process.env.RELEASE_VERIFICATION_TOKEN = token
   process.env.SENTRY_DSN = 'https://public@example.invalid/1'
-  process.env.SENTRY_AUTH_TOKEN = 'sentry-read-token'
+  process.env.SENTRY_EVENT_READ_AUTH_TOKEN = 'sentry-read-token'
   process.env.SENTRY_ORG = 'yodev'
   process.env.SENTRY_PROJECT = 'ads-by-yodev'
   mocks.flush.mockReset().mockResolvedValue(true)

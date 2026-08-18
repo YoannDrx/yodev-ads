@@ -21,7 +21,7 @@ function authorized(request: Request) {
 async function indexedEvent(eventId: string) {
   const organization = process.env.SENTRY_ORG
   const project = process.env.SENTRY_PROJECT
-  const authToken = process.env.SENTRY_AUTH_TOKEN
+  const authToken = process.env.SENTRY_EVENT_READ_AUTH_TOKEN
   if (!organization || !project || !authToken) return null
   const eventUrl = new URL(
     `/api/0/projects/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/events/${eventId}/`,
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   if (process.env.RELEASE_TARGET !== 'staging') {
     return Response.json({ verified: false, code: 'staging_only' }, { status: 409, headers: noStoreHeaders })
   }
-  if (!process.env.SENTRY_DSN || !process.env.SENTRY_AUTH_TOKEN || !process.env.SENTRY_ORG || !process.env.SENTRY_PROJECT) {
+  if (!process.env.SENTRY_DSN || !process.env.SENTRY_EVENT_READ_AUTH_TOKEN || !process.env.SENTRY_ORG || !process.env.SENTRY_PROJECT) {
     return Response.json({ verified: false, code: 'configuration_missing' }, { status: 503, headers: noStoreHeaders })
   }
 

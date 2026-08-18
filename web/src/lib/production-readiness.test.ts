@@ -14,7 +14,7 @@ function validEnvironment(target: 'staging' | 'private_beta' | 'public'): NodeJS
     BETTER_AUTH_SECRET: 'a'.repeat(32), BETTER_AUTH_GOOGLE_CLIENT_ID: 'auth-google-id', BETTER_AUTH_GOOGLE_CLIENT_SECRET: 'auth-google-secret',
     APP_ENCRYPTION_KEY: 'b'.repeat(43), OAUTH_STATE_KEY: 'c'.repeat(32), CRON_SECRET: 'd'.repeat(32), RELEASE_VERIFICATION_TOKEN: 'r'.repeat(32),
     YODEV_MAIL_API_URL: 'https://mail.example.test', YODEV_MAIL_API_KEY: 'ym_secret', YODEV_MAIL_WEBHOOK_SECRET: 'e'.repeat(32), YODEV_MAIL_RECIPIENT_HASH_SECRET: 'f'.repeat(32),
-    SENTRY_DSN: 'https://public@sentry.example.test/1', NEXT_PUBLIC_SENTRY_DSN: 'https://public@sentry.example.test/2', SENTRY_AUTH_TOKEN: 'sentry-auth-token', SENTRY_ORG: 'yodev', SENTRY_PROJECT: 'ads',
+    SENTRY_DSN: 'https://public@sentry.example.test/1', NEXT_PUBLIC_SENTRY_DSN: 'https://public@sentry.example.test/2', SENTRY_AUTH_TOKEN: 'sentry-ci-token', SENTRY_EVENT_READ_AUTH_TOKEN: 'sentry-event-read-token', SENTRY_ORG: 'yodev', SENTRY_PROJECT: 'ads',
     GOOGLE_ADS_DEVELOPER_TOKEN: 'developer', GOOGLE_OAUTH_CLIENT_ID: 'client-id', GOOGLE_OAUTH_CLIENT_SECRET: 'client-secret',
     STRIPE_SECRET_KEY: target === 'staging' ? 'sk_test_secret' : 'sk_live_secret', STRIPE_WEBHOOK_SECRET: 'whsec_secret',
     STRIPE_PRICE_SOLO: 'price_solo', STRIPE_PRICE_STUDIO: 'price_studio', STRIPE_PRICE_AGENCY: 'price_agency', STRIPE_PORTAL_CONFIGURATION_ID: 'bpc_portal', STRIPE_TAX_MODE: 'exempt_293b',
@@ -51,6 +51,7 @@ describe('production configuration audit', () => {
     ['YODEV_MAIL_RECIPIENT_HASH_SECRET'],
     ['NEXT_PUBLIC_SENTRY_DSN'],
     ['SENTRY_AUTH_TOKEN'],
+    ['SENTRY_EVENT_READ_AUTH_TOKEN'],
     ['STRIPE_PORTAL_CONFIGURATION_ID'],
   ])('reports a missing required value for %s', (name) => {
     const env = validEnvironment('staging')

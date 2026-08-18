@@ -48,6 +48,7 @@ export function auditProductionConfiguration(
     'SENTRY_DSN',
     'NEXT_PUBLIC_SENTRY_DSN',
     'SENTRY_AUTH_TOKEN',
+    'SENTRY_EVENT_READ_AUTH_TOKEN',
     'SENTRY_ORG',
     'SENTRY_PROJECT',
     'GOOGLE_ADS_DEVELOPER_TOKEN',

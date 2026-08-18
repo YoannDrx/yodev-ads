@@ -8,7 +8,7 @@ function required(name: string) {
 }
 
 const dsn = required('SENTRY_DSN')
-const authToken = required('SENTRY_AUTH_TOKEN')
+const authToken = required('SENTRY_EVENT_READ_AUTH_TOKEN')
 const organization = required('SENTRY_ORG')
 const project = required('SENTRY_PROJECT')
 const environment = required('SENTRY_DRILL_ENVIRONMENT')
