@@ -316,13 +316,13 @@ Evidence consolidated on 2026-08-17:
 - repository evidence on 2026-08-17: lint, types, data-boundary and transaction verifiers, 682 Vitest tests across 116 files, 6 public Playwright scenarios and the 52-route Next.js production build passed; a fresh PostgreSQL 17 applied migrations through `0041` and passed RLS, tenant constraints/invariants, concurrency and targeted load protocols.
 
 Repository stabilization evidence on 2026-08-18 is separate from the historical
-staging proof: `npm run check` passed with 767 tests and coverage above every configured
+staging proof: `npm run check` passed with 770 tests across 117 files and coverage above every configured
 threshold, the runtime audit and web SBOM passed, 15 Python tests/Ruff/`pip-audit`
 passed, and a fresh PostgreSQL 17 repeated migrations, RLS, constraints, invariants,
 concurrency and load with a 10/10 observed pool peak. A new Stripe sandbox drill again
 proved Solo activation, immediate paid Studio upgrade, end-of-period Solo downgrade
-and schedule cancellation. The six public E2E pass locally; five authenticated tests
-remain intentionally skipped outside the release workflow. The current remote staging
+and schedule cancellation. The six public E2E pass locally; ten authenticated page and
+direct-export API tests remain intentionally skipped outside the release workflow. The current remote staging
 deployment remains in maintenance and is therefore not counted as a fresh open-app
 acceptance run.
 

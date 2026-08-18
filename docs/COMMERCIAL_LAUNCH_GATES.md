@@ -30,14 +30,17 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
   sauvegarde et comptages avant/après. Preuve du 2026-08-17 : branche de restauration
   conservée `backup-pre-0041-20260817` (`br-wandering-firefly-b2brmy7p`), historique
   passé de 35 à 42 migrations et comptages métier inchangés.
-- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 767 Vitest
-  dans 116 fichiers, 52 routes, une couverture de 92,24 % statements / 85,42 % branches /
+- [x] Le candidat de stabilisation du 2026-08-18 passe `npm run check` avec 770 Vitest
+  dans 117 fichiers, 52 routes, une couverture de 92,24 % statements / 85,42 % branches /
   93,29 % fonctions / 94,71 % lignes, 6 E2E publics locaux, 15 pytest, Ruff, les audits
   npm/Python, le SBOM web et toutes les vérifications PostgreSQL. La preuve staging
   authentifiée 5/5 du 2026-08-17 reste historique : le workflow de promotion exige
   désormais cinq nouveaux storage states éphémères et échoue s'ils sont absents.
 - [ ] Matrice owner/admin/strategist/analyst/client testée par UI, Server Actions et
   routes directes en FR et EN, y compris l’isolation inter-workspace.
+- [x] La route directe d'export renvoie 403 aux rôles sans permission et 404 au owner
+  pour l'UUID d'un export appartenant au workspace fixture étranger ; les dix scénarios
+  page/API deviennent obligatoires dans le workflow de promotion.
 - [x] `release:verify` et le workflow manuel `release-readiness.yml` bloquent une
   promotion en maintenance, sans scheduler/notifications, sans Google Sign-In,
   YoDevMail, Sentry, Stripe ou sans matrice Playwright authentifiée complète.
