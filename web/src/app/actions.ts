@@ -152,7 +152,12 @@ import {
 } from '@/lib/platform-incident-management'
 import { scheduleSubprocessorChangeNotice } from '@/lib/subprocessor-change-management'
 import { SUBPROCESSOR_CHANGE_TYPES } from '@/lib/subprocessor-change-model'
-import { retryGlobalDeadLetter, scheduleStripeReconciliation } from '@/lib/system-operations'
+import {
+  cancelOperationalDeadLetter,
+  retryGlobalDeadLetter,
+  reviewOperationalEmailDelivery,
+  scheduleStripeReconciliation,
+} from '@/lib/system-operations'
 import { accessTeamsOAuthSession, completeTeamsOAuthSession } from '@/lib/notification-oauth-management'
 import { openOAuthState } from '@/lib/oauth-state'
 import { hasTeamsOAuthConfiguration, resolveTeamsDestination } from '@/lib/teams-oauth'
@@ -2178,6 +2183,52 @@ export async function retryGlobalDeadLetterJob(formData: FormData) {
       jobId,
     })
     target = toUrl('/operations', 'notice', 'Le job système sera repris par le prochain worker disponible.')
+  } catch (error) {
+    target = toUrl('/operations', 'error', message(error))
+  }
+  revalidatePath('/operations')
+  redirect(target)
+}
+
+const operationalReviewSchema = z.object({
+  reason: z.string().trim().min(10).max(500),
+})
+
+export async function cancelOperationalDeadLetterJob(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireWorkspacePermission('workspace:admin')
+    if (workspace.accessState !== 'internal') throw new Error('Cette action est réservée à l’exploitation Yodev.')
+    const jobId = z.string().uuid().parse(formData.get('jobId'))
+    const { reason } = operationalReviewSchema.parse(Object.fromEntries(formData))
+    await cancelOperationalDeadLetter({
+      operatorWorkspaceId: workspace.id,
+      actorUserId: session.userId,
+      jobId,
+      reason,
+    })
+    target = toUrl('/operations', 'notice', 'Dead-letter annulée avec conservation de la preuve et de l’audit.')
+  } catch (error) {
+    target = toUrl('/operations', 'error', message(error))
+  }
+  revalidatePath('/operations')
+  redirect(target)
+}
+
+export async function reviewOperationalEmailDeliveryAction(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireWorkspacePermission('workspace:admin')
+    if (workspace.accessState !== 'internal') throw new Error('Cette action est réservée à l’exploitation Yodev.')
+    const deliveryId = z.string().uuid().parse(formData.get('deliveryId'))
+    const { reason } = operationalReviewSchema.parse(Object.fromEntries(formData))
+    await reviewOperationalEmailDelivery({
+      operatorWorkspaceId: workspace.id,
+      actorUserId: session.userId,
+      deliveryId,
+      reason,
+    })
+    target = toUrl('/operations', 'notice', 'Livraison email examinée et classée avec audit.')
   } catch (error) {
     target = toUrl('/operations', 'error', message(error))
   }

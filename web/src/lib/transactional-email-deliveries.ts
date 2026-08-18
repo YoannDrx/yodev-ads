@@ -11,6 +11,7 @@ export const TERMINAL_EMAIL_DELIVERY_STATUSES = [
   'suppressed',
   'hard_bounced',
   'complained',
+  'reviewed',
 ] as const
 
 export async function claimTransactionalEmailDelivery(input: {

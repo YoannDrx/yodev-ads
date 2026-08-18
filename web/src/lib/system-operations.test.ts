@@ -8,7 +8,13 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
 
-import { getSystemOperationsSnapshot, retryGlobalDeadLetter, scheduleStripeReconciliation } from './system-operations'
+import {
+  cancelOperationalDeadLetter,
+  getSystemOperationsSnapshot,
+  retryGlobalDeadLetter,
+  reviewOperationalEmailDelivery,
+  scheduleStripeReconciliation,
+} from './system-operations'
 
 function queryMap(input: Record<string, unknown[]> = {}) {
   return new Proxy({}, {
@@ -115,6 +121,51 @@ describe('system operations snapshot', () => {
       workspaceId: '00000000-0000-4000-8000-000000000001',
       actorUserId: 'operator-1',
       action: 'system_job.manual_retry_requested',
+    })
+  })
+
+  it('cancels an obsolete dead-letter without deleting its evidence', async () => {
+    const now = new Date('2026-08-18T16:30:00.000Z')
+    const database = databaseDouble({ statementResults: [[{
+      id: '00000000-0000-4000-8000-000000000010',
+      workspaceId: '00000000-0000-4000-8000-000000000002',
+      type: 'auth.invitation_deliver',
+    }]] })
+    mocks.database = database.db
+    await expect(cancelOperationalDeadLetter({
+      operatorWorkspaceId: '00000000-0000-4000-8000-000000000001',
+      actorUserId: 'operator-1',
+      jobId: '00000000-0000-4000-8000-000000000010',
+      reason: 'Invitation accepted through the replacement delivery.',
+      now,
+    })).resolves.toMatchObject({ type: 'auth.invitation_deliver' })
+    expect(database.capture.sets[0]).toMatchObject({ status: 'cancelled', completedAt: now })
+    expect(database.capture.values[0]).toMatchObject({
+      action: 'job.dead_letter_cancelled',
+      metadata: expect.objectContaining({ reason: 'Invitation accepted through the replacement delivery.' }),
+    })
+  })
+
+  it('classifies a reviewed failed email while preserving provider evidence', async () => {
+    const now = new Date('2026-08-18T16:31:00.000Z')
+    const database = databaseDouble({ statementResults: [[{
+      id: '00000000-0000-4000-8000-000000000020',
+      workspaceId: '00000000-0000-4000-8000-000000000002',
+      category: 'auth_organization_invitation',
+      providerMessageId: null,
+    }]] })
+    mocks.database = database.db
+    await expect(reviewOperationalEmailDelivery({
+      operatorWorkspaceId: '00000000-0000-4000-8000-000000000001',
+      actorUserId: 'operator-1',
+      deliveryId: '00000000-0000-4000-8000-000000000020',
+      reason: 'Replacement invitations were delivered after profile approval.',
+      now,
+    })).resolves.toMatchObject({ category: 'auth_organization_invitation' })
+    expect(database.capture.sets[0]).toMatchObject({ status: 'reviewed', terminalAt: now })
+    expect(database.capture.values[0]).toMatchObject({
+      action: 'email.delivery_reviewed',
+      metadata: expect.objectContaining({ reason: 'Replacement invitations were delivered after profile approval.' }),
     })
   })
 })

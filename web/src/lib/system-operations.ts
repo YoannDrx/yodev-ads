@@ -92,6 +92,82 @@ export async function retryGlobalDeadLetter(input: {
   })
 }
 
+export async function cancelOperationalDeadLetter(input: {
+  operatorWorkspaceId: string
+  actorUserId: string
+  jobId: string
+  reason: string
+  now?: Date
+}) {
+  const now = input.now ?? new Date()
+  return withSystemTransaction(async (db) => {
+    const [job] = await db.update(jobs).set({
+      status: 'cancelled',
+      completedAt: now,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      updatedAt: now,
+    }).where(and(eq(jobs.id, input.jobId), eq(jobs.status, 'dead_letter')))
+      .returning({ id: jobs.id, workspaceId: jobs.workspaceId, type: jobs.type })
+    if (!job) throw new Error('Dead-letter job missing or already reconciled')
+    await db.insert(auditEvents).values({
+      workspaceId: input.operatorWorkspaceId,
+      actorUserId: input.actorUserId,
+      action: 'job.dead_letter_cancelled',
+      entityType: 'job',
+      entityId: job.id,
+      metadata: {
+        type: job.type,
+        jobWorkspaceId: job.workspaceId,
+        reason: input.reason,
+        cancelledAt: now.toISOString(),
+      },
+    })
+    return job
+  })
+}
+
+export async function reviewOperationalEmailDelivery(input: {
+  operatorWorkspaceId: string
+  actorUserId: string
+  deliveryId: string
+  reason: string
+  now?: Date
+}) {
+  const now = input.now ?? new Date()
+  return withSystemTransaction(async (db) => {
+    const [delivery] = await db.update(transactionalEmailDeliveries).set({
+      status: 'reviewed',
+      terminalAt: now,
+      updatedAt: now,
+    }).where(and(
+      eq(transactionalEmailDeliveries.id, input.deliveryId),
+      inArray(transactionalEmailDeliveries.status, ['failed', 'hard_bounced', 'complained', 'ambiguous']),
+    )).returning({
+      id: transactionalEmailDeliveries.id,
+      workspaceId: transactionalEmailDeliveries.workspaceId,
+      category: transactionalEmailDeliveries.category,
+      providerMessageId: transactionalEmailDeliveries.providerMessageId,
+    })
+    if (!delivery) throw new Error('Email delivery missing or already reconciled')
+    await db.insert(auditEvents).values({
+      workspaceId: input.operatorWorkspaceId,
+      actorUserId: input.actorUserId,
+      action: 'email.delivery_reviewed',
+      entityType: 'transactional_email_delivery',
+      entityId: delivery.id,
+      metadata: {
+        category: delivery.category,
+        deliveryWorkspaceId: delivery.workspaceId,
+        providerMessageId: delivery.providerMessageId,
+        reason: input.reason,
+        reviewedAt: now.toISOString(),
+      },
+    })
+    return delivery
+  })
+}
+
 export async function getSystemOperationsSnapshot() {
   return withSystemTransaction(async (db) => {
     const workspaceStates = await db.select({ state: workspaces.accessState, total: count() }).from(workspaces).groupBy(workspaces.accessState)
