@@ -63,6 +63,18 @@ describe('GoogleAdsGateway v25 contracts', () => {
     expect(gateway.collectedRequestIds()).toEqual(['provider-request-1'])
   })
 
+  it('collects request IDs embedded in successful searchStream responses', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify([
+      { results: [], requestId: 'stream-request-1' },
+      { results: [], requestId: 'stream-request-1' },
+    ]), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+
+    await gateway.listManagedCustomers()
+
+    expect(gateway.collectedRequestIds()).toEqual(['stream-request-1'])
+  })
+
   it('classifies a revoked refresh token with a safe reconnect diagnostic', async () => {
     getAccessTokenMock.mockRejectedValue({ response: { data: { error: 'invalid_grant', error_description: 'provider detail must stay private' } } })
     const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })

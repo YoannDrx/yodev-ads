@@ -712,6 +712,19 @@ type ApiResult<T> = {
   requestId: string | null
 }
 
+function responseBodyRequestIds(value: unknown) {
+  const responses = Array.isArray(value) ? value : [value]
+  return [...new Set(responses.flatMap((response) => {
+    if (!response || typeof response !== 'object') return []
+    const candidate = 'requestId' in response
+      ? response.requestId
+      : 'request_id' in response
+        ? response.request_id
+        : null
+    return typeof candidate === 'string' && candidate.length > 0 ? [candidate] : []
+  }))]
+}
+
 type GoogleAdsFailurePayload = {
   error?: {
     message?: string
@@ -886,8 +899,7 @@ export class GoogleAdsGateway {
           null,
         )
       }
-      const requestId = response.headers.get('request-id')
-      if (requestId) this.observedRequestIds.push(requestId)
+      const headerRequestId = response.headers.get('request-id')
       const responseText = await response.text()
       let data: (T & GoogleAdsFailurePayload) | null = null
       try {
@@ -897,6 +909,14 @@ export class GoogleAdsGateway {
         // Google and intermediary gateways may return an empty or HTML body.
         // Never leak that body to users or logs because it can contain proxy details.
       }
+
+      // Successful searchStream calls carry their request ID in each response
+      // message rather than in the HTTP header. Keep both REST transports
+      // observable so release drills retain provider evidence.
+      const bodyRequestIds = responseBodyRequestIds(data)
+      const requestIds = [...new Set([headerRequestId, ...bodyRequestIds].filter((value): value is string => Boolean(value)))]
+      this.observedRequestIds.push(...requestIds)
+      const requestId = headerRequestId ?? bodyRequestIds[0] ?? null
 
       if (retryable && (response.status === 429 || response.status >= 500) && attempt < delays.length) {
         await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
