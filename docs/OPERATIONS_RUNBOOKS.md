@@ -363,6 +363,21 @@ Stripe, email or mutation-health issue remained.
 
 This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email delivery, Sentry delivery, direct role action/API coverage, fresh Google reads and controlled mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.
 
+Provider-account audit on 2026-08-18 added three constraints to this evidence. The
+shared Google Cloud project `app-oauth-481214` has generic, unverified `App OAuth`
+branding and must not receive the new Ads by Yodev staging client. The dedicated
+`vigieads` project is the correct boundary and already carries the Ads by Yodev
+product, but its OAuth audience is still in Test with one test user. Its Better Auth
+staging client form was prepared with the exact staging origin and callback but not
+submitted pending operator confirmation; publishing and the resulting branding/scope
+review remain separate commercial gates. An `aws login` attempt explicitly approved
+for a new `yodev-staging` profile authenticated as the account root instead of a
+non-root operator; the newly created local profile was immediately removed and no AWS
+resource was changed. Finally, `https://api.mail.yodev.fr/api/health` returned HTTP 200
+with `database=ok` on version `c0d4a80`, and the production project exposes the expected
+Postmark/AWS-OIDC configuration names. The hardened YoDevMail candidate remains the
+green draft PR `YoannDrx/yodev-mail#19` and is not yet the version served in production.
+
 ## Runtime release-readiness probe
 
 Vercel variables marked Sensitive cannot be exported as release evidence. Configure a

@@ -140,6 +140,13 @@ classé en dead-letter avec un jeton OAuth Google révoqué/expiré. Il prouve l
 d'erreur, pas les lectures métier ; le propriétaire doit reconnecter le MCC avant la
 recette read-only puis toute mutation contrôlée.
 
+L'audit Google Cloud du 2026-08-18 confirme que le projet produit `vigieads` est encore
+publié en mode Test avec un seul utilisateur de test. Le projet OAuth mutualisé voisin
+affiche un branding générique et n'est pas une solution commerciale acceptable. Le
+client Better Auth staging doit donc être créé dans `vigieads`, puis le branding Ads by
+Yodev et la publication/validation des scopes doivent être terminés avant de considérer
+un nouveau refresh token comme durable.
+
 ## Gate 3 — juridique et fiscal
 
 - [ ] Entité contractante, adresse, SIREN/SIRET, TVA et contacts vérifiés.

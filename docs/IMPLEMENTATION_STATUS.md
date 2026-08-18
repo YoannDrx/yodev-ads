@@ -76,4 +76,14 @@ The remaining commercial blockers are not safely auto-certifiable from the repos
 6. reconnecter l'accès opérateur Neon à YoDevMail, sauvegarder et migrer sa base, puis provisionner sa clé et son webhook YoDevAds avec une identité AWS à privilèges minimaux ;
 7. rehearse provider outage, incident and deletion-tombstone procedures, then collect the mandatory 30-day private-beta evidence.
 
+The 2026-08-18 provider-console audit refined items 1, 2, 5 and 6. The dedicated
+Google project `vigieads` is still in OAuth Test mode; the shared `app-oauth-481214`
+project has generic unverified branding and is rejected for this product. The approved
+AWS CLI login returned the account root, so the temporary local profile was removed
+without changing AWS and a non-root Identity Center permission set remains mandatory.
+YoDevMail production is healthy on version `c0d4a80` with Postmark and Vercel OIDC
+configuration present, but the hardened green candidate in draft PR
+`YoannDrx/yodev-mail#19` is not deployed. Sentry has no authenticated organization or
+project evidence yet.
+
 Checkout and public opening must remain disabled until every item above has objective evidence.
