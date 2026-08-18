@@ -302,6 +302,13 @@
       "when": 1787068957704,
       "tag": "0042_fix_auth_invitation_membership_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1787070986395,
+      "tag": "0043_add_email_delivery_reviewed",
+      "breakpoints": true
     }
   ]
 }
