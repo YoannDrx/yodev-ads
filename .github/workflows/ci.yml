@@ -180,6 +180,8 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Verify deployed release configuration
+        run: npm run verify:deployed-production-config
       - name: Materialize short-lived authenticated browser states
         run: node scripts/materialize-playwright-storage-states.mjs
       - name: Verify code, release configuration and authenticated staging
