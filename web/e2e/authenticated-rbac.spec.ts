@@ -107,7 +107,10 @@ test.describe.serial('authenticated Server Action authorization matrix', () => {
         actionRequestPromise,
         page.getByRole('button', { name: /Apply language|Appliquer la langue/ }).click(),
       ])
-      await expect(page).toHaveURL(/\/settings\?notice=/)
+      const actionResponse = await actionRequest.response()
+      expect(actionResponse, 'The owner Server Action must return a response').toBeTruthy()
+      expect(actionResponse!.status()).toBe(200)
+      expect(actionResponse!.headers()['x-action-redirect']).toMatch(/^\/settings\?notice=/)
       const body = actionRequest.postDataBuffer()
       expect(body, 'The captured Server Action must have a replayable request body').toBeTruthy()
       actionUrl = actionRequest.url()
