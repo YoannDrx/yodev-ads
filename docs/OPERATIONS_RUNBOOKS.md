@@ -320,7 +320,7 @@ Evidence consolidated on 2026-08-17:
 - repository evidence on 2026-08-17: lint, types, data-boundary and transaction verifiers, 682 Vitest tests across 116 files, 6 public Playwright scenarios and the 52-route Next.js production build passed; a fresh PostgreSQL 17 applied migrations through `0041` and passed RLS, tenant constraints/invariants, concurrency and targeted load protocols.
 
 Repository stabilization evidence on 2026-08-18 is separate from the historical
-staging proof: `npm run check` passed with 788 tests across 119 files and coverage above every configured
+staging proof: `npm run check` passed with 792 tests across 120 files and coverage above every configured
 threshold, the runtime audit and web SBOM passed, 15 Python tests/Ruff/`pip-audit`
 passed, and a fresh PostgreSQL 17 repeated migrations, RLS, constraints, invariants,
 concurrency and load with a 10/10 observed pool peak. A new Stripe sandbox drill again
@@ -331,13 +331,23 @@ deployment remains in maintenance and is therefore not counted as a fresh open-a
 acceptance run.
 
 The current candidate is deployed separately as
-`dpl_EUxHCcAEQQaXKbHsZD6ux4zusjRG` (`2bb079c`). Its health endpoint returns HTTP 503
-with `status=maintenance`, a connected database and scheduler/retention marked overdue.
-The authenticated runtime probe returned sixteen issue codes: two Better Auth Google,
-four YoDevMail, five Sentry, scheduler, notifications, maintenance and explicit missing
-recent scheduler/retention evidence. Manual GitHub Actions run `32136356134` passed the
-web, PostgreSQL, Python/CLI and secrets jobs on commit `2bb079c`, then failed exactly on
-this negative runtime proof before accessing the missing authenticated browser states.
+`dpl_BPt3T8s62HyZE2UtXqiG5GQuDSzZ` (`9b217d2`). Its health endpoint returns HTTP 503
+with `status=maintenance` and a connected database, while scheduler and retention both
+have recent successful non-overdue runs. The scheduler was first triggered under
+maintenance through Vercel, then repeated automatically on its five-minute cadence. Its
+controlled run requested three jobs, created one, processed four and produced zero dead
+letters; database evidence shows only retention and secret-rotation attempts, with zero
+new Google or notification jobs. Thirteen historical provider jobs were explicitly
+cancelled without deletion, retaining their attempts/errors plus an auditable cancellation
+reason; the live queue then contained zero due jobs and zero dead letters.
+
+The authenticated runtime probe now also fails closed on unresolved durable work, failed
+Stripe webhooks, billing reconciliations, problematic email deliveries and ambiguous or
+failed Google mutations. Manual GitHub Actions run `32139256436` passed the web,
+PostgreSQL, Python/CLI and secrets jobs on commit `9b217d2`, then returned exactly fourteen
+remaining external/configuration issues: two Better Auth Google, four YoDevMail, five
+Sentry, Google reads, notifications and maintenance. No queue, scheduler, retention,
+Stripe, email or mutation-health issue remained.
 
 This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email delivery, Sentry delivery, direct role action/API coverage, fresh Google reads and controlled mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.
 
