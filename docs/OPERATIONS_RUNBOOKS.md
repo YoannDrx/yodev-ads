@@ -327,12 +327,13 @@ deployment remains in maintenance and is therefore not counted as a fresh open-a
 acceptance run.
 
 The current candidate is deployed separately as
-`dpl_74R6cLh6PqqNMutwb9i4EvUo8S5v` (`a656208`). Its health endpoint returns HTTP 503
+`dpl_7uSwwtHgut2hPBn8HqmKftSSxpb7` (`946e25d`). Its health endpoint returns HTTP 503
 with `status=maintenance`, a connected database and scheduler/retention marked overdue.
-The authenticated runtime probe returned eleven issue codes: two Better Auth Google,
-four YoDevMail, two Sentry, scheduler, notifications and maintenance. GitHub Actions
-run `32133586620` passed the web, PostgreSQL, Python/CLI and secrets jobs on the same
-commit.
+The authenticated runtime probe returned fourteen issue codes: two Better Auth Google,
+four YoDevMail, five Sentry, scheduler, notifications and maintenance. Manual GitHub
+Actions run `32135480450` passed the web, PostgreSQL, Python/CLI and secrets jobs on
+commit `a7b1b92`, then failed exactly on this negative runtime proof before accessing
+the missing authenticated browser states.
 
 This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email delivery, Sentry delivery, direct role action/API coverage, fresh Google reads and controlled mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.
 

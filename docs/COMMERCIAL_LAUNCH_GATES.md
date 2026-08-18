@@ -47,7 +47,9 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
 - [x] Le contrôle de configuration est exécuté dans le runtime Vercel ciblé via
   `/api/internal/release-readiness`, protégé par un jeton dédié, non mis en cache et
   limité aux codes de diagnostic. Les secrets fournisseurs sensibles ne sont pas
-  dupliqués dans GitHub Actions.
+  dupliqués dans GitHub Actions. Le déclenchement staging du 2026-08-18 a bien échoué
+  en 503 sur les 14 prérequis runtime encore ouverts, après réussite des quatre jobs
+  standards : [run 32135480450](https://github.com/YoannDrx/yodev-ads/actions/runs/32135480450).
 - [x] Zéro appel ou dépendance directe Postmark/Resend dans YoDevAds ; les anciennes
   variables ont également été retirées du staging Vercel.
 - [x] Webhooks Stripe et YoDevMail idempotents, rejouables et corrélés à leur registre
@@ -140,8 +142,9 @@ YoDevAds.
 - [ ] Ancienne production conservée en lecture seule pendant la fenêtre approuvée.
 - [ ] Surveillance renforcée pendant 24 heures avec responsables identifiés.
 - [x] Les jobs GitHub Actions `web`, `database`, `cli` et `secrets` ont réellement
-  démarré puis réussi sur le commit `a656208` :
-  [run 32133586620](https://github.com/YoannDrx/yodev-ads/actions/runs/32133586620).
+  démarré puis réussi sur le commit `a7b1b92`; la gate runtime distincte a ensuite
+  refusé le staging incomplet :
+  [run 32135480450](https://github.com/YoannDrx/yodev-ads/actions/runs/32135480450).
 
 Rollback immédiat si authentification indisponible, fuite inter-tenant, incohérence
 Checkout/webhook, migration incomplète, email critique non soumis ou mutation Google
