@@ -40,8 +40,10 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
 - [ ] Matrice owner/admin/strategist/analyst/client testée par UI, Server Actions et
   routes directes en FR et EN, y compris l’isolation inter-workspace.
 - [x] La route directe d'export renvoie 403 aux rôles sans permission et 404 au owner
-  pour l'UUID d'un export appartenant au workspace fixture étranger ; les dix scénarios
-  page/API deviennent obligatoires dans le workflow de promotion.
+  pour l'UUID d'un export appartenant au workspace fixture étranger. Un onzième scénario
+  capture la vraie requête `updateWorkspaceLocale`, exclut explicitement le cookie owner,
+  puis la rejoue avec chaque session pour prouver que la Server Action réautorise owner/
+  admin et refuse strategist/analyst/client. Tous deviennent obligatoires en promotion.
 - [x] `release:verify` et le workflow manuel `release-readiness.yml` bloquent une
   promotion en maintenance, sans scheduler/notifications, sans Google Sign-In,
   YoDevMail, Sentry, Stripe ou sans matrice Playwright authentifiée complète.

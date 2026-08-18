@@ -325,8 +325,11 @@ threshold, the runtime audit and web SBOM passed, 15 Python tests/Ruff/`pip-audi
 passed, and a fresh PostgreSQL 17 repeated migrations, RLS, constraints, invariants,
 concurrency and load with a 10/10 observed pool peak. A new Stripe sandbox drill again
 proved Solo activation, immediate paid Studio upgrade, end-of-period Solo downgrade
-and schedule cancellation. The six public E2E pass locally; ten authenticated page and
-direct-export API tests remain intentionally skipped outside the release workflow. The current remote staging
+and schedule cancellation. The six public E2E pass locally; eleven authenticated page,
+direct Server Action and direct-export API tests remain intentionally skipped outside the
+release workflow. The Server Action test captures the runtime action request, copies only
+the Next.js protocol headers and body (never the owner cookie), and replays it with every
+role session. The current remote staging
 deployment remains in maintenance and is therefore not counted as a fresh open-app
 acceptance run.
 
