@@ -47,6 +47,9 @@ export function auditProductionConfiguration(
     'YODEV_MAIL_RECIPIENT_HASH_SECRET',
     'SENTRY_DSN',
     'NEXT_PUBLIC_SENTRY_DSN',
+    'SENTRY_AUTH_TOKEN',
+    'SENTRY_ORG',
+    'SENTRY_PROJECT',
     'GOOGLE_ADS_DEVELOPER_TOKEN',
     'GOOGLE_OAUTH_CLIENT_ID',
     'GOOGLE_OAUTH_CLIENT_SECRET',
@@ -56,6 +59,7 @@ export function auditProductionConfiguration(
     'STRIPE_PRICE_STUDIO',
     'STRIPE_PRICE_AGENCY',
     'STRIPE_PORTAL_CONFIGURATION_ID',
+    'STRIPE_TAX_MODE',
   ])
 
   for (const [name, minimum] of [['BETTER_AUTH_SECRET', 32], ['OAUTH_STATE_KEY', 32], ['CRON_SECRET', 32], ['RELEASE_VERIFICATION_TOKEN', 32], ['YODEV_MAIL_WEBHOOK_SECRET', 32], ['YODEV_MAIL_RECIPIENT_HASH_SECRET', 32]] as const) {
@@ -100,6 +104,12 @@ export function auditProductionConfiguration(
   if (configured(env, 'STRIPE_PORTAL_CONFIGURATION_ID') && !env.STRIPE_PORTAL_CONFIGURATION_ID!.startsWith('bpc_')) {
     issues.push({ code: 'stripe.invalid_portal_configuration', message: 'Stripe portal configuration must start with bpc_' })
   }
+  if (configured(env, 'STRIPE_TAX_MODE') && !['exempt_293b', 'stripe_tax'].includes(env.STRIPE_TAX_MODE!)) {
+    issues.push({ code: 'stripe.invalid_tax_mode', message: 'STRIPE_TAX_MODE must be exempt_293b or stripe_tax' })
+  }
+  if (env.STRIPE_TAX_MODE === 'stripe_tax' && env.STRIPE_TAX_CONFIGURATION_VALIDATED !== '1') {
+    issues.push({ code: 'stripe.tax_not_validated', message: 'Stripe Tax requires an explicitly validated registration and configuration' })
+  }
 
   if (env.PUBLIC_API_ENABLED !== '0') {
     issues.push({ code: 'flags.public_api', message: 'PUBLIC_API_ENABLED must remain 0 for the initial commercial release' })
@@ -112,10 +122,12 @@ export function auditProductionConfiguration(
   if (env.MAINTENANCE_MODE !== '0') {
     issues.push({ code: 'flags.maintenance', message: 'MAINTENANCE_MODE must be 0 before release promotion' })
   }
-  if (target === 'public') {
-    if (env.PUBLIC_BETA_ENABLED !== '1') issues.push({ code: 'flags.public_beta_closed', message: 'PUBLIC_BETA_ENABLED must be 1 for public launch' })
-    if (env.STRIPE_CHECKOUT_ENABLED !== '1') issues.push({ code: 'flags.checkout_closed', message: 'STRIPE_CHECKOUT_ENABLED must be 1 for public launch' })
+  if (target !== 'staging') {
+    if (env.STRIPE_CHECKOUT_ENABLED !== '1') issues.push({ code: 'flags.checkout_closed', message: 'STRIPE_CHECKOUT_ENABLED must be 1 for commercial beta or public launch' })
     if (env.LEGAL_DOCUMENTS_APPROVED !== '1') issues.push({ code: 'legal.not_approved', message: 'LEGAL_DOCUMENTS_APPROVED must be 1' })
+  }
+  if (target === 'public' && env.PUBLIC_BETA_ENABLED !== '1') {
+    issues.push({ code: 'flags.public_beta_closed', message: 'PUBLIC_BETA_ENABLED must be 1 for public launch' })
   }
 
   if (env.GOOGLE_MUTATIONS_ENABLED === '1' && env.FORCE_READ_ONLY !== '0') {

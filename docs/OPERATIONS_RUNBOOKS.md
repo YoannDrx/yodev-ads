@@ -316,7 +316,7 @@ Evidence consolidated on 2026-08-17:
 - repository evidence on 2026-08-17: lint, types, data-boundary and transaction verifiers, 682 Vitest tests across 116 files, 6 public Playwright scenarios and the 52-route Next.js production build passed; a fresh PostgreSQL 17 applied migrations through `0041` and passed RLS, tenant constraints/invariants, concurrency and targeted load protocols.
 
 Repository stabilization evidence on 2026-08-18 is separate from the historical
-staging proof: `npm run check` passed with 775 tests across 118 files and coverage above every configured
+staging proof: `npm run check` passed with 778 tests across 118 files and coverage above every configured
 threshold, the runtime audit and web SBOM passed, 15 Python tests/Ruff/`pip-audit`
 passed, and a fresh PostgreSQL 17 repeated migrations, RLS, constraints, invariants,
 concurrency and load with a 10/10 observed pool peak. A new Stripe sandbox drill again
@@ -325,6 +325,14 @@ and schedule cancellation. The six public E2E pass locally; ten authenticated pa
 direct-export API tests remain intentionally skipped outside the release workflow. The current remote staging
 deployment remains in maintenance and is therefore not counted as a fresh open-app
 acceptance run.
+
+The current candidate is deployed separately as
+`dpl_74R6cLh6PqqNMutwb9i4EvUo8S5v` (`a656208`). Its health endpoint returns HTTP 503
+with `status=maintenance`, a connected database and scheduler/retention marked overdue.
+The authenticated runtime probe returned eleven issue codes: two Better Auth Google,
+four YoDevMail, two Sentry, scheduler, notifications and maintenance. GitHub Actions
+run `32133586620` passed the web, PostgreSQL, Python/CLI and secrets jobs on the same
+commit.
 
 This is functional staging evidence, not yet the formal RPO/RTO or 30-day SLO record. Transactional email delivery, Sentry delivery, direct role action/API coverage, fresh Google reads and controlled mutations, provider outage drills, deletion-tombstone restoration and professional legal/tax approval remain open rehearsal gates.
 
