@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/db/auth-database', () => ({ getAuthDatabase: () => ({}) }))
+const mocks = vi.hoisted(() => ({ execute: vi.fn() }))
+
+vi.mock('@/db/auth-database', () => ({ getAuthDatabase: () => ({ execute: mocks.execute }) }))
 vi.mock('@/lib/auth-emails', () => ({ sendAuthEmail: vi.fn() }))
 
 const managedEnvironment = [
@@ -12,7 +14,18 @@ const managedEnvironment = [
 describe('Better Auth server configuration', () => {
   afterEach(() => {
     for (const key of managedEnvironment) delete process.env[key]
+    mocks.execute.mockReset()
     vi.resetModules()
+  })
+
+  it('resolves membership limits for invited users before membership creation', async () => {
+    mocks.execute.mockResolvedValue({ rows: [{ limit: 10_000 }] })
+    const { workspaceMemberLimit } = await import('./auth')
+    await expect(workspaceMemberLimit({ id: 'invited-user' }, { id: 'organization-1' })).resolves.toBe(10_000)
+    expect(mocks.execute).toHaveBeenCalledOnce()
+
+    mocks.execute.mockResolvedValueOnce({ rows: [] })
+    await expect(workspaceMemberLimit({ id: 'unrelated-user' }, { id: 'organization-1' })).resolves.toBe(1)
   })
 
   it('fails closed when the authentication secret is absent or too short', async () => {
