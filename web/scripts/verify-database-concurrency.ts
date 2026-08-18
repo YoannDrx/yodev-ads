@@ -1,10 +1,12 @@
 import 'dotenv/config'
 
+import { createHmac } from 'node:crypto'
 import type Stripe from 'stripe'
 import { and, eq, inArray } from 'drizzle-orm'
 import {
   approvalRequests,
   approvalVotes,
+  auditEvents,
   clients,
   deletionRequests,
   jobAttempts,
@@ -19,6 +21,11 @@ import { entitlementContext } from '../src/lib/entitlements'
 import { voteAndClaimGoogleApproval } from '../src/lib/google-approval-management'
 import { claimNextJob, completeJob, enqueueJob } from '../src/lib/jobs'
 import { processStripeWebhookEvent } from '../src/lib/stripe-webhook-service'
+import {
+  claimWorkspaceDeletionCancellation,
+  finalizeWorkspaceDeletionCancellation,
+} from '../src/lib/workspace-lifecycle-management'
+import { purgeWorkspace } from '../src/lib/workspace-deletion'
 import { createWorkspaceNotificationChannel } from '../src/lib/workspace-security-resources'
 
 const workspaceId = '40000000-0000-4000-8000-000000000010'
@@ -28,10 +35,13 @@ const approvalId = '40000000-0000-4000-8000-000000000001'
 const purgeWorkspaceId = '50000000-0000-4000-8000-000000000001'
 const purgeClientId = '50000000-0000-4000-8000-000000000002'
 const purgeRequestId = '50000000-0000-4000-8000-000000000003'
+const cancellationWorkspaceId = '50000000-0000-4000-8000-000000000004'
+const cancellationRequestId = '50000000-0000-4000-8000-000000000005'
 const jobKey = 'integration:concurrency:job-lease'
 const stripeEventId = 'evt_integration_concurrency'
 const channelLabels = ['Integration quota A', 'Integration quota B']
-const tombstoneHash = 'integration-concurrency-tombstone'
+const deletionTombstoneKey = 'integration-concurrency-deletion-tombstone-key'
+const tombstoneHash = createHmac('sha256', deletionTombstoneKey).update(purgeWorkspaceId).digest('hex')
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
@@ -45,6 +55,7 @@ async function cleanup() {
     if (oldJobs.length > 0) await db.delete(jobs).where(inArray(jobs.id, oldJobs.map((job) => job.id)))
     await db.delete(stripeWebhookEvents).where(eq(stripeWebhookEvents.eventId, stripeEventId))
     await db.delete(workspaces).where(eq(workspaces.id, workspaceId))
+    await db.delete(workspaces).where(eq(workspaces.id, cancellationWorkspaceId))
     await db.delete(workspaces).where(eq(workspaces.id, purgeWorkspaceId))
   })
   await withPurgeTransaction((db) => db.delete(workspaceDeletionTombstones).where(
@@ -177,7 +188,66 @@ async function verifyStripeIdempotence() {
   invariant(events.length === 1 && events[0].status === 'processed', 'Stripe idempotency row is inconsistent')
 }
 
-async function verifyPurgeClaimAndCascade() {
+async function verifyCancellationWinsBeforeDeadline() {
+  const now = new Date()
+  const purgeAt = new Date(now.getTime() + 24 * 60 * 60_000)
+  await withSystemTransaction(async (db) => {
+    await db.insert(workspaces).values({
+      id: cancellationWorkspaceId,
+      ownerUserId: 'integration-cancellation-owner',
+      name: 'Integration cancellation',
+      slug: 'integration-cancellation',
+      plan: 'solo',
+      accessState: 'deletion_pending',
+      deletionRequestedAt: now,
+      purgeAt,
+    })
+    await db.insert(deletionRequests).values({
+      id: cancellationRequestId,
+      workspaceId: cancellationWorkspaceId,
+      requestedBy: 'integration-cancellation-owner',
+      previousAccessState: 'active',
+      status: 'pending',
+      requestedAt: now,
+      purgeAt,
+    })
+  })
+
+  const [cancellation, purge] = await Promise.allSettled([
+    claimWorkspaceDeletionCancellation({
+      workspaceId: cancellationWorkspaceId,
+      actorUserId: 'integration-cancellation-owner',
+      now,
+    }),
+    purgeWorkspace(cancellationWorkspaceId, now),
+  ])
+  invariant(cancellation.status === 'fulfilled', 'Cancellation did not win before the purge deadline')
+  invariant(purge.status === 'fulfilled' && purge.value === 'not_due', 'Purge did not remain blocked before its deadline')
+
+  await finalizeWorkspaceDeletionCancellation({
+    workspaceId: cancellationWorkspaceId,
+    actorUserId: 'integration-cancellation-owner',
+    requestId: cancellation.value.id,
+    previousAccessState: 'active',
+    now,
+  })
+  const evidence = await withSystemTransaction(async (db) => ({
+    workspace: await db.query.workspaces.findFirst({ where: eq(workspaces.id, cancellationWorkspaceId) }),
+    request: await db.query.deletionRequests.findFirst({ where: eq(deletionRequests.id, cancellationRequestId) }),
+    audit: await db.query.auditEvents.findFirst({
+      where: and(
+        eq(auditEvents.workspaceId, cancellationWorkspaceId),
+        eq(auditEvents.action, 'workspace.deletion_cancelled'),
+      ),
+    }),
+  }))
+  invariant(evidence.workspace?.accessState === 'active', 'Cancellation did not restore workspace access')
+  invariant(!evidence.workspace.deletionRequestedAt && !evidence.workspace.purgeAt, 'Cancellation left a deletion deadline on the workspace')
+  invariant(evidence.request?.status === 'cancelled' && evidence.request.cancelledAt, 'Cancellation request was not finalized')
+  invariant(evidence.audit, 'Cancellation restoration was not audited')
+}
+
+async function verifyPurgeWinsAfterDeadline() {
   const now = new Date()
   await withSystemTransaction(async (db) => {
     await db.insert(workspaces).values({
@@ -206,20 +276,19 @@ async function verifyPurgeClaimAndCascade() {
       purgeAt: new Date(now.getTime() - 60_000),
     })
   })
-  const claim = () => withPurgeTransaction((db) => db.update(deletionRequests).set({ status: 'purging' }).where(and(
-    eq(deletionRequests.workspaceId, purgeWorkspaceId),
-    eq(deletionRequests.status, 'pending'),
-  )).returning({ id: deletionRequests.id }))
-  const claims = await Promise.all([claim(), claim()])
-  invariant(claims.filter((rows) => rows.length === 1).length === 1, 'Deletion request was not claimed exactly once')
-  await withPurgeTransaction(async (db) => {
-    await db.insert(workspaceDeletionTombstones).values({
-      workspaceHash: tombstoneHash,
-      deletionRequestedAt: now,
-      retainUntil: new Date(now.getTime() + 365 * 24 * 60 * 60_000),
-    })
-    await db.delete(workspaces).where(eq(workspaces.id, purgeWorkspaceId))
-  })
+  const [cancellation, purge] = await Promise.allSettled([
+    claimWorkspaceDeletionCancellation({
+      workspaceId: purgeWorkspaceId,
+      actorUserId: 'integration-owner',
+      now,
+    }),
+    purgeWorkspace(purgeWorkspaceId, now),
+  ])
+  invariant(
+    cancellation.status === 'rejected' && /ne peut plus être annulée/.test(String(cancellation.reason)),
+    'Cancellation did not fail closed after the purge deadline',
+  )
+  invariant(purge.status === 'fulfilled' && purge.value === 'purged', 'Due workspace purge did not win the lifecycle race')
   const evidence = await withSystemTransaction(async (db) => ({
     workspace: await db.query.workspaces.findFirst({ where: eq(workspaces.id, purgeWorkspaceId) }),
     client: await db.query.clients.findFirst({ where: eq(clients.id, purgeClientId) }),
@@ -229,7 +298,7 @@ async function verifyPurgeClaimAndCascade() {
     where: eq(workspaceDeletionTombstones.workspaceHash, tombstoneHash),
   }))
   invariant(!evidence.workspace && !evidence.client && !evidence.request, 'Workspace purge did not cascade operational data')
-  invariant(tombstone, 'Workspace purge did not preserve its deletion tombstone')
+  invariant(tombstone?.externalCleanupStatus === 'completed', 'Workspace purge did not preserve its completed deletion tombstone')
 }
 
 async function main() {
@@ -237,6 +306,7 @@ async function main() {
   // deterministic test key so a Vercel Sensitive placeholder cannot be
   // mistaken for a usable production encryption key after `vercel env pull`.
   process.env.APP_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64url')
+  process.env.DELETION_TOMBSTONE_KEY = deletionTombstoneKey
   await cleanup()
   try {
     await seedConcurrencyFixture()
@@ -244,10 +314,18 @@ async function main() {
     await verifyApprovalClaim()
     await verifyJobLease()
     await verifyStripeIdempotence()
-    await verifyPurgeClaimAndCascade()
+    await verifyCancellationWinsBeforeDeadline()
+    await verifyPurgeWinsAfterDeadline()
     console.log(JSON.stringify({
       ok: true,
-      verified: ['concurrent_quota', 'approval_claim', 'job_lease', 'stripe_idempotence', 'purge_claim_and_cascade'],
+      verified: [
+        'concurrent_quota',
+        'approval_claim',
+        'job_lease',
+        'stripe_idempotence',
+        'deletion_cancellation_before_deadline',
+        'purge_after_deadline_and_cascade',
+      ],
     }))
   } finally {
     await cleanup()

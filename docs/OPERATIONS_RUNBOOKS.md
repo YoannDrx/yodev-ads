@@ -330,6 +330,14 @@ direct-export API tests remain intentionally skipped outside the release workflo
 deployment remains in maintenance and is therefore not counted as a fresh open-app
 acceptance run.
 
+The deletion concurrency verifier now calls the production lifecycle functions rather
+than reproducing their SQL. On a fresh disposable PostgreSQL 17, a cancellation before
+the deadline won against purge, restored active access, cleared both deletion timestamps
+and wrote its audit. A second fixture past the deadline rejected cancellation, purged the
+workspace and child client, and retained the expected completed-cleanup tombstone. The
+container and all fixtures were removed after the run. This is not a substitute for the
+still-pending authenticated FR/EN staging UI and backup-restore drill.
+
 The current candidate is deployed separately as
 `dpl_FEqPCv2Pzy4N7K7tosWuWpFu8PLw` (`4037913`). Its health endpoint returns HTTP 503
 with `status=maintenance` and a connected database, while scheduler and retention both

@@ -69,7 +69,14 @@ heure, motif, ancienne valeur, nouvelle valeur et résultat du smoke test.
 - [x] Slack, Teams, uploads Blob et domaines personnalisés disposent de switches serveur
   indépendants, explicitement fixés à `0` et imposés par la gate tant que leurs drills
   fournisseurs ne sont pas certifiés.
-- [ ] Purge FR/EN, annulation concurrente, tombstone et restauration exercés.
+- [x] La confirmation de suppression est strictement `SUPPRIMER` en FR et `DELETE`
+  en EN. Sur une PostgreSQL 17 jetable migrée depuis zéro, les fonctions de production
+  prouvent qu'avant l'échéance l'annulation gagne contre la purge, restaure l'accès et
+  produit son audit ; après l'échéance la purge gagne, cascade les données et conserve
+  un tombstone de nettoyage terminé.
+- [ ] Le parcours UI complet doit encore être rejoué avec deux workspaces staging
+  temporaires FR/EN, puis la restauration de sauvegarde et une panne de nettoyage
+  fournisseur doivent être consignées sans toucher aux workspaces réels.
 - [ ] Aucun P0/P1 ouvert ; chaque P2 restant possède un contournement accepté.
 
 ## Gate 2 — fournisseurs
