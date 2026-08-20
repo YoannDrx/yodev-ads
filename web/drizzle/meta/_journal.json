@@ -246,6 +246,69 @@
       "when": 1786621384844,
       "tag": "0034_auth_workspace_entitlements",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786901834381,
+      "tag": "0035_commercial_readiness",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1786902394763,
+      "tag": "0036_billing_legal_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1786902951211,
+      "tag": "0037_massive_thor_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1786904767615,
+      "tag": "0038_rainy_gertrude_yorkes",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1786980764474,
+      "tag": "0039_aberrant_oracle",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1786981142839,
+      "tag": "0040_fat_ezekiel_stane",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1786982029132,
+      "tag": "0041_bored_stardust",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1787068957704,
+      "tag": "0042_fix_auth_invitation_membership_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1787070986395,
+      "tag": "0043_add_email_delivery_reviewed",
+      "breakpoints": true
     }
   ]
 }

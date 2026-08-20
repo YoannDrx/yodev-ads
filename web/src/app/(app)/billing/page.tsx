@@ -1,28 +1,33 @@
 import { Check, CreditCard, Download, ExternalLink, ShieldCheck } from 'lucide-react'
-import { cancelSubscriptionAtPeriodEnd, cancelWorkspaceDeletion, createCheckoutSession, openBillingPortal, reactivateSubscription, requestWorkspaceDeletion, requestWorkspaceExport } from '@/app/actions'
+import { cancelScheduledSubscriptionPlanChange, cancelSubscriptionAtPeriodEnd, cancelWorkspaceDeletion, changeSubscriptionPlan, createCheckoutSession, openBillingPortal, reactivateSubscription, requestWorkspaceDeletion, requestWorkspaceExport } from '@/app/actions'
 import { FlashMessage } from '@/components/flash-message'
 import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { BillingActivationStatus } from '@/components/billing-activation-status'
 import { hasStripeConfiguration, planCatalog, planFeaturesForLocale, subscriptionIsActive } from '@/lib/billing'
 import { listWorkspaceClients, listWorkspaceExports } from '@/lib/data'
-import { requireWorkspace } from '@/lib/workspace'
+import { featureEnabled } from '@/lib/feature-flags'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ notice?: string; error?: string }>
+  searchParams: Promise<{ notice?: string; error?: string; checkout?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin, role } = await requireWorkspace()
+  const { workspace, isAdmin, role } = await requireWorkspacePermission('billing:manage')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const clients = (await listWorkspaceClients(workspace.id)).filter((client) => !client.isManager)
   const exports = role === 'owner' ? await listWorkspaceExports(workspace.id) : []
   const stripeReady = hasStripeConfiguration()
+  const checkoutReady = stripeReady && featureEnabled('stripeCheckout') && process.env.LEGAL_DOCUMENTS_APPROVED === '1' && !workspace.billingReconciliationRequired
   const active = subscriptionIsActive(workspace.subscriptionStatus)
   const currentPlan = planCatalog[workspace.plan as keyof typeof planCatalog] ?? planCatalog.solo
+  const requestedPlan = workspace.requestedPlan ? planCatalog[workspace.requestedPlan as keyof typeof planCatalog] : null
+  const requestedUpgrade = Boolean(requestedPlan && requestedPlan.accountLimit > currentPlan.accountLimit)
   return (
     <>
       <PageHeading
@@ -40,12 +45,29 @@ export default async function BillingPage({
         }
       />
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
+      <BillingActivationStatus processing={query.checkout === 'processing'} active={active} locale={locale} />
       <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border bg-white p-4 text-sm">
         <span className={`size-2 rounded-full ${active ? 'bg-emerald-500' : 'bg-amber-500'}`} />
         <strong>{english ? 'Current plan' : 'Offre actuelle'} : {currentPlan.name}</strong>
         <span className="text-muted-foreground">· {clients.length} {english ? `connected account${clients.length === 1 ? '' : 's'}` : 'compte(s) connecté(s)'}</span>
         <span className="text-muted-foreground">· {english ? 'status' : 'statut'} {workspace.subscriptionStatus}</span>
       </div>
+      {workspace.requestedPlan && <div className="mb-6 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span>
+            {english ? 'Requested plan' : 'Offre demandée'} : <strong>{requestedPlan?.name ?? workspace.requestedPlan}</strong>
+            {requestedUpgrade
+              ? ` · ${english ? 'pending prorated invoice payment confirmation' : 'en attente de confirmation du paiement proratisé'}`
+              : workspace.requestedPlanEffectiveAt
+                ? ` · ${english ? 'effective on' : 'effective le'} ${workspace.requestedPlanEffectiveAt.toLocaleDateString(english ? 'en-GB' : 'fr-FR')}`
+                : ''}.
+          </span>
+          {!requestedUpgrade && isAdmin && <form action={cancelScheduledSubscriptionPlanChange}><Button type="submit" size="sm" variant="outline">{english ? 'Cancel scheduled change' : 'Annuler le changement'}</Button></form>}
+        </div>
+      </div>}
+      {workspace.billingReconciliationRequired && <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+        {english ? 'Billing is being reconciled. A new Checkout is temporarily blocked; current rights are not increased.' : 'La facturation est en cours de réconciliation. Un nouveau Checkout est temporairement bloqué et les droits actuels ne sont pas augmentés.'}
+      </div>}
       <section className="grid gap-5 lg:grid-cols-3">
         {Object.entries(planCatalog).map(([id, plan]) => {
           const current = workspace.plan === id
@@ -74,26 +96,35 @@ export default async function BillingPage({
                     </li>
                   ))}
                 </ul>
-                <form action={active ? openBillingPortal : createCheckoutSession} className="mt-7">
+                <form action={active && !current ? changeSubscriptionPlan : active ? openBillingPortal : createCheckoutSession} className="mt-7">
                   <input type="hidden" name="plan" value={id} />
                   {!active && <input type="hidden" name="checkoutAttemptId" value={crypto.randomUUID()} />}
                   {!active && <div className="mb-4 space-y-3 text-sm">
                     <Input name="billingEmail" type="email" defaultValue={workspace.billingEmail ?? ''} placeholder={english ? 'Billing email' : 'Email de facturation'} required />
+                    <Input name="billingLegalName" defaultValue={workspace.billingLegalName ?? workspace.name} placeholder={english ? 'Legal company name' : 'Raison sociale'} minLength={2} maxLength={180} required />
                     <div className="grid grid-cols-[1fr_90px] gap-2">
-                      <select name="customerType" aria-label={english ? 'Customer type' : 'Type de client'} className="h-10 rounded-lg border bg-white px-3 text-sm" required><option value="business">{english ? 'Business' : 'Professionnel'}</option><option value="individual">{english ? 'Individual' : 'Particulier'}</option></select>
+                      <div className="flex h-10 items-center rounded-lg border bg-slate-50 px-3 text-sm">{english ? 'Business' : 'Professionnel'}</div>
                       <Input name="countryCode" aria-label={english ? 'Country' : 'Pays'} defaultValue={workspace.countryCode} maxLength={2} pattern="[A-Za-z]{2}" required />
                     </div>
                     <label className="flex items-start gap-2 text-xs leading-5"><input name="acceptLegal" type="checkbox" required className="mt-1" /><span>{english ? 'I accept the ' : 'J’accepte les '}<a className="underline" href="/terms" target="_blank">{english ? 'Terms' : 'CGV'}</a>{english ? ' and the ' : ' et la '}<a className="underline" href="/privacy" target="_blank">{english ? 'Privacy Policy' : 'politique de confidentialité'}</a>.</span></label>
-                    <label className="flex items-start gap-2 text-xs leading-5"><input name="startImmediately" type="checkbox" required className="mt-1" /><span>{english ? 'I request immediate performance of the service before the withdrawal period ends and acknowledge the consequences described in the Terms.' : 'Je demande l’exécution immédiate du service avant la fin du délai de rétractation et reconnais les conséquences décrites dans les CGV.'}</span></label>
+                    <label className="flex items-start gap-2 text-xs leading-5"><input name="startImmediately" type="checkbox" required className="mt-1" /><span>{english ? 'I request immediate activation of the professional service after payment confirmation.' : 'Je demande l’activation immédiate du service professionnel après confirmation du paiement.'}</span></label>
                   </div>}
                   <Button
                     type="submit"
                     className="w-full"
                     variant={current ? 'outline' : 'default'}
-                    disabled={!isAdmin || !stripeReady}
+                    disabled={!isAdmin || (active ? !stripeReady || Boolean(workspace.requestedPlan) : !checkoutReady)}
                   >
                     <CreditCard className="mr-2 size-4" />
-                    {stripeReady ? (active ? english ? 'Manage or change with Stripe' : 'Gérer ou changer via Stripe' : `${english ? 'Choose' : 'Choisir'} ${plan.name}`) : english ? 'Connect Stripe' : 'Stripe à connecter'}
+                    {active && current
+                      ? english ? 'Manage billing' : 'Gérer la facturation'
+                      : active && stripeReady
+                        ? plan.monthlyPrice > currentPlan.monthlyPrice
+                          ? english ? `Upgrade to ${plan.name}` : `Passer à ${plan.name}`
+                          : english ? `Schedule ${plan.name}` : `Programmer ${plan.name}`
+                      : checkoutReady
+                        ? `${english ? 'Choose' : 'Choisir'} ${plan.name}`
+                        : english ? 'Private beta — Checkout closed' : 'Bêta privée — Checkout fermé'}
                   </Button>
                 </form>
               </CardContent>

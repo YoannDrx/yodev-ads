@@ -165,6 +165,10 @@ export function retryWorkspaceDeadLetterJob(input: ActorContext & { jobId: strin
       .update(jobs)
       .set({
         status: 'queued',
+        payload: sql`coalesce(${jobs.payload}, '{}'::jsonb) || jsonb_build_object(
+          'manualRetryGeneration',
+          coalesce((${jobs.payload}->>'manualRetryGeneration')::int, 0) + 1
+        )`,
         availableAt: now,
         maximumAttempts: sql`${jobs.attemptCount} + 5`,
         leaseOwner: null,
@@ -174,7 +178,7 @@ export function retryWorkspaceDeadLetterJob(input: ActorContext & { jobId: strin
         updatedAt: now,
       })
       .where(and(eq(jobs.id, input.jobId), eq(jobs.workspaceId, input.workspaceId), eq(jobs.status, 'dead_letter')))
-      .returning({ id: jobs.id, type: jobs.type })
+      .returning({ id: jobs.id, type: jobs.type, payload: jobs.payload })
     if (!job) throw new Error('Job en dead-letter introuvable.')
     await db.insert(auditEvents).values({
       workspaceId: input.workspaceId,
@@ -182,7 +186,12 @@ export function retryWorkspaceDeadLetterJob(input: ActorContext & { jobId: strin
       action: 'job.manual_retry_requested',
       entityType: 'job',
       entityId: job.id,
-      metadata: { type: job.type },
+      metadata: {
+        type: job.type,
+        manualRetryGeneration: job.payload && typeof job.payload === 'object' && 'manualRetryGeneration' in job.payload
+          ? job.payload.manualRetryGeneration
+          : null,
+      },
     })
     return job
   })

@@ -1,0 +1,58 @@
+name: Release readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_target:
+        description: Configuration and GitHub environment to verify
+        type: choice
+        required: true
+        options:
+          - staging
+          - private_beta
+          - public
+      base_url:
+        description: Exact HTTPS deployment URL to exercise
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-readiness-${{ inputs.release_target }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.release_target }}
+    defaults:
+      run:
+        working-directory: web
+    env:
+      RELEASE_TARGET: ${{ inputs.release_target }}
+      PLAYWRIGHT_BASE_URL: ${{ inputs.base_url }}
+      RELEASE_VERIFICATION_BASE_URL: ${{ inputs.base_url }}
+      RELEASE_VERIFICATION_TOKEN: ${{ secrets.RELEASE_VERIFICATION_TOKEN }}
+      PLAYWRIGHT_OWNER_STORAGE_STATE_BASE64: ${{ secrets.PLAYWRIGHT_OWNER_STORAGE_STATE_BASE64 }}
+      PLAYWRIGHT_ADMIN_STORAGE_STATE_BASE64: ${{ secrets.PLAYWRIGHT_ADMIN_STORAGE_STATE_BASE64 }}
+      PLAYWRIGHT_STRATEGIST_STORAGE_STATE_BASE64: ${{ secrets.PLAYWRIGHT_STRATEGIST_STORAGE_STATE_BASE64 }}
+      PLAYWRIGHT_ANALYST_STORAGE_STATE_BASE64: ${{ secrets.PLAYWRIGHT_ANALYST_STORAGE_STATE_BASE64 }}
+      PLAYWRIGHT_CLIENT_STORAGE_STATE_BASE64: ${{ secrets.PLAYWRIGHT_CLIENT_STORAGE_STATE_BASE64 }}
+      PLAYWRIGHT_FOREIGN_EXPORT_ID: ${{ secrets.PLAYWRIGHT_FOREIGN_EXPORT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Verify deployed release configuration
+        run: npm run verify:deployed-production-config
+      - name: Materialize short-lived authenticated browser states
+        run: node scripts/materialize-playwright-storage-states.mjs
+      - name: Verify code, release configuration and authenticated staging
+        run: npm run release:verify

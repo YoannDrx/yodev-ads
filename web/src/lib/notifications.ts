@@ -113,8 +113,9 @@ async function deliverChannel(
       subject: payload.eventType === 'digest' ? payload.title : `[${payload.severity === 'critical' ? copy.criticalSubject : copy.alert}] ${payload.title}`,
       html: alertEmailHtml(payload),
       idempotencyKey: payload.eventKey,
-      tag: payload.eventType === 'digest' ? 'weekly_digest' : `alert_${payload.severity}`,
-      resendIdempotency: false,
+      category: payload.eventType === 'digest' ? 'weekly_digest' : `alert_${payload.severity}`,
+      workspaceId: channel.workspaceId,
+      referenceId: payload.eventKey,
     })
     return result.providerMessageId ?? undefined
   }

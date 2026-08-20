@@ -5,9 +5,9 @@ describe('workspace permissions', () => {
   it.each([
     ['owner', true, true, true],
     ['admin', false, true, true],
-    ['operator', false, false, false],
+    ['strategist', false, false, false],
     ['analyst', false, false, false],
-    ['viewer', false, false, false],
+    ['client', false, false, false],
   ] as const)('enforces sensitive boundaries for %s', (role, billing, approve, memberAdmin) => {
     const permissions = permissionsForRole(role)
     expect(permissions.has('billing:manage')).toBe(billing)
@@ -15,27 +15,28 @@ describe('workspace permissions', () => {
     expect(permissions.has('members:manage')).toBe(memberAdmin)
   })
 
-  it('maps unknown Better Auth roles to viewer and ownership independently', () => {
-    expect(authRoleToWorkspaceRole('operator', false)).toBe('operator')
-    expect(authRoleToWorkspaceRole('member', false)).toBe('viewer')
+  it('maps legacy roles, fails unknown roles closed to client and resolves ownership independently', () => {
+    expect(authRoleToWorkspaceRole('operator', false)).toBe('strategist')
+    expect(authRoleToWorkspaceRole('viewer', false)).toBe('client')
+    expect(authRoleToWorkspaceRole('member', false)).toBe('client')
     expect(authRoleToWorkspaceRole(null, true)).toBe('owner')
   })
 
   it('allows analysts to discuss tasks without operating them', () => {
     expect(permissionsForRole('analyst').has('tasks:comment')).toBe(true)
     expect(permissionsForRole('analyst').has('tasks:manage')).toBe(false)
-    expect(permissionsForRole('operator').has('tasks:manage')).toBe(true)
-    expect(permissionsForRole('viewer').has('tasks:comment')).toBe(false)
+    expect(permissionsForRole('strategist').has('tasks:manage')).toBe(true)
+    expect(permissionsForRole('client').has('tasks:comment')).toBe(false)
   })
 
-  it('allows members to read support while preserving viewer read-only access', () => {
-    expect(permissionsForRole('viewer').has('support:read')).toBe(true)
-    expect(permissionsForRole('viewer').has('support:contact')).toBe(false)
+  it('allows every workspace role to contact support within its visibility scope', () => {
+    expect(permissionsForRole('client').has('support:read')).toBe(true)
+    expect(permissionsForRole('client').has('support:contact')).toBe(true)
     expect(permissionsForRole('analyst').has('support:contact')).toBe(true)
-    expect(permissionsForRole('operator').has('support:contact')).toBe(true)
+    expect(permissionsForRole('strategist').has('support:contact')).toBe(true)
   })
 
-  it.each(['admin', 'operator', 'analyst', 'viewer'] as WorkspaceRole[])('reserves workspace deletion for owner, not %s', (role) => {
+  it.each(['admin', 'strategist', 'analyst', 'client'] as WorkspaceRole[])('reserves workspace deletion for owner, not %s', (role) => {
     expect(() => requirePermission(role, 'workspace:delete')).toThrowError(/Permission required/)
   })
 })

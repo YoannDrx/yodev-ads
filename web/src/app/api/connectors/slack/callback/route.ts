@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { requireCapability } from '@/lib/entitlements'
+import { requireFeature } from '@/lib/feature-flags'
 import { oauthCallbackUrl, openOAuthState } from '@/lib/oauth-state'
 import { exchangeSlackAuthorizationCode } from '@/lib/slack-oauth'
 import { assertSafeWebhookUrl } from '@/lib/webhook-security'
@@ -12,6 +13,8 @@ const COOKIE_NAME = 'yodev_ads_slack_oauth'
 export async function GET(request: Request) {
   const url = new URL(request.url)
   try {
+    requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
+    requireFeature('slackConnector', 'Le connecteur Slack est temporairement désactivé.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'notifications.webhook')
     const code = url.searchParams.get('code')

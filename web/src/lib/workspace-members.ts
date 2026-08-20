@@ -20,11 +20,13 @@ import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
 
 export type ManageableWorkspaceRole = Exclude<WorkspaceRole, 'owner'>
 
-export const manageableWorkspaceRoles = ['admin', 'operator', 'analyst', 'viewer'] as const satisfies readonly ManageableWorkspaceRole[]
+export const manageableWorkspaceRoles = ['admin', 'strategist', 'analyst', 'client'] as const satisfies readonly ManageableWorkspaceRole[]
 
 export function workspaceRoleFromAuth(role: string): ManageableWorkspaceRole {
   const value = role.replace(/^org:/, '')
-  return manageableWorkspaceRoles.includes(value as ManageableWorkspaceRole) ? value as ManageableWorkspaceRole : 'viewer'
+  if (value === 'operator') return 'strategist'
+  if (value === 'viewer') return 'client'
+  return manageableWorkspaceRoles.includes(value as ManageableWorkspaceRole) ? value as ManageableWorkspaceRole : 'client'
 }
 
 export async function workspaceMemberRoster(organizationId: string, ownerUserId: string) {

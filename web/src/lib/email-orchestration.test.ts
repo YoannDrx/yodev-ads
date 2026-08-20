@@ -4,17 +4,15 @@ import { databaseDouble } from '../../test/fluent-db'
 const mocks = vi.hoisted(() => ({
   databases: [] as unknown[],
   transaction: vi.fn(async (callback: (db: unknown) => unknown) => callback(mocks.databases.shift())),
-  resendSend: vi.fn(),
-  yodevMailSend: vi.fn(),
+  emailSend: vi.fn(),
   decryptSecret: vi.fn((value: string) => value),
   verifiedAuthUserEmail: vi.fn(),
 }))
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
 vi.mock('@/lib/crypto', () => ({ decryptSecret: mocks.decryptSecret }))
-vi.mock('resend', () => ({ Resend: class { emails = { send: mocks.resendSend } } }))
+vi.mock('@/lib/transactional-email', () => ({ sendTransactionalEmail: mocks.emailSend }))
 vi.mock('@/lib/auth-identities', () => ({ verifiedAuthUserEmail: mocks.verifiedAuthUserEmail }))
-vi.mock('@/lib/yodev-mail-client', () => ({ sendOperationsAlertWithYodevMail: mocks.yodevMailSend }))
 
 import { deliverLifecycleEmail } from './lifecycle-emails'
 import { deliverOperationsAlert } from './operations-alerts'
@@ -71,13 +69,11 @@ describe('scheduled report delivery', () => {
     mocks.databases = []
     vi.clearAllMocks()
     mocks.decryptSecret.mockImplementation((value: string) => value)
-    mocks.resendSend.mockResolvedValue({ data: { id: 'email-1' }, error: null })
-    mocks.yodevMailSend.mockResolvedValue({ delivered: true, providerMessageId: 'yodev-message-1', status: 'queued' })
-    process.env.RESEND_API_KEY = 're_test'
+    mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
   })
 
   afterEach(() => {
-    for (const key of ['RESEND_API_KEY', 'NEXT_PUBLIC_APP_URL', 'OPERATIONS_ALERT_EMAIL', 'SUPPORT_EMAIL']) delete process.env[key]
+    for (const key of ['NEXT_PUBLIC_APP_URL', 'OPERATIONS_ALERT_EMAIL', 'SUPPORT_EMAIL']) delete process.env[key]
   })
 
   it('leases, refreshes, sends and audits a localized report using its verified custom domain', async () => {
@@ -87,9 +83,10 @@ describe('scheduled report delivery', () => {
     mocks.databases.push(context.database.db, refresh.db, success.db)
     await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ delivered: true, recipientCount: 1, providerMessageId: 'email-1' })
     expect(refresh.capture.sets[0]).toMatchObject({ editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: 7 })
-    expect(mocks.resendSend).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({
       to: ['client@example.test'], html: expect.stringContaining('https://reports.acme.test/r/report-token'),
-    }), { idempotencyKey: `report-schedule:${entityId}:2026-08-10` })
+      idempotencyKey: `report-schedule:${entityId}:2026-08-10`, category: 'scheduled_report', workspaceId,
+    }))
     expect(success.capture.sets[0]).toMatchObject({ lastRunKey: '2026-08-10', lastError: null, deliveryLeaseUntil: null })
   })
 
@@ -99,7 +96,7 @@ describe('scheduled report delivery', () => {
       mocks.databases.push(context.database.db)
       await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ skipped: true, reason })
     }
-    expect(mocks.resendSend).not.toHaveBeenCalled()
+    expect(mocks.emailSend).not.toHaveBeenCalled()
   })
 
   it('rejects missing, unauthorized, recipient-less and concurrently leased schedules', async () => {
@@ -123,7 +120,7 @@ describe('scheduled report delivery', () => {
     const context = scheduledContext()
     const refresh = databaseDouble()
     const failed = databaseDouble()
-    mocks.resendSend.mockResolvedValue({ data: null, error: { message: 'provider down' } })
+    mocks.emailSend.mockRejectedValue(new Error('provider down'))
     mocks.databases.push(context.database.db, refresh.db, failed.db)
     await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('provider down')
     expect(failed.capture.sets[0]).toMatchObject({ lastError: 'provider down', deliveryLeaseUntil: null })
@@ -134,12 +131,11 @@ describe('task notification delivery', () => {
   beforeEach(() => {
     mocks.databases = []
     vi.clearAllMocks()
-    mocks.resendSend.mockResolvedValue({ data: { id: 'email-1' }, error: null })
+    mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
     mocks.decryptSecret.mockImplementation((value: string) => value)
-    process.env.RESEND_API_KEY = 're_test'
   })
 
-  afterEach(() => { delete process.env.RESEND_API_KEY })
+  afterEach(() => undefined)
 
   function mentionDatabase(preferenceValue: unknown = preference, workspaceValue: unknown = workspace) {
     return databaseDouble({ query: queryMap({
@@ -152,7 +148,7 @@ describe('task notification delivery', () => {
     const success = databaseDouble()
     mocks.databases.push(mentionDatabase().db, success.db)
     await expect(deliverTaskMention(comment.id, preference.id)).resolves.toEqual({ delivered: true, providerMessageId: 'email-1' })
-    expect(mocks.resendSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'yoann@example.test' }), expect.objectContaining({ idempotencyKey: `task-mention:${comment.id}:${preference.id}` }))
+    expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'yoann@example.test', idempotencyKey: `task-mention:${comment.id}:${preference.id}`, workspaceId }))
     expect(success.capture.values[0]).toMatchObject({ action: 'task.mention_delivered' })
   })
 
@@ -164,7 +160,7 @@ describe('task notification delivery', () => {
   })
 
   it('records a mention delivery error on the encrypted recipient preference', async () => {
-    mocks.resendSend.mockResolvedValue({ data: null, error: { message: 'mail down' } })
+    mocks.emailSend.mockRejectedValue(new Error('mail down'))
     const failed = databaseDouble()
     mocks.databases.push(mentionDatabase().db, failed.db)
     await expect(deliverTaskMention(comment.id, preference.id)).rejects.toThrow('mail down')
@@ -203,20 +199,19 @@ describe('lifecycle and operations emails', () => {
   beforeEach(() => {
     mocks.databases = []
     vi.clearAllMocks()
-    mocks.resendSend.mockResolvedValue({ data: { id: 'email-1' }, error: null })
+    mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
     mocks.verifiedAuthUserEmail.mockResolvedValue('owner@example.test')
-    process.env.RESEND_API_KEY = 're_test'
     process.env.OPERATIONS_ALERT_EMAIL = 'ops@example.test'
   })
 
   afterEach(() => {
-    for (const key of ['RESEND_API_KEY', 'OPERATIONS_ALERT_EMAIL', 'SUPPORT_EMAIL', 'OPERATIONS_EMAIL_PROVIDER']) delete process.env[key]
+    for (const key of ['OPERATIONS_ALERT_EMAIL', 'SUPPORT_EMAIL']) delete process.env[key]
   })
 
   it('delivers a billing lifecycle email and persists immutable audit evidence', async () => {
     mocks.databases.push(databaseDouble({ query: queryMap({ workspaces: { first: workspace } }) }).db, databaseDouble().db)
     await expect(deliverLifecycleEmail({ workspaceId, kind: 'payment_failed', referenceKey: 'invoice-1' })).resolves.toEqual({ delivered: true, providerMessageId: 'email-1' })
-    expect(mocks.resendSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'billing@example.test', html: expect.stringContaining('/billing') }), expect.objectContaining({ idempotencyKey: `lifecycle:${workspaceId}:payment_failed:invoice-1` }))
+    expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'billing@example.test', html: expect.stringContaining('/billing'), idempotencyKey: `lifecycle:${workspaceId}:payment_failed:invoice-1`, workspaceId }))
   })
 
   it('falls back to a verified Better Auth owner address and rejects deleted or recipient-less workspaces', async () => {
@@ -234,25 +229,23 @@ describe('lifecycle and operations emails', () => {
 
   it('validates operations recipients and sends idempotent redacted alerts', async () => {
     await expect(deliverOperationsAlert({ kind: 'job_dead_letter', sourceId: 'job-1', title: 'Job', description: 'Failure' })).resolves.toEqual({ delivered: true, providerMessageId: 'email-1' })
-    expect(mocks.resendSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'ops@example.test' }), { idempotencyKey: 'operations-alert:job_dead_letter:job-1' })
+    expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'ops@example.test', idempotencyKey: 'operations-alert:job_dead_letter:job-1', category: 'operations_job_dead_letter' }))
     delete process.env.OPERATIONS_ALERT_EMAIL
     delete process.env.SUPPORT_EMAIL
     await expect(deliverOperationsAlert({ kind: 'job_dead_letter', sourceId: 'job-2', title: 'Job', description: 'Failure' })).rejects.toThrow('absents')
   })
 
   it('fails retryably when email transport configuration or provider response is invalid', async () => {
-    delete process.env.RESEND_API_KEY
-    await expect(deliverOperationsAlert({ kind: 'mutation_ambiguous', sourceId: 'approval-1', title: 'Mutation', description: 'Failure' })).rejects.toThrow('RESEND_API_KEY absent')
-    process.env.RESEND_API_KEY = 're_test'
-    mocks.resendSend.mockResolvedValue({ data: null, error: { message: 'provider unavailable' } })
+    mocks.emailSend.mockRejectedValueOnce(new Error('YODEV_MAIL_API_KEY absent'))
+    await expect(deliverOperationsAlert({ kind: 'mutation_ambiguous', sourceId: 'approval-1', title: 'Mutation', description: 'Failure' })).rejects.toThrow('YODEV_MAIL_API_KEY absent')
+    mocks.emailSend.mockRejectedValueOnce(new Error('provider unavailable'))
     await expect(deliverOperationsAlert({ kind: 'mutation_ambiguous', sourceId: 'approval-1', title: 'Mutation', description: 'Failure' })).rejects.toThrow('provider unavailable')
   })
 
-  it('uses the explicit Mail by Yodev switch without requiring Resend', async () => {
-    delete process.env.RESEND_API_KEY
-    process.env.OPERATIONS_EMAIL_PROVIDER = 'yodev_mail'
-    await expect(deliverOperationsAlert({ kind: 'job_dead_letter', sourceId: 'job-yodev', title: 'Job', description: 'Failure' })).resolves.toMatchObject({ providerMessageId: 'yodev-message-1' })
-    expect(mocks.yodevMailSend).toHaveBeenCalledWith(expect.objectContaining({ kind: 'job_dead_letter', sourceId: 'job-yodev', recipient: 'ops@example.test' }))
-    expect(mocks.resendSend).not.toHaveBeenCalled()
+  it('uses YoDevMail as the single operations transport', async () => {
+    await expect(deliverOperationsAlert({ kind: 'job_dead_letter', sourceId: 'job-yodev', title: 'Job', description: 'Failure' })).resolves.toMatchObject({ providerMessageId: 'email-1' })
+    expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'ops@example.test', idempotencyKey: 'operations-alert:job_dead_letter:job-yodev', category: 'operations_job_dead_letter',
+    }))
   })
 })

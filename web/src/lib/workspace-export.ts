@@ -82,6 +82,7 @@ async function collectWorkspaceExport(workspaceId: string) {
         timezone: true,
         countryCode: true,
         billingEmail: true,
+        billingLegalName: true,
         notificationEmail: true,
         maximumDailyBudgetMicros: true,
         maximumMonthlySpendMicros: true,

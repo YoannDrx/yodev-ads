@@ -6,11 +6,14 @@ import { oauthCallbackUrl, sealOAuthState } from '@/lib/oauth-state'
 import { consumeRateLimit } from '@/lib/rate-limit'
 import { hasSlackOAuthConfiguration, slackAuthorizationUrl } from '@/lib/slack-oauth'
 import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireFeature } from '@/lib/feature-flags'
 
 const COOKIE_NAME = 'yodev_ads_slack_oauth'
 
 export async function GET(request: Request) {
   try {
+    requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
+    requireFeature('slackConnector', 'Le connecteur Slack est temporairement désactivé.')
     if (!hasSlackOAuthConfiguration()) throw new Error('La configuration OAuth Slack est incomplète.')
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'notifications.webhook')

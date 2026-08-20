@@ -74,9 +74,9 @@ describe('Better Auth workspace identity and trial orchestration', () => {
 
   it('returns server-derived role and entitlements from Better Auth membership', async () => {
     const existing = workspace({ ownerUserId: 'owner-2' })
-    mocks.databases.push(contextDatabase({ workspace: existing, membership: { role: 'operator' } }).db)
+    mocks.databases.push(contextDatabase({ workspace: existing, membership: { role: 'strategist' } }).db)
     await expect(requireWorkspace()).resolves.toMatchObject({
-      workspace: existing, role: 'operator', isAdmin: false,
+      workspace: existing, role: 'strategist', isAdmin: false,
       entitlements: { state: 'active', plan: 'studio' },
     })
   })
@@ -86,7 +86,7 @@ describe('Better Auth workspace identity and trial orchestration', () => {
       workspace: workspace({ ownerUserId: 'owner-2', plan: 'unknown', accessState: 'unknown' }),
       membership: { role: 'custom' },
     }).db)
-    await expect(requireWorkspace()).resolves.toMatchObject({ role: 'viewer', entitlements: { state: 'suspended', plan: 'trial' } })
+    await expect(requireWorkspace()).resolves.toMatchObject({ role: 'client', entitlements: { state: 'suspended', plan: 'trial' } })
   })
 
   it('suspends an expired trial with a compare-and-set transition', async () => {
@@ -140,7 +140,7 @@ describe('Better Auth workspace identity and trial orchestration', () => {
   it('enforces lifecycle and permission guards after identity resolution', async () => {
     mocks.databases.push(contextDatabase({ workspace: workspace(), membership: { role: 'owner' } }).db)
     await expect(requireAdminWorkspace()).resolves.toMatchObject({ role: 'owner' })
-    mocks.databases.push(contextDatabase({ workspace: workspace({ ownerUserId: 'owner' }), membership: { role: 'viewer' } }).db)
+    mocks.databases.push(contextDatabase({ workspace: workspace({ ownerUserId: 'owner' }), membership: { role: 'client' } }).db)
     await expect(requireWorkspacePermission('billing:manage')).rejects.toThrow('Permission required')
     mocks.databases.push(contextDatabase({ workspace: workspace({ accessState: 'grace' }), membership: { role: 'owner' } }).db)
     await expect(requireWorkspacePermission('reports:manage')).rejects.toThrow('access state')

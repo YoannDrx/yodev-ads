@@ -20,6 +20,22 @@ describe('maintenance routing', () => {
     }
   })
 
+  it('keeps the authenticated runtime readiness probe reachable during maintenance', () => {
+    process.env.MAINTENANCE_MODE = '1'
+
+    const response = proxy(new NextRequest('https://ads.yodev.fr/api/internal/release-readiness'))
+    expect(response.status).toBe(200)
+    expect(response.headers.get('x-middleware-next')).toBe('1')
+  })
+
+  it('lets the authenticated scheduler route collect operational evidence during maintenance', () => {
+    process.env.MAINTENANCE_MODE = '1'
+
+    const response = proxy(new NextRequest('https://ads.yodev.fr/api/cron/scheduler'))
+    expect(response.status).toBe(200)
+    expect(response.headers.get('x-middleware-next')).toBe('1')
+  })
+
   it('continues to fail closed for unrelated writes', async () => {
     process.env.MAINTENANCE_MODE = '1'
 

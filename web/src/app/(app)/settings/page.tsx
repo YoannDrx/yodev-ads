@@ -34,10 +34,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { getMyTaskNotificationPreferences, getWorkspaceConnection, listApiKeys, listNotificationChannels, listWorkspaceClients, listWorkspaceDeadLetters, listWorkspaceDomains, listWorkspaceSafetyPolicies } from '@/lib/data'
 import { hasGoogleConfiguration } from '@/lib/env'
+import { featureEnabled, privateApiWorkspaceAllowed } from '@/lib/feature-flags'
 import { formatCustomerId } from '@/lib/ids'
 import { hasSlackOAuthConfiguration } from '@/lib/slack-oauth'
 import { hasTeamsOAuthConfiguration } from '@/lib/teams-oauth'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 import { workspaceMemberRoster } from '@/lib/workspace-members'
 import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
 
@@ -47,16 +48,18 @@ export default async function SettingsPage({
   searchParams: Promise<{ notice?: string; error?: string; reveal?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin, entitlements, session } = await requireWorkspace()
+  const { workspace, isAdmin, entitlements, session } = await requireWorkspacePermission('workspace:admin')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
-  const canUseCustomDomain = entitlements.capabilities.has('custom_domain')
+  const canUseCustomDomain = entitlements.capabilities.has('custom_domain') && featureEnabled('customDomains')
   const canUseBranding = entitlements.capabilities.has('reports.white_label')
   const canCollaborate = entitlements.capabilities.has('collaboration')
+  const canUsePrivateApi = privateApiWorkspaceAllowed(workspace.id, workspace.accessState)
+  const notificationsEnabled = featureEnabled('notifications')
   const [connection, keys, channels, safetyPolicies, clients, deadLetters, domains, taskPreferences, memberRoster] = await Promise.all([
     getWorkspaceConnection(workspace.id),
-    listApiKeys(workspace.id),
-    listNotificationChannels(workspace.id),
+    canUsePrivateApi ? listApiKeys(workspace.id) : Promise.resolve([]),
+    notificationsEnabled ? listNotificationChannels(workspace.id) : Promise.resolve([]),
     listWorkspaceSafetyPolicies(workspace.id),
     listWorkspaceClients(workspace.id),
     isAdmin ? listWorkspaceDeadLetters(workspace.id) : Promise.resolve([]),
@@ -66,8 +69,9 @@ export default async function SettingsPage({
   ])
   const safetyPolicy = safetyPolicies.find((policy) => !policy.clientId && !policy.campaignId)
   const googleReady = hasGoogleConfiguration()
-  const slackReady = hasSlackOAuthConfiguration()
-  const teamsReady = hasTeamsOAuthConfiguration()
+  const slackReady = featureEnabled('slackConnector') && hasSlackOAuthConfiguration()
+  const teamsReady = featureEnabled('teamsConnector') && hasTeamsOAuthConfiguration()
+  const blobReady = featureEnabled('blobUploads') && Boolean(process.env.BLOB_READ_WRITE_TOKEN)
   return (
     <>
       <PageHeading
@@ -110,7 +114,7 @@ export default async function SettingsPage({
                 {canCollaborate && (
                   <form action={inviteWorkspaceMember} className="grid gap-3 md:grid-cols-[1fr_180px_auto]">
                     <Input name="emailAddress" type="email" placeholder={english ? 'member@company.com' : 'membre@entreprise.fr'} required />
-                    <select name="role" aria-label={english ? 'Role' : 'Rôle'} defaultValue="viewer" className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="admin">Admin</option><option value="operator">Operator</option><option value="analyst">Analyst</option><option value="viewer">Viewer</option></select>
+                    <select name="role" aria-label={english ? 'Role' : 'Rôle'} defaultValue="client" className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="admin">Admin</option><option value="strategist">Strategist</option><option value="analyst">Analyst</option><option value="client">Client</option></select>
                     <Button type="submit"><Plus className="mr-2 size-4" />{english ? 'Invite' : 'Inviter'}</Button>
                   </form>
                 )}
@@ -118,7 +122,7 @@ export default async function SettingsPage({
                   {memberRoster.members.map((member) => (
                     <div key={member.id} className="flex flex-col gap-3 rounded-xl bg-[#f7f9fa] px-4 py-3 md:flex-row md:items-center md:justify-between">
                       <div><p className="text-sm font-medium">{member.displayName}{member.userId === session.userId ? ` · ${english ? 'you' : 'vous'}` : ''}</p><p className="mt-1 text-xs text-muted-foreground">{member.identifier} · {member.role}</p></div>
-                      {member.role !== 'owner' && <div className="flex flex-wrap gap-2"><form action={updateWorkspaceMemberRole} className="flex gap-2"><input type="hidden" name="userId" value={member.userId} /><select name="role" defaultValue={member.role} aria-label={english ? `Role for ${member.displayName}` : `Rôle de ${member.displayName}`} className="h-9 rounded-lg border bg-white px-2 text-xs"><option value="admin">Admin</option><option value="operator">Operator</option><option value="analyst">Analyst</option><option value="viewer">Viewer</option></select><Button type="submit" size="sm" variant="outline">{english ? 'Update' : 'Modifier'}</Button></form><form action={removeWorkspaceMember}><input type="hidden" name="userId" value={member.userId} /><Button type="submit" size="sm" variant="ghost" aria-label={english ? `Remove ${member.displayName}` : `Retirer ${member.displayName}`}><Trash2 className="size-4" /></Button></form></div>}
+                      {member.role !== 'owner' && <div className="flex flex-wrap gap-2"><form action={updateWorkspaceMemberRole} className="flex gap-2"><input type="hidden" name="userId" value={member.userId} /><select name="role" defaultValue={member.role} aria-label={english ? `Role for ${member.displayName}` : `Rôle de ${member.displayName}`} className="h-9 rounded-lg border bg-white px-2 text-xs"><option value="admin">Admin</option><option value="strategist">Strategist</option><option value="analyst">Analyst</option><option value="client">Client</option></select><Button type="submit" size="sm" variant="outline">{english ? 'Update' : 'Modifier'}</Button></form><form action={removeWorkspaceMember}><input type="hidden" name="userId" value={member.userId} /><Button type="submit" size="sm" variant="ghost" aria-label={english ? `Remove ${member.displayName}` : `Retirer ${member.displayName}`}><Trash2 className="size-4" /></Button></form></div>}
                     </div>
                   ))}
                   {memberRoster.invitations.map((invitation) => (
@@ -177,6 +181,12 @@ export default async function SettingsPage({
                         {english ? 'Sync accounts' : 'Synchroniser les comptes'}
                       </Button>
                     </form>
+                    <Button asChild variant="outline">
+                      <a href={`/api/google-ads/connect?managerCustomerId=${encodeURIComponent(connection.managerCustomerId)}`}>
+                        <KeyRound className="mr-2 size-4" />
+                        {english ? 'Reconnect Google Ads' : 'Reconnecter Google Ads'}
+                      </a>
+                    </Button>
                     <form action={disconnectGoogleAds}>
                       <Button type="submit" variant="outline">
                         <Unplug className="mr-2 size-4" />
@@ -285,7 +295,7 @@ export default async function SettingsPage({
                 </Button>
               )}
             </form>
-            {isAdmin && canUseBranding && (
+            {isAdmin && canUseBranding && blobReady && (
               <div className="mt-5 border-t pt-5">
                 <form action={uploadWorkspaceLogo} className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   <div className="flex-1 space-y-2"><Label htmlFor="workspaceLogo">{english ? 'Logo (PNG, JPEG or WebP, 2 MB max)' : 'Logo (PNG, JPEG ou WebP, 2 Mo max)'}</Label><Input id="workspaceLogo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" required /></div>
@@ -319,7 +329,7 @@ export default async function SettingsPage({
           </CardContent>
         </Card>
 
-        <Card className="border-[#e8e5ef] shadow-sm">
+        {notificationsEnabled && <Card className="border-[#e8e5ef] shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-xl bg-sky-50 text-sky-700"><BellRing className="size-5" /></span>
@@ -329,24 +339,20 @@ export default async function SettingsPage({
           <CardContent>
             {isAdmin && entitlements.capabilities.has('notifications.webhook') && (
               <div className="mb-5 grid gap-3 md:grid-cols-2">
-                <div className="flex flex-col justify-between gap-3 rounded-xl border border-[#e8e5ef] bg-[#fafbfc] p-4">
+                {slackReady && <div className="flex flex-col justify-between gap-3 rounded-xl border border-[#e8e5ef] bg-[#fafbfc] p-4">
                   <div><p className="text-sm font-semibold">Slack OAuth</p><p className="mt-1 text-xs text-muted-foreground">{english ? 'Choose a Slack channel during installation. The generated webhook is encrypted and never displayed.' : 'Choisissez un canal Slack pendant l’installation. Le webhook généré est chiffré et n’est jamais affiché.'}</p></div>
-                  {slackReady
-                    ? <Button asChild variant="outline"><a href="/api/connectors/slack/connect"><Cable className="mr-2 size-4" />{english ? 'Connect Slack' : 'Connecter Slack'}</a></Button>
-                    : <span className="text-xs text-amber-700">{english ? 'Slack OAuth configuration required' : 'Configuration OAuth Slack requise'}</span>}
-                </div>
-                <div className="flex flex-col justify-between gap-3 rounded-xl border border-[#e8e5ef] bg-[#fafbfc] p-4">
+                  <Button asChild variant="outline"><a href="/api/connectors/slack/connect"><Cable className="mr-2 size-4" />{english ? 'Connect Slack' : 'Connecter Slack'}</a></Button>
+                </div>}
+                {teamsReady && <div className="flex flex-col justify-between gap-3 rounded-xl border border-[#e8e5ef] bg-[#fafbfc] p-4">
                   <div><p className="text-sm font-semibold">Microsoft Teams OAuth</p><p className="mt-1 text-xs text-muted-foreground">{english ? 'Grant delegated Microsoft Graph access, then select an accessible team and channel.' : 'Accordez l’accès Microsoft Graph délégué, puis choisissez une équipe et un canal accessibles.'}</p></div>
-                  {teamsReady
-                    ? <Button asChild variant="outline"><a href="/api/connectors/teams/connect"><Cable className="mr-2 size-4" />{english ? 'Connect Teams' : 'Connecter Teams'}</a></Button>
-                    : <span className="text-xs text-amber-700">{english ? 'Microsoft OAuth configuration required' : 'Configuration OAuth Microsoft requise'}</span>}
-                </div>
+                  <Button asChild variant="outline"><a href="/api/connectors/teams/connect"><Cable className="mr-2 size-4" />{english ? 'Connect Teams' : 'Connecter Teams'}</a></Button>
+                </div>}
               </div>
             )}
             {isAdmin && (
               <form action={createNotificationChannel} className="grid gap-3 sm:grid-cols-2">
                 <Input name="label" aria-label={english ? 'Channel name' : 'Nom du canal'} placeholder={english ? 'Agency operations' : 'Ops agence'} required />
-                <select name="kind" aria-label={english ? 'Channel type' : 'Type de canal'} className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="email">Email</option><option value="slack">Slack</option><option value="teams">Teams</option><option value="webhook">Webhook</option></select>
+                <select name="kind" aria-label={english ? 'Channel type' : 'Type de canal'} className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="email">Email</option>{slackReady && <option value="slack">Slack</option>}{teamsReady && <option value="teams">Teams</option>}<option value="webhook">Webhook</option></select>
                 <Input name="destination" aria-label={english ? 'Channel destination' : 'Destination du canal'} placeholder={english ? 'email@agency.com or https://…' : 'email@agence.fr ou https://…'} required className="sm:col-span-2" />
                 <select name="minimumSeverity" aria-label={english ? 'Minimum severity' : 'Sévérité minimale'} className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="warning">{english ? 'Warnings and critical alerts' : 'Alertes et critiques'}</option><option value="critical">{english ? 'Critical only' : 'Critiques uniquement'}</option></select>
                 <Button type="submit"><Plus className="mr-2 size-4" />{english ? 'Add' : 'Ajouter'}</Button>
@@ -362,9 +368,9 @@ export default async function SettingsPage({
               {channels.length === 0 && <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">{english ? 'No active channel. Incidents remain available in the cockpit.' : 'Aucun canal actif. Les incidents restent disponibles dans le cockpit.'}</p>}
             </div>
           </CardContent>
-        </Card>
+        </Card>}
 
-        <Card className="border-[#e8e5ef] shadow-sm xl:col-span-2">
+        {notificationsEnabled && <Card className="border-[#e8e5ef] shadow-sm xl:col-span-2">
           <CardHeader>
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-xl bg-teal-50 text-teal-700"><UserRound className="size-5" /></span>
@@ -383,7 +389,7 @@ export default async function SettingsPage({
             {taskPreferences?.lastDigestAt && <p className="mt-3 text-xs text-muted-foreground">{english ? 'Last digest processed' : 'Dernier digest traité'} : {taskPreferences.lastDigestAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</p>}
             {taskPreferences?.lastError && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800">{english ? 'Last error' : 'Dernière erreur'} : {taskPreferences.lastError}</p>}
           </CardContent>
-        </Card>
+        </Card>}
 
         <Card className="border-[#e8e5ef] shadow-sm xl:col-span-2">
           <CardContent className="flex items-start gap-4 p-5">
@@ -439,7 +445,7 @@ export default async function SettingsPage({
           </Card>
         )}
 
-        <Card className="border-[#e8e5ef] shadow-sm xl:col-span-2">
+        {canUsePrivateApi && <Card className="border-[#e8e5ef] shadow-sm xl:col-span-2">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-50 text-sky-700">
@@ -492,7 +498,7 @@ export default async function SettingsPage({
               </code>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
       </div>
     </>
   )

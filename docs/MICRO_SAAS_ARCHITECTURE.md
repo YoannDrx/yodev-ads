@@ -11,7 +11,7 @@ shared credentials into CLI configuration.
 ```text
 Organization
   ├── Brand
-  ├── Members (owner, admin, analyst, operator, viewer)
+  ├── Members (owner, admin, strategist, analyst, client)
   ├── Google Ads connections
   │     ├── OAuth authorization
   │     ├── developer-token reference
@@ -59,7 +59,7 @@ mutation reaches Google Ads.
    dedicated least-privilege Postgres credential.
 5. **Secret store**: Vercel environment secrets plus encrypted OAuth and notification destinations in Postgres.
 6. **Billing**: Stripe Checkout, customer portal and signed subscription webhooks.
-7. **Delivery**: Resend email, OAuth-provisioned Slack incoming webhooks, delegated Microsoft Graph Teams posting and SSRF-safe legacy/generic webhooks. Provider-bound signed state protects every OAuth callback; Teams selection uses a short-lived actor-bound encrypted session and PKCE.
+7. **Delivery**: YoDevMail transactional email, OAuth-provisioned Slack incoming webhooks, delegated Microsoft Graph Teams posting and SSRF-safe legacy/generic webhooks. Provider-bound signed state protects every OAuth callback; Teams selection uses a short-lived actor-bound encrypted session and PKCE.
 
 Vercel Cron seeds and drains a durable Postgres queue with leases, bounded retries,
 backoff and dead-letter handling. Monitoring and incident delivery are isolated per
@@ -106,6 +106,5 @@ into the web, CLI and worker layers.
 
 External launch dependencies remain: custom-domain purchase, Better Auth secret and
 Google OAuth client provisioning, Google Ads OAuth verification, Stripe live price
-provisioning and a verified Resend
-sending domain. The application degrades safely when optional billing or email
+provisioning and a verified YoDevMail project, webhook and sending domain. The application degrades safely when optional billing or email
 secrets are absent.

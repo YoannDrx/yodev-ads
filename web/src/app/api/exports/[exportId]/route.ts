@@ -7,7 +7,13 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ exportId: string }> },
 ) {
-  const { workspace, session } = await requireWorkspacePermission('workspace:export')
+  let context: Awaited<ReturnType<typeof requireWorkspacePermission>>
+  try {
+    context = await requireWorkspacePermission('workspace:export')
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  const { workspace, session } = context
   const { exportId } = await params
   const artifact = await getDownloadableWorkspaceExport(workspace.id, session.userId, exportId)
   if (!artifact?.artifactKey) return NextResponse.json({ error: 'Export unavailable' }, { status: 404 })

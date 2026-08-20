@@ -85,7 +85,9 @@ export async function deliverScheduledReport(scheduleId: string, runKey: string)
       subject: email.subject,
       html: email.html,
       idempotencyKey,
-      tag: 'scheduled_report',
+      category: 'scheduled_report',
+      workspaceId: context.workspace.id,
+      referenceId: `${context.schedule.id}:${runKey}`,
     })
     await withSystemTransaction(async (db) => {
       await db.update(reportSchedules).set({

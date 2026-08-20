@@ -19,8 +19,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { listReportAutomation, listShareLinks, listWorkspaceClients } from '@/lib/data'
+import { featureEnabled } from '@/lib/feature-flags'
 import { permissionsForRole } from '@/lib/permissions'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 const weekdays: Record<'fr' | 'en', Record<number, string>> = {
   fr: { 1: 'lundi', 2: 'mardi', 3: 'mercredi', 4: 'jeudi', 5: 'vendredi', 6: 'samedi', 7: 'dimanche' },
@@ -33,7 +34,7 @@ export default async function ReportsPage({
   searchParams: Promise<{ notice?: string; error?: string; reveal?: string }>
 }) {
   const query = await searchParams
-  const { workspace, role } = await requireWorkspace()
+  const { workspace, role } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [links, clients, automation] = await Promise.all([
@@ -43,6 +44,7 @@ export default async function ReportsPage({
   ])
   const advertiserClients = clients.filter((client) => !client.isManager)
   const canManage = permissionsForRole(role).has('reports:manage')
+  const schedulesEnabled = featureEnabled('scheduler') && featureEnabled('notifications')
 
   return (
     <>
@@ -56,7 +58,7 @@ export default async function ReportsPage({
         <SecretRevelation title={english ? 'New report link · one-time reveal' : 'Nouveau lien de rapport · révélation unique'} buttonLabel={english ? 'Reveal link now' : 'Révéler le lien maintenant'} />
       )}
 
-      {canManage && (
+      {canManage && schedulesEnabled && (
         <div className="grid gap-6 xl:grid-cols-2">
           <Card className="border-[#dde4e7] shadow-none">
             <CardHeader><CardTitle className="flex items-center gap-2"><Plus className="size-5 text-[#176646]" />{english ? 'Create one-off report' : 'Créer un rapport ponctuel'}</CardTitle></CardHeader>
@@ -141,7 +143,7 @@ export default async function ReportsPage({
         </Card>
       )}
 
-      <section className="mt-8">
+      {schedulesEnabled && <section className="mt-8">
         <h2 className="text-lg font-semibold">{english ? 'Scheduled deliveries' : 'Envois planifiés'}</h2>
         <div className="mt-3 grid gap-3 lg:grid-cols-2">
           {automation.schedules.map(({ schedule, client, template }) => (
@@ -160,7 +162,7 @@ export default async function ReportsPage({
           ))}
           {automation.schedules.length === 0 && <div className="rounded-3xl border border-dashed bg-white p-10 text-center text-muted-foreground">{english ? 'No scheduled delivery.' : 'Aucun envoi planifié.'}</div>}
         </div>
-      </section>
+      </section>}
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold">{english ? 'Active and historical links' : 'Liens actifs et historiques'}</h2>

@@ -16,6 +16,8 @@ import {
   workspaces,
 } from '../src/db/schema'
 import { withSystemTransaction } from '../src/db/transactions'
+
+const loadApplicationName = `yodev_database_load_runtime_${process.pid}`
 import { listApiApprovals } from '../src/lib/api-v1-repository'
 import { voteAndClaimGoogleApproval } from '../src/lib/google-approval-management'
 import { seedScheduledJobs } from '../src/lib/job-scheduler'
@@ -218,8 +220,8 @@ async function verifyBoundedPool(ownerConnectionString: string) {
         select count(*)::int as count
         from pg_stat_activity
         where datname = current_database()
-          and application_name = 'yodev_database_load_runtime'
-      `)
+          and application_name = $1
+      `, [loadApplicationName])
       peak = Math.max(peak, result.rows[0]?.count ?? 0)
       await new Promise((resolve) => setTimeout(resolve, 10))
     }
@@ -301,29 +303,36 @@ async function verifyConcurrentScheduler() {
   delete process.env.APP_ENCRYPTION_KEY
   delete process.env.APP_ENCRYPTION_KEYS
   delete process.env.APP_ENCRYPTION_KID
-  const results = await Promise.all([seedScheduledJobs(schedulerNow), seedScheduledJobs(schedulerNow)])
-  const evidence = await withSystemTransaction(async (db) => {
-    const scheduled = await db.select({
-      workspaceId: jobs.workspaceId,
-      deduplicationKey: jobs.deduplicationKey,
-    }).from(jobs).where(inArray(jobs.workspaceId, workspaceIds))
-    const duplicates = await db.execute<{ deduplication_key: string; occurrences: number }>(sql`
-      select deduplication_key, count(*)::int as occurrences
-      from jobs
-      where workspace_id in (${sql.join(workspaceIds.map((id) => sql`${id}`), sql`, `)})
-      group by deduplication_key
-      having count(*) > 1
-    `)
-    return { scheduled, duplicates: duplicates.rows }
-  })
-  invariant(evidence.scheduled.length > 0, 'The concurrent scheduler did not create tenant jobs')
-  invariant(evidence.duplicates.length === 0, 'The concurrent scheduler created duplicate jobs')
-  invariant(
-    evidence.scheduled.every((job) => job.workspaceId !== suspendedWorkspaceId),
-    'A suspended tenant received a collection or monitoring job',
-  )
-  invariant(results.reduce((total, result) => total + result.created, 0) >= evidence.scheduled.length, 'Scheduler creation evidence is inconsistent')
-  return { requested: results.reduce((total, result) => total + result.requested, 0), created: evidence.scheduled.length }
+  const previousGoogleReads = process.env.GOOGLE_READS_ENABLED
+  process.env.GOOGLE_READS_ENABLED = '1'
+  try {
+    const results = await Promise.all([seedScheduledJobs(schedulerNow), seedScheduledJobs(schedulerNow)])
+    const evidence = await withSystemTransaction(async (db) => {
+      const scheduled = await db.select({
+        workspaceId: jobs.workspaceId,
+        deduplicationKey: jobs.deduplicationKey,
+      }).from(jobs).where(inArray(jobs.workspaceId, workspaceIds))
+      const duplicates = await db.execute<{ deduplication_key: string; occurrences: number }>(sql`
+        select deduplication_key, count(*)::int as occurrences
+        from jobs
+        where workspace_id in (${sql.join(workspaceIds.map((id) => sql`${id}`), sql`, `)})
+        group by deduplication_key
+        having count(*) > 1
+      `)
+      return { scheduled, duplicates: duplicates.rows }
+    })
+    invariant(evidence.scheduled.length > 0, 'The concurrent scheduler did not create tenant jobs')
+    invariant(evidence.duplicates.length === 0, 'The concurrent scheduler created duplicate jobs')
+    invariant(
+      evidence.scheduled.every((job) => job.workspaceId !== suspendedWorkspaceId),
+      'A suspended tenant received a collection or monitoring job',
+    )
+    invariant(results.reduce((total, result) => total + result.created, 0) >= evidence.scheduled.length, 'Scheduler creation evidence is inconsistent')
+    return { requested: results.reduce((total, result) => total + result.requested, 0), created: evidence.scheduled.length }
+  } finally {
+    if (previousGoogleReads === undefined) delete process.env.GOOGLE_READS_ENABLED
+    else process.env.GOOGLE_READS_ENABLED = previousGoogleReads
+  }
 }
 
 async function main() {
@@ -333,7 +342,7 @@ async function main() {
   invariant(ownerConnectionString, 'DATABASE_URL is required')
   for (const name of ['DATABASE_URL', 'DATABASE_AUTHENTICATED_URL', 'DATABASE_SYSTEM_URL', 'DATABASE_PURGE_URL'] as const) {
     const connectionString = process.env[name] ?? ownerConnectionString
-    process.env[name] = taggedConnectionString(connectionString, 'yodev_database_load_runtime')
+    process.env[name] = taggedConnectionString(connectionString, loadApplicationName)
   }
 
   await cleanup()

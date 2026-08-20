@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 if (!secretKey) throw new Error('STRIPE_SECRET_KEY is required')
-if (!secretKey.includes('_test_')) throw new Error('Refusing to provision products outside a Stripe sandbox')
+if (!/^(?:sk|rk)_test_/.test(secretKey)) throw new Error('Refusing to provision products outside a Stripe sandbox')
 const vercelProject = process.env.YODEV_VERCEL_PROJECT
 if (!vercelProject) throw new Error('YODEV_VERCEL_PROJECT is required to prevent accidental production configuration')
 const appUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -13,10 +13,22 @@ const targetAppUrl: string = appUrl
 
 const stripe = new Stripe(secretKey)
 const plans = [
-  { id: 'solo', name: 'Ads by Yodev Solo', amount: 2_900 },
-  { id: 'studio', name: 'Ads by Yodev Studio', amount: 8_900 },
-  { id: 'agency', name: 'Ads by Yodev Agency', amount: 18_900 },
+  { id: 'solo', name: 'Solo', amount: 2_900 },
+  { id: 'studio', name: 'Studio', amount: 8_900 },
+  { id: 'agency', name: 'Agency', amount: 18_900 },
 ] as const
+
+const productDefinition = {
+  name: 'Ads by Yodev',
+  description: 'Cockpit SaaS français de pilotage Google Ads pour indépendants et agences, avec surveillance multi-client, alertes explicables et changements contrôlés.',
+  statementDescriptor: 'ADS BY YODEV',
+  url: 'https://ads.yodev.fr',
+  marketingFeatures: [
+    'Surveillance et diagnostics Google Ads multi-client',
+    'Alertes explicables et opérations validées avant exécution',
+    'Rapports clients et garde-fous de dépenses',
+  ],
+} as const
 
 function setVercelEnvironment(name: string, value: string, sensitive = false) {
   const targets = [{ environments: 'production', visibility: sensitive ? '--sensitive' : '--no-sensitive' }]
@@ -36,31 +48,49 @@ function setVercelEnvironment(name: string, value: string, sensitive = false) {
 
 async function main() {
   const existingProducts = await stripe.products.list({ active: true, limit: 100 })
+  const existingProduct = existingProducts.data.find(
+    (item) => item.metadata.yodev_product === 'ads' && item.metadata.yodev_catalog === 'commercial_v1',
+  )
+  const productInput = {
+    name: productDefinition.name,
+    description: productDefinition.description,
+    statement_descriptor: productDefinition.statementDescriptor,
+    url: productDefinition.url,
+    marketing_features: productDefinition.marketingFeatures.map((name) => ({ name })),
+    metadata: { yodev_product: 'ads', yodev_catalog: 'commercial_v1' },
+  } satisfies Stripe.ProductCreateParams
+  const product = existingProduct
+    ? await stripe.products.update(existingProduct.id, productInput)
+    : await stripe.products.create(productInput)
+  const configuredPrices: string[] = []
   for (const plan of plans) {
-    const product =
-      existingProducts.data.find((item) => item.metadata.yodev_product === 'ads' && item.metadata.yodev_plan === plan.id) ??
-      (await stripe.products.create({
-        name: plan.name,
-        metadata: { yodev_product: 'ads', yodev_plan: plan.id },
-      }))
     const prices = await stripe.prices.list({ product: product.id, active: true, limit: 100 })
     const price =
       prices.data.find(
         (item) =>
+          item.lookup_key === `yodev_ads_${plan.id}_monthly_v1` &&
           item.currency === 'eur' &&
           item.unit_amount === plan.amount &&
-          item.recurring?.interval === 'month',
+          item.recurring?.interval === 'month' &&
+          item.tax_behavior === 'exclusive' &&
+          item.metadata.yodev_plan === plan.id,
       ) ??
       (await stripe.prices.create({
         product: product.id,
         currency: 'eur',
         unit_amount: plan.amount,
         recurring: { interval: 'month' },
+        tax_behavior: 'exclusive',
         lookup_key: `yodev_ads_${plan.id}_monthly_v1`,
         transfer_lookup_key: true,
+        nickname: plan.name,
         metadata: { yodev_product: 'ads', yodev_plan: plan.id },
       }))
+    configuredPrices.push(price.id)
     setVercelEnvironment(`STRIPE_PRICE_${plan.id.toUpperCase()}`, price.id)
+  }
+  if (product.default_price !== configuredPrices[0]) {
+    await stripe.products.update(product.id, { default_price: configuredPrices[0] })
   }
 
   const portalConfigurations = await stripe.billingPortal.configurations.list({ active: true, limit: 100 })
@@ -85,22 +115,12 @@ async function main() {
         options: ['too_expensive', 'missing_features', 'switched_service', 'unused', 'customer_service', 'other'],
       },
     },
-    subscription_update: {
-      enabled: true,
-      default_allowed_updates: ['price'],
-      proration_behavior: 'create_prorations',
-      products: await Promise.all(plans.map(async (plan) => {
-        const product = existingProducts.data.find(
-          (item) => item.metadata.yodev_product === 'ads' && item.metadata.yodev_plan === plan.id,
-        )
-        if (!product) throw new Error(`Missing Stripe product for ${plan.id}`)
-        const price = (await stripe.prices.list({ product: product.id, active: true, limit: 100 })).data.find(
-          (item) => item.currency === 'eur' && item.unit_amount === plan.amount && item.recurring?.interval === 'month',
-        )
-        if (!price) throw new Error(`Missing Stripe monthly EUR price for ${plan.id}`)
-        return { product: product.id, prices: [price.id] }
-      })),
-    },
+    // Stripe's hosted portal rejects several prices with the same recurring
+    // interval on a single product. YoDevAds deliberately keeps one commercial
+    // product and handles upgrades/downgrades through its audited billing
+    // actions, so the portal is limited to payment details, invoices and
+    // cancellation.
+    subscription_update: { enabled: false },
   }
   const portal = existingPortal
     ? await stripe.billingPortal.configurations.update(existingPortal.id, {
@@ -129,11 +149,19 @@ async function main() {
   const existingEndpoint = endpoints.data.find((endpoint) => endpoint.url === endpointUrl && endpoint.status === 'enabled')
   const enabledEvents: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
     'charge.refunded',
+    'checkout.session.completed',
     'customer.subscription.created',
     'customer.subscription.updated',
     'customer.subscription.deleted',
+    'customer.subscription.pending_update_applied',
+    'customer.subscription.pending_update_expired',
+    'subscription_schedule.created',
+    'subscription_schedule.updated',
+    'subscription_schedule.completed',
+    'subscription_schedule.canceled',
     'invoice.paid',
     'invoice.payment_failed',
+    'invoice.payment_action_required',
   ]
   if (existingEndpoint && !process.env.STRIPE_WEBHOOK_SECRET) {
     throw new Error('The Ads by Yodev webhook already exists. Rotate its signing secret in Stripe before provisioning.')

@@ -62,7 +62,7 @@ describe('Better Auth workspace member orchestration', () => {
     expect(mocks.tenantContexts).toEqual([{ workspaceId, userId: 'user-1' }])
   })
 
-  it('reads the Better Auth roster and fails unknown roles closed to viewer', async () => {
+  it('reads the Better Auth roster and fails unknown roles closed to client', async () => {
     const database = memberDatabase({ statementResults: [[
       { id: 'membership-owner', userId: 'owner-1', email: 'owner@example.test', name: 'Owner One', role: 'admin', createdAt: new Date() },
       { id: 'membership-2', userId: 'user-2', email: 'analyst@example.test', name: '', role: 'analyst', createdAt: new Date() },
@@ -73,7 +73,7 @@ describe('Better Auth workspace member orchestration', () => {
       expect.objectContaining({ role: 'owner', displayName: 'Owner One' }),
       expect.objectContaining({ role: 'analyst', displayName: 'analyst@example.test' }),
     ]))
-    expect(roster.invitations[0].role).toBe('viewer')
+    expect(roster.invitations[0].role).toBe('client')
     expect(roster.usage).toBe(3)
   })
 
@@ -95,12 +95,12 @@ describe('Better Auth workspace member orchestration', () => {
     mocks.databases.push(memberDatabase({ statementResults: [[], [], [{ count: 5 }], [{ count: 0 }], [], []] }).db)
     await expect(inviteWorkspaceMemberWithQuota({
       workspaceId, organizationId: 'org-1', ownerUserId: 'owner-1', actorUserId: 'owner-1',
-      emailAddress: 'member@example.test', role: 'viewer', entitlements: entitlementContext('active', 'studio'),
+      emailAddress: 'member@example.test', role: 'client', entitlements: entitlementContext('active', 'studio'),
     })).rejects.toThrow('Quota exceeded')
     mocks.databases.push(memberDatabase({ statementResults: [[], [], [{ count: 1 }], [{ count: 0 }], [{ id: 'duplicate' }], []] }).db)
     await expect(inviteWorkspaceMemberWithQuota({
       workspaceId, organizationId: 'org-1', ownerUserId: 'owner-1', actorUserId: 'owner-1',
-      emailAddress: 'member@example.test', role: 'viewer', entitlements: entitlementContext('active', 'studio'),
+      emailAddress: 'member@example.test', role: 'client', entitlements: entitlementContext('active', 'studio'),
     })).rejects.toThrow('déjà membre ou invitée')
     expect(mocks.databases).toEqual([])
   })
@@ -110,7 +110,7 @@ describe('Better Auth workspace member orchestration', () => {
     const removal = memberDatabase({ statementResults: [[], [{ id: 'membership-2' }]] })
     const revocation = memberDatabase({ statementResults: [[], [{ id: 'invite-1' }]] })
     mocks.databases.push(role.db, removal.db, revocation.db)
-    await updateWorkspaceMemberRoleWithAudit({ workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', targetUserId: 'user-2', role: 'operator' })
+    await updateWorkspaceMemberRoleWithAudit({ workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', targetUserId: 'user-2', role: 'strategist' })
     await removeWorkspaceMemberWithAudit({ workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', targetUserId: 'user-2' })
     await revokeWorkspaceInvitationWithAudit({ workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', invitationId: 'invite-1' })
     expect(role.capture.values[0]).toMatchObject({ action: 'workspace.member_role_updated' })
@@ -134,7 +134,7 @@ describe('Better Auth workspace member orchestration', () => {
     const database = memberDatabase({ workspace: { accessState: 'suspended', plan: 'agency' } })
     mocks.databases.push(database.db)
     await expect(updateWorkspaceMemberRoleWithAudit({
-      workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', targetUserId: 'user-2', role: 'viewer',
+      workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', targetUserId: 'user-2', role: 'client',
     })).rejects.toThrow('Capability required: collaboration')
     expect(database.capture.sets).toEqual([])
   })

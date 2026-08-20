@@ -1,5 +1,6 @@
 import { LegalDocument } from '@/components/legal-document'
 import { getLocale } from '@/lib/locale'
+import { RETENTION_POLICY } from '@/lib/retention-policy'
 
 export const metadata = { title: 'Confidentialité · Privacy' }
 
@@ -13,7 +14,7 @@ export default async function PrivacyPage() {
         : 'Yodev, published by Yoann Andrieux (French sole trader, SIREN 803 272 590), controls account, subscription, security and service usage processing. For Google Ads and client data imported on a business customer’s instructions, Yodev generally acts as processor and the customer as controller.'}</p></section>
       <section><h2>{fr ? 'Données traitées' : 'Data processed'}</h2><ul>
         <li>{fr ? 'identité, coordonnées, organisation, rôles et preuves d’acceptation ;' : 'identity, contact details, organisation, roles and acceptance evidence;'}</li>
-        <li>{fr ? 'coordonnées de facturation, statut B2B/B2C, plan et identifiants Stripe ;' : 'billing details, B2B/B2C status, plan and Stripe identifiers;'}</li>
+        <li>{fr ? 'raison sociale, coordonnées de facturation professionnelles, plan et identifiants Stripe ;' : 'legal business name, professional billing details, plan and Stripe identifiers;'}</li>
         <li>{fr ? 'comptes, métriques, configurations, changements et identifiants de ressources Google Ads ;' : 'Google Ads accounts, metrics, settings, changes and resource identifiers;'}</li>
         <li>{fr ? 'alertes, rapports, commentaires, approbations, audits et journaux techniques ;' : 'alerts, reports, comments, approvals, audits and technical logs;'}</li>
         <li>{fr ? 'adresses IP et empreintes pseudonymisées nécessaires à la sécurité et aux limites de débit.' : 'IP addresses and pseudonymised fingerprints needed for security and rate limiting.'}</li>
@@ -26,10 +27,10 @@ export default async function PrivacyPage() {
         : 'Access is limited to authorised customer users, Yodev and strictly necessary vendors listed on the Subprocessors page. Some vendors may process data outside the EEA under their applicable terms and transfer mechanisms. Yodev does not sell data or use it for advertising targeting.'}</p></section>
       <section><h2>{fr ? 'Durées de conservation' : 'Retention'}</h2><ul>
         <li>{fr ? 'performances, audits, approbations, alertes et changements : 24 mois ;' : 'performance, audits, approvals, alerts and changes: 24 months;'}</li>
-        <li>{fr ? 'logs de notification et erreurs : 90 jours ; limitation de débit : 30 jours ;' : 'notification/error logs: 90 days; rate-limit records: 30 days;'}</li>
-        <li>{fr ? 'rapports publics : 90 jours par défaut ; exports : 7 jours ;' : 'public reports: 90 days by default; exports: 7 days;'}</li>
+        <li>{fr ? `preuves de livraison et erreurs de notification : ${RETENTION_POLICY.deliveryEvidenceDays} jours ; limitations de débit : suppression à expiration ;` : `delivery evidence and notification errors: ${RETENTION_POLICY.deliveryEvidenceDays} days; rate-limit records: deleted on expiry;`}</li>
+        <li>{fr ? `rapports publics : ${RETENTION_POLICY.publicReportDefaultDays} jours par défaut ; exports : ${RETENTION_POLICY.exportArtifactDays} jours ;` : `public reports: ${RETENTION_POLICY.publicReportDefaultDays} days by default; exports: ${RETENTION_POLICY.exportArtifactDays} days;`}</li>
         <li>{fr ? 'jetons OAuth : jusqu’à révocation, suppression ou perte d’accès ;' : 'OAuth tokens: until revocation, deletion or loss of access;'}</li>
-        <li>{fr ? 'après demande de suppression : révocation immédiate puis purge opérationnelle à J+30, hors données comptables légalement requises.' : 'after a deletion request: immediate revocation followed by operational purge at day 30, except legally required accounting records.'}</li>
+        <li>{fr ? `après demande de suppression : révocation immédiate puis purge opérationnelle à J+${RETENTION_POLICY.workspaceDeletionGraceDays}, hors données comptables légalement requises.` : `after a deletion request: immediate revocation followed by operational purge at day ${RETENTION_POLICY.workspaceDeletionGraceDays}, except legally required accounting records.`}</li>
       </ul></section>
       <section><h2>{fr ? 'Sécurité' : 'Security'}</h2><p>{fr
         ? 'Les espaces sont isolés en base et dans l’application. Les jetons OAuth sont chiffrés, les secrets sont révélés une seule fois, les actions sensibles sont auditées et les écritures Google nécessitent une approbation humaine. Aucun système ne peut garantir un risque nul.'

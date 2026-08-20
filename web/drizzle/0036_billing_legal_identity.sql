@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "billing_legal_name" varchar(180);

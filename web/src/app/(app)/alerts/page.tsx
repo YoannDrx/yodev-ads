@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { listAlertIncidents } from '@/lib/data'
 import { permissionsForRole } from '@/lib/permissions'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function AlertsPage({
   searchParams,
@@ -15,7 +15,7 @@ export default async function AlertsPage({
   searchParams: Promise<{ notice?: string; error?: string }>
 }) {
   const query = await searchParams
-  const { workspace, role } = await requireWorkspace()
+  const { workspace, role } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const canManageTasks = permissionsForRole(role).has('tasks:manage')

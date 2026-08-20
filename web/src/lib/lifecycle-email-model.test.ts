@@ -22,6 +22,22 @@ describe('lifecycleEmail', () => {
     expect(email.html).toContain('&lt;img')
     expect(email.html).toContain('a=1&amp;b=2')
   })
+
+  it.each([
+    ['fr', 'Date concernée', 'Europe/Paris'],
+    ['en', 'Relevant date', 'UTC'],
+  ])('renders an effective date in %s', (locale, label, timezone) => {
+    const email = lifecycleEmail({
+      kind: 'cancellation_scheduled',
+      locale,
+      workspaceName: 'Agency & Co',
+      appUrl: 'https://ads.example.test/billing',
+      effectiveAt: new Date('2026-09-16T12:00:00.000Z'),
+      timezone,
+    })
+    expect(email.html).toContain(label)
+    expect(email.html).toContain('Agency &amp; Co')
+  })
 })
 
 describe('trialLifecycleDue', () => {
@@ -53,5 +69,14 @@ describe('trialLifecycleDue', () => {
       trialEndsAt: ends,
       now: new Date('2026-08-08T10:00:00.000Z'),
     })).toEqual([])
+  })
+
+  it.each([
+    ['2026-08-01T10:00:00.000Z', ['welcome']],
+    ['2026-08-08T10:00:00.000Z', ['welcome', 'trial_day_7']],
+    ['2026-08-12T23:59:59.000Z', ['welcome', 'trial_day_7']],
+  ])('returns the cumulative reminders due at %s', (date, expected) => {
+    expect(trialLifecycleDue({ accessState: 'trial', trialStartedAt: started, trialEndsAt: ends, now: new Date(date) }))
+      .toEqual(expected)
   })
 })

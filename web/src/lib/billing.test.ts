@@ -4,6 +4,7 @@ import {
   accountLimitForPlan,
   accessStateForSubscription,
   accountsWithinPlan,
+  billingPortalConfigurationId,
   checkoutTaxConfiguration,
   chargeRefundRecord,
   planFeaturesForLocale,
@@ -18,6 +19,7 @@ describe('billing plans', () => {
   const originalStudioPrice = process.env.STRIPE_PRICE_STUDIO
   const originalTaxMode = process.env.STRIPE_TAX_MODE
   const originalTaxValidation = process.env.STRIPE_TAX_CONFIGURATION_VALIDATED
+  const originalPortalConfiguration = process.env.STRIPE_PORTAL_CONFIGURATION_ID
 
   afterEach(() => {
     if (originalStudioPrice) process.env.STRIPE_PRICE_STUDIO = originalStudioPrice
@@ -26,6 +28,8 @@ describe('billing plans', () => {
     else delete process.env.STRIPE_TAX_MODE
     if (originalTaxValidation) process.env.STRIPE_TAX_CONFIGURATION_VALIDATED = originalTaxValidation
     else delete process.env.STRIPE_TAX_CONFIGURATION_VALIDATED
+    if (originalPortalConfiguration) process.env.STRIPE_PORTAL_CONFIGURATION_ID = originalPortalConfiguration
+    else delete process.env.STRIPE_PORTAL_CONFIGURATION_ID
   })
 
   it('provides plan features in both supported commercial locales', () => {
@@ -46,6 +50,15 @@ describe('billing plans', () => {
     expect(() => checkoutTaxConfiguration()).toThrow('validé juridiquement')
     process.env.STRIPE_TAX_CONFIGURATION_VALIDATED = '1'
     expect(checkoutTaxConfiguration()).toEqual({ mode: 'stripe_tax', automaticTax: { enabled: true } })
+  })
+
+  it('fails closed unless the billing portal uses an explicit Stripe configuration', () => {
+    delete process.env.STRIPE_PORTAL_CONFIGURATION_ID
+    expect(() => billingPortalConfigurationId()).toThrow('STRIPE_PORTAL_CONFIGURATION_ID')
+    process.env.STRIPE_PORTAL_CONFIGURATION_ID = 'invalid'
+    expect(() => billingPortalConfigurationId()).toThrow('invalide')
+    process.env.STRIPE_PORTAL_CONFIGURATION_ID = 'bpc_yodev_ads'
+    expect(billingPortalConfigurationId()).toBe('bpc_yodev_ads')
   })
 
   it('provides explicit checkout and invoice wording for each tax mode', () => {
@@ -103,8 +116,8 @@ describe('billing plans', () => {
       id: 'sub_123',
       customer: 'cus_123',
       status: 'active',
-      metadata: { workspaceId: 'workspace-1' },
-      items: { data: [{ price: { id: 'price_studio' }, current_period_end: 1_800_000_000 }] },
+      metadata: { workspaceId: 'workspace-1', plan: 'solo' },
+      items: { data: [{ price: { id: 'price_studio', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 }] },
     } as unknown as Stripe.Subscription
     expect(subscriptionRecord(subscription)).toMatchObject({
       workspaceId: 'workspace-1',
@@ -112,7 +125,30 @@ describe('billing plans', () => {
       stripeCustomerId: 'cus_123',
       stripeSubscriptionId: 'sub_123',
       subscriptionStatus: 'active',
+      reconciliationReason: null,
     })
+  })
+
+  it('never trusts plan metadata and rejects unknown or ambiguous recurring items', () => {
+    process.env.STRIPE_PRICE_STUDIO = 'price_studio'
+    const base = {
+      id: 'sub_123', customer: 'cus_123', status: 'active', metadata: { workspaceId: 'workspace-1', plan: 'solo' },
+    }
+    expect(subscriptionRecord({
+      ...base,
+      items: { data: [{ price: { id: 'price_studio', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 }] },
+    } as unknown as Stripe.Subscription).plan).toBe('studio')
+    expect(subscriptionRecord({
+      ...base,
+      items: { data: [{ price: { id: 'price_unknown', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 }] },
+    } as unknown as Stripe.Subscription)).toMatchObject({ plan: undefined, reconciliationReason: 'unknown_price:price_unknown' })
+    expect(subscriptionRecord({
+      ...base,
+      items: { data: [
+        { price: { id: 'price_studio', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 },
+        { price: { id: 'price_studio', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 },
+      ] },
+    } as unknown as Stripe.Subscription).reconciliationReason).toBe('expected_one_recurring_item:2')
   })
 
   it('maps successful partial and full refunds without changing subscription access', () => {

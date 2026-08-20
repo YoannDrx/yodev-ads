@@ -21,7 +21,7 @@ export const planCatalog = {
     name: 'Studio',
     monthlyPrice: 89,
     accountLimit: 15,
-    features: ['Tout Solo', 'Approbations collaboratives', 'Notifications multicanales', 'API agence'],
+    features: ['Tout Solo', 'Approbations collaboratives', 'Gestion d’équipe', 'Rapports programmés'],
   },
   agency: {
     name: 'Agency',
@@ -36,12 +36,12 @@ export type PlanId = keyof typeof planCatalog
 const planFeaturesByLocale = {
   fr: {
     solo: ['Analyse 360°', 'Vigies quotidiennes', 'Rapports clients'],
-    studio: ['Tout Solo', 'Approbations collaboratives', 'Notifications multicanales', 'API agence'],
+    studio: ['Tout Solo', 'Approbations collaboratives', 'Gestion d’équipe', 'Rapports programmés'],
     agency: ['Tout Studio', 'Marque blanche', 'Règles de sécurité', 'Support prioritaire'],
   },
   en: {
     solo: ['360° analysis', 'Daily monitors', 'Client reports'],
-    studio: ['Everything in Solo', 'Collaborative approvals', 'Multichannel notifications', 'Agency API'],
+    studio: ['Everything in Solo', 'Collaborative approvals', 'Team management', 'Scheduled reports'],
     agency: ['Everything in Studio', 'White label', 'Safety policies', 'Priority support'],
   },
 } as const satisfies Record<Locale, Record<PlanId, readonly string[]>>
@@ -137,14 +137,34 @@ export function checkoutIntegrationIdentifier() {
   return `yodev_ads_${suffix}`
 }
 
+export function billingPortalConfigurationId() {
+  const configurationId = process.env.STRIPE_PORTAL_CONFIGURATION_ID?.trim()
+  if (!configurationId) {
+    throw new Error('Le portail de facturation est bloqué tant que STRIPE_PORTAL_CONFIGURATION_ID n’est pas configuré.')
+  }
+  if (!/^bpc_[A-Za-z0-9_]+$/.test(configurationId)) {
+    throw new Error('STRIPE_PORTAL_CONFIGURATION_ID est invalide.')
+  }
+  return configurationId
+}
+
 export function subscriptionRecord(subscription: Stripe.Subscription) {
   const workspaceId = subscription.metadata.workspaceId
-  const priceId = subscription.items.data[0]?.price.id
-  const plan = (subscription.metadata.plan && isPlanId(subscription.metadata.plan)
-    ? subscription.metadata.plan
-    : priceId
-      ? planFromPriceId(priceId)
-      : undefined) as PlanId | undefined
+  const recurringItems = subscription.items.data.filter((item) => item.price.recurring)
+  const item = recurringItems[0]
+  const priceId = item?.price.id
+  const reconciliationReason = recurringItems.length !== 1
+    ? `expected_one_recurring_item:${recurringItems.length}`
+    : item.price.currency !== 'eur'
+      ? `unexpected_currency:${item.price.currency}`
+      : item.price.recurring?.interval !== 'month'
+        ? `unexpected_interval:${item.price.recurring?.interval ?? 'none'}`
+        : item.quantity !== null && item.quantity !== undefined && item.quantity !== 1
+          ? `unexpected_quantity:${item.quantity}`
+          : !priceId || !planFromPriceId(priceId)
+            ? `unknown_price:${priceId ?? 'missing'}`
+            : null
+  const plan = reconciliationReason ? undefined : planFromPriceId(priceId!)
   const currentPeriodEnd = subscription.items.data.reduce(
     (latest, item) => Math.max(latest, item.current_period_end),
     0,
@@ -152,6 +172,8 @@ export function subscriptionRecord(subscription: Stripe.Subscription) {
   return {
     workspaceId,
     plan,
+    priceId,
+    reconciliationReason,
     stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
     stripeSubscriptionId: subscription.id,
     subscriptionStatus: subscription.status,

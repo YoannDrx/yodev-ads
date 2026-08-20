@@ -87,11 +87,20 @@ export function createTenantSupportTicket(input: SupportActorContext & {
   })
 }
 
-export function addTenantSupportMessage(input: SupportActorContext & { ticketId: string; body: string; now?: Date }) {
+export function addTenantSupportMessage(input: SupportActorContext & {
+  ticketId: string
+  body: string
+  requesterOnly?: boolean
+  now?: Date
+}) {
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
     const ticket = await db.query.supportTickets.findFirst({
-      where: and(eq(supportTickets.id, input.ticketId), eq(supportTickets.workspaceId, input.workspaceId)),
+      where: and(
+        eq(supportTickets.id, input.ticketId),
+        eq(supportTickets.workspaceId, input.workspaceId),
+        input.requesterOnly ? eq(supportTickets.requestedBy, input.actorUserId) : undefined,
+      ),
     })
     if (!ticket) throw new Error('Demande de support introuvable.')
     const nextStatus = statusAfterSupportMessage(z.enum(SUPPORT_STATUSES).parse(ticket.status), 'customer')

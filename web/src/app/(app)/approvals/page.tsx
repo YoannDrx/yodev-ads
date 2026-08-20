@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { listApprovals } from '@/lib/data'
 import { formatCustomerId } from '@/lib/ids'
 import { permissionsForRole } from '@/lib/permissions'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function ApprovalsPage({
   searchParams,
@@ -19,7 +19,7 @@ export default async function ApprovalsPage({
   searchParams: Promise<{ notice?: string; error?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin, role } = await requireWorkspace()
+  const { workspace, isAdmin, role } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const permissions = permissionsForRole(role)

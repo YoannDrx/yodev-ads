@@ -8,8 +8,9 @@ Ads REST API.
 
 ```bash
 npm run dev          # local Next.js server
-npm run check        # lint + types + unit tests + production build
+npm run check        # CI-equivalent lint, types, coverage, build and runtime audit
 npm run test:e2e     # Playwright public-route smoke tests
+npm run release:verify # full code/runtime-config/authenticated promotion gate
 npm run db:generate  # generate a reviewed Drizzle migration
 npm run db:migrate   # apply committed migrations
 npm run db:verify-rls # verify RLS, runtime roles and cross-tenant isolation
@@ -24,9 +25,8 @@ development values are managed with `vercel env`.
 All commercial or externally mutating capabilities fail closed. Enable their
 documented environment flags deliberately per environment; `FORCE_READ_ONLY=1`
 overrides Google Ads writes immediately. Checkout also requires an explicit
-`STRIPE_TAX_MODE`, approved legal-document versions and, for consumer sales, a
-configured consumer mediator. Stripe Tax remains blocked until its validation flag
-is set.
+`STRIPE_TAX_MODE` and approved B2B legal-document versions. No consumer Checkout is
+available. Stripe Tax remains blocked until its validation flag is set.
 
 ## Security contract
 
@@ -72,6 +72,16 @@ cutover. The detailed and deliberately conservative readiness ledger is
 [`docs/IMPLEMENTATION_STATUS.md`](../docs/IMPLEMENTATION_STATUS.md).
 The exact identity migration and rollback sequence is documented in
 [`docs/BETTER_AUTH_CUTOVER.md`](../docs/BETTER_AUTH_CUTOVER.md).
+
+Release configuration is audited inside the deployed Vercel runtime through
+`/api/internal/release-readiness`. The route requires a dedicated 32+ character
+`RELEASE_VERIFICATION_TOKEN`, remains reachable during maintenance, never returns
+secret values and answers 503 until every target-specific requirement plus recent
+scheduler and retention evidence is satisfied. `GOOGLE_READS_ENABLED` is independent
+from the scheduler and mutation switches: keep it at `0` until the read-only MCC drill
+passes, including while rehearsing provider-independent scheduler work in maintenance.
+CI provides only `RELEASE_VERIFICATION_BASE_URL` and the matching GitHub Environment
+token instead of duplicating every sensitive provider credential outside Vercel.
 
 CI also migrates a disposable PostgreSQL 17 database, seeds two isolated tenants,
 and executes the RLS, role, composite-constraint and tenant-invariant verifiers.

@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { listMonitoringAgents, listWorkspaceClients } from '@/lib/data'
 import { agentTemplatesForLocale } from '@/lib/monitoring'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function AgentsPage({
   searchParams,
@@ -16,7 +16,7 @@ export default async function AgentsPage({
   searchParams: Promise<{ notice?: string; error?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin } = await requireWorkspace()
+  const { workspace, isAdmin } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const agentTemplates = agentTemplatesForLocale(locale)

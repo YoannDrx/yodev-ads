@@ -102,7 +102,9 @@ export async function deliverSubprocessorChangeNotice(input: { noticeId: string;
     subject: email.subject,
     html: email.html,
     idempotencyKey,
-    tag: 'subprocessor_change',
+    category: 'subprocessor_change',
+    workspaceId: context.workspace.id,
+    referenceId: context.notice.id,
   })
 
   await withSystemTransaction((db) => db.insert(auditEvents).values({

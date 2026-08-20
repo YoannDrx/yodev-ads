@@ -8,7 +8,10 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
-vi.mock('@/lib/feature-flags', () => ({ featureEnabled: () => mocks.enabled }))
+vi.mock('@/lib/feature-flags', () => ({
+  featureEnabled: () => mocks.enabled,
+  privateApiWorkspaceAllowed: () => mocks.enabled,
+}))
 
 import { apiData, apiError, ApiV1Error, authenticateApiRequest, decodeCursor, encodeCursor, pageResult } from './api-v1'
 

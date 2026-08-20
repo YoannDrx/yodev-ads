@@ -65,18 +65,11 @@ async function initialOrganizationId(userId: string) {
   return membership?.organizationId ?? null
 }
 
-async function workspaceMemberLimit(user: { id: string }, organization: { id: string }) {
-  const [membership] = await getAuthDatabase()
-    .select({
-      limit: sql<number>`public.auth_workspace_membership_limit(${user.id}, ${organization.id})`,
-    })
-    .from(authMembers)
-    .where(and(
-      eq(authMembers.userId, user.id),
-      eq(authMembers.organizationId, organization.id),
-    ))
-    .limit(1)
-  return Number(membership?.limit ?? 1)
+export async function workspaceMemberLimit(user: { id: string }, organization: { id: string }) {
+  const result = await getAuthDatabase().execute<{ limit: number }>(sql`
+    select public.auth_workspace_membership_limit(${user.id}, ${organization.id}) as limit
+  `)
+  return Number(result.rows[0]?.limit ?? 1)
 }
 
 function createAuth() {

@@ -4,12 +4,12 @@ import { databaseDouble } from '../../test/fluent-db'
 const mocks = vi.hoisted(() => ({
   databases: [] as unknown[],
   transaction: vi.fn(async (callback: (db: unknown) => unknown) => callback(mocks.databases.shift())),
-  resendSend: vi.fn(),
+  emailSend: vi.fn(),
   verifiedAuthUserEmail: vi.fn(),
 }))
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
-vi.mock('resend', () => ({ Resend: class { emails = { send: mocks.resendSend } } }))
+vi.mock('@/lib/transactional-email', () => ({ sendTransactionalEmail: mocks.emailSend }))
 vi.mock('@/lib/auth-identities', () => ({ verifiedAuthUserEmail: mocks.verifiedAuthUserEmail }))
 
 import { deliverSupportEmail } from './support-notifications'
@@ -40,14 +40,12 @@ describe('support email delivery', () => {
   beforeEach(() => {
     mocks.databases = []
     vi.clearAllMocks()
-    process.env.RESEND_API_KEY = 're_test'
     process.env.SUPPORT_EMAIL = 'support@example.test'
-    mocks.resendSend.mockResolvedValue({ data: { id: 'email-1' }, error: null })
+    mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
     mocks.verifiedAuthUserEmail.mockResolvedValue(null)
   })
 
   afterEach(() => {
-    delete process.env.RESEND_API_KEY
     delete process.env.SUPPORT_EMAIL
   })
 
@@ -55,20 +53,21 @@ describe('support email delivery', () => {
     const message = { id: 'message-1', ticketId, body: '<script>question</script>' }
     mocks.databases.push(contextDatabase({ message }).db, databaseDouble().db)
     await expect(deliverSupportEmail({ ticketId, kind: 'customer_reply', referenceKey: 'reply-1', messageId: message.id })).resolves.toEqual({ delivered: true, providerMessageId: 'email-1' })
-    expect(mocks.resendSend).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({
       to: 'support@example.test', html: expect.not.stringContaining('<script>'),
-    }), { idempotencyKey: `support:${ticketId}:customer_reply:reply-1` })
+      idempotencyKey: `support:${ticketId}:customer_reply:reply-1`, category: 'support_customer_reply', workspaceId,
+    }))
   })
 
   it('sends support replies to the billing contact or a verified Better Auth owner fallback', async () => {
     mocks.databases.push(contextDatabase().db, databaseDouble().db)
     await deliverSupportEmail({ ticketId, kind: 'support_reply', referenceKey: 'support-1' })
-    expect(mocks.resendSend).toHaveBeenLastCalledWith(expect.objectContaining({ to: 'client@example.test' }), expect.anything())
+    expect(mocks.emailSend).toHaveBeenLastCalledWith(expect.objectContaining({ to: 'client@example.test' }))
 
     mocks.verifiedAuthUserEmail.mockResolvedValue('owner@example.test')
     mocks.databases.push(contextDatabase({ workspace: { ...workspace, billingEmail: null } }).db, databaseDouble().db)
     await deliverSupportEmail({ ticketId, kind: 'status_changed', referenceKey: 'status-1' })
-    expect(mocks.resendSend).toHaveBeenLastCalledWith(expect.objectContaining({ to: 'owner@example.test' }), expect.anything())
+    expect(mocks.emailSend).toHaveBeenLastCalledWith(expect.objectContaining({ to: 'owner@example.test' }))
   })
 
   it('rejects missing ticket/workspace/recipient and transport configuration', async () => {
@@ -80,13 +79,13 @@ describe('support email delivery', () => {
     mocks.databases.push(contextDatabase().db)
     await expect(deliverSupportEmail({ ticketId, kind: 'new_ticket', referenceKey: 'x' })).rejects.toThrow('SUPPORT_EMAIL absent')
     process.env.SUPPORT_EMAIL = 'support@example.test'
-    delete process.env.RESEND_API_KEY
     mocks.databases.push(contextDatabase().db)
-    await expect(deliverSupportEmail({ ticketId, kind: 'new_ticket', referenceKey: 'x' })).rejects.toThrow('RESEND_API_KEY absent')
+    mocks.emailSend.mockRejectedValueOnce(new Error('YODEV_MAIL_API_KEY absent'))
+    await expect(deliverSupportEmail({ ticketId, kind: 'new_ticket', referenceKey: 'x' })).rejects.toThrow('YODEV_MAIL_API_KEY absent')
   })
 
   it('surfaces retryable provider errors without writing success audit', async () => {
-    mocks.resendSend.mockResolvedValue({ data: null, error: { message: 'provider down' } })
+    mocks.emailSend.mockRejectedValue(new Error('provider down'))
     mocks.databases.push(contextDatabase().db)
     await expect(deliverSupportEmail({ ticketId, kind: 'new_ticket', referenceKey: 'x' })).rejects.toThrow('provider down')
   })

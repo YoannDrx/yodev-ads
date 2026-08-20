@@ -5,10 +5,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { getClientGoalAndPacing, getWorkspaceConnection, listMonitoringAgents, listShareLinks, listWorkspaceClients } from '@/lib/data'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function GettingStartedPage() {
-  const { workspace } = await requireWorkspace()
+  const { workspace } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const [connection, clients, agents, reports] = await Promise.all([
     getWorkspaceConnection(workspace.id),

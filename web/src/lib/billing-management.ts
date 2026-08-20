@@ -4,7 +4,7 @@ import { and, eq, isNull, or } from 'drizzle-orm'
 import { auditEvents, legalAcceptances, workspaces } from '@/db/schema'
 import { withTenantTransaction } from '@/db/transactions'
 import { insertActivationMilestone } from '@/lib/activation'
-import { subscriptionIsActive } from '@/lib/billing'
+import { subscriptionIsActive, type PlanId } from '@/lib/billing'
 import { LEGAL_VERSIONS } from '@/lib/legal'
 
 type BillingActorContext = {
@@ -14,8 +14,9 @@ type BillingActorContext = {
 
 export function reserveWorkspaceCheckout(input: BillingActorContext & {
   checkoutAttemptId: string
-  customerType: 'individual' | 'business'
+  customerType: 'business'
   billingEmail: string
+  billingLegalName: string
   countryCode: string
   locale: string
   requestFingerprint: string
@@ -30,12 +31,16 @@ export function reserveWorkspaceCheckout(input: BillingActorContext & {
         subscriptionStatus: workspaces.subscriptionStatus,
         checkoutAttemptId: workspaces.checkoutAttemptId,
         checkoutReservedAt: workspaces.checkoutReservedAt,
+        billingReconciliationRequired: workspaces.billingReconciliationRequired,
       })
       .from(workspaces)
       .where(eq(workspaces.id, input.workspaceId))
       .limit(1)
       .for('update')
     if (!workspace) throw new Error('Espace de travail introuvable.')
+    if (workspace.billingReconciliationRequired) {
+      throw new Error('La facturation doit être réconciliée avant de démarrer une nouvelle souscription.')
+    }
     if (workspace.stripeSubscriptionId && subscriptionIsActive(workspace.subscriptionStatus)) {
       throw new Error('Un abonnement actif existe déjà. Utilisez le portail de facturation pour changer d’offre.')
     }
@@ -63,6 +68,7 @@ export function reserveWorkspaceCheckout(input: BillingActorContext & {
     })
     await db.update(workspaces).set({
       billingEmail: input.billingEmail,
+      billingLegalName: input.billingLegalName,
       countryCode: input.countryCode,
       termsVersion: LEGAL_VERSIONS.terms,
       privacyVersion: LEGAL_VERSIONS.privacy,
@@ -138,4 +144,69 @@ export function recordSubscriptionCancellationRevoked(input: BillingActorContext
       entityId: input.workspaceId,
       metadata: {},
     }))
+}
+
+export function recordPlanChangeRequested(input: BillingActorContext & {
+  currentPlan: PlanId
+  requestedPlan: PlanId
+  effectiveAt: Date | null
+  mode: 'upgrade' | 'downgrade'
+  stripeReference: string
+  paymentPending: boolean
+  now?: Date
+}) {
+  const now = input.now ?? new Date()
+  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    const [workspace] = await db
+      .select({ plan: workspaces.plan, billingReconciliationRequired: workspaces.billingReconciliationRequired })
+      .from(workspaces)
+      .where(eq(workspaces.id, input.workspaceId))
+      .limit(1)
+      .for('update')
+    if (!workspace) throw new Error('Espace de travail introuvable.')
+    if (workspace.billingReconciliationRequired) throw new Error('La facturation doit d’abord être réconciliée.')
+    if (workspace.plan !== input.currentPlan) throw new Error('Le forfait local a changé pendant la demande.')
+
+    await db.update(workspaces).set({
+      requestedPlan: input.requestedPlan,
+      requestedPlanEffectiveAt: input.effectiveAt,
+      updatedAt: now,
+    }).where(eq(workspaces.id, input.workspaceId))
+    await db.insert(auditEvents).values({
+      workspaceId: input.workspaceId,
+      actorUserId: input.actorUserId,
+      action: `billing.plan_change_${input.mode}_requested`,
+      entityType: 'workspace',
+      entityId: input.workspaceId,
+      metadata: {
+        currentPlan: input.currentPlan,
+        requestedPlan: input.requestedPlan,
+        effectiveAt: input.effectiveAt?.toISOString() ?? null,
+        stripeReference: input.stripeReference,
+        paymentPending: input.paymentPending,
+      },
+    })
+  })
+}
+
+export function recordPlanChangeCanceled(input: BillingActorContext & {
+  stripeReference: string
+  now?: Date
+}) {
+  const now = input.now ?? new Date()
+  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    await db.update(workspaces).set({
+      requestedPlan: null,
+      requestedPlanEffectiveAt: null,
+      updatedAt: now,
+    }).where(eq(workspaces.id, input.workspaceId))
+    await db.insert(auditEvents).values({
+      workspaceId: input.workspaceId,
+      actorUserId: input.actorUserId,
+      action: 'billing.plan_change_canceled',
+      entityType: 'workspace',
+      entityId: input.workspaceId,
+      metadata: { stripeReference: input.stripeReference },
+    })
+  })
 }

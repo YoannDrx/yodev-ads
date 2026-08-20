@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { apiKeys, auditEvents, rateLimitBuckets, workspaces } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { entitlementContext, isPlan, isWorkspaceAccessState, type Capability } from '@/lib/entitlements'
-import { featureEnabled } from '@/lib/feature-flags'
+import { featureEnabled, privateApiWorkspaceAllowed } from '@/lib/feature-flags'
 import { hashToken } from '@/lib/tokens'
 
 export type ApiScope =
@@ -110,7 +110,7 @@ export async function authenticateApiRequest(
   requiredScope: ApiScope,
   requiredCapability: Capability = 'api.read',
 ) {
-  if (!featureEnabled('publicApi')) throw new ApiV1Error('FEATURE_DISABLED', 'Public API is disabled', 503)
+  if (!featureEnabled('publicApi')) throw new ApiV1Error('FEATURE_DISABLED', 'Private API beta is disabled', 503)
   const authorization = request.headers.get('authorization')
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : ''
   if (!token.startsWith('ya_live_')) throw new ApiV1Error('INVALID_API_KEY', 'Invalid API key', 401)
@@ -129,6 +129,9 @@ export async function authenticateApiRequest(
       )
       .limit(1))
   if (!credential) throw new ApiV1Error('INVALID_API_KEY', 'Invalid or expired API key', 401)
+  if (!privateApiWorkspaceAllowed(credential.workspace.id, credential.workspace.accessState)) {
+    throw new ApiV1Error('FEATURE_DISABLED', 'Private API beta is disabled for this workspace', 503)
+  }
   if (!isPlan(credential.workspace.plan) || !isWorkspaceAccessState(credential.workspace.accessState)) {
     throw new ApiV1Error('WORKSPACE_SUSPENDED', 'Workspace access is unavailable', 403)
   }

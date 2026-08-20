@@ -5,10 +5,14 @@ import { z } from 'zod'
 const booleanFlagSchema = z.enum(['0', '1']).default('0')
 
 export const featureFlagEnvironment = {
+  googleReads: 'GOOGLE_READS_ENABLED',
   googleMutations: 'GOOGLE_MUTATIONS_ENABLED',
   stripeCheckout: 'STRIPE_CHECKOUT_ENABLED',
   publicApi: 'PUBLIC_API_ENABLED',
   customDomains: 'CUSTOM_DOMAINS_ENABLED',
+  blobUploads: 'BLOB_UPLOADS_ENABLED',
+  slackConnector: 'SLACK_CONNECTOR_ENABLED',
+  teamsConnector: 'TEAMS_CONNECTOR_ENABLED',
   publicBeta: 'PUBLIC_BETA_ENABLED',
   scheduler: 'SCHEDULER_ENABLED',
   notifications: 'NOTIFICATIONS_ENABLED',
@@ -25,6 +29,16 @@ export type FeatureFlag = keyof typeof featureFlagEnvironment
 export function featureEnabled(flag: FeatureFlag) {
   const value = process.env[featureFlagEnvironment[flag]]
   return booleanFlagSchema.parse(value) === '1'
+}
+
+export function privateApiWorkspaceAllowed(workspaceId: string, accessState: string) {
+  if (!featureEnabled('publicApi')) return false
+  if (accessState === 'internal') return true
+  const allowlist = new Set((process.env.PRIVATE_API_WORKSPACE_IDS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean))
+  return allowlist.has(workspaceId)
 }
 
 export function requireFeature(flag: FeatureFlag, message: string) {

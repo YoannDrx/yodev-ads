@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { listWorkspaceSupportTickets } from '@/lib/data'
 import { permissionsForRole } from '@/lib/permissions'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 const categoryLabels: Record<string, { fr: string; en: string }> = {
   technical: { fr: 'Technique', en: 'Technical' },
@@ -22,8 +22,8 @@ const categoryLabels: Record<string, { fr: string; en: string }> = {
 
 export default async function SupportPage({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string }> }) {
   const query = await searchParams
-  const { workspace, role, session } = await requireWorkspace()
-  const tickets = await listWorkspaceSupportTickets(workspace.id)
+  const { workspace, role, session } = await requireWorkspacePermission('support:read')
+  const tickets = await listWorkspaceSupportTickets(workspace.id, role === 'client' ? session.userId : undefined)
   const canContact = permissionsForRole(role).has('support:contact')
   const english = workspace.locale === 'en'
   const openCount = tickets.filter(({ ticket }) => !['resolved', 'closed'].includes(ticket.status)).length

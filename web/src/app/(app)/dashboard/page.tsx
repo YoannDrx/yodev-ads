@@ -13,13 +13,13 @@ import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/forma
 import { GoogleAdsGateway, type CampaignPerformance } from '@/lib/google-ads'
 import { buildPacingBudgetRecommendations, type PacingGoal } from '@/lib/pacing'
 import { permissionsForRole } from '@/lib/permissions'
-import { requireWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
 
 type DashboardProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string }> }
 
 export default async function DashboardPage({ searchParams }: DashboardProps) {
   const query = await searchParams
-  const { workspace, isAdmin, role, entitlements } = await requireWorkspace()
+  const { workspace, isAdmin, role, entitlements } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [connection, workspaceClients, alertRows] = await Promise.all([

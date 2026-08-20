@@ -8,9 +8,12 @@ const mocks = vi.hoisted(() => ({
   claimNextJob: vi.fn(), completeJob: vi.fn(), enqueueJob: vi.fn(), enqueueJobs: vi.fn(), failJob: vi.fn(),
   runMonitoring: vi.fn(), weeklyDigest: vi.fn(), retryNotification: vi.fn(), dispatchNotifications: vi.fn(),
   reconcile: vi.fn(), observeMutation: vi.fn(), purgeWorkspace: vi.fn(), runExport: vi.fn(), deleteExports: vi.fn(),
+  externalCleanup: vi.fn(), revokeGoogleConnection: vi.fn(), recordStripeCancellation: vi.fn(),
   scheduledReport: vi.fn(), taskMention: vi.fn(), taskDigest: vi.fn(), lifecycleEmail: vi.fn(), supportEmail: vi.fn(), operationsAlert: vi.fn(),
   subprocessorFanout: vi.fn(), subprocessorDelivery: vi.fn(),
   authInvitation: vi.fn(),
+  stripeReconciliation: vi.fn(),
+  startOperationalRun: vi.fn(), completeOperationalRun: vi.fn(), failOperationalRun: vi.fn(),
   rotateSecrets: vi.fn(), currentKid: vi.fn(),
   stripeUpdate: vi.fn(), featureEnabled: vi.fn(), reportRunKey: vi.fn(), digestRunKey: vi.fn(), trialDue: vi.fn(),
   deadLetterAlert: vi.fn(), redact: vi.fn((value: unknown) => value),
@@ -30,7 +33,12 @@ vi.mock('@/lib/notifications', () => ({
 }))
 vi.mock('@/lib/reconcile-google-mutation', () => ({ reconcileGoogleMutation: mocks.reconcile }))
 vi.mock('@/lib/run-monitoring', () => ({ runWorkspaceMonitoring: mocks.runMonitoring }))
-vi.mock('@/lib/workspace-deletion', () => ({ purgeWorkspace: mocks.purgeWorkspace }))
+vi.mock('@/lib/workspace-deletion', () => ({
+  purgeWorkspace: mocks.purgeWorkspace,
+  runWorkspaceExternalCleanup: mocks.externalCleanup,
+  revokeWorkspaceGoogleConnection: mocks.revokeGoogleConnection,
+  recordWorkspaceDeletionStripeCancellation: mocks.recordStripeCancellation,
+}))
 vi.mock('@/lib/workspace-export', () => ({ runWorkspaceExport: mocks.runExport, deleteExpiredExportArtifacts: mocks.deleteExports }))
 vi.mock('@/lib/scheduled-reports', () => ({ deliverScheduledReport: mocks.scheduledReport }))
 vi.mock('@/lib/task-notifications', () => ({ deliverTaskMention: mocks.taskMention, deliverPersonalTaskDigest: mocks.taskDigest }))
@@ -41,6 +49,12 @@ vi.mock('@/lib/subprocessor-change-notifications', () => ({
   deliverSubprocessorChangeNotice: mocks.subprocessorDelivery,
 }))
 vi.mock('@/lib/auth-invitations', () => ({ deliverAuthInvitation: mocks.authInvitation }))
+vi.mock('@/lib/stripe-reconciliation', () => ({ reconcileStripeWorkspace: mocks.stripeReconciliation }))
+vi.mock('@/lib/operational-runs', () => ({
+  startOperationalRun: mocks.startOperationalRun,
+  completeOperationalRun: mocks.completeOperationalRun,
+  failOperationalRun: mocks.failOperationalRun,
+}))
 vi.mock('@/lib/operations-alerts', () => ({ deliverOperationsAlert: mocks.operationsAlert }))
 vi.mock('@/lib/mutation-observations', () => ({ completeMutationObservation: mocks.observeMutation }))
 vi.mock('@/lib/billing', async (importOriginal) => ({
@@ -128,7 +142,10 @@ describe('durable job runner orchestration', () => {
       mocks.runExport, mocks.scheduledReport, mocks.taskMention, mocks.taskDigest, mocks.lifecycleEmail,
       mocks.supportEmail, mocks.operationsAlert, mocks.dispatchNotifications, mocks.stripeUpdate,
       mocks.rotateSecrets, mocks.subprocessorFanout, mocks.subprocessorDelivery, mocks.authInvitation,
+      mocks.stripeReconciliation, mocks.externalCleanup, mocks.revokeGoogleConnection,
+      mocks.recordStripeCancellation, mocks.startOperationalRun, mocks.completeOperationalRun, mocks.failOperationalRun,
     ]) method.mockResolvedValue({ ok: true })
+    mocks.stripeUpdate.mockResolvedValue({ status: 'active', cancel_at_period_end: true })
     mocks.dailyAccountMetrics.mockResolvedValue([])
     mocks.listManagedCustomers.mockResolvedValue([])
     mocks.dailyCampaignMetrics.mockResolvedValue([])
@@ -154,13 +171,16 @@ describe('durable job runner orchestration', () => {
       job('mutation.observe', { observationId: entityId }),
       job('notification.deliver', { deliveryId: entityId }),
       job('workspace.purge', { workspaceId }),
+      job('workspace.external_cleanup', { workspaceHash: 'a'.repeat(64), logoUrl: null, hostnames: [] }, { workspaceId: null }),
+      job('google.revoke_connection', { workspaceId }, { workspaceId: null }),
       job('workspace.export', { workspaceId, exportJobId: entityId }),
-      job('stripe.cancel_subscription', { subscriptionId: 'sub_123' }),
+      job('stripe.cancel_subscription', { workspaceId, subscriptionId: 'sub_123' }, { workspaceId: null }),
+      job('stripe.reconcile', { workspaceId }),
       job('secrets.rotate', { workspaceId, targetKid: 'kid-2' }),
     ]
     mocks.currentKid.mockReturnValue('kid-2')
     mocks.jobs.push(...jobs)
-    const result = await runAvailableJobs({ workerId: 'worker', maximumJobs: 20 })
+    const result = await runAvailableJobs({ workerId: 'worker', maximumJobs: 25 })
     expect(result.processed).toBe(jobs.length)
     expect(result.results.every((item) => item.status === 'completed')).toBe(true)
     expect(mocks.completeJob).toHaveBeenCalledTimes(jobs.length)
@@ -168,13 +188,35 @@ describe('durable job runner orchestration', () => {
     expect(mocks.authInvitation).toHaveBeenCalledWith({ invitationId: entityId, workspaceId })
     expect(mocks.lifecycleEmail).toHaveBeenCalledWith(expect.objectContaining({ effectiveAt: new Date('2026-08-12T10:00:00.000Z') }))
     expect(mocks.stripeUpdate).toHaveBeenCalledWith('sub_123', { cancel_at_period_end: true })
+    expect(mocks.recordStripeCancellation).toHaveBeenCalledWith(expect.objectContaining({
+      workspaceId, subscriptionId: 'sub_123', state: 'confirmed',
+    }))
+    expect(mocks.externalCleanup).toHaveBeenCalledOnce()
+    expect(mocks.revokeGoogleConnection).toHaveBeenCalledWith(workspaceId)
+    expect(mocks.stripeReconciliation).toHaveBeenCalledWith(workspaceId, expect.any(Object))
     expect(mocks.rotateSecrets).toHaveBeenCalledWith(workspaceId)
   })
 
   it('excludes notification jobs when the notification kill switch is off', async () => {
-    mocks.featureEnabled.mockReturnValue(false)
+    mocks.featureEnabled.mockImplementation((flag) => flag !== 'notifications')
     await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
     expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining(['notification.deliver']))
+  })
+
+  it('excludes every Google read job when its independent kill switch is off', async () => {
+    mocks.featureEnabled.mockImplementation((flag) => flag !== 'googleReads')
+    await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
+    expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining([
+      'monitoring.scan',
+      'monitoring.weekly_digest',
+      'google.mutation.reconcile',
+      'mutation.observe',
+      'metrics.daily_sync',
+      'google.accounts_sync',
+      'google.read_drill',
+      'google.change_sync',
+      'conversion.actions_sync',
+    ]))
   })
 
   it('applies notification retry semantics and non-retryable dead-letter semantics', async () => {
@@ -313,7 +355,7 @@ describe('durable job runner orchestration', () => {
 
   it('applies all retention windows and includes expired export artifacts', async () => {
     mocks.jobs.push(job('retention.run', {}, { workspaceId: null }))
-    mocks.deleteExports.mockResolvedValue({ deleted: 3 })
+    mocks.deleteExports.mockResolvedValue({ expired: 3 })
     const retentionDb = databaseDouble()
     mocks.databases.push(retentionDb.db)
     const result = await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
@@ -338,6 +380,7 @@ describe('durable job runner orchestration', () => {
       [{ id: workspaceId, accessState: 'trial', trialStartedAt, trialEndsAt }],
       [{ workspaceId }],
       [{ id: entityId }],
+      [{ workspaceId }],
     ] })
     mocks.databases.push(schedulerDb.db)
     await seedScheduledJobs(now)
@@ -346,12 +389,43 @@ describe('durable job runner orchestration', () => {
       'retention.run', 'lifecycle.email', 'monitoring.scan', 'monitoring.weekly_digest', 'report.schedule_deliver',
       'task.personal_digest', 'metrics.daily_sync', 'google.change_sync', 'conversion.actions_sync',
       'google.mutation.reconcile', 'workspace.purge', 'workspace.export',
-      'secrets.rotate', 'subprocessor.notice_fanout',
+      'secrets.rotate', 'subprocessor.notice_fanout', 'stripe.reconcile',
     ]))
     expect(pending).toContainEqual(expect.objectContaining({
       type: 'secrets.rotate',
       deduplicationKey: `secrets.rotate:${workspaceId}:kid-2`,
     }))
     expect(pending.every((item) => item.deduplicationKey.length > 5)).toBe(true)
+  })
+
+  it('seeds only provider-independent work while Google reads and notifications are disabled', async () => {
+    const now = new Date('2026-08-10T08:00:00Z')
+    const trialStartedAt = new Date('2026-08-03T08:00:00Z')
+    const trialEndsAt = new Date('2026-08-17T08:00:00Z')
+    mocks.featureEnabled.mockReturnValue(false)
+    mocks.trialDue.mockReturnValue(['welcome', 'trial_day_7'])
+    const schedulerDb = databaseDouble({ statementResults: [
+      [{ workspaceId, timezone: 'Europe/Paris' }],
+      [{ approvalId: entityId, workspaceId }],
+      [{ workspaceId, purgeAt: new Date('2026-08-09T00:00:00Z') }],
+      [{ workspaceId, clientId, timezone: 'Europe/Paris' }],
+      [{ exportJobId: entityId, workspaceId }],
+      [{ id: entityId, workspaceId, cadence: 'weekly', scheduleWeekday: 1, scheduleMonthday: null, sendHour: 8, timezone: 'Europe/Paris', lastRunKey: null }],
+      [{ id: clientId, workspaceId, cadence: 'daily', digestHour: 8, timezone: 'Europe/Paris', lastDigestKey: null }],
+      [{ id: workspaceId, accessState: 'trial', trialStartedAt, trialEndsAt }],
+      [],
+      [{ id: entityId }],
+      [{ workspaceId }],
+    ] })
+    mocks.databases.push(schedulerDb.db)
+    await seedScheduledJobs(now)
+    const [pending] = mocks.enqueueJobs.mock.calls[0] as [Array<{ type: string }>]
+    expect(new Set(pending.map((item) => item.type))).toEqual(new Set([
+      'retention.run',
+      'stripe.reconcile',
+      'workspace.purge',
+      'workspace.export',
+    ]))
+    expect(mocks.trialDue).not.toHaveBeenCalled()
   })
 })

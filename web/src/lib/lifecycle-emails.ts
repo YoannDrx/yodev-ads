@@ -50,7 +50,9 @@ export async function deliverLifecycleEmail(input: {
     subject: email.subject,
     html: email.html,
     idempotencyKey,
-    tag: `lifecycle_${input.kind}`,
+    category: `lifecycle_${input.kind}`,
+    workspaceId: workspace.id,
+    referenceId: input.referenceKey,
   })
 
   await withSystemTransaction((db) => db.insert(auditEvents).values({

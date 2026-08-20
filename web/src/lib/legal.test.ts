@@ -1,16 +1,20 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { LEGAL_VERSIONS, legalRequestFingerprint, requireCommercialLegalReadiness } from './legal'
 
 describe('legal evidence', () => {
   beforeEach(() => {
     process.env.LEGAL_FINGERPRINT_KEY = 'legal-test-key'
     delete process.env.LEGAL_DOCUMENTS_APPROVED
-    delete process.env.CONSUMER_MEDIATOR_NAME
-    delete process.env.CONSUMER_MEDIATOR_URL
+  })
+
+  afterEach(() => {
+    delete process.env.LEGAL_FINGERPRINT_KEY
+    delete process.env.APP_ENCRYPTION_KEY
+    delete process.env.LEGAL_DOCUMENTS_APPROVED
   })
 
   it('versions every acceptance-controlled document', () => {
-    expect(Object.values(LEGAL_VERSIONS)).toEqual(['2026-08-12', '2026-08-12', '2026-08-12', '2026-08-12'])
+    expect(Object.values(LEGAL_VERSIONS)).toEqual(['2026-08-16-b2b', '2026-08-16-b2b', '2026-08-16-b2b', '2026-08-16-b2b'])
   })
 
   it('pseudonymizes request context without storing raw IP or user-agent', () => {
@@ -22,16 +26,21 @@ describe('legal evidence', () => {
   })
 
   it('blocks commercial checkout until the documents are professionally approved', () => {
-    expect(() => requireCommercialLegalReadiness('business')).toThrow('documents commerciaux')
+    expect(() => requireCommercialLegalReadiness()).toThrow('documents commerciaux')
     process.env.LEGAL_DOCUMENTS_APPROVED = '1'
-    expect(() => requireCommercialLegalReadiness('business')).not.toThrow()
+    expect(() => requireCommercialLegalReadiness()).not.toThrow()
   })
 
-  it('also requires a configured consumer mediator before B2C checkout', () => {
-    process.env.LEGAL_DOCUMENTS_APPROVED = '1'
-    expect(() => requireCommercialLegalReadiness('individual')).toThrow('médiateur')
-    process.env.CONSUMER_MEDIATOR_NAME = 'Test mediator'
-    process.env.CONSUMER_MEDIATOR_URL = 'https://mediator.example'
-    expect(() => requireCommercialLegalReadiness('individual')).not.toThrow()
+  it('falls back to the encryption key and normalizes missing request headers', () => {
+    delete process.env.LEGAL_FINGERPRINT_KEY
+    process.env.APP_ENCRYPTION_KEY = 'fallback-key'
+    expect(legalRequestFingerprint(new Headers())).toMatch(/^[a-f0-9]{64}$/)
   })
+
+  it('fails closed when no fingerprint key is available', () => {
+    delete process.env.LEGAL_FINGERPRINT_KEY
+    delete process.env.APP_ENCRYPTION_KEY
+    expect(() => legalRequestFingerprint(new Headers())).toThrow('not configured')
+  })
+
 })

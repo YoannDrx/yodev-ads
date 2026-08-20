@@ -8,5 +8,6 @@ __pycache__/
 credentials.json
 google-ads.yaml
 .vercel
+.playwright-mcp/
 .env*
 !web/.env.example

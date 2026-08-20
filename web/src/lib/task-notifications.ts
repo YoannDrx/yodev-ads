@@ -18,14 +18,16 @@ function appTasksUrl() {
   return `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr'}/tasks`
 }
 
-async function sendEmail(input: { to: string; subject: string; html: string; idempotencyKey: string }) {
+async function sendEmail(input: { to: string; subject: string; html: string; idempotencyKey: string; workspaceId: string; referenceId: string }) {
   const result = await sendTransactionalEmail({
     from: process.env.TASK_FROM_EMAIL ?? process.env.NOTIFICATION_FROM_EMAIL ?? 'Ads by Yodev <ads@yodev.fr>',
     to: input.to,
     subject: input.subject,
     html: input.html,
     idempotencyKey: input.idempotencyKey,
-    tag: input.idempotencyKey.startsWith('task-mention:') ? 'task_mention' : 'task_digest',
+    category: input.idempotencyKey.startsWith('task-mention:') ? 'task_mention' : 'task_digest',
+    workspaceId: input.workspaceId,
+    referenceId: input.referenceId,
   })
   return result.providerMessageId
 }
@@ -55,6 +57,8 @@ export async function deliverTaskMention(commentId: string, preferenceId: string
       subject: email.subject,
       html: email.html,
       idempotencyKey: `task-mention:${context.comment.id}:${context.preference.id}`,
+      workspaceId: context.workspace.id,
+      referenceId: context.comment.id,
     })
     await withSystemTransaction(async (db) => {
       await db.update(memberNotificationPreferences).set({ lastError: null, updatedAt: new Date() }).where(eq(memberNotificationPreferences.id, context.preference.id))
@@ -119,6 +123,8 @@ export async function deliverPersonalTaskDigest(preferenceId: string, runKey: st
       subject: email.subject,
       html: email.html,
       idempotencyKey: `task-digest:${context.preference.id}:${runKey}`,
+      workspaceId: context.workspace.id,
+      referenceId: runKey,
     })
     await withSystemTransaction(async (db) => {
       await db.update(memberNotificationPreferences).set({

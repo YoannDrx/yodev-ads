@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await processStripeWebhookEvent(event)
+    const result = await processStripeWebhookEvent(event, { stripe: getStripe() })
     if (result.duplicate) return NextResponse.json({ received: true, duplicate: true })
   } catch (error) {
     console.error(JSON.stringify({

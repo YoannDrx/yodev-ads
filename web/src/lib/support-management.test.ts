@@ -83,6 +83,13 @@ describe('support management', () => {
     }))
   })
 
+  it('can restrict an external client reply to a ticket they requested', async () => {
+    const database = supportDatabase({ statementResults: [[{ id: messageId }]], ticket: { ...ticket, requestedBy: actorUserId } })
+    mocks.tenantDatabases.push(database.db)
+    await addTenantSupportMessage({ workspaceId, actorUserId, ticketId, body: 'Contexte client', requesterOnly: true, now })
+    expect(database.capture.values).toContainEqual(expect.objectContaining({ ticketId, authorUserId: actorUserId }))
+  })
+
   it('rejects missing and closed tenant tickets', async () => {
     mocks.tenantDatabases.push(
       supportDatabase().db,

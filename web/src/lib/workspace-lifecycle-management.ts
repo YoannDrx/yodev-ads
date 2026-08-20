@@ -51,10 +51,17 @@ export function markWorkspaceDeletionPending(input: ActorContext & {
   previousAccessState: WorkspaceAccessState
   googleRevocationConfirmed: boolean
   stripeCancellationQueued: boolean
+  googleRevocationState?: 'not_required' | 'pending' | 'confirmed'
+  stripeCancellationState?: 'not_required' | 'pending' | 'confirmed'
+  stripeSubscriptionId?: string | null
   now?: Date
 }) {
   const now = input.now ?? new Date()
   const purgeAt = new Date(now.getTime() + 30 * 24 * 60 * 60_000)
+  const googleRevocationState = input.googleRevocationState
+    ?? (input.googleRevocationConfirmed ? 'confirmed' : 'pending')
+  const stripeCancellationState = input.stripeCancellationState
+    ?? (input.stripeCancellationQueued ? 'pending' : 'not_required')
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
     await lockWorkspaceAccessBoundary(transaction, input.workspaceId)
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:deletion`}))`)
@@ -86,7 +93,9 @@ export function markWorkspaceDeletionPending(input: ActorContext & {
     await transaction.update(jobs).set({
       status: 'cancelled', leaseOwner: null, leaseExpiresAt: null, updatedAt: now,
     }).where(and(eq(jobs.workspaceId, input.workspaceId), inArray(jobs.status, ['queued', 'retrying', 'running'])))
-    await transaction.delete(googleAdsConnections).where(eq(googleAdsConnections.workspaceId, input.workspaceId))
+    if (googleRevocationState !== 'pending') {
+      await transaction.delete(googleAdsConnections).where(eq(googleAdsConnections.workspaceId, input.workspaceId))
+    }
     await transaction.insert(deletionRequests).values({
       workspaceId: input.workspaceId,
       requestedBy: input.actorUserId,
@@ -94,6 +103,13 @@ export function markWorkspaceDeletionPending(input: ActorContext & {
       status: 'pending',
       requestedAt: now,
       purgeAt,
+      stripeSubscriptionId: input.stripeSubscriptionId ?? null,
+      stripeCancellationState,
+      stripeCancellationConfirmedAt: stripeCancellationState === 'confirmed' ? now : null,
+      stripeCancellationError: null,
+      googleRevocationState,
+      googleRevocationConfirmedAt: googleRevocationState === 'confirmed' ? now : null,
+      googleRevocationError: null,
     }).onConflictDoUpdate({
       target: deletionRequests.workspaceId,
       set: {
@@ -104,6 +120,13 @@ export function markWorkspaceDeletionPending(input: ActorContext & {
         purgeAt,
         cancelledAt: null,
         completedAt: null,
+        stripeSubscriptionId: input.stripeSubscriptionId ?? null,
+        stripeCancellationState,
+        stripeCancellationConfirmedAt: stripeCancellationState === 'confirmed' ? now : null,
+        stripeCancellationError: null,
+        googleRevocationState,
+        googleRevocationConfirmedAt: googleRevocationState === 'confirmed' ? now : null,
+        googleRevocationError: null,
       },
     })
     await transaction.insert(auditEvents).values({
@@ -115,7 +138,10 @@ export function markWorkspaceDeletionPending(input: ActorContext & {
       metadata: {
         purgeAt: purgeAt.toISOString(),
         googleRevocationConfirmed: input.googleRevocationConfirmed,
+        googleRevocationState,
         stripeCancellationQueued: input.stripeCancellationQueued,
+        stripeCancellationState,
+        stripeSubscriptionId: input.stripeSubscriptionId ?? null,
       },
     })
     return { purgeAt, requestedAt: now }

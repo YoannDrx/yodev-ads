@@ -121,7 +121,7 @@ export const authMembers = pgTable(
     id: text('id').primaryKey(),
     organizationId: text('organization_id').references(() => authOrganizations.id, { onDelete: 'cascade' }).notNull(),
     userId: text('user_id').references(() => authUsers.id, { onDelete: 'cascade' }).notNull(),
-    role: varchar('role', { length: 32 }).default('viewer').notNull(),
+    role: varchar('role', { length: 32 }).default('client').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -136,7 +136,7 @@ export const authInvitations = pgTable(
     id: text('id').primaryKey(),
     organizationId: text('organization_id').references(() => authOrganizations.id, { onDelete: 'cascade' }).notNull(),
     email: varchar('email', { length: 320 }).notNull(),
-    role: varchar('role', { length: 32 }).default('viewer').notNull(),
+    role: varchar('role', { length: 32 }).default('client').notNull(),
     status: varchar('status', { length: 32 }).default('pending').notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     inviterId: text('inviter_id').references(() => authUsers.id, { onDelete: 'cascade' }).notNull(),
@@ -202,6 +202,7 @@ export const workspaces = pgTable(
     timezone: varchar('timezone', { length: 64 }).default('Europe/Paris').notNull(),
     countryCode: varchar('country_code', { length: 2 }).default('FR').notNull(),
     billingEmail: varchar('billing_email', { length: 254 }),
+    billingLegalName: varchar('billing_legal_name', { length: 180 }),
     deletionRequestedAt: timestamp('deletion_requested_at', { withTimezone: true }),
     purgeAt: timestamp('purge_at', { withTimezone: true }),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -215,6 +216,10 @@ export const workspaces = pgTable(
     checkoutReservedAt: timestamp('checkout_reserved_at', { withTimezone: true }),
     subscriptionCurrentPeriodEnd: timestamp('subscription_current_period_end', { withTimezone: true }),
     stripeStateAppliedAt: timestamp('stripe_state_applied_at', { withTimezone: true }),
+    requestedPlan: varchar('requested_plan', { length: 24 }),
+    requestedPlanEffectiveAt: timestamp('requested_plan_effective_at', { withTimezone: true }),
+    billingReconciliationRequired: boolean('billing_reconciliation_required').default(false).notNull(),
+    billingReconciliationReason: text('billing_reconciliation_reason'),
     notificationEmail: varchar('notification_email', { length: 254 }),
     maximumDailyBudgetMicros: numeric('maximum_daily_budget_micros', { precision: 22, scale: 0 }),
     maximumMonthlySpendMicros: numeric('maximum_monthly_spend_micros', { precision: 22, scale: 0 }),
@@ -845,6 +850,39 @@ export const stripeWebhookEvents = pgTable(
   (table) => [uniqueIndex('stripe_webhook_events_event_idx').on(table.eventId)],
 )
 
+export const operationalRuns = pgTable(
+  'operational_runs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    component: varchar('component', { length: 64 }).notNull(),
+    runKey: varchar('run_key', { length: 160 }).notNull(),
+    status: varchar('status', { length: 24 }).default('running').notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    durationMs: integer('duration_ms'),
+    workCount: integer('work_count').default(0).notNull(),
+    details: jsonb('details').$type<Record<string, unknown>>().default({}).notNull(),
+    errorMessage: text('error_message'),
+    nextExpectedAt: timestamp('next_expected_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('operational_runs_component_key_idx').on(table.component, table.runKey),
+    index('operational_runs_component_started_idx').on(table.component, table.startedAt),
+  ],
+)
+
+export const operationalLeases = pgTable(
+  'operational_leases',
+  {
+    component: varchar('component', { length: 64 }).primaryKey(),
+    owner: varchar('owner', { length: 160 }).notNull(),
+    leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('operational_leases_expiry_idx').on(table.leaseExpiresAt)],
+)
+
 export const yodevMailEvents = pgTable(
   'yodev_mail_events',
   {
@@ -855,6 +893,33 @@ export const yodevMailEvents = pgTable(
     receivedAt: timestamp('received_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index('yodev_mail_events_message_idx').on(table.messageId, table.occurredAt)],
+)
+
+export const transactionalEmailDeliveries = pgTable(
+  'transactional_email_deliveries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'set null' }),
+    category: varchar('category', { length: 64 }).notNull(),
+    businessKey: varchar('business_key', { length: 240 }).notNull(),
+    recipientHash: varchar('recipient_hash', { length: 64 }).notNull(),
+    contentHash: varchar('content_hash', { length: 64 }).notNull(),
+    providerMessageId: uuid('provider_message_id'),
+    status: varchar('status', { length: 24 }).default('pending').notNull(),
+    attemptCount: integer('attempt_count').default(0).notNull(),
+    lastError: text('last_error'),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    deliveredAt: timestamp('delivered_at', { withTimezone: true }),
+    terminalAt: timestamp('terminal_at', { withTimezone: true }),
+    lastEventAt: timestamp('last_event_at', { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex('transactional_email_deliveries_business_idx').on(table.businessKey),
+    uniqueIndex('transactional_email_deliveries_message_idx').on(table.providerMessageId),
+    index('transactional_email_deliveries_workspace_idx').on(table.workspaceId, table.createdAt),
+    index('transactional_email_deliveries_status_idx').on(table.status, table.updatedAt),
+  ],
 )
 
 export const legalAcceptances = pgTable(
@@ -1211,6 +1276,13 @@ export const deletionRequests = pgTable(
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     tombstoneHash: varchar('tombstone_hash', { length: 64 }),
+    stripeSubscriptionId: varchar('stripe_subscription_id', { length: 64 }),
+    stripeCancellationState: varchar('stripe_cancellation_state', { length: 24 }).default('not_required').notNull(),
+    stripeCancellationConfirmedAt: timestamp('stripe_cancellation_confirmed_at', { withTimezone: true }),
+    stripeCancellationError: text('stripe_cancellation_error'),
+    googleRevocationState: varchar('google_revocation_state', { length: 24 }).default('not_required').notNull(),
+    googleRevocationConfirmedAt: timestamp('google_revocation_confirmed_at', { withTimezone: true }),
+    googleRevocationError: text('google_revocation_error'),
   },
   (table) => [uniqueIndex('deletion_requests_workspace_idx').on(table.workspaceId)],
 )
@@ -1223,6 +1295,9 @@ export const workspaceDeletionTombstones = pgTable(
     deletionRequestedAt: timestamp('deletion_requested_at', { withTimezone: true }).notNull(),
     purgedAt: timestamp('purged_at', { withTimezone: true }).defaultNow().notNull(),
     retainUntil: timestamp('retain_until', { withTimezone: true }).notNull(),
+    externalCleanupStatus: varchar('external_cleanup_status', { length: 24 }).default('pending').notNull(),
+    externalCleanupError: text('external_cleanup_error'),
+    externalCleanupCompletedAt: timestamp('external_cleanup_completed_at', { withTimezone: true }),
   },
   (table) => [uniqueIndex('workspace_tombstones_hash_idx').on(table.workspaceHash)],
 )

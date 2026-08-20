@@ -18,7 +18,7 @@ const readOnlyOrganizationRole = {
 export const authOrganizationRoles = {
   owner: authOrganizationAccess.newRole(readOnlyOrganizationRole),
   admin: authOrganizationAccess.newRole(readOnlyOrganizationRole),
-  operator: authOrganizationAccess.newRole(readOnlyOrganizationRole),
+  strategist: authOrganizationAccess.newRole(readOnlyOrganizationRole),
   analyst: authOrganizationAccess.newRole(readOnlyOrganizationRole),
-  viewer: authOrganizationAccess.newRole(readOnlyOrganizationRole),
+  client: authOrganizationAccess.newRole(readOnlyOrganizationRole),
 }
