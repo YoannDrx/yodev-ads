@@ -2,7 +2,7 @@ import 'server-only'
 
 import type Stripe from 'stripe'
 import { and, eq, isNull, lte, or } from 'drizzle-orm'
-import { auditEvents, clients, jobs, stripeWebhookEvents, workspaces } from '@/db/schema'
+import { auditEvents, clients, googleAdsConnections, jobs, stripeWebhookEvents, workspaces } from '@/db/schema'
 import type { DatabaseTransaction } from '@/db/transactions'
 import { withSystemTransaction } from '@/db/transactions'
 import {
@@ -80,6 +80,13 @@ async function applyPlanQuota(
     where: eq(clients.workspaceId, workspaceId),
     columns: { id: true, googleCustomerId: true, isManager: true, active: true },
   })
+  const activeGoogleConnection = await db.query.googleAdsConnections.findFirst({
+    where: and(
+      eq(googleAdsConnections.workspaceId, workspaceId),
+      eq(googleAdsConnections.status, 'active'),
+    ),
+    columns: { id: true },
+  })
   const accountQuota = accountsWithinPlan(
     workspaceClients
       .filter((client) => client.active)
@@ -96,14 +103,16 @@ async function applyPlanQuota(
       .where(and(eq(clients.workspaceId, workspaceId), eq(clients.id, client.id)))
     accountActivationChanges += 1
   }
-  await db.insert(jobs).values({
-    workspaceId,
-    type: 'google.accounts_sync',
-    payload: { workspaceId },
-    priority: 25,
-    deduplicationKey: `google.accounts_sync:${workspaceId}:${eventId}`,
-  }).onConflictDoNothing({ target: jobs.deduplicationKey })
-  return { accountQuota, accountActivationChanges }
+  if (activeGoogleConnection) {
+    await db.insert(jobs).values({
+      workspaceId,
+      type: 'google.accounts_sync',
+      payload: { workspaceId },
+      priority: 25,
+      deduplicationKey: `google.accounts_sync:${workspaceId}:${eventId}`,
+    }).onConflictDoNothing({ target: jobs.deduplicationKey })
+  }
+  return { accountQuota, accountActivationChanges, accountSyncQueued: Boolean(activeGoogleConnection) }
 }
 
 function scheduledPlan(schedule: Stripe.SubscriptionSchedule) {
@@ -343,7 +352,7 @@ export async function processStripeWebhookEvent(event: Stripe.Event, options: { 
 
         if (workspace) {
           const quota = isUpgrade
-            ? { accountQuota: accountsWithinPlan([], planToApply), accountActivationChanges: 0 }
+            ? { accountQuota: accountsWithinPlan([], planToApply), accountActivationChanges: 0, accountSyncQueued: false }
             : await applyPlanQuota(db, workspace.id, record.plan, event.id)
           await db.insert(auditEvents).values({
             workspaceId: workspace.id,
@@ -361,6 +370,7 @@ export async function processStripeWebhookEvent(event: Stripe.Event, options: { 
               activeAdvertiserAccounts: quota.accountQuota.included.filter((client) => !client.isManager).length,
               inactiveAdvertiserAccounts: quota.accountQuota.excluded.length,
               accountActivationChanges: quota.accountActivationChanges,
+              accountSyncQueued: quota.accountSyncQueued,
             },
           })
           if (subscription.cancel_at_period_end) {
