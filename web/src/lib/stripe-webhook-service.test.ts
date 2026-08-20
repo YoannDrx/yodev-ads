@@ -22,10 +22,11 @@ function event(type: Stripe.Event.Type, object: unknown, id = 'evt_1'): Stripe.E
   return { id, type, created: 1_786_531_200, data: { object } } as Stripe.Event
 }
 
-function queryMap(input: { workspace?: unknown; clients?: unknown[] } = {}) {
+function queryMap(input: { workspace?: unknown; clients?: unknown[]; googleConnection?: unknown } = {}) {
   return {
     workspaces: { findFirst: vi.fn(async () => input.workspace) },
     clients: { findMany: vi.fn(async () => input.clients ?? []) },
+    googleAdsConnections: { findFirst: vi.fn(async () => input.googleConnection) },
   }
 }
 
@@ -114,7 +115,11 @@ describe('Stripe webhook durable service', () => {
     }))
     const processing = databaseDouble({
       statementResults: [[{ id: workspaceId }]],
-      query: queryMap({ workspace: { id: workspaceId, plan: 'studio', accessState: 'active' }, clients: accounts }),
+      query: queryMap({
+        workspace: { id: workspaceId, plan: 'studio', accessState: 'active' },
+        clients: accounts,
+        googleConnection: { id: 'connection-1' },
+      }),
     })
     mocks.databases.push(claim.db, processing.db)
     const subscription = {
@@ -140,7 +145,33 @@ describe('Stripe webhook durable service', () => {
     }))
     expect(processing.capture.values).toContainEqual(expect.objectContaining({
       action: 'billing.customer.subscription.updated',
-      metadata: expect.objectContaining({ inactiveAdvertiserAccounts: 1 }),
+      metadata: expect.objectContaining({ inactiveAdvertiserAccounts: 1, accountSyncQueued: true }),
+    }))
+  })
+
+  it('does not enqueue a Google account sync without an active Google Ads connection', async () => {
+    const claim = databaseDouble({ statementResults: [[{ id: 'event-row' }]] })
+    const processing = databaseDouble({
+      statementResults: [[{ id: workspaceId }]],
+      query: queryMap({ workspace: { id: workspaceId, plan: 'solo', accessState: 'suspended' } }),
+    })
+    mocks.databases.push(claim.db, processing.db)
+    const subscription = {
+      id: 'sub_1',
+      customer: 'cus_1',
+      status: 'active',
+      cancel_at_period_end: false,
+      metadata: { workspaceId, plan: 'solo' },
+      items: { data: [{ price: { id: 'price_solo', currency: 'eur', recurring: { interval: 'month' } }, quantity: 1, current_period_end: 1_800_000_000 }] },
+    }
+
+    await expect(processStripeWebhookEvent(event('customer.subscription.created', subscription)))
+      .resolves.toEqual({ duplicate: false })
+
+    expect(processing.capture.values).not.toContainEqual(expect.objectContaining({ type: 'google.accounts_sync' }))
+    expect(processing.capture.values).toContainEqual(expect.objectContaining({
+      action: 'billing.customer.subscription.created',
+      metadata: expect.objectContaining({ accountSyncQueued: false }),
     }))
   })
 
