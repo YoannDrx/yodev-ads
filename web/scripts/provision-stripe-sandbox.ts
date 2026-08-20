@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 
 const secretKey = process.env.STRIPE_SECRET_KEY
 if (!secretKey) throw new Error('STRIPE_SECRET_KEY is required')
-if (!secretKey.includes('_test_')) throw new Error('Refusing to provision products outside a Stripe sandbox')
+if (!/^(?:sk|rk)_test_/.test(secretKey)) throw new Error('Refusing to provision products outside a Stripe sandbox')
 const vercelProject = process.env.YODEV_VERCEL_PROJECT
 if (!vercelProject) throw new Error('YODEV_VERCEL_PROJECT is required to prevent accidental production configuration')
 const appUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -13,10 +13,22 @@ const targetAppUrl: string = appUrl
 
 const stripe = new Stripe(secretKey)
 const plans = [
-  { id: 'solo', name: 'Ads by Yodev Solo', amount: 2_900 },
-  { id: 'studio', name: 'Ads by Yodev Studio', amount: 8_900 },
-  { id: 'agency', name: 'Ads by Yodev Agency', amount: 18_900 },
+  { id: 'solo', name: 'Solo', amount: 2_900 },
+  { id: 'studio', name: 'Studio', amount: 8_900 },
+  { id: 'agency', name: 'Agency', amount: 18_900 },
 ] as const
+
+const productDefinition = {
+  name: 'Ads by Yodev',
+  description: 'Cockpit SaaS français de pilotage Google Ads pour indépendants et agences, avec surveillance multi-client, alertes explicables et changements contrôlés.',
+  statementDescriptor: 'ADS BY YODEV',
+  url: 'https://ads.yodev.fr',
+  marketingFeatures: [
+    'Surveillance et diagnostics Google Ads multi-client',
+    'Alertes explicables et opérations validées avant exécution',
+    'Rapports clients et garde-fous de dépenses',
+  ],
+} as const
 
 function setVercelEnvironment(name: string, value: string, sensitive = false) {
   const targets = [{ environments: 'production', visibility: sensitive ? '--sensitive' : '--no-sensitive' }]
@@ -36,33 +48,49 @@ function setVercelEnvironment(name: string, value: string, sensitive = false) {
 
 async function main() {
   const existingProducts = await stripe.products.list({ active: true, limit: 100 })
-  const product = existingProducts.data.find(
+  const existingProduct = existingProducts.data.find(
     (item) => item.metadata.yodev_product === 'ads' && item.metadata.yodev_catalog === 'commercial_v1',
-  ) ?? await stripe.products.create({
-    name: 'Ads by Yodev',
+  )
+  const productInput = {
+    name: productDefinition.name,
+    description: productDefinition.description,
+    statement_descriptor: productDefinition.statementDescriptor,
+    url: productDefinition.url,
+    marketing_features: productDefinition.marketingFeatures.map((name) => ({ name })),
     metadata: { yodev_product: 'ads', yodev_catalog: 'commercial_v1' },
-  })
+  } satisfies Stripe.ProductCreateParams
+  const product = existingProduct
+    ? await stripe.products.update(existingProduct.id, productInput)
+    : await stripe.products.create(productInput)
   const configuredPrices: string[] = []
   for (const plan of plans) {
     const prices = await stripe.prices.list({ product: product.id, active: true, limit: 100 })
     const price =
       prices.data.find(
         (item) =>
+          item.lookup_key === `yodev_ads_${plan.id}_monthly_v1` &&
           item.currency === 'eur' &&
           item.unit_amount === plan.amount &&
-          item.recurring?.interval === 'month',
+          item.recurring?.interval === 'month' &&
+          item.tax_behavior === 'exclusive' &&
+          item.metadata.yodev_plan === plan.id,
       ) ??
       (await stripe.prices.create({
         product: product.id,
         currency: 'eur',
         unit_amount: plan.amount,
         recurring: { interval: 'month' },
+        tax_behavior: 'exclusive',
         lookup_key: `yodev_ads_${plan.id}_monthly_v1`,
         transfer_lookup_key: true,
+        nickname: plan.name,
         metadata: { yodev_product: 'ads', yodev_plan: plan.id },
       }))
     configuredPrices.push(price.id)
     setVercelEnvironment(`STRIPE_PRICE_${plan.id.toUpperCase()}`, price.id)
+  }
+  if (product.default_price !== configuredPrices[0]) {
+    await stripe.products.update(product.id, { default_price: configuredPrices[0] })
   }
 
   const portalConfigurations = await stripe.billingPortal.configurations.list({ active: true, limit: 100 })
