@@ -42,14 +42,14 @@ describe('operational run registry', () => {
     })
   })
 
-  it('normalizes a failed run and returns only the latest row per component', async () => {
+  it('normalizes a failed run and fetches the latest row for every component independently', async () => {
     const startedAt = new Date('2026-08-17T10:00:00.000Z')
     const failed = databaseDouble()
-    const latest = databaseDouble({ query: { operationalRuns: { findMany: vi.fn(async () => [
-      { id: 'scheduler-new', component: 'scheduler' },
-      { id: 'retention-new', component: 'retention' },
-      { id: 'scheduler-old', component: 'scheduler' },
-    ]) } } })
+    const findFirst = vi.fn()
+      .mockResolvedValueOnce({ id: 'scheduler-new', component: 'scheduler' })
+      .mockResolvedValueOnce({ id: 'retention-new', component: 'retention' })
+      .mockResolvedValueOnce(undefined)
+    const latest = databaseDouble({ query: { operationalRuns: { findFirst } } })
     mocks.databases.push(failed.db, latest.db)
 
     await failOperationalRun({ component: 'scheduler', runKey: 'request-1', startedAt, error: new Error('boom') })
@@ -57,6 +57,7 @@ describe('operational run registry', () => {
       scheduler: { id: 'scheduler-new', component: 'scheduler' },
       retention: { id: 'retention-new', component: 'retention' },
     })
+    expect(findFirst).toHaveBeenCalledTimes(3)
     expect(failed.capture.sets[0]).toMatchObject({ status: 'failed', errorMessage: 'boom' })
   })
 

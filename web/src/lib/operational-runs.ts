@@ -6,6 +6,8 @@ import { withSystemTransaction } from '@/db/transactions'
 
 export type OperationalComponent = 'scheduler' | 'retention' | 'stripe_reconciliation'
 
+const operationalComponents: OperationalComponent[] = ['scheduler', 'retention', 'stripe_reconciliation']
+
 function normalizedError(error: unknown) {
   return (error instanceof Error ? error.message : String(error)).slice(0, 2000)
 }
@@ -115,12 +117,14 @@ export function failOperationalRun(input: {
 
 export function latestOperationalRuns() {
   return withSystemTransaction(async (db) => {
-    const rows = await db.query.operationalRuns.findMany({
-      orderBy: [desc(operationalRuns.startedAt)],
-      limit: 100,
-    })
-    const latest = new Map<string, typeof rows[number]>()
-    for (const row of rows) if (!latest.has(row.component)) latest.set(row.component, row)
-    return Object.fromEntries(latest)
+    const latest: Partial<Record<OperationalComponent, typeof operationalRuns.$inferSelect>> = {}
+    for (const component of operationalComponents) {
+      const row = await db.query.operationalRuns.findFirst({
+        where: eq(operationalRuns.component, component),
+        orderBy: [desc(operationalRuns.startedAt)],
+      })
+      if (row) latest[component] = row
+    }
+    return latest
   })
 }
