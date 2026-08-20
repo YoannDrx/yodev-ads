@@ -3,12 +3,23 @@ import { writeFile } from 'node:fs/promises'
 import { isAbsolute } from 'node:path'
 import { Pool, type PoolClient } from 'pg'
 
-const loginRoles = [
-  { login: 'yodev_ads_app_login', group: 'yodev_app', inherit: false, env: 'DATABASE_AUTHENTICATED_URL' },
-  { login: 'yodev_ads_system_login', group: 'yodev_system', inherit: false, env: 'DATABASE_SYSTEM_URL' },
-  { login: 'yodev_ads_purge_login', group: 'yodev_purge', inherit: false, env: 'DATABASE_PURGE_URL' },
-  { login: 'yodev_ads_auth_login', group: 'yodev_auth', inherit: true, env: 'DATABASE_AUTH_URL' },
-] as const
+function databaseLoginPrefix() {
+  const prefix = process.env.YODEV_DB_LOGIN_PREFIX ?? 'yodev_ads'
+  if (!/^[a-z][a-z0-9_]{2,47}$/.test(prefix)) {
+    throw new Error('YODEV_DB_LOGIN_PREFIX must be a lowercase PostgreSQL identifier between 3 and 48 characters')
+  }
+  return prefix
+}
+
+function databaseLoginRoles() {
+  const prefix = databaseLoginPrefix()
+  return [
+    { login: `${prefix}_app_login`, group: 'yodev_app', inherit: false, env: 'DATABASE_AUTHENTICATED_URL' },
+    { login: `${prefix}_system_login`, group: 'yodev_system', inherit: false, env: 'DATABASE_SYSTEM_URL' },
+    { login: `${prefix}_purge_login`, group: 'yodev_purge', inherit: false, env: 'DATABASE_PURGE_URL' },
+    { login: `${prefix}_auth_login`, group: 'yodev_auth', inherit: true, env: 'DATABASE_AUTH_URL' },
+  ] as const
+}
 
 async function formattedStatement(client: PoolClient, format: string, values: string[]) {
   const result = await client.query<{ statement: string }>('select format($1, variadic $2::text[]) as statement', [format, values])
@@ -18,6 +29,7 @@ async function formattedStatement(client: PoolClient, format: string, values: st
 }
 
 async function main() {
+  const loginRoles = databaseLoginRoles()
   const databaseUrl = process.env.DATABASE_URL
   if (!databaseUrl) throw new Error('DATABASE_URL is not configured')
   const parsed = new URL(databaseUrl)
