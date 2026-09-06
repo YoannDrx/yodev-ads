@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:local": "node scripts/verify-local-browser.mjs",
+    "db:verify-local": "node scripts/verify-local-database.mjs",
     "verify:data-boundary": "tsx scripts/verify-app-data-boundary.ts",
     "verify:transaction-serialization": "tsx scripts/verify-transaction-query-serialization.ts",
     "verify:production-config": "tsx scripts/verify-production-config.ts",

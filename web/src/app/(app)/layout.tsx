@@ -113,7 +113,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {labels[key]}
             </Link>
           ))}
-          {workspace.accessState === 'internal' && <Link href="/operations" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-amber-200/80 transition hover:bg-white/8 hover:text-amber-100"><RadioTower className="size-[18px]" />{locale === 'en' ? 'Operations' : 'Opérations'}</Link>}
+          {workspace.accessState === 'internal' && rolePermissions.has('workspace:admin') && <Link href="/operations" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-amber-200/80 transition hover:bg-white/8 hover:text-amber-100"><RadioTower className="size-[18px]" />{locale === 'en' ? 'Operations' : 'Opérations'}</Link>}
         </nav>
         <div className="mt-auto rounded-2xl border border-white/8 bg-white/5 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-[#19A58F]">{locale === 'en' ? 'Your monitor' : 'Votre vigie'}</p>
@@ -149,7 +149,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           ))}
           <MobileMenu label={locale === 'en' ? 'Full navigation' : 'Navigation complète'}>
               {accessibleNavigation.map(({ href, key, icon: Icon }) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined} className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-100"><Icon className="size-5" />{labels[key]}</Link>)}
-              {workspace.accessState === 'internal' && <Link href="/operations" className="flex min-h-11 items-center px-3 text-sm">{locale === 'en' ? 'Operations' : 'Opérations'}</Link>}
+              {workspace.accessState === 'internal' && rolePermissions.has('workspace:admin') && <Link href="/operations" className="flex min-h-11 items-center px-3 text-sm">{locale === 'en' ? 'Operations' : 'Opérations'}</Link>}
           </MobileMenu>
         </nav>
       </div>

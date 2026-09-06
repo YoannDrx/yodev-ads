@@ -44,8 +44,22 @@ npm run dev
 ```
 
 Use `npm run check` for lint, TypeScript, unit tests and a production build, then
-`npm run test:e2e` for the browser smoke suite. Secrets are provisioned through
-Vercel and must never be committed.
+`npm run test:e2e` for the browser smoke suite.
+
+For a fully local authenticated regression run, provision a disposable PostgreSQL 17
+instance named `yodev_test` on loopback, then run `npm run db:verify-local` and
+`npm run test:e2e:local` from `web`. The default database is
+`postgresql://postgres@127.0.0.1:55438/yodev_test`; override it with
+`YODEV_TEST_DATABASE_URL`. Both runners refuse remote databases. They apply the
+committed migrations, verify tenant boundaries and real concurrency, then create
+five verified fixture identities, sign them in through Better Auth and run the
+browser matrix without missing-session skips. Provider switches are disabled;
+no real Google, payment or email action is performed. The browser runner owns port
+3017, stops its server and removes its fixture identities, workspaces and temporary
+sessions after the run. These checks complement the deployed provider and
+authenticated release gates.
+
+Secrets are provisioned through Vercel and must never be committed.
 
 ## Operator CLI
 
