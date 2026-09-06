@@ -767,12 +767,15 @@ export const notificationDeliveries = pgTable(
     errorMessage: text('error_message'),
     attemptCount: integer('attempt_count').default(0).notNull(),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }),
+    leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }),
+    dispatchStartedAt: timestamp('dispatch_started_at', { withTimezone: true }),
     terminalAt: timestamp('terminal_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     uniqueIndex('notification_deliveries_event_channel_idx').on(table.eventKey, table.channelId),
     index('notification_deliveries_workspace_idx').on(table.workspaceId, table.createdAt),
+    index('notification_deliveries_recovery_idx').on(table.status, table.leaseExpiresAt, table.nextAttemptAt),
   ],
 )
 

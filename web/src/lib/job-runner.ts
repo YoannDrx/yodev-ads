@@ -195,8 +195,9 @@ async function executeJob(job: ClaimedJob) {
       const { deliveryId } = notificationPayload.parse(job.payload)
       const result = await retryNotificationDelivery(deliveryId)
       if (result === 'dead_letter') throw new NonRetryableJobError('Notification delivery reached dead-letter')
+      if (result === 'ambiguous') throw new NonRetryableJobError('Notification transport acceptance requires reconciliation')
       if (result === 'retrying') throw new Error('Notification delivery failed and is scheduled for retry')
-      if (result === 'not_available' || result === 'disabled') throw new Error('Notification delivery is not yet available for completion')
+      if (result === 'not_available' || result === 'disabled' || result === 'lease_lost') throw new Error('Notification delivery is not yet available for completion')
       return result
     }
     case 'workspace.purge': {

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { databaseDouble } from '../../test/fluent-db'
+import { currentTransactionalEmailRetryGeneration, runWithTransactionalEmailRetryGeneration } from './transactional-email-context'
 
 const mocks = vi.hoisted(() => ({
   databases: [] as unknown[],
@@ -63,6 +64,10 @@ function delivery(overrides: Record<string, unknown> = {}) {
     status: 'sending', providerMessageId: null, errorMessage: null, attemptCount: 1,
     nextAttemptAt: null, terminalAt: null, createdAt: new Date(), ...overrides,
   }
+}
+
+function dispatchMarkerDb() {
+  return databaseDouble({ statementResults: [[{ id: delivery().id }]] }).db
 }
 
 function queryDouble(input: {
@@ -147,8 +152,8 @@ describe('notification delivery orchestration', () => {
       incident: { status: 'open', createdAt: new Date(dueAt.getTime() - 4 * 3_600_000), lastNotifiedAt: acceptedAt, snoozedUntil: null },
       agent: { enabled: true, reminderIntervalHours: 4 }, client: { active: true, isManager: false },
     }]], query: queryDouble({ channel: channel(), delivery: { terminalAt: acceptedAt } }) })
-    const successDb = databaseDouble()
-    mocks.databases.push(claimDb.db, successDb.db)
+    const successDb = databaseDouble({ statementResults: [[{ id: delivery().id }]] })
+    mocks.databases.push(claimDb.db, dispatchMarkerDb(), successDb.db)
     mocks.emailSend.mockResolvedValue({ providerMessageId: 'second-channel', deliveries: [{ providerMessageId: 'second-channel', status: 'accepted' }] })
     expect(await retryNotificationDelivery(claimed.id)).toBe('accepted')
     expect(mocks.emailSend).toHaveBeenCalledOnce()
@@ -157,8 +162,8 @@ describe('notification delivery orchestration', () => {
   it('delivers a claimed email and persists provider evidence', async () => {
     const claimed = delivery()
     const claimDb = databaseDouble({ statementResults: [[claimed]], query: queryDouble({ channel: channel() }) })
-    const successDb = databaseDouble()
-    mocks.databases.push(claimDb.db, successDb.db)
+    const successDb = databaseDouble({ statementResults: [[{ id: delivery().id }]] })
+    mocks.databases.push(claimDb.db, dispatchMarkerDb(), successDb.db)
     mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1', deliveries: [{ providerMessageId: 'email-1', status: 'queued' }] })
     await expect(retryNotificationDelivery(claimed.id)).resolves.toBe('accepted')
     expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({
@@ -166,6 +171,21 @@ describe('notification delivery orchestration', () => {
     }))
     expect(successDb.capture.sets[0]).toMatchObject({ status: 'accepted', providerMessageId: 'email-1', errorMessage: null })
     expect(successDb.capture.sets[2]).toMatchObject({ lastNotifiedAt: expect.anything(), updatedAt: expect.any(Date) })
+  })
+
+  it('preserves the channel transport key even inside a manual job retry generation', async () => {
+    const deliveryKey = 'notification:channel-identity'
+    const claimed = delivery({ payload: { ...payload, deliveryKey } })
+    mocks.databases.push(
+      databaseDouble({ statementResults: [[claimed]], query: queryDouble({ channel: channel() }) }).db,
+      dispatchMarkerDb(), databaseDouble({ statementResults: [[{ id: claimed.id }]] }).db,
+    )
+    mocks.emailSend.mockImplementationOnce(async (input) => {
+      expect(input.idempotencyKey).toBe(deliveryKey)
+      expect(currentTransactionalEmailRetryGeneration()).toBe(0)
+      return { providerMessageId: 'existing-proof', deliveries: [{ providerMessageId: 'existing-proof', status: 'accepted' }] }
+    })
+    expect(await runWithTransactionalEmailRetryGeneration({ manualRetryGeneration: 3 }, () => retryNotificationDelivery(claimed.id))).toBe('accepted')
   })
 
   it('delivers a managed Teams channel through Graph and rotates its refresh token atomically', async () => {
@@ -182,8 +202,8 @@ describe('notification delivery orchestration', () => {
     const claimed = delivery()
     const claimDb = databaseDouble({ statementResults: [[claimed]], query: queryDouble({ channel: teamsChannel }) })
     const rotationDb = databaseDouble({ statementResults: [[{ id: teamsChannel.id }]] })
-    const successDb = databaseDouble()
-    mocks.databases.push(claimDb.db, rotationDb.db, successDb.db)
+    const successDb = databaseDouble({ statementResults: [[{ id: delivery().id }]] })
+    mocks.databases.push(claimDb.db, rotationDb.db, dispatchMarkerDb(), successDb.db)
     mocks.refreshTeamsAccessToken.mockResolvedValue({
       accessToken: 'access-token',
       refreshToken: 'refresh-token-with-sufficient-length-new',
@@ -208,8 +228,8 @@ describe('notification delivery orchestration', () => {
 
   it.each(['suppressed', 'simulated', 'ambiguous', 'pending'])('does not record %s email as accepted', async (status) => {
     const claimDb = databaseDouble({ statementResults: [[delivery()]], query: queryDouble({ channel: channel() }) })
-    const failureDb = databaseDouble()
-    mocks.databases.push(claimDb.db, failureDb.db)
+    const failureDb = databaseDouble({ statementResults: [[{ id: delivery().id }]] })
+    mocks.databases.push(claimDb.db, dispatchMarkerDb(), failureDb.db)
     mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1', deliveries: [{ providerMessageId: 'email-1', status }] })
     await expect(retryNotificationDelivery(delivery().id)).resolves.toBe('retrying')
     expect(failureDb.capture.sets[0]).toMatchObject({ status: 'retrying', errorMessage: expect.stringContaining('not accepted') })
@@ -243,40 +263,39 @@ describe('notification delivery orchestration', () => {
     expect(terminalDb.capture.sets[0]).toMatchObject({ status: 'dead_letter', errorMessage: 'Notification channel missing or disabled' })
   })
 
-  it('retries a failed SSRF-checked webhook and dead-letters the fifth failure', async () => {
+  it('quarantines a webhook with unknown acceptance instead of automatically resending', async () => {
     mocks.postSafeWebhook.mockRejectedValue(new Error('Webhook HTTP 503'))
     const webhook = channel({ kind: 'webhook', encryptedDestination: 'https://hooks.example.test/ads' })
-    const first = delivery({ attemptCount: 1 })
-    const firstClaim = databaseDouble({ statementResults: [[first]], query: queryDouble({ channel: webhook }) })
-    const firstFailure = databaseDouble()
-    mocks.databases.push(firstClaim.db, firstFailure.db)
-    await expect(retryNotificationDelivery(first.id)).resolves.toBe('retrying')
-    expect(mocks.postSafeWebhook).toHaveBeenCalledWith(
-      'https://hooks.example.test/ads',
-      expect.objectContaining({ eventKey: payload.eventKey }),
-    )
-    expect(firstFailure.capture.sets[0]).toMatchObject({ status: 'retrying', errorMessage: 'Webhook HTTP 503' })
+    const claimed = delivery()
+    const claimDb = databaseDouble({ statementResults: [[claimed]], query: queryDouble({ channel: webhook }) })
+    const failureDb = databaseDouble({ statementResults: [[{ id: claimed.id }]] })
+    mocks.databases.push(claimDb.db, dispatchMarkerDb(), failureDb.db)
+    await expect(retryNotificationDelivery(claimed.id)).resolves.toBe('ambiguous')
+    expect(failureDb.capture.sets[0]).toMatchObject({ status: 'ambiguous', nextAttemptAt: null, terminalAt: null })
+    expect(failureDb.capture.values[0]).toMatchObject({ type: 'operations.alert', payload: { kind: 'notification_delivery_failed', sourceId: claimed.id } })
+  })
 
-    const fifth = delivery({ attemptCount: 5 })
-    const fifthClaim = databaseDouble({ statementResults: [[fifth]], query: queryDouble({ channel: webhook }) })
-    const fifthFailure = databaseDouble()
-    mocks.databases.push(fifthClaim.db, fifthFailure.db)
-    await expect(retryNotificationDelivery(fifth.id)).resolves.toBe('dead_letter')
-    expect(fifthFailure.capture.sets[0]).toMatchObject({ status: 'dead_letter', nextAttemptAt: null })
+  it('does not start transport after its lease has been lost', async () => {
+    mocks.databases.push(
+      databaseDouble({ statementResults: [[delivery()]], query: queryDouble({ channel: channel() }) }).db,
+      databaseDouble({ statementResults: [[]] }).db,
+    )
+    expect(await retryNotificationDelivery(delivery().id)).toBe('lease_lost')
+    expect(mocks.emailSend).not.toHaveBeenCalled()
   })
 
   it('handles missing YoDevMail configuration and provider errors as retryable failures', async () => {
     mocks.emailSend.mockRejectedValueOnce(new Error('YODEV_MAIL_API_KEY absent'))
     const missingKeyClaim = databaseDouble({ statementResults: [[delivery()]], query: queryDouble({ channel: channel() }) })
-    const missingKeyFailure = databaseDouble()
-    mocks.databases.push(missingKeyClaim.db, missingKeyFailure.db)
+    const missingKeyFailure = databaseDouble({ statementResults: [[{ id: delivery().id }]] })
+    mocks.databases.push(missingKeyClaim.db, dispatchMarkerDb(), missingKeyFailure.db)
     await expect(retryNotificationDelivery(delivery().id)).resolves.toBe('retrying')
     expect(missingKeyFailure.capture.sets[0]).toMatchObject({ errorMessage: 'YODEV_MAIL_API_KEY absent' })
 
     mocks.emailSend.mockRejectedValueOnce(new Error('provider down'))
     const providerClaim = databaseDouble({ statementResults: [[delivery()]], query: queryDouble({ channel: channel() }) })
-    const providerFailure = databaseDouble()
-    mocks.databases.push(providerClaim.db, providerFailure.db)
+    const providerFailure = databaseDouble({ statementResults: [[{ id: delivery().id }]] })
+    mocks.databases.push(providerClaim.db, dispatchMarkerDb(), providerFailure.db)
     await expect(retryNotificationDelivery(delivery().id)).resolves.toBe('retrying')
     expect(providerFailure.capture.sets[0]).toMatchObject({ errorMessage: 'provider down' })
   })
@@ -297,8 +316,8 @@ describe('notification delivery orchestration', () => {
     const channelsDb = databaseDouble({ query: queryDouble({ channels: [selectedChannel] }) })
     const insertDb = databaseDouble({ statementResults: [[{ id: delivery().id }]] })
     const claimDb = databaseDouble({ statementResults: [[delivery()]], query: queryDouble({ channel: selectedChannel }) })
-    const successDb = databaseDouble()
-    mocks.databases.push(channelsDb.db, insertDb.db, claimDb.db, successDb.db)
+    const successDb = databaseDouble({ statementResults: [[{ id: delivery().id }]] })
+    mocks.databases.push(channelsDb.db, insertDb.db, claimDb.db, dispatchMarkerDb(), successDb.db)
     mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1', deliveries: [{ providerMessageId: 'email-1', status: 'queued' }] })
     await expect(dispatchIncidentNotifications(payload)).resolves.toEqual({ accepted: 1, failed: 0 })
     expect(insertDb.capture.values[0]).toMatchObject({ eventKey: payload.eventKey, status: 'queued' })
@@ -309,22 +328,21 @@ describe('notification delivery orchestration', () => {
     await expect(dispatchIncidentNotifications(payload)).resolves.toEqual({ accepted: 0, failed: 0 })
   })
 
-  it('enqueues a durable retry after a failed immediate delivery', async () => {
-    mocks.postSafeWebhook.mockRejectedValue(new Error('Webhook HTTP 500'))
-    const selectedChannel = channel({ kind: 'webhook', encryptedDestination: 'https://hooks.example.test/ads' })
-    const failedDelivery = delivery()
-    const nextAttemptAt = new Date('2026-08-12T10:01:00Z')
+  it('persists the fallback job with the delivery before the immediate attempt', async () => {
+    mocks.emailSend.mockRejectedValue(new Error('YoDevMail temporary failure'))
+    const selectedChannel = channel()
+    const claimed = delivery()
+    const insertDb = databaseDouble({ statementResults: [[{ id: claimed.id }]] })
     mocks.databases.push(
       databaseDouble({ query: queryDouble({ channels: [selectedChannel] }) }).db,
-      databaseDouble({ statementResults: [[{ id: failedDelivery.id }]] }).db,
-      databaseDouble({ statementResults: [[failedDelivery]], query: queryDouble({ channel: selectedChannel }) }).db,
-      databaseDouble().db,
-      databaseDouble({ query: queryDouble({ delivery: { nextAttemptAt } }) }).db,
+      insertDb.db,
+      databaseDouble({ statementResults: [[claimed]], query: queryDouble({ channel: selectedChannel }) }).db,
+      dispatchMarkerDb(), databaseDouble({ statementResults: [[{ id: claimed.id }]] }).db,
     )
-    await expect(dispatchIncidentNotifications(payload)).resolves.toEqual({ accepted: 0, failed: 1 })
-    expect(mocks.enqueueJob).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'notification.deliver', payload: { deliveryId: failedDelivery.id }, availableAt: nextAttemptAt, priority: 20,
-    }))
+    expect(await dispatchIncidentNotifications(payload)).toEqual({ accepted: 0, failed: 1 })
+    expect(insertDb.capture.values[0]).toMatchObject({ payload: { deliveryKey: expect.stringMatching(/^notification:/) } })
+    expect(insertDb.capture.values[1]).toMatchObject({ type: 'notification.deliver', payload: { deliveryId: claimed.id } })
+    expect(mocks.enqueueJob).not.toHaveBeenCalled()
   })
 
   it('skips empty digests and dispatches an aggregated weekly digest', async () => {
@@ -347,7 +365,8 @@ describe('notification delivery orchestration', () => {
     const englishDelivery = delivery({ payload: { ...payload, locale: 'en' } })
     mocks.databases.push(
       databaseDouble({ statementResults: [[englishDelivery]], query: queryDouble({ channel: channel() }) }).db,
-      databaseDouble().db,
+      dispatchMarkerDb(),
+      databaseDouble({ statementResults: [[{ id: delivery().id }]] }).db,
     )
     mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-en', deliveries: [{ providerMessageId: 'email-en', status: 'queued' }] })
     await expect(retryNotificationDelivery(englishDelivery.id)).resolves.toBe('accepted')

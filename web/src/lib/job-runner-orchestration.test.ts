@@ -34,6 +34,7 @@ vi.mock('@/lib/notifications', () => ({
 }))
 vi.mock('@/lib/reconcile-google-mutation', () => ({ reconcileGoogleMutation: mocks.reconcile }))
 vi.mock('@/lib/alert-reminders', () => ({ deliverAlertReminder: mocks.reminder, pendingAlertReminderJobs: mocks.pendingReminders }))
+vi.mock('@/lib/notification-delivery-recovery', () => ({ recoverNotificationDeliveries: vi.fn(async () => ({ recovered: 0 })) }))
 vi.mock('@/lib/monitoring-scan-jobs', () => ({ executeMonitoringChunk: mocks.runMonitoring, fanOutMonitoringScan: mocks.fanOutMonitoring }))
 vi.mock('@/lib/workspace-deletion', () => ({
   purgeWorkspace: mocks.purgeWorkspace,

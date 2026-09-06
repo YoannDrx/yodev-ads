@@ -21,6 +21,7 @@ import { trialLifecycleDue } from '@/lib/lifecycle-email-model'
 import { reportScheduleRunKey } from '@/lib/report-scheduling'
 import { taskDigestRunKey } from '@/lib/task-notification-model'
 import { pendingAlertReminderJobs } from '@/lib/alert-reminders'
+import { recoverNotificationDeliveries } from '@/lib/notification-delivery-recovery'
 
 export function localScheduleParts(date: Date, timezone: string) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -41,6 +42,7 @@ export function localScheduleParts(date: Date, timezone: string) {
 }
 
 export async function seedScheduledJobs(now = new Date()) {
+  await recoverNotificationDeliveries(now)
   const currentKid = currentEncryptionKeyId()
   const { monitoredWorkspaces, billingWorkspaces, ambiguousApprovals, dueDeletions, metricClients, queuedExports, scheduledReports, digestPreferences, trialWorkspaces, rotationWorkspaces, subprocessorNotices } = await withSystemTransaction(async (db) => {
     const monitored = await db

@@ -14,12 +14,12 @@ describe('release operational readiness', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('is ready only when durable work and provider reconciliation queues are clear', async () => {
-    mocks.database = databaseDouble({ statementResults: Array.from({ length: 6 }, () => [{ total: 0 }]) }).db
+    mocks.database = databaseDouble({ statementResults: Array.from({ length: 7 }, () => [{ total: 0 }]) }).db
     await expect(releaseOperationalIssues(new Date('2026-08-18T12:00:00Z'))).resolves.toEqual([])
   })
 
   it('reports every unresolved operational family without exposing tenant details', async () => {
-    mocks.database = databaseDouble({ statementResults: Array.from({ length: 6 }, (_, index) => [{ total: index + 1 }]) }).db
+    mocks.database = databaseDouble({ statementResults: Array.from({ length: 7 }, (_, index) => [{ total: index + 1 }]) }).db
     await expect(releaseOperationalIssues(new Date('2026-08-18T12:00:00Z'))).resolves.toEqual([
       expect.objectContaining({ code: 'queue.dead_letters' }),
       expect.objectContaining({ code: 'queue.due_jobs' }),
@@ -27,6 +27,7 @@ describe('release operational readiness', () => {
       expect.objectContaining({ code: 'stripe.reconciliation_required' }),
       expect.objectContaining({ code: 'email.unresolved_deliveries' }),
       expect.objectContaining({ code: 'google.unresolved_mutations' }),
+      expect.objectContaining({ code: 'notifications.unresolved_deliveries' }),
     ])
   })
 })

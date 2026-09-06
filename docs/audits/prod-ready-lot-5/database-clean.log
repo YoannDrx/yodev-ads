@@ -1,0 +1,84 @@
+
+> @yodev/ads@0.1.0 db:verify-local
+> node scripts/verify-local-database.mjs
+
+Running drizzle-kit migrate
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/Users/yoannandrieux/Projets/yodev-ads/web/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[⣟] applying migrations...[2K[1G[⡿] applying migrations...[2K[1G[⢿] applying migrations...[2K[1G[⣻] applying migrations...[2K[1G[⣽] applying migrations...[2K[1G[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[⣟] applying migrations...[2K[1G[⡿] applying migrations...[2K[1G[⢿] applying migrations...[2K[1G[⣻] applying migrations...[2K[1G[⣽] applying migrations...[2K[1G[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[⣟] applying migrations...[2K[1G[⡿] applying migrations...[2K[1G[⢿] applying migrations...[2K[1G[⣻] applying migrations...[2K[1G[⣽] applying migrations...[2K[1G[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[⣟] applying migrations...[2K[1G[⡿] applying migrations...[2K[1G[⢿] applying migrations...[2K[1G[⣻] applying migrations...[2K[1G[✓] migrations applied successfully!Running tsx scripts/seed-rls-verification.ts
+{"seededWorkspaces":["10000000-0000-4000-8000-000000000001","20000000-0000-4000-8000-000000000002"]}
+Running tsx scripts/verify-rls.ts
+{"ok":true,"tenantA":"10000000-0000-4000-8000-000000000001","tenantB":"20000000-0000-4000-8000-000000000002","visibleClientRows":1,"rlsTables":46,"runtimeRoles":["yodev_app","yodev_system","yodev_purge","yodev_auth"],"oauthSessionIsolation":true}
+Running tsx scripts/validate-tenant-constraints.ts
+{"validated":33}
+Running tsx scripts/verify-tenant-invariants.ts
+{
+  "ok": true,
+  "invariants": [
+    {
+      "invariant": "workspace_state",
+      "violations": 0
+    },
+    {
+      "invariant": "duplicate_stripe_subscription",
+      "violations": 0
+    },
+    {
+      "invariant": "approval_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "agent_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "incident_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "share_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "performance_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "support_message_ticket_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "mutation_observation_approval_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "mutation_observation_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "report_template_version_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "legacy_workspace_auth_mapping",
+      "violations": 0
+    },
+    {
+      "invariant": "workspace_owner_membership",
+      "violations": 0
+    },
+    {
+      "invariant": "trial_grant_auth_mapping",
+      "violations": 0
+    },
+    {
+      "invariant": "auth_organization_workspace_uniqueness",
+      "violations": 0
+    }
+  ]
+}
+Running tsx scripts/verify-database-concurrency.ts
+{"ok":true,"verified":["concurrent_quota","approval_claim","job_lease","stripe_idempotence","deletion_cancellation_before_deadline","purge_after_deadline_and_cascade"]}
+Running tsx scripts/verify-prod-ready-concurrency.ts
+{"ok":true,"verified":["monitor_quota_concurrent_create_reactivate","current_plan_under_lock","worker_sigkill_final_attempt","concurrent_lease_recovery","stale_worker_finalization_rejected","manual_scan_concurrency","fanout_concurrency_and_client_scope","independent_reminder_due_query","reminder_acceptance_recovery_without_send","stale_reminder_suppressed","deferred_reminder_cancelled_concurrently_before_transport","expired_retryable_attempt_audited_before_reclaim","terminal_recovery_alert_outbox","single_local_transport_across_interruption","late_email_receipt_reconciled_without_resend"]}

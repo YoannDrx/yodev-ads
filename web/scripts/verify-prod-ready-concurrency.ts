@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict'
+import { createServer } from 'node:http'
+import { randomUUID } from 'node:crypto'
+import { encryptSecret } from '../src/lib/crypto'
+import { recoverNotificationDeliveries } from '../src/lib/notification-delivery-recovery'
+import { notificationDeliveryKey } from '../src/lib/notification-delivery-model'
 import { fork } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { and, count, eq } from 'drizzle-orm'
-import { alertIncidents, clients, jobAttempts, jobs, monitoringAgents, notificationChannels, notificationDeliveries, workspaces } from '../src/db/schema'
+import { alertIncidents, clients, jobAttempts, jobs, monitoringAgents, notificationChannels, notificationDeliveries, transactionalEmailDeliveries, workspaces } from '../src/db/schema'
 import { withSystemTransaction } from '../src/db/transactions'
 import { entitlementContext } from '../src/lib/entitlements'
 import { claimNextJob, completeJob, enqueueJob, recoverExpiredJobs, type ClaimedJob } from '../src/lib/jobs'
@@ -17,6 +22,7 @@ assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathnam
 const workspaceId = '70000000-0000-4000-8000-000000000001'
 const actorUserId = 'prod-ready-fixture-owner'
 let recoveryAlertKey: string | undefined
+const notificationAlertKeys: string[] = []
 
 async function main() {
   if (process.argv.includes('--crash-worker')) {
@@ -136,9 +142,82 @@ async function main() {
     assert.equal(cancelled?.attemptCount, 1)
     assert.equal(cancelled?.providerMessageId, null)
 
-    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed', 'deferred_reminder_cancelled_concurrently_before_transport', 'expired_retryable_attempt_audited_before_reclaim', 'terminal_recovery_alert_outbox'] }))
+    // All HTTP stays inside this process's loopback fixture. Holding its
+    // acknowledgement exercises an interruption after dispatch with no email sent.
+    const originalMailUrl = process.env.YODEV_MAIL_API_URL
+    const originalMailKey = process.env.YODEV_MAIL_API_KEY
+    let providerRequests = 0
+    let acknowledge: (() => void) | undefined
+    let arrived: (() => void) | undefined
+    const requestArrived = new Promise<void>((resolve) => { arrived = resolve })
+    const providerId = randomUUID()
+    const provider = createServer((request, response) => {
+      assert.equal(request.url, '/v1/emails')
+      assert.equal(request.headers.authorization, 'Bearer disposable-fixture-key')
+      request.resume()
+      request.once('end', () => {
+        providerRequests += 1
+        acknowledge = () => { if (response.writableEnded) return; response.writeHead(202, { 'content-type': 'application/json' }); response.end(JSON.stringify({ data: { id: providerId, status: 'queued' } })) }
+        arrived?.()
+      })
+    })
+    await new Promise<void>((resolve) => provider.listen(0, '127.0.0.1', resolve))
+    const address = provider.address()
+    assert(address && typeof address === 'object')
+    process.env.YODEV_MAIL_API_URL = `http://127.0.0.1:${address.port}`
+    process.env.YODEV_MAIL_API_KEY = 'disposable-fixture-key'
+    try {
+      await withSystemTransaction((db) => db.update(notificationChannels).set({ encryptedDestination: encryptSecret('fixture@example.invalid') }).where(eq(notificationChannels.id, queuedChannel.id)))
+      const transportEvent = 'local-http-transport-evidence'
+      const deliveryKey = notificationDeliveryKey(transportEvent, queuedChannel.id)
+      const [transport] = await withSystemTransaction((db) => db.insert(notificationDeliveries).values({
+        workspaceId, channelId: queuedChannel.id, incidentId: incident.id, status: 'queued', eventKey: transportEvent,
+        payload: { workspaceId, incidentId: incident.id, eventKey: transportEvent, deliveryKey, severity: 'warning', title: 'Local', description: 'Local transport only', clientName: 'Fixture' },
+      }).returning())
+      notificationAlertKeys.push(`operations.alert:notification_delivery_failed:${transport.id}`)
+      const transportStartedAt = Date.now()
+      const attempt = retryNotificationDelivery(transport.id)
+      let arrivalTimeout: ReturnType<typeof setTimeout> | undefined
+      try {
+        await Promise.race([requestArrived, new Promise((_, reject) => { arrivalTimeout = setTimeout(() => reject(new Error('Local provider was not called')), 10_000) })])
+      } finally { clearTimeout(arrivalTimeout) }
+      assert.equal(await retryNotificationDelivery(transport.id), 'not_available')
+      await withSystemTransaction((db) => db.update(notificationDeliveries).set({ leaseExpiresAt: new Date(Date.now() - 1_000) }).where(eq(notificationDeliveries.id, transport.id)))
+      await Promise.all([recoverNotificationDeliveries(), recoverNotificationDeliveries()])
+      const interrupted = await withSystemTransaction((db) => db.query.notificationDeliveries.findFirst({ where: eq(notificationDeliveries.id, transport.id) }))
+      assert.equal(interrupted?.status, 'ambiguous')
+      acknowledge!()
+      const attemptResult = await attempt
+      if (attemptResult !== 'accepted') {
+        const localLedger = await withSystemTransaction((db) => db.query.transactionalEmailDeliveries.findFirst({ where: eq(transactionalEmailDeliveries.businessKey, deliveryKey) }))
+        console.log(JSON.stringify({ fixture: 'interrupted_local_transport', elapsedMs: Date.now() - transportStartedAt, result: attemptResult, ledgerStatus: localLedger?.status, ledgerError: localLedger?.lastError }))
+      }
+      assert.equal(attemptResult, 'accepted')
+      assert.equal(await retryNotificationDelivery(transport.id), 'accepted')
+      assert.equal(providerRequests, 1, 'Only one provider submission may occur across concurrent claims and lease recovery')
+
+      // A late provider receipt also reconciles an ambiguity after the original
+      // worker is gone, without invoking the provider a second time.
+      await withSystemTransaction((db) => db.update(notificationDeliveries).set({ status: 'ambiguous', terminalAt: null, providerMessageId: null }).where(eq(notificationDeliveries.id, transport.id)))
+      const recoveredEmail = await recoverNotificationDeliveries()
+      assert.equal(recoveredEmail.reconciled, 1)
+      const receipt = await withSystemTransaction((db) => db.query.transactionalEmailDeliveries.findFirst({ where: eq(transactionalEmailDeliveries.businessKey, deliveryKey) }))
+      assert.equal(receipt?.providerMessageId, providerId)
+      assert.equal(providerRequests, 1)
+    } finally {
+      acknowledge?.()
+      await new Promise<void>((resolve) => provider.close(() => resolve()))
+      if (originalMailUrl === undefined) delete process.env.YODEV_MAIL_API_URL
+      else process.env.YODEV_MAIL_API_URL = originalMailUrl
+      if (originalMailKey === undefined) delete process.env.YODEV_MAIL_API_KEY
+      else process.env.YODEV_MAIL_API_KEY = originalMailKey
+    }
+
+    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed', 'deferred_reminder_cancelled_concurrently_before_transport', 'expired_retryable_attempt_audited_before_reclaim', 'terminal_recovery_alert_outbox', 'single_local_transport_across_interruption', 'late_email_receipt_reconciled_without_resend'] }))
   } finally {
+    for (const key of notificationAlertKeys) await withSystemTransaction((db) => db.delete(jobs).where(eq(jobs.deduplicationKey, key)))
     if (recoveryAlertKey) await withSystemTransaction((db) => db.delete(jobs).where(eq(jobs.deduplicationKey, recoveryAlertKey!)))
+    await withSystemTransaction((db) => db.delete(transactionalEmailDeliveries).where(eq(transactionalEmailDeliveries.workspaceId, workspaceId)))
     await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, workspaceId)))
   }
 }

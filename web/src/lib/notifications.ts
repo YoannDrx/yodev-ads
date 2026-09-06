@@ -1,15 +1,18 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm'
-import { alertIncidents, clients, monitoringAgents, notificationChannels, notificationDeliveries, performanceSnapshots, workspaces } from '@/db/schema'
+import { and, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm'
+import { alertIncidents, clients, jobs, monitoringAgents, notificationChannels, notificationDeliveries, performanceSnapshots, workspaces } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { decryptSecret, encryptSecret } from '@/lib/crypto'
 import { featureEnabled } from '@/lib/feature-flags'
-import { enqueueJob, jobRetryDelay } from '@/lib/jobs'
+import { jobRetryDelay, NonRetryableJobError } from '@/lib/jobs'
 import { postSafeWebhook } from '@/lib/webhook-security'
 import { entitlementContext, isPlan, isWorkspaceAccessState } from '@/lib/entitlements'
 import { sendTransactionalEmail } from '@/lib/transactional-email'
 import { reminderDeliveryIsCurrent } from '@/lib/alert-reminder-plan'
+import { MAXIMUM_NOTIFICATION_DELIVERY_ATTEMPTS, NOTIFICATION_DELIVERY_LEASE_MS, notificationDeliveryKey } from '@/lib/notification-delivery-model'
+import { operationsAlertJob } from '@/lib/operations-alert-model'
+import { runWithTransactionalEmailRetryGeneration } from '@/lib/transactional-email-context'
 import {
   parseTeamsDestination,
   postTeamsChannelMessage,
@@ -29,10 +32,11 @@ export type NotificationPayload = {
   locale?: 'fr' | 'en'
   reminderDueAt?: string
   reminderIntervalHours?: number
+  deliveryKey?: string
 }
 
 const severityRank = { warning: 1, critical: 2 } as const
-const MAXIMUM_DELIVERY_ATTEMPTS = 5
+class NotificationLeaseLostError extends Error {}
 
 type NotificationChannel = typeof notificationChannels.$inferSelect
 
@@ -106,20 +110,22 @@ export function teamsMessageHtml(payload: NotificationPayload) {
 async function deliverChannel(
   channel: typeof notificationChannels.$inferSelect,
   payload: NotificationPayload,
+  beforeSend: () => Promise<void>,
 ): Promise<string | undefined> {
   const destination = decryptSecret(channel.encryptedDestination)
   if (channel.kind === 'email') {
     const copy = notificationCopy(payload)
-    const result = await sendTransactionalEmail({
+    await beforeSend()
+    const result = await runWithTransactionalEmailRetryGeneration({}, () => sendTransactionalEmail({
       from: process.env.NOTIFICATION_FROM_EMAIL ?? 'Ads by Yodev <ads@yodev.fr>',
       to: destination,
       subject: payload.eventType === 'digest' ? payload.title : `[${payload.severity === 'critical' ? copy.criticalSubject : copy.alert}] ${payload.title}`,
       html: alertEmailHtml(payload),
-      idempotencyKey: payload.eventKey,
+      idempotencyKey: payload.deliveryKey ?? payload.eventKey,
       category: payload.eventType === 'digest' ? 'weekly_digest' : `alert_${payload.severity}`,
       workspaceId: channel.workspaceId,
       referenceId: payload.eventKey,
-    })
+    }))
     if (!result.deliveries.length || result.deliveries.some((delivery) =>
       !delivery.providerMessageId || !['queued', 'sending', 'sent', 'accepted', 'delivered'].includes(delivery.status))) {
       throw new Error('YoDevMail has not accepted this notification for delivery')
@@ -144,6 +150,7 @@ async function deliverChannel(
         )).returning({ id: notificationChannels.id }))
         if (!rotated) throw new Error('Le jeton Microsoft Teams a été renouvelé simultanément ; la livraison sera retentée.')
       }
+      await beforeSend()
       return postTeamsChannelMessage({
         accessToken: tokens.accessToken,
         teamId: managed.data.teamId,
@@ -152,6 +159,7 @@ async function deliverChannel(
       })
     }
   }
+  await beforeSend()
   await postSafeWebhook(destination, webhookBody(payload))
 }
 
@@ -164,6 +172,8 @@ export async function retryNotificationDelivery(deliveryId: string) {
         status: 'sending',
         attemptCount: sql`${notificationDeliveries.attemptCount} + 1`,
         nextAttemptAt: null,
+        leaseExpiresAt: new Date(Date.now() + NOTIFICATION_DELIVERY_LEASE_MS),
+        dispatchStartedAt: null,
       })
       .where(
         and(
@@ -210,7 +220,7 @@ export async function retryNotificationDelivery(deliveryId: string) {
           expectedDueAt, acceptedOccurrenceAt: accepted?.terminalAt })) cancellationReason = 'Reminder occurrence is no longer current'
     }
     if (cancellationReason) {
-      await db.update(notificationDeliveries).set({ status: 'cancelled', terminalAt: new Date(), errorMessage: cancellationReason })
+      await db.update(notificationDeliveries).set({ status: 'cancelled', leaseExpiresAt: null, terminalAt: new Date(), errorMessage: cancellationReason })
         .where(and(eq(notificationDeliveries.id, deliveryId), eq(notificationDeliveries.attemptCount, claimed.attemptCount), eq(notificationDeliveries.status, 'sending')))
       return { claimed: null, channel: null, existingStatus: 'cancelled' }
     }
@@ -222,24 +232,37 @@ export async function retryNotificationDelivery(deliveryId: string) {
     if (claimResult.existingStatus === 'delivered') return 'delivered' as const
     if (claimResult.existingStatus === 'dead_letter') return 'dead_letter' as const
     if (claimResult.existingStatus === 'cancelled') return 'cancelled' as const
+    if (claimResult.existingStatus === 'ambiguous') return 'ambiguous' as const
     return 'not_available' as const
   }
   if (!channel) {
     await withSystemTransaction((db) => db
       .update(notificationDeliveries)
-      .set({ status: 'dead_letter', terminalAt: new Date(), errorMessage: 'Notification channel missing or disabled' })
-      .where(eq(notificationDeliveries.id, deliveryId)))
+      .set({ status: 'dead_letter', leaseExpiresAt: null, terminalAt: new Date(), errorMessage: 'Notification channel missing or disabled' })
+      .where(and(eq(notificationDeliveries.id, deliveryId), eq(notificationDeliveries.attemptCount, claimed.attemptCount), eq(notificationDeliveries.status, 'sending'))))
     return 'dead_letter' as const
   }
   const payload = claimed.payload as NotificationPayload
+  let dispatchStarted = false
   try {
-    const providerMessageId = await deliverChannel(channel, payload)
+    const providerMessageId = await deliverChannel(channel, payload, async () => {
+      const now = new Date()
+      const [marked] = await withSystemTransaction((db) => db.update(notificationDeliveries).set({ dispatchStartedAt: now })
+        .where(and(eq(notificationDeliveries.id, deliveryId), eq(notificationDeliveries.attemptCount, claimed.attemptCount),
+          eq(notificationDeliveries.status, 'sending'), gt(notificationDeliveries.leaseExpiresAt, now)))
+        .returning({ id: notificationDeliveries.id }))
+      if (!marked) throw new NotificationLeaseLostError()
+      dispatchStarted = true
+    })
     const now = new Date()
     await withSystemTransaction(async (db) => {
-      await db
+      const [recorded] = await db
         .update(notificationDeliveries)
-        .set({ status: 'accepted', providerMessageId, errorMessage: null, terminalAt: now })
-        .where(eq(notificationDeliveries.id, deliveryId))
+        .set({ status: 'accepted', leaseExpiresAt: null, providerMessageId, errorMessage: null, terminalAt: now })
+        .where(and(eq(notificationDeliveries.id, deliveryId), eq(notificationDeliveries.attemptCount, claimed.attemptCount),
+          inArray(notificationDeliveries.status, ['sending', 'ambiguous'])))
+        .returning({ id: notificationDeliveries.id })
+      if (!recorded) throw new NotificationLeaseLostError()
       await db
         .update(notificationChannels)
         // This legacy timestamp records transport acceptance. Actual email
@@ -252,25 +275,36 @@ export async function retryNotificationDelivery(deliveryId: string) {
     })
     return 'accepted' as const
   } catch (error) {
+    if (error instanceof NotificationLeaseLostError) return 'lease_lost' as const
     const now = new Date()
     const errorMessage = error instanceof Error ? error.message : 'Erreur de notification'
-    const terminal = claimed.attemptCount >= MAXIMUM_DELIVERY_ATTEMPTS
-    await withSystemTransaction(async (db) => {
-      await db
+    const ambiguous = dispatchStarted && channel.kind !== 'email'
+    const terminal = !ambiguous && (error instanceof NonRetryableJobError || claimed.attemptCount >= MAXIMUM_NOTIFICATION_DELIVERY_ATTEMPTS)
+    const status = ambiguous ? 'ambiguous' : terminal ? 'dead_letter' : 'retrying'
+    const failureStored = await withSystemTransaction(async (db) => {
+      const [recorded] = await db
         .update(notificationDeliveries)
         .set({
-          status: terminal ? 'dead_letter' : 'retrying',
+          status,
+          leaseExpiresAt: null,
           errorMessage: errorMessage.slice(0, 2000),
-          nextAttemptAt: terminal ? null : new Date(now.getTime() + jobRetryDelay(claimed.attemptCount)),
+          nextAttemptAt: terminal || ambiguous ? null : new Date(now.getTime() + jobRetryDelay(claimed.attemptCount)),
           terminalAt: terminal ? now : null,
         })
-        .where(eq(notificationDeliveries.id, deliveryId))
+        .where(and(eq(notificationDeliveries.id, deliveryId), eq(notificationDeliveries.attemptCount, claimed.attemptCount), eq(notificationDeliveries.status, 'sending')))
+        .returning({ id: notificationDeliveries.id })
+      if (!recorded) return false
       await db
         .update(notificationChannels)
         .set({ lastError: errorMessage.slice(0, 1000), updatedAt: now })
         .where(eq(notificationChannels.id, channel.id))
+      if (ambiguous || terminal) await db.insert(jobs).values(operationsAlertJob({
+        kind: 'notification_delivery_failed', sourceId: deliveryId, title: `Notification ${status}`,
+        description: ambiguous ? 'Transport acceptance is unknown; reconcile before any resend.' : 'Notification delivery exhausted its retries or was rejected.',
+      })).onConflictDoNothing({ target: jobs.deduplicationKey })
+      return true
     })
-    return terminal ? 'dead_letter' as const : 'retrying' as const
+    return failureStored ? status : 'lease_lost' as const
   }
 }
 
@@ -290,38 +324,25 @@ export async function dispatchIncidentNotifications(payload: NotificationPayload
   let failed = 0
   for (const channel of channels) {
     if (severityRank[payload.severity] < severityRank[channel.minimumSeverity as keyof typeof severityRank]) continue
-    const [claim] = await withSystemTransaction((db) => db
-      .insert(notificationDeliveries)
-      .values({
-        workspaceId: payload.workspaceId,
-        channelId: channel.id,
-        incidentId: payload.incidentId,
-        eventKey: payload.eventKey,
-        payload: { ...payload },
-        status: 'queued',
-      })
-      .onConflictDoNothing()
-      .returning({ id: notificationDeliveries.id }))
+    const claim = await withSystemTransaction(async (db) => {
+      const [created] = await db.insert(notificationDeliveries).values({
+        workspaceId: payload.workspaceId, channelId: channel.id, incidentId: payload.incidentId,
+        eventKey: payload.eventKey, payload: { ...payload, deliveryKey: notificationDeliveryKey(payload.eventKey, channel.id) }, status: 'queued',
+      }).onConflictDoNothing().returning({ id: notificationDeliveries.id })
+      if (!created) return null
+      // The durable fallback exists before the immediate attempt can start.
+      await db.insert(jobs).values({
+        workspaceId: payload.workspaceId, type: 'notification.deliver', payload: { deliveryId: created.id },
+        availableAt: new Date(Date.now() + jobRetryDelay(1)), priority: payload.severity === 'critical' ? 20 : 70,
+        deduplicationKey: `notification.deliver:${created.id}`, maximumAttempts: MAXIMUM_NOTIFICATION_DELIVERY_ATTEMPTS,
+      }).onConflictDoNothing({ target: jobs.deduplicationKey })
+      return created
+    })
     if (!claim) continue
     const result = await retryNotificationDelivery(claim.id)
     if (result === 'accepted' || result === 'delivered') {
       accepted += 1
     } else if (result !== 'cancelled' && result !== 'disabled') {
-      if (result === 'retrying') {
-        const delivery = await withSystemTransaction((db) => db.query.notificationDeliveries.findFirst({
-          where: eq(notificationDeliveries.id, claim.id),
-          columns: { nextAttemptAt: true },
-        }))
-        await enqueueJob({
-          workspaceId: payload.workspaceId,
-          type: 'notification.deliver',
-          payload: { deliveryId: claim.id },
-          availableAt: delivery?.nextAttemptAt ?? new Date(Date.now() + jobRetryDelay(1)),
-          priority: payload.severity === 'critical' ? 20 : 70,
-          deduplicationKey: `notification.deliver:${claim.id}`,
-          maximumAttempts: 4,
-        })
-      }
       failed += 1
     }
   }
