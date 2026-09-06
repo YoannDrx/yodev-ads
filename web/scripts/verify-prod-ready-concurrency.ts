@@ -16,6 +16,7 @@ const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
 assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathname.startsWith('/yodev_test'), 'Disposable local database required')
 const workspaceId = '70000000-0000-4000-8000-000000000001'
 const actorUserId = 'prod-ready-fixture-owner'
+let recoveryAlertKey: string | undefined
 
 async function main() {
   if (process.argv.includes('--crash-worker')) {
@@ -49,7 +50,14 @@ async function main() {
     })
     await new Promise<void>((resolve) => { child.once('exit', () => resolve()); child.kill('SIGKILL') })
     assert.equal(claimed.id, job.id)
+    // An expired retryable attempt must not be reclaimed before its previous
+    // attempt is closed and audited by recovery.
+    const retryable = await enqueueJob({ workspaceId, type: 'monitoring.scan', maximumAttempts: 2, priority: -9999, deduplicationKey: `prod-ready:retryable:${Date.now()}` })
+    const retryableClaim = await claimNextJob('expired-retryable', new Date(), 1)
+    assert.equal(retryableClaim?.id, retryable.job.id)
     const now = new Date(Date.now() + 1_000)
+    assert.equal(await claimNextJob('must-not-bypass-recovery', now), null)
+    recoveryAlertKey = `operations.alert:job_dead_letter:${job.id}`
     const recovery = await Promise.all([recoverExpiredJobs(now), recoverExpiredJobs(now)])
     assert.equal(recovery.reduce((sum, item) => sum + item.deadLettered, 0), 1)
     assert.equal(await completeJob(claimed, 'crashed-worker', now), false)
@@ -59,6 +67,15 @@ async function main() {
     }))
     assert.equal(evidence.job?.status, 'dead_letter')
     assert.equal(evidence.attempt?.state, 'dead_letter')
+    const recoveredAttempt = await withSystemTransaction((db) => db.query.jobAttempts.findFirst({ where: eq(jobAttempts.jobId, retryable.job.id) }))
+    assert.equal(recoveredAttempt?.state, 'failed')
+    const alertEvidence = await withSystemTransaction((db) => db.query.jobs.findMany({ where: eq(jobs.deduplicationKey, recoveryAlertKey!) }))
+    assert.equal(alertEvidence.length, 1, 'Terminal recovery must enqueue exactly one durable operational alert')
+    assert.equal(alertEvidence[0].type, 'operations.alert')
+    const resumed = await claimNextJob('resumed-worker', now, 1_000, ['operations.alert'])
+    assert.equal(resumed?.id, retryable.job.id)
+    assert.equal(resumed?.attemptCount, 2)
+    assert.equal(await completeJob(resumed!, 'resumed-worker', now), true)
 
     // These flags authorize only queue/fixture operations here. No Google
     // worker executes, and the only notification channel is disabled.
@@ -119,8 +136,9 @@ async function main() {
     assert.equal(cancelled?.attemptCount, 1)
     assert.equal(cancelled?.providerMessageId, null)
 
-    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed', 'deferred_reminder_cancelled_concurrently_before_transport'] }))
+    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed', 'deferred_reminder_cancelled_concurrently_before_transport', 'expired_retryable_attempt_audited_before_reclaim', 'terminal_recovery_alert_outbox'] }))
   } finally {
+    if (recoveryAlertKey) await withSystemTransaction((db) => db.delete(jobs).where(eq(jobs.deduplicationKey, recoveryAlertKey!)))
     await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, workspaceId)))
   }
 }

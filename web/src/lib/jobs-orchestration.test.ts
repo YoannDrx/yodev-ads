@@ -92,6 +92,7 @@ describe('durable job orchestration', () => {
     await expect(recoverExpiredJobs()).resolves.toEqual({ recovered: 2, deadLettered: 1 })
     expect(database.capture.sets.map((value) => (value as { status?: string }).status).filter(Boolean)).toEqual(['retrying', 'dead_letter'])
     expect(database.capture.values[0]).toMatchObject({ action: 'job.lease_expired', metadata: { attempt: 5, exhausted: true } })
+    expect(database.capture.values[1]).toMatchObject({ type: 'operations.alert', payload: { kind: 'job_dead_letter', sourceId: 'last' } })
     await expect(recoverExpiredJobs(new Date(), 0)).rejects.toThrow('Invalid recovery limit')
   })
 

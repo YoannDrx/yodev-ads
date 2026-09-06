@@ -3,6 +3,7 @@ import 'server-only'
 import { and, asc, eq, inArray, isNull, lt, lte, notInArray, or, sql } from 'drizzle-orm'
 import { auditEvents, jobAttempts, jobs } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
+import { operationsAlertJobForDeadLetter } from '@/lib/operations-alert-model'
 
 export const JOB_BACKOFF_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 60 * 60_000, 12 * 60 * 60_000] as const
 export const DEFAULT_JOB_LEASE_MS = 5 * 60_000
@@ -147,10 +148,8 @@ export async function claimNextJob(
         and(
           lte(jobs.availableAt, now),
           lt(jobs.attemptCount, jobs.maximumAttempts),
-          or(
-            inArray(jobs.status, ['queued', 'retrying']),
-            and(eq(jobs.status, 'running'), or(isNull(jobs.leaseExpiresAt), lte(jobs.leaseExpiresAt, now))),
-          ),
+          // Expired running attempts must pass through audited recovery first.
+          inArray(jobs.status, ['queued', 'retrying']),
           excludedTypes.length > 0 ? notInArray(jobs.type, excludedTypes) : undefined,
         ),
       )
@@ -205,6 +204,9 @@ export async function recoverExpiredJobs(now = new Date(), limit = 50) {
         action: 'job.lease_expired', entityType: 'job', entityId: job.id,
         metadata: { attempt: job.attemptCount, type: job.type, exhausted },
       })
+      const alert = exhausted ? operationsAlertJobForDeadLetter({ jobId: job.id, jobType: job.type, description: message }) : null
+      if (alert) await db.insert(jobs).values({ ...alert, availableAt: now })
+        .onConflictDoNothing({ target: jobs.deduplicationKey })
     }
     return { recovered: expired.length, deadLettered: expired.filter((job) => job.attemptCount >= job.maximumAttempts).length }
   })

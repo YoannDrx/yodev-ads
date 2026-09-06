@@ -1,0 +1,13 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run --run src/lib/jobs-orchestration.test.ts src/lib/job-runner-orchestration.test.ts --maxWorkers=1
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  2 passed (2)
+      Tests  25 passed (25)
+   Start at  01:01:33
+   Duration  14.00s (transform 2.36s, setup 0ms, import 12.02s, tests 656ms, environment 0ms)
+
