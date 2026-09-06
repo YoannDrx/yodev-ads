@@ -1,4 +1,5 @@
 import 'server-only'
+import { remainingWorkMs, workSignal, pauseWithinWorkDeadline } from '@/lib/work-deadline'
 
 import { OAuth2Client } from 'google-auth-library'
 import { decryptSecret } from '@/lib/crypto'
@@ -770,6 +771,7 @@ export function createOAuthClient(redirectUri?: string) {
     clientId: env.GOOGLE_OAUTH_CLIENT_ID,
     clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
     redirectUri: redirectUri ?? env.GOOGLE_OAUTH_REDIRECT_URI,
+    transporterOptions: { timeout: 10_000, retry: false },
   })
 }
 
@@ -842,6 +844,9 @@ export class GoogleAdsGateway {
   }
 
   private async accessToken() {
+    // The gateway can outlive one request: create a fresh signal for each refresh.
+    this.oauthClient.transporter.defaults.timeout = remainingWorkMs(10_000)
+    this.oauthClient.transporter.defaults.signal = workSignal(10_000)
     const response = await this.oauthClient.getAccessToken()
     if (!response.token) throw new Error('Impossible de renouveler l’accès Google Ads.')
     return response.token
@@ -877,7 +882,7 @@ export class GoogleAdsGateway {
         response = await fetch(`https://googleads.googleapis.com/${env.GOOGLE_ADS_API_VERSION}${path}`, {
           ...init,
           cache: 'no-store',
-          signal: init.signal ?? AbortSignal.timeout(25_000),
+          signal: workSignal(25_000, init.signal),
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
@@ -888,7 +893,7 @@ export class GoogleAdsGateway {
         })
       } catch (error) {
         if (retryable && attempt < delays.length) {
-          await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+          await pauseWithinWorkDeadline(delays[attempt])
           continue
         }
         throw new GoogleAdsError(
@@ -919,13 +924,13 @@ export class GoogleAdsGateway {
       const requestId = headerRequestId ?? bodyRequestIds[0] ?? null
 
       if (retryable && (response.status === 429 || response.status >= 500) && attempt < delays.length) {
-        await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+        await pauseWithinWorkDeadline(delays[attempt])
         continue
       }
       if (response.ok) {
         if (data) return { data, requestId }
         if (retryable && attempt < delays.length) {
-          await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+          await pauseWithinWorkDeadline(delays[attempt])
           continue
         }
         throw new GoogleAdsError('Google Ads a renvoyé une réponse invalide ou incomplète.', 502, requestId)

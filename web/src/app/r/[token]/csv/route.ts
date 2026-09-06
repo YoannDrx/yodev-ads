@@ -1,3 +1,4 @@
+import { isSupportedReportPeriod, unsupportedReportPeriodMessage } from '@/lib/report-period'
 import { getPublicShare } from '@/lib/data'
 import { buildClientReportModel, clientReportCsv } from '@/lib/client-report-model'
 import { GoogleAdsGateway } from '@/lib/google-ads'
@@ -14,6 +15,7 @@ export async function GET(request: Request, context: { params: Promise<{ token: 
     pdf: true,
   })
   if (!rate.allowed) return new Response('Trop de requêtes', { status: 429, headers: { 'Retry-After': String(rate.retryAfterSeconds) } })
+  if (!isSupportedReportPeriod(result.share.periodDays)) return new Response(unsupportedReportPeriodMessage(result.share.locale), { status: 409, headers: { 'Cache-Control': 'private, no-store' } })
   const campaigns = await new GoogleAdsGateway(result.connection).campaignPerformance(result.client.googleCustomerId)
   const whiteLabel = ['studio', 'agency', 'internal'].includes(result.workspace.plan)
   const report = buildClientReportModel({

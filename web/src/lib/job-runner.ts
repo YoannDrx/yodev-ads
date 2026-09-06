@@ -1,4 +1,5 @@
 import 'server-only'
+import { withWorkDeadline } from '@/lib/work-deadline'
 
 import { and, eq, gte, inArray, isNotNull, lt, or } from 'drizzle-orm'
 import { z } from 'zod'
@@ -601,7 +602,8 @@ export async function runAvailableJobs(options: {
     )
     if (!job) break
     try {
-      const result = await runWithTransactionalEmailRetryGeneration(job.payload, () => executeJob(job))
+      const result = await withWorkDeadline(startedAt + maximumRuntimeMs, () =>
+        runWithTransactionalEmailRetryGeneration(job.payload, () => executeJob(job)))
       const providerMessageId = result && typeof result === 'object' && 'providerMessageId' in result && typeof result.providerMessageId === 'string'
         ? result.providerMessageId.slice(0, 128)
         : null

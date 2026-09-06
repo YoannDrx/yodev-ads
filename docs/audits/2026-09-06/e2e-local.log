@@ -1,0 +1,54 @@
+
+> @yodev/ads@0.1.0 test:e2e
+> playwright test --reporter=line
+
+[WebServer] (node:40435) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:40438) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[WebServer] (node:40466) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 17 tests using 4 workers
+
+(node:40510) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:40511) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:40512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+(node:40509) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/17] [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › owner has only its server-authorized product surface
+[2/17] [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › admin has only its server-authorized product surface
+[3/17] [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › analyst has only its server-authorized product surface
+[4/17] [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › strategist has only its server-authorized product surface
+[5/17] [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › client has only its server-authorized product surface
+[6/17] [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › owner cannot cross the direct export API boundary
+[7/17] [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › admin cannot cross the direct export API boundary
+[8/17] [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › strategist cannot cross the direct export API boundary
+[9/17] [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › analyst cannot cross the direct export API boundary
+[10/17] [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › client cannot cross the direct export API boundary
+[11/17] [chromium] › e2e/authenticated-rbac.spec.ts:93:7 › authenticated Server Action authorization matrix › re-authorizes workspace administration for every session
+[12/17] [chromium] › e2e/public.spec.ts:21:5 › privacy and terms pages are public
+[13/17] [chromium] › e2e/public.spec.ts:28:5 › the subprocessor register and change-notice policy are public
+[14/17] [chromium] › e2e/public.spec.ts:15:5 › authenticated areas redirect anonymous visitors to sign-in
+[15/17] [chromium] › e2e/public.spec.ts:3:5 › public landing exposes the product proposition and account creation
+[16/17] [chromium] › e2e/public.spec.ts:35:5 › the public product and legal surface honor the English locale
+[17/17] [chromium] › e2e/public.spec.ts:46:5 › public status page never claims operational health when status storage is unavailable
+[WebServer] (node:40540) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+  11 skipped
+  6 passed (13.0s)

@@ -1,3 +1,5 @@
+import { workspaceDecision } from '@/lib/workspace-decision'
+import { googleMutationKindEnabled } from '@/lib/feature-flags'
 import Link from 'next/link'
 import {
   BadgeAlert,
@@ -30,7 +32,7 @@ type AnalysisPageProps = { searchParams: Promise<{ client?: string; notice?: str
 
 export default async function AnalysisPage({ searchParams }: AnalysisPageProps) {
   const query = await searchParams
-  const { workspace, entitlements, session } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, entitlements, session, role } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const categories: Array<{ value: AnalysisCategory | 'all'; label: string; icon: typeof SearchCheck }> = [
@@ -40,7 +42,7 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
     { value: 'ads', label: english ? 'Ads' : 'Annonces', icon: FileSearch },
     { value: 'tracking', label: 'Tracking', icon: ShieldCheck },
   ]
-  const canProposeAdvanced = entitlements.capabilities.has('google.mutate.advanced')
+  const canProposeAdvanced = workspaceDecision({ role, state: workspace.accessState, permission: 'google:propose', entitlements, capability: 'google.mutate.advanced', features: ['googleReads'] }).allowed
   const [connection, clients] = await Promise.all([
     getWorkspaceConnection(workspace.id),
     listWorkspaceClients(workspace.id),
@@ -265,7 +267,7 @@ function FindingList({ findings, currency, clientId, canProposeAdvanced, locale 
 
 function WorkflowForm({ finding, clientId, locale }: { finding: AnalysisFinding; clientId: string; locale: 'fr' | 'en' }) {
   const english = locale === 'en'
-  if (!finding.suggestedWorkflow || !finding.campaignId || !finding.campaignName || !finding.adGroupId) return null
+  if (!finding.suggestedWorkflow || !googleMutationKindEnabled(finding.suggestedWorkflow) || !finding.campaignId || !finding.campaignName || !finding.adGroupId) return null
   if (finding.suggestedWorkflow === 'keyword_create_negative' || finding.suggestedWorkflow === 'keyword_create_positive') {
     return (
       <form action={requestGoogleAdsChange} className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">

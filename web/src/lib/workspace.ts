@@ -1,3 +1,4 @@
+import { workspaceDecision } from '@/lib/workspace-decision'
 import 'server-only'
 
 import { randomUUID } from 'node:crypto'
@@ -159,7 +160,9 @@ export async function requireAdminWorkspace() {
 
 export async function requireWorkspacePermission(permission: Permission) {
   const context = await requireWorkspace()
-  if (!workspaceLifecycleAllowsPermission(context.workspace.accessState, permission)) {
+  const decision = workspaceDecision({ role: context.role, state: context.workspace.accessState, permission })
+  if (!decision.allowed && decision.reason === 'role') requirePermission(context.role, permission)
+  if (!decision.allowed) {
     const error = new Error(`Workspace access state does not allow: ${permission}`)
     error.name = 'WorkspaceAccessRestrictedError'
     throw error

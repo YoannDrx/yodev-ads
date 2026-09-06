@@ -4,6 +4,7 @@ export type Permission =
   | 'workspace:read'
   | 'portfolio:read'
   | 'workspace:admin'
+  | 'audit:read'
   | 'billing:manage'
   | 'members:manage'
   | 'google:connect'
@@ -26,6 +27,7 @@ const allPermissions: readonly Permission[] = [
   'workspace:read',
   'portfolio:read',
   'workspace:admin',
+  'audit:read',
   'billing:manage',
   'members:manage',
   'google:connect',
@@ -49,6 +51,7 @@ const rolePermissions: Record<WorkspaceRole, ReadonlySet<Permission>> = {
     'workspace:read',
     'portfolio:read',
     'workspace:admin',
+    'audit:read',
     'members:manage',
     'google:connect',
     'google:propose',

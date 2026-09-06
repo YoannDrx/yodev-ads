@@ -90,7 +90,7 @@ describe('public report workflows', () => {
     })
     mocks.databases.push(database.db)
     await createWorkspacePublicReport({
-      workspaceId, actorUserId, clientId, label: 'Rapport', locale: 'en', periodDays: 7,
+      workspaceId, actorUserId, clientId, label: 'Rapport', locale: 'en', periodDays: 30,
       token: 'token', entitlements: entitlementContext('active', 'solo'),
       fallbackOrigin: 'https://ads.yodev.fr', now,
     })

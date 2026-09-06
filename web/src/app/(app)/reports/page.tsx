@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { listReportAutomation, listShareLinks, listWorkspaceClients } from '@/lib/data'
 import { featureEnabled } from '@/lib/feature-flags'
-import { permissionsForRole } from '@/lib/permissions'
+import { workspacePermissions } from '@/lib/workspace-decision'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
 const weekdays: Record<'fr' | 'en', Record<number, string>> = {
@@ -43,7 +43,7 @@ export default async function ReportsPage({
     listReportAutomation(workspace.id),
   ])
   const advertiserClients = clients.filter((client) => !client.isManager)
-  const canManage = permissionsForRole(role).has('reports:manage')
+  const canManage = workspacePermissions(role, workspace.accessState).has('reports:manage')
   const schedulesEnabled = featureEnabled('scheduler') && featureEnabled('notifications')
 
   return (
@@ -68,7 +68,7 @@ export default async function ReportsPage({
                   <Field label={english ? 'Internal name' : 'Nom interne'} htmlFor="report-label"><Input id="report-label" name="label" placeholder={english ? 'ACME monthly report' : 'Reporting mensuel ACME'} required /></Field>
                   <Field label={english ? 'Client account' : 'Compte client'} htmlFor="report-client"><select id="report-client" name="clientId" className="h-10 w-full rounded-lg border bg-white px-3 text-sm" required>{advertiserClients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></Field>
                   <Field label={english ? 'Language' : 'Langue'} htmlFor="report-locale"><select id="report-locale" name="locale" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="fr">Français</option><option value="en">English</option></select></Field>
-                  <Field label={english ? 'Period' : 'Période'} htmlFor="report-period"><select id="report-period" name="periodDays" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="7">7 {english ? 'days' : 'jours'}</option><option value="30">30 {english ? 'days' : 'jours'}</option><option value="90">90 {english ? 'days' : 'jours'}</option></select></Field>
+                  <Field label={english ? 'Period' : 'Période'} htmlFor="report-period"><select id="report-period" name="periodDays" defaultValue={30} className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="30">30 {english ? 'days' : 'jours'}</option></select></Field>
                 </div>
                 <Field label={english ? 'Editorial comment' : 'Commentaire éditorial'} htmlFor="report-comment"><Textarea id="report-comment" name="editorialComment" maxLength={5000} placeholder={english ? 'What the client should take away from this period…' : 'Ce que le client doit retenir de la période…'} /></Field>
                 <Field label={english ? 'Action plan' : 'Plan d’action'} htmlFor="report-plan"><Textarea id="report-plan" name="actionPlan" maxLength={5000} placeholder={english ? 'Decisions and next steps…' : 'Décisions et prochaines étapes…'} /></Field>
@@ -84,7 +84,7 @@ export default async function ReportsPage({
                 <div className="grid gap-4 sm:grid-cols-3">
                   <Field label={english ? 'Template name' : 'Nom du modèle'} htmlFor="template-name"><Input id="template-name" name="name" placeholder={english ? 'Monthly review' : 'Bilan mensuel'} required /></Field>
                   <Field label={english ? 'Language' : 'Langue'} htmlFor="template-locale"><select id="template-locale" name="locale" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="fr">Français</option><option value="en">English</option></select></Field>
-                  <Field label={english ? 'Period' : 'Période'} htmlFor="template-period"><select id="template-period" name="periodDays" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="7">7 {english ? 'days' : 'jours'}</option><option value="30">30 {english ? 'days' : 'jours'}</option><option value="90">90 {english ? 'days' : 'jours'}</option></select></Field>
+                  <Field label={english ? 'Period' : 'Période'} htmlFor="template-period"><select id="template-period" name="periodDays" defaultValue={30} className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="30">30 {english ? 'days' : 'jours'}</option></select></Field>
                 </div>
                 <Field label={english ? 'Reusable comment' : 'Commentaire réutilisable'} htmlFor="template-comment"><Textarea id="template-comment" name="editorialComment" maxLength={5000} placeholder={english ? 'Editorial context shared by each delivery…' : 'Contexte éditorial commun à chaque envoi…'} /></Field>
                 <Field label={english ? 'Reusable action plan' : 'Plan d’action réutilisable'} htmlFor="template-plan"><Textarea id="template-plan" name="actionPlan" maxLength={5000} placeholder={english ? 'Next-step structure…' : 'Structure des prochaines étapes…'} /></Field>
@@ -109,7 +109,7 @@ export default async function ReportsPage({
                     <div className="grid gap-3 sm:grid-cols-3">
                       <Input name="name" defaultValue={template.name} required aria-label={english ? 'Template name' : 'Nom du modèle'} />
                       <select name="locale" defaultValue={template.locale} aria-label={english ? 'Template language' : 'Langue du modèle'} className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="fr">Français</option><option value="en">English</option></select>
-                      <select name="periodDays" defaultValue={template.periodDays} aria-label={english ? 'Template period' : 'Période du modèle'} className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="7">7 {english ? 'days' : 'jours'}</option><option value="30">30 {english ? 'days' : 'jours'}</option><option value="90">90 {english ? 'days' : 'jours'}</option></select>
+                      <select name="periodDays" defaultValue={template.periodDays === 30 ? 30 : "unsupported"} aria-label={english ? 'Template period' : 'Période du modèle'} className="h-10 rounded-lg border bg-white px-3 text-sm">{template.periodDays !== 30 && <option value="unsupported" disabled>{template.periodDays} — {english ? "unavailable" : "indisponible"}</option>}<option value="30">30 {english ? 'days' : 'jours'}</option></select>
                     </div>
                     <Textarea name="editorialComment" defaultValue={template.editorialComment ?? ''} maxLength={5000} aria-label={english ? 'Template editorial comment' : 'Commentaire éditorial du modèle'} />
                     <Textarea name="actionPlan" defaultValue={template.actionPlan ?? ''} maxLength={5000} aria-label={english ? 'Template action plan' : 'Plan d’action du modèle'} />
@@ -130,7 +130,7 @@ export default async function ReportsPage({
             <form action={createReportSchedule} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Field label={english ? 'Name' : 'Nom'} htmlFor="schedule-name"><Input id="schedule-name" name="name" placeholder={english ? 'ACME monthly review' : 'Bilan mensuel ACME'} required /></Field>
               <Field label={english ? 'Account' : 'Compte'} htmlFor="schedule-client"><select id="schedule-client" name="clientId" className="h-10 w-full rounded-lg border bg-white px-3 text-sm" required>{advertiserClients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></Field>
-              <Field label={english ? 'Template' : 'Modèle'} htmlFor="schedule-template"><select id="schedule-template" name="templateId" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="">{english ? 'Standard 30-day report' : 'Rapport standard 30 jours'}</option>{automation.templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></Field>
+              <Field label={english ? 'Template' : 'Modèle'} htmlFor="schedule-template"><select id="schedule-template" name="templateId" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="">{english ? 'Standard 30-day report' : 'Rapport standard 30 jours'}</option>{automation.templates.filter((template) => template.periodDays === 30).map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></Field>
               <Field label={english ? 'Cadence' : 'Cadence'} htmlFor="schedule-cadence"><select id="schedule-cadence" name="cadence" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="monthly">{english ? 'Monthly' : 'Mensuelle'}</option><option value="weekly">{english ? 'Weekly' : 'Hebdomadaire'}</option></select></Field>
               <Field label={english ? 'Weekday (1–7)' : 'Jour semaine (1–7)'} htmlFor="schedule-weekday"><Input id="schedule-weekday" name="scheduleWeekday" type="number" min={1} max={7} defaultValue={1} required /></Field>
               <Field label={english ? 'Day of month (1–28)' : 'Jour du mois (1–28)'} htmlFor="schedule-monthday"><Input id="schedule-monthday" name="scheduleMonthday" type="number" min={1} max={28} defaultValue={1} required /></Field>

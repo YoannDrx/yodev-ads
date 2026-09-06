@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { databaseDouble } from '../../test/fluent-db'
+import { databaseDouble as baseDatabaseDouble } from '../../test/fluent-db'
 
 const mocks = vi.hoisted(() => ({
   databases: [] as unknown[],
@@ -21,6 +21,14 @@ import {
   updateWorkspaceAlertWorkflow,
   type AlertWorkflowOperation,
 } from './monitoring-workflows'
+
+function databaseDouble(input: Parameters<typeof baseDatabaseDouble>[0] = {}) {
+  return baseDatabaseDouble({ ...input, statementResults: [[], ...(input.statementResults ?? [])], query: {
+    workspaces: { findFirst: async () => ({ accessState: 'active', plan: 'solo' }) },
+    monitoringAgents: { findFirst: async () => ({ id: agentId, enabled: true }) },
+    ...input.query,
+  } })
+}
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 const incidentId = '00000000-0000-4000-8000-000000000002'
@@ -78,7 +86,7 @@ describe('monitoring action workflows', () => {
   it('fails closed if creation or toggle returns no tenant-owned monitor', async () => {
     mocks.databases.push(
       databaseDouble({ statementResults: [[], [{ count: 0 }], []] }).db,
-      databaseDouble({ statementResults: [[]] }).db,
+      databaseDouble({ statementResults: [[]], query: { monitoringAgents: { findFirst: async () => undefined } } }).db,
     )
     await expect(createWorkspaceMonitoringAgent({
       workspaceId,
@@ -96,8 +104,8 @@ describe('monitoring action workflows', () => {
   })
 
   it('toggles a tenant-owned monitor and records scan results', async () => {
-    const toggle = databaseDouble({ statementResults: [[{ id: agentId }]] })
-    const scan = databaseDouble()
+    const toggle = databaseDouble({ statementResults: [[], [{ id: agentId }]] })
+    const scan = baseDatabaseDouble()
     mocks.databases.push(toggle.db, scan.db)
     await setWorkspaceMonitoringAgentEnabled({ workspaceId, actorUserId, agentId, enabled: false, now })
     await recordWorkspaceMonitoringScan({ workspaceId, actorUserId, result: { detected: 2, resolved: 1 } })
@@ -108,8 +116,34 @@ describe('monitoring action workflows', () => {
     })
   })
 
+  it('rejects reactivation at the current quota even when the caller saw a higher plan', async () => {
+    const database = databaseDouble({ statementResults: [[], [{ count: 5 }]], query: {
+      monitoringAgents: { findFirst: async () => ({ id: agentId, enabled: false }) },
+    } })
+    mocks.databases.push(database.db)
+    await expect(setWorkspaceMonitoringAgentEnabled({ workspaceId, actorUserId, agentId, enabled: true, now })).rejects.toThrow('Quota exceeded')
+    expect(database.capture.sets).toEqual([])
+  })
+
+  it('allows reactivation below quota and audits it exactly once', async () => {
+    const database = databaseDouble({ statementResults: [[], [{ count: 4 }], [{ id: agentId, enabled: true }]], query: {
+      monitoringAgents: { findFirst: async () => ({ id: agentId, enabled: false }) },
+    } })
+    mocks.databases.push(database.db)
+    await setWorkspaceMonitoringAgentEnabled({ workspaceId, actorUserId, agentId, enabled: true, now })
+    expect(database.capture.values[0]).toMatchObject({ action: 'monitoring.agent_enabled' })
+  })
+
+  it('treats an already enabled monitor as an idempotent transition', async () => {
+    const database = databaseDouble({ statementResults: [[]] })
+    mocks.databases.push(database.db)
+    await setWorkspaceMonitoringAgentEnabled({ workspaceId, actorUserId, agentId, enabled: true, now })
+    expect(database.capture.sets).toEqual([])
+    expect(database.capture.values).toEqual([])
+  })
+
   it('acknowledges a tenant-owned alert with one audit event', async () => {
-    const database = databaseDouble({ statementResults: [[{ id: incidentId }]] })
+    const database = baseDatabaseDouble({ statementResults: [[{ id: incidentId }]] })
     mocks.databases.push(database.db)
     await acknowledgeWorkspaceAlert({ workspaceId, actorUserId, incidentId, now })
     expect(database.capture.sets[0]).toMatchObject({ status: 'acknowledged', acknowledgedAt: now, updatedAt: now })
@@ -117,7 +151,7 @@ describe('monitoring action workflows', () => {
   })
 
   it('rejects an alert absent from the tenant', async () => {
-    mocks.databases.push(databaseDouble({ statementResults: [[]] }).db)
+    mocks.databases.push(baseDatabaseDouble({ statementResults: [[]] }).db)
     await expect(acknowledgeWorkspaceAlert({ workspaceId, actorUserId, incidentId, now }))
       .rejects.toThrow('Alerte introuvable')
   })
@@ -135,7 +169,7 @@ describe('monitoring action workflows', () => {
     { operation: 'assign_self', expected: { assignedTo: actorUserId } },
     { operation: 'unassign', expected: { assignedTo: null, dueAt: null } },
   ])('applies the $operation alert transition', async ({ operation, dueDate, expected }) => {
-    const database = databaseDouble({ statementResults: [[{ id: incidentId }]] })
+    const database = baseDatabaseDouble({ statementResults: [[{ id: incidentId }]] })
     mocks.databases.push(database.db)
     await updateWorkspaceAlertWorkflow({ workspaceId, actorUserId, incidentId, operation, dueDate, now })
     expect(database.capture.sets[0]).toMatchObject({ ...expected, updatedAt: now })
@@ -143,7 +177,7 @@ describe('monitoring action workflows', () => {
   })
 
   it('persists an optional comment and due-date audit metadata', async () => {
-    const database = databaseDouble({ statementResults: [[{ id: incidentId }]] })
+    const database = baseDatabaseDouble({ statementResults: [[{ id: incidentId }]] })
     mocks.databases.push(database.db)
     await updateWorkspaceAlertWorkflow({
       workspaceId,
@@ -161,7 +195,7 @@ describe('monitoring action workflows', () => {
   })
 
   it('rejects an alert workflow update when the scoped update returns no incident', async () => {
-    mocks.databases.push(databaseDouble({ statementResults: [[]] }).db)
+    mocks.databases.push(baseDatabaseDouble({ statementResults: [[]] }).db)
     await expect(updateWorkspaceAlertWorkflow({
       workspaceId,
       actorUserId,

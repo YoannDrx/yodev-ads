@@ -1,3 +1,5 @@
+import { featureEnabled, googleMutationKindEnabled } from '@/lib/feature-flags'
+import { dashboardHealth } from '@/lib/dashboard-health'
 import Link from 'next/link'
 import { Activity, ArrowDownUp, BellRing, Gauge, MousePointerClick, ReceiptText, Target } from 'lucide-react'
 import { requestGoogleAdsChange, updateClientGoal } from '@/app/actions'
@@ -58,8 +60,10 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     remainingDays: goalContext?.calendar ? goalContext.calendar.daysInMonth - goalContext.calendar.elapsedDays : 0,
     locale,
   })
-  const canProposeBudget = permissionsForRole(role).has('google:propose') && entitlements.capabilities.has('google.mutate.basic')
-  const canProposeAtomicBatch = permissionsForRole(role).has('google:propose') &&
+  const canProposeBasic = permissionsForRole(role).has('google:propose') && entitlements.capabilities.has('google.mutate.basic') && featureEnabled('googleReads')
+  const canProposeBudget = canProposeBasic && googleMutationKindEnabled('campaign_budget')
+  const canProposeStatus = canProposeBasic && googleMutationKindEnabled('campaign_status')
+  const canProposeAtomicBatch = canProposeBasic && googleMutationKindEnabled('budget_reallocation') &&
     entitlements.capabilities.has('google.mutate.advanced') &&
     (entitlements.plan === 'agency' || entitlements.plan === 'internal')
 
@@ -73,16 +77,12 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     { cost: 0, clicks: 0, impressions: 0, conversions: 0 },
   )
   const currency = client?.currencyCode ?? 'EUR'
-  const openAlerts = alertRows.filter(({ incident }) => incident.status === 'open')
-  const healthPenalty = campaigns.reduce(
-    (penalty, campaign) => {
-      if (campaign.status === 'ENABLED' && Number(campaign.impressions) === 0) return penalty + 20
-      if (Number(campaign.costMicros) > 100_000_000 && campaign.conversions === 0) return penalty + 12
-      return penalty
-    },
-    openAlerts.filter(({ incident }) => incident.severity === 'critical').length * 8,
-  )
-  const healthScore = Math.max(0, Math.min(100, 100 - healthPenalty))
+  const { score: healthScore, openIncidents: openAlerts } = dashboardHealth({
+    clientId: client?.id, campaigns: apiError ? null : campaigns,
+    incidents: alertRows.map(({ incident }) => incident),
+  })
+  const collectedAt = new Date()
+
 
   return (
     <>
@@ -124,8 +124,14 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
               : undefined
           }
         />
+      ) : apiError ? (
+        <div role="status" className="rounded-xl border bg-white p-8">
+          <h2 className="font-semibold">{english ? 'Performance unavailable' : 'Performances indisponibles'}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{english ? 'The collection failed. Reload this page to retry or check the connection in settings.' : 'La collecte a échoué. Rechargez la page pour réessayer ou vérifiez la connexion dans les réglages.'}</p>
+        </div>
       ) : (
         <>
+          <p className="mb-4 text-xs text-muted-foreground">{english ? 'Google data retrieved at' : 'Données Google récupérées le'} {collectedAt.toLocaleString(english ? 'en-GB' : 'fr-FR', { timeZone: client.timezone })} · {client.timezone}</p>
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label={english ? 'Spend' : 'Investissement'}
@@ -165,11 +171,11 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">{english ? 'Monitoring score' : 'Score de vigilance'}</p>
                   <p className="mt-3 text-4xl font-semibold tracking-tight">
-                    {healthScore}
+                    {healthScore ?? '—'}
                     <span className="text-lg text-white/35"> / 100</span>
                   </p>
                   <p className="mt-2 max-w-md text-sm leading-6 text-white/55">
-                    {english ? 'Summary calculated from delivery, spend without conversions and open incidents.' : 'Synthèse calculée à partir de la diffusion, des dépenses sans conversion et des incidents ouverts.'}
+                    {english ? 'Client score based on delivery, spend without conversions, and open or reopened incidents. No score without campaigns; acknowledged and snoozed incidents are excluded.' : 'Score du client fondé sur la diffusion, les dépenses sans conversion et les incidents ouverts ou rouverts. Aucun score sans campagne ; les incidents acquittés et reportés sont exclus.'}
                   </p>
                 </div>
                 <div className="relative grid size-28 shrink-0 place-items-center rounded-full border-[10px] border-white/8">
@@ -340,12 +346,12 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                             : `${formatPercent(campaign.searchBudgetLostImpressionShare)} / ${campaign.searchRankLostImpressionShare === null ? '—' : formatPercent(campaign.searchRankLostImpressionShare)}`}
                         </td>
                         <td className="px-5 py-4 text-right">
-                          <details className="relative inline-block text-left">
+                          {(canProposeStatus || canProposeBudget) && <details className="relative inline-block text-left">
                             <summary className="cursor-pointer list-none rounded-lg border px-3 py-2 text-xs font-medium hover:bg-muted">
                               {english ? 'Prepare' : 'Préparer'}
                             </summary>
                             <div className="absolute right-0 z-10 mt-2 w-72 rounded-2xl border bg-white p-4 text-left shadow-xl">
-                              <form action={requestGoogleAdsChange} className="space-y-3">
+                              {canProposeStatus && <form action={requestGoogleAdsChange} className="space-y-3">
                                 <input type="hidden" name="kind" value="campaign_status" />
                                 <input type="hidden" name="clientId" value={client.id} />
                                 <input type="hidden" name="campaignId" value={campaign.id} />
@@ -361,9 +367,9 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                                 <Button type="submit" variant="outline" size="sm" className="w-full">
                                   {english ? 'Validate then request' : 'Valider puis demander'}
                                 </Button>
-                              </form>
+                              </form>}
                               <div className="my-4 border-t" />
-                              <form action={requestGoogleAdsChange} className="space-y-3">
+                              {canProposeBudget && <form action={requestGoogleAdsChange} className="space-y-3">
                                 <input type="hidden" name="kind" value="campaign_budget" />
                                 <input type="hidden" name="clientId" value={client.id} />
                                 <input type="hidden" name="campaignId" value={campaign.id} />
@@ -386,9 +392,9 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                                     {english ? 'Request' : 'Demander'}
                                   </Button>
                                 </div>
-                              </form>
+                              </form>}
                             </div>
-                          </details>
+                          </details>}
                         </td>
                       </tr>
                     ))}

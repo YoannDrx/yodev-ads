@@ -42,16 +42,17 @@ import {
   workspaces,
 } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
+import { spreadsheetText } from '@/lib/csv'
 
 function csvCell(value: unknown) {
   if (value === null || value === undefined) return ''
-  const text = typeof value === 'object' ? JSON.stringify(value) : String(value)
+  const text = typeof value === 'object' ? JSON.stringify(value) : typeof value === 'string' ? spreadsheetText(value) : String(value)
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 
 export function rowsToCsv(rows: Array<Record<string, unknown>>, columns?: string[]) {
   const headers = columns ?? [...new Set(rows.flatMap((row) => Object.keys(row)))]
-  return [headers.join(','), ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(','))].join('\r\n')
+  return [headers.map(csvCell).join(','), ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(','))].join('\r\n')
 }
 
 export function exportArchive(files: Record<string, string>) {

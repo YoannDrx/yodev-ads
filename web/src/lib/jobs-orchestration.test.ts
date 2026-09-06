@@ -10,6 +10,7 @@ vi.mock('@/db/transactions', () => ({ withSystemTransaction: transactionMock.run
 
 import {
   claimNextJob,
+  recoverExpiredJobs,
   completeJob,
   enqueueJob,
   enqueueJobs,
@@ -80,6 +81,18 @@ describe('durable job orchestration', () => {
     const database = databaseDouble({ statementResults: [[]] })
     transactionMock.databases.push(database.db)
     await expect(claimNextJob('worker-1')).resolves.toBeNull()
+  })
+
+  it('recovers retryable and exhausted leases, preserving attempt history', async () => {
+    const database = databaseDouble({ statementResults: [[
+      queuedJob({ status: 'running', attemptCount: 1 }),
+      queuedJob({ id: 'last', workspaceId: 'workspace', status: 'running', attemptCount: 5 }),
+    ]] })
+    transactionMock.databases.push(database.db)
+    await expect(recoverExpiredJobs()).resolves.toEqual({ recovered: 2, deadLettered: 1 })
+    expect(database.capture.sets.map((value) => (value as { status?: string }).status).filter(Boolean)).toEqual(['retrying', 'dead_letter'])
+    expect(database.capture.values[0]).toMatchObject({ action: 'job.lease_expired', metadata: { attempt: 5, exhausted: true } })
+    await expect(recoverExpiredJobs(new Date(), 0)).rejects.toThrow('Invalid recovery limit')
   })
 
   it('completes only a job owned by the current worker', async () => {

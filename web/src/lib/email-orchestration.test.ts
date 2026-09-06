@@ -37,7 +37,7 @@ const workspace = {
   locale: 'fr', timezone: 'Europe/Paris', accessState: 'active', plan: 'agency',
 }
 
-function scheduledContext(overrides: Record<string, unknown> = {}, options: { workspace?: unknown; claim?: unknown[] } = {}) {
+function scheduledContext(overrides: Record<string, unknown> = {}, options: { workspace?: unknown; claim?: unknown[]; periodDays?: number } = {}) {
   const schedule = {
     id: entityId, workspaceId, clientId: 'client-1', shareId: 'share-1', templateId: 'template-1', enabled: true,
     lastRunKey: null, recipientEmails: ['client@example.test'], deliveryLeaseUntil: null,
@@ -50,7 +50,7 @@ function scheduledContext(overrides: Record<string, unknown> = {}, options: { wo
       query: queryMap({
         reportSchedules: { first: schedule }, workspaces: { first: options.workspace ?? workspace }, clients: { first: { id: 'client-1', name: 'Client' } },
         shareLinks: { first: { id: 'share-1', workspaceId, active: true, editorialComment: 'Initial', actionPlan: null, locale: 'fr', periodDays: 30 } },
-        reportTemplates: { first: { id: 'template-1', active: true, editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: 7 } },
+        reportTemplates: { first: { id: 'template-1', active: true, editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: options.periodDays ?? 30 } },
         workspaceDomains: { first: { hostname: 'reports.acme.test' } },
       }),
     }),
@@ -76,13 +76,22 @@ describe('scheduled report delivery', () => {
     for (const key of ['NEXT_PUBLIC_APP_URL', 'OPERATIONS_ALERT_EMAIL', 'SUPPORT_EMAIL']) delete process.env[key]
   })
 
+  it('blocks legacy unsupported periods before any share update or email and releases its lease', async () => {
+    const context = scheduledContext({}, { periodDays: 7 })
+    const failure = databaseDouble()
+    mocks.databases.push(context.database.db, failure.db)
+    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('pas prise en charge')
+    expect(mocks.emailSend).not.toHaveBeenCalled()
+    expect(failure.capture.sets[0]).toMatchObject({ deliveryLeaseUntil: null, lastError: expect.stringContaining('pas prise en charge') })
+  })
+
   it('leases, refreshes, sends and audits a localized report using its verified custom domain', async () => {
     const context = scheduledContext()
     const refresh = databaseDouble()
     const success = databaseDouble()
     mocks.databases.push(context.database.db, refresh.db, success.db)
     await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ delivered: true, recipientCount: 1, providerMessageId: 'email-1' })
-    expect(refresh.capture.sets[0]).toMatchObject({ editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: 7 })
+    expect(refresh.capture.sets[0]).toMatchObject({ editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: 30 })
     expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({
       to: ['client@example.test'], html: expect.stringContaining('https://reports.acme.test/r/report-token'),
       idempotencyKey: `report-schedule:${entityId}:2026-08-10`, category: 'scheduled_report', workspaceId,

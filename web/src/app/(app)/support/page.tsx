@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { listWorkspaceSupportTickets } from '@/lib/data'
-import { permissionsForRole } from '@/lib/permissions'
+import { workspacePermissions } from '@/lib/workspace-decision'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
 const categoryLabels: Record<string, { fr: string; en: string }> = {
@@ -24,7 +24,7 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
   const query = await searchParams
   const { workspace, role, session } = await requireWorkspacePermission('support:read')
   const tickets = await listWorkspaceSupportTickets(workspace.id, role === 'client' ? session.userId : undefined)
-  const canContact = permissionsForRole(role).has('support:contact')
+  const canContact = workspacePermissions(role, workspace.accessState).has('support:contact')
   const english = workspace.locale === 'en'
   const openCount = tickets.filter(({ ticket }) => !['resolved', 'closed'].includes(ticket.status)).length
 

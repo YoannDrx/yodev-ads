@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { reportPeriodSchema } from '@/lib/report-period'
+
 import { and, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm'
 import {
   approvalRequests,
@@ -32,6 +34,7 @@ export function createWorkspacePublicReport(input: ActorContext & {
   fallbackOrigin: string
   now?: Date
 }) {
+  reportPeriodSchema.parse(input.periodDays)
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
     const entitlements = await lockWorkspaceEntitlements(transaction, input.workspaceId, 'monitoring')

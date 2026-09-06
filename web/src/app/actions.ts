@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { reportPeriodSchema } from '@/lib/report-period'
 import { del, put } from '@vercel/blob'
 import {
   billingPortalConfigurationId,
@@ -1549,7 +1550,7 @@ export async function createShareLink(formData: FormData) {
     const editorialComment = z.string().trim().max(5000).optional().parse(formData.get('editorialComment') || undefined)
     const actionPlan = z.string().trim().max(5000).optional().parse(formData.get('actionPlan') || undefined)
     const locale = z.enum(['fr', 'en']).default('fr').parse(formData.get('locale') || 'fr')
-    const periodDays = z.coerce.number().int().refine((value) => [7, 30, 90].includes(value), 'Période invalide.').parse(formData.get('periodDays') || 30)
+    const periodDays = reportPeriodSchema.parse(formData.get('periodDays') || 30)
     const client = await getWorkspaceClient(workspace.id, clientId)
     if (!client || client.id !== clientId) throw new Error('Compte client introuvable.')
     const token = createShareToken()
@@ -1603,7 +1604,7 @@ export async function createReportTemplate(formData: FormData) {
 const reportTemplateInputSchema = z.object({
   name: z.string().trim().min(2).max(160),
   locale: z.enum(['fr', 'en']).default('fr'),
-  periodDays: z.coerce.number().int().refine((value) => [7, 30, 90].includes(value), 'Période invalide.'),
+  periodDays: reportPeriodSchema,
   editorialComment: z.string().trim().max(5000).optional(),
   actionPlan: z.string().trim().max(5000).optional(),
 })

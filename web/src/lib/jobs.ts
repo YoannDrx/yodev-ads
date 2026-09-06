@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { and, asc, eq, inArray, isNull, lt, lte, notInArray, or, sql } from 'drizzle-orm'
-import { jobAttempts, jobs } from '@/db/schema'
+import { auditEvents, jobAttempts, jobs } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 
 export const JOB_BACKOFF_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 60 * 60_000, 12 * 60 * 60_000] as const
@@ -179,6 +179,33 @@ export async function claimNextJob(
   })
 }
 
+/** Recover abandoned attempts in bounded batches, including the final attempt. */
+export async function recoverExpiredJobs(now = new Date(), limit = 50) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new Error('Invalid recovery limit')
+  return withSystemTransaction(async (db) => {
+    const expired = await db.select().from(jobs).where(and(
+      eq(jobs.status, 'running'), or(isNull(jobs.leaseExpiresAt), lte(jobs.leaseExpiresAt, now)),
+    )).orderBy(asc(jobs.leaseExpiresAt), asc(jobs.id)).limit(limit).for('update', { skipLocked: true })
+    for (const job of expired) {
+      const exhausted = job.attemptCount >= job.maximumAttempts
+      const message = 'Worker lease expired before completion was recorded.'
+      await db.update(jobs).set({
+        status: exhausted ? 'dead_letter' : 'retrying', leaseOwner: null, leaseExpiresAt: null,
+        availableAt: now, updatedAt: now, lastError: message, deadLetteredAt: exhausted ? now : null,
+      }).where(eq(jobs.id, job.id))
+      await db.update(jobAttempts).set({
+        state: exhausted ? 'dead_letter' : 'failed', finishedAt: now, errorMessage: message,
+      }).where(and(eq(jobAttempts.jobId, job.id), eq(jobAttempts.attempt, job.attemptCount), eq(jobAttempts.state, 'running')))
+      if (job.workspaceId) await db.insert(auditEvents).values({
+        workspaceId: job.workspaceId, actorUserId: 'system:job-recovery',
+        action: 'job.lease_expired', entityType: 'job', entityId: job.id,
+        metadata: { attempt: job.attemptCount, type: job.type, exhausted },
+      })
+    }
+    return { recovered: expired.length, deadLettered: expired.filter((job) => job.attemptCount >= job.maximumAttempts).length }
+  })
+}
+
 export async function completeJob(job: ClaimedJob, workerId: string, now = new Date(), providerMessageId?: string | null) {
   return withSystemTransaction(async (db) => {
     const [completed] = await db
@@ -191,7 +218,7 @@ export async function completeJob(job: ClaimedJob, workerId: string, now = new D
         lastError: null,
         updatedAt: now,
       })
-      .where(and(eq(jobs.id, job.id), eq(jobs.status, 'running'), eq(jobs.leaseOwner, workerId)))
+      .where(and(eq(jobs.id, job.id), eq(jobs.status, 'running'), eq(jobs.leaseOwner, workerId), eq(jobs.attemptCount, job.attemptCount)))
       .returning({ id: jobs.id })
     if (!completed) return false
     await db
@@ -226,7 +253,7 @@ export async function failJob(
         deadLetteredAt: deadLettered ? now : null,
         updatedAt: now,
       })
-      .where(and(eq(jobs.id, job.id), eq(jobs.status, 'running'), eq(jobs.leaseOwner, workerId)))
+      .where(and(eq(jobs.id, job.id), eq(jobs.status, 'running'), eq(jobs.leaseOwner, workerId), eq(jobs.attemptCount, job.attemptCount)))
       .returning({ id: jobs.id })
     if (!failed) return { updated: false, deadLettered }
     await db

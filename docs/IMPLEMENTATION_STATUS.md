@@ -2,6 +2,8 @@
 
 Last reviewed: 2026-08-18. This is the launch-readiness source of truth. A UI is not sufficient: “implemented” means the server contract, isolation and automated verification exist. External validation and rollout evidence are tracked separately.
 
+**2026-09-06 remediation in progress:** the new [audit](./AUDIT_PROD_READY_2026-09-06.md), [execution plan](./PLAN_PROD_READY.md) and [execution evidence](./PROD_READY_EXECUTION.md) qualify the historical status below. The first correction lot passes 853 local tests, coverage thresholds, lint, types, build and disposable PostgreSQL checks including real worker termination and concurrent monitor quotas. It has not been deployed or certified through the provider/beta gates. New reports temporarily accept only 30 days; legacy 7/90-day links are retained with an explicit unavailable response pending historical reporting.
+
 Status meanings:
 
 - **Implemented**: implemented in the repository and covered by automated checks.

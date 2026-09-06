@@ -65,7 +65,11 @@ export const GOOGLE_MUTATION_KINDS = [
 export type GoogleMutationKind = (typeof GOOGLE_MUTATION_KINDS)[number]
 
 export function requireGoogleMutationKind(rawKind: string) {
-  if (!GOOGLE_MUTATION_KINDS.includes(rawKind as GoogleMutationKind)) throw new Error('Type de mutation Google Ads non pris en charge.')
+  if (!googleMutationKindEnabled(rawKind)) throw new Error(`Le type de mutation Google Ads « ${rawKind} » est temporairement désactivé.`)
+}
+
+export function googleMutationKindEnabled(rawKind: string) {
+  if (!GOOGLE_MUTATION_KINDS.includes(rawKind as GoogleMutationKind)) return false
   const kind = rawKind as GoogleMutationKind
   const flag: FeatureFlag = kind === 'campaign_status'
     ? 'googleMutationStatus'
@@ -76,5 +80,5 @@ export function requireGoogleMutationKind(rawKind: string) {
         : kind.startsWith('keyword_')
           ? 'googleMutationKeywords'
           : 'googleMutationAds'
-  requireFeature(flag, `Le type de mutation Google Ads « ${kind} » est temporairement désactivé.`)
+  return featureEnabled(flag)
 }

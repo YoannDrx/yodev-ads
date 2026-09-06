@@ -1,3 +1,4 @@
+import { workspaceDecision } from '@/lib/workspace-decision'
 import { Bot, Clock3, Gauge, Play, Plus, ShieldCheck } from 'lucide-react'
 import { createMonitoringAgent, runMonitoringScan, toggleMonitoringAgent } from '@/app/actions'
 import { FlashMessage } from '@/components/flash-message'
@@ -16,7 +17,9 @@ export default async function AgentsPage({
   searchParams: Promise<{ notice?: string; error?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role, entitlements } = await requireWorkspacePermission('portfolio:read')
+  const canManage = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'monitoring' }).allowed
+  const canRun = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'monitoring', features: ['googleReads'] }).allowed
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const agentTemplates = agentTemplatesForLocale(locale)
@@ -27,13 +30,13 @@ export default async function AgentsPage({
         eyebrow={english ? 'Safe automation' : 'Automatisation sûre'}
         title={english ? 'Autonomous monitors' : 'Vigies autonomes'}
         description={english ? 'Specialized agents monitor your accounts every morning. They detect and explain; every Google Ads change still requires approval.' : 'Des agents spécialisés surveillent vos comptes chaque matin. Ils détectent et expliquent ; toute modification Google Ads reste soumise à approbation.'}
-        actions={
+        actions={canRun ?
           <form action={runMonitoringScan}>
             <Button type="submit">
               <Play className="mr-2 size-4" />
               {english ? 'Analyze now' : 'Analyser maintenant'}
             </Button>
-          </form>
+          </form> : undefined
         }
       />
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
@@ -47,7 +50,7 @@ export default async function AgentsPage({
               </span>
               <h2 className="mt-5 font-semibold tracking-tight">{template.name}</h2>
               <p className="mt-2 min-h-16 text-sm leading-6 text-muted-foreground">{template.description}</p>
-              {isAdmin && (
+              {canManage && (
                 <form action={createMonitoringAgent} className="mt-5 space-y-3 border-t pt-4">
                   <input type="hidden" name="kind" value={template.kind} />
                   <select
@@ -130,7 +133,7 @@ export default async function AgentsPage({
                   </p>
                 </div>
               </div>
-              {isAdmin && (
+              {canManage && (
                 <div className="flex gap-2">
                   <form action={runMonitoringScan}>
                     <input type="hidden" name="agentId" value={agent.id} />

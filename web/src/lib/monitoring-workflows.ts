@@ -5,6 +5,7 @@ import { alertComments, alertIncidents, auditEvents, monitoringAgents } from '@/
 import { withTenantTransaction } from '@/db/transactions'
 import { insertActivationMilestone } from '@/lib/activation'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
+import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
 
@@ -26,12 +27,13 @@ export function createWorkspaceMonitoringAgent(input: ActorContext & {
   entitlements: EntitlementContext
 }) {
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
+    const entitlements = await lockWorkspaceEntitlements(transaction, input.workspaceId, 'monitoring')
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:monitors`}))`)
     const [usage] = await transaction
       .select({ count: count() })
       .from(monitoringAgents)
       .where(and(eq(monitoringAgents.workspaceId, input.workspaceId), eq(monitoringAgents.enabled, true)))
-    requireQuota(input.entitlements, 'monitors', usage.count)
+    requireQuota(entitlements, 'monitors', usage.count)
     const [created] = await transaction
       .insert(monitoringAgents)
       .values({
@@ -69,16 +71,36 @@ export async function setWorkspaceMonitoringAgentEnabled(input: ActorContext & {
   enabled: boolean
   now?: Date
 }) {
-  const [agent] = await withTenantTransaction(
+  return withTenantTransaction(
     { workspaceId: input.workspaceId, userId: input.actorUserId },
-    (db) => db
+    async (db) => {
+      const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+      await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:monitors`}))`)
+      const existing = await db.query.monitoringAgents.findFirst({
+        where: and(eq(monitoringAgents.id, input.agentId), eq(monitoringAgents.workspaceId, input.workspaceId)),
+      })
+      if (!existing) throw new Error('Vigie introuvable.')
+      if (existing.enabled === input.enabled) return existing
+      if (input.enabled) {
+        const [usage] = await db.select({ count: count() }).from(monitoringAgents)
+          .where(and(eq(monitoringAgents.workspaceId, input.workspaceId), eq(monitoringAgents.enabled, true)))
+        requireQuota(entitlements, 'monitors', usage.count)
+      }
+      const [agent] = await db
       .update(monitoringAgents)
       .set({ enabled: input.enabled, updatedAt: input.now ?? new Date() })
       .where(and(eq(monitoringAgents.id, input.agentId), eq(monitoringAgents.workspaceId, input.workspaceId)))
-      .returning(),
+      .returning()
+      if (!agent) throw new Error('Vigie introuvable.')
+      await db.insert(auditEvents).values({
+        workspaceId: input.workspaceId, actorUserId: input.actorUserId,
+        action: input.enabled ? 'monitoring.agent_enabled' : 'monitoring.agent_disabled',
+        entityType: 'monitoring_agent', entityId: agent.id,
+        metadata: { previouslyEnabled: existing.enabled },
+      })
+      return agent
+    },
   )
-  if (!agent) throw new Error('Vigie introuvable.')
-  return agent
 }
 
 export function recordWorkspaceMonitoringScan(input: ActorContext & {

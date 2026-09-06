@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { listTaskMentionDirectory, listWorkspaceClients, listWorkspaceTasks } from '@/lib/data'
-import { permissionsForRole } from '@/lib/permissions'
+import { workspacePermissions } from '@/lib/workspace-decision'
 import { taskTiming } from '@/lib/task-workflow'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
@@ -33,7 +33,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     listWorkspaceClients(workspace.id),
     listTaskMentionDirectory(workspace.id),
   ])
-  const permissions = permissionsForRole(role)
+  const permissions = workspacePermissions(role, workspace.accessState)
   const canManage = permissions.has('tasks:manage')
   const canComment = permissions.has('tasks:comment')
   const allowedStatus = ['open', 'todo', 'in_progress', 'blocked', 'done', 'cancelled'].includes(query.status ?? '') ? query.status : 'open'

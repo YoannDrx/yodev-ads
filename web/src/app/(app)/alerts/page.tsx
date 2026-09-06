@@ -1,3 +1,4 @@
+import { featureEnabled } from '@/lib/feature-flags'
 import { AlertTriangle, CheckCircle2, Clock3, Play, Siren, UserRoundCheck, Workflow } from 'lucide-react'
 import { createWorkspaceTask, runMonitoringScan, updateAlertWorkflow } from '@/app/actions'
 import { FlashMessage } from '@/components/flash-message'
@@ -6,7 +7,7 @@ import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { listAlertIncidents } from '@/lib/data'
-import { permissionsForRole } from '@/lib/permissions'
+import { workspacePermissions } from '@/lib/workspace-decision'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function AlertsPage({
@@ -18,7 +19,9 @@ export default async function AlertsPage({
   const { workspace, role } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
-  const canManageTasks = permissionsForRole(role).has('tasks:manage')
+  const canManageAlerts = workspacePermissions(role, workspace.accessState).has('alerts:manage')
+  const canRun = workspacePermissions(role, workspace.accessState).has('monitoring:run') && featureEnabled('googleReads')
+  const canManageTasks = workspacePermissions(role, workspace.accessState).has('tasks:manage')
   const incidents = await listAlertIncidents(workspace.id)
   const open = incidents.filter(({ incident }) => incident.status === 'open')
   return (
@@ -27,13 +30,13 @@ export default async function AlertsPage({
         eyebrow={english ? 'Monitoring center' : 'Centre de vigilance'}
         title={english ? 'Alerts and anomalies' : 'Alertes et anomalies'}
         description={english ? 'An explainable, prioritized work queue linked to the monitor that detected each anomaly.' : 'Une file de travail explicable, priorisée et reliée à la vigie qui a détecté chaque anomalie.'}
-        actions={
+        actions={canRun ?
           <form action={runMonitoringScan}>
             <Button type="submit" variant="outline">
               <Play className="mr-2 size-4" />
               {english ? 'Run analysis again' : 'Relancer l’analyse'}
             </Button>
-          </form>
+          </form> : undefined
         }
       />
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
@@ -78,7 +81,7 @@ export default async function AlertsPage({
                   </div>
                 )}
               </div>
-              {incident.status !== 'resolved' && (
+              {canManageAlerts && incident.status !== 'resolved' && (
                 <form action={updateAlertWorkflow} className="grid min-w-64 gap-2">
                   <input type="hidden" name="incidentId" value={incident.id} />
                   <select name="operation" aria-label={english ? 'Alert action' : 'Action sur l’alerte'} className="h-9 rounded-lg border bg-white px-3 text-xs"><option value="acknowledge">{english ? 'Acknowledge' : 'Acquitter'}</option><option value="assign_self">{english ? 'Assign to me' : 'Me l’assigner'}</option>{incident.assignedTo && <option value="unassign">{english ? 'Remove assignment' : 'Retirer l’assignation'}</option>}<option value="snooze_24h">{english ? 'Snooze for 24h' : 'Masquer 24 h'}</option><option value="resolve">{english ? 'Resolve' : 'Résoudre'}</option></select>
@@ -87,7 +90,7 @@ export default async function AlertsPage({
                   <Button type="submit" size="sm" variant="outline"><CheckCircle2 className="mr-2 size-4" />{english ? 'Update' : 'Mettre à jour'}</Button>
                 </form>
               )}
-              {incident.status === 'resolved' && <form action={updateAlertWorkflow}><input type="hidden" name="incidentId" value={incident.id} /><input type="hidden" name="operation" value="reopen" /><Button type="submit" size="sm" variant="outline">{english ? 'Reopen' : 'Rouvrir'}</Button></form>}
+              {canManageAlerts && incident.status === 'resolved' && <form action={updateAlertWorkflow}><input type="hidden" name="incidentId" value={incident.id} /><input type="hidden" name="operation" value="reopen" /><Button type="submit" size="sm" variant="outline">{english ? 'Reopen' : 'Rouvrir'}</Button></form>}
               {canManageTasks && <form action={createWorkspaceTask} className="grid shrink-0 gap-2"><input type="hidden" name="sourceType" value="alert" /><input type="hidden" name="sourceEntityId" value={incident.id} /><input type="hidden" name="returnTo" value="alerts" /><input type="hidden" name="priority" value={incident.severity === 'critical' ? 'urgent' : 'high'} /><input type="hidden" name="slaHours" value={incident.severity === 'critical' ? '4' : '24'} /><input type="hidden" name="assignSelf" value="true" /><Button type="submit" size="sm" variant="outline"><Workflow className="mr-2 size-4" />{english ? 'Create task' : 'Créer une tâche'}</Button></form>}
             </CardContent>
           </Card>

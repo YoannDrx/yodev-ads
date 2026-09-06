@@ -1,3 +1,5 @@
+import { MobileMenu } from '@/components/mobile-menu'
+import { workspacePermissions } from '@/lib/workspace-decision'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -26,7 +28,7 @@ import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
 import { getPublicPlatformStatus } from '@/lib/public-status'
 import { workspaceAccessAllowsPath } from '@/lib/workspace-access'
 import { AccountMenu } from '@/components/account-menu'
-import { permissionsForRole, type Permission } from '@/lib/permissions'
+import { type Permission } from '@/lib/permissions'
 
 const navigation = [
   { href: '/getting-started', key: 'gettingStarted', icon: Rocket, permission: 'portfolio:read' },
@@ -41,7 +43,7 @@ const navigation = [
   { href: '/approvals', key: 'approvals', icon: ClipboardCheck, permission: 'portfolio:read' },
   { href: '/reports', key: 'reports', icon: Share2, permission: 'portfolio:read' },
   { href: '/support', key: 'support', icon: LifeBuoy, permission: 'support:read' },
-  { href: '/audit', key: 'audit', icon: ListChecks, permission: 'workspace:admin' },
+  { href: '/audit', key: 'audit', icon: ListChecks, permission: 'audit:read' },
   { href: '/billing', key: 'billing', icon: CreditCard, permission: 'billing:manage' },
   { href: '/settings', key: 'settings', icon: Settings, permission: 'workspace:admin' },
 ] as const satisfies ReadonlyArray<{ href: string; key: string; icon: typeof Rocket; permission: Permission }>
@@ -61,9 +63,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     headers(),
   ])
   const pathname = requestHeaders.get('x-yodev-pathname') ?? '/dashboard'
-  const rolePermissions = permissionsForRole(role)
+  const rolePermissions = workspacePermissions(role, workspace.accessState)
   if (!workspaceAccessAllowsPath(workspace.accessState, pathname)) {
-    redirect(`/billing?notice=${encodeURIComponent(workspace.locale === 'en' ? 'Your current access is limited to billing and stored data.' : 'Votre accès actuel est limité à la facturation et aux données stockées.')}`)
+    redirect(`${rolePermissions.has('billing:manage') ? '/billing' : '/support'}?notice=${encodeURIComponent(workspace.locale === 'en' ? 'Your current access is limited to billing and stored data.' : 'Votre accès actuel est limité à la facturation et aux données stockées.')}`)
   }
   const requestedNavigation = navigation.find(({ href }) => pathname === href || pathname.startsWith(`${href}/`))
   if (requestedNavigation && !rolePermissions.has(requestedNavigation.permission)) {
@@ -81,8 +83,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const accessibleNavigation = navigation.filter(({ href, permission }) =>
     workspaceAccessAllowsPath(workspace.accessState, href) && rolePermissions.has(permission),
   )
-  const homeHref = rolePermissions.has('portfolio:read') ? '/dashboard' : '/support'
-  const mobileNavigation = accessibleNavigation.filter(({ href }) => ['/dashboard', '/analysis', '/alerts', '/approvals', '/billing', '/settings'].includes(href))
+  const homeHref = accessibleNavigation.some(({ href }) => href === '/dashboard') ? '/dashboard' : accessibleNavigation[0]?.href ?? '/support'
+  const mobileNavigation = accessibleNavigation.slice(0, 4)
   return (
     <div
       className="min-h-screen bg-[#f3f6f8]"
@@ -134,7 +136,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
         <main className="mx-auto max-w-[1500px] px-4 pb-24 pt-7 sm:px-7 sm:pt-9 lg:pb-10">{children}</main>
-        <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t bg-white px-2 py-2 lg:hidden">
+        <nav aria-label={locale === 'en' ? 'Quick navigation' : 'Navigation rapide'} className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t bg-white px-2 py-2 lg:hidden">
           {mobileNavigation.map(({ href, key, icon: Icon }) => (
             <Link
               key={href}
@@ -145,6 +147,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <span>{labels[key].split(' ')[0]}</span>
             </Link>
           ))}
+          <MobileMenu label={locale === 'en' ? 'Full navigation' : 'Navigation complète'}>
+              {accessibleNavigation.map(({ href, key, icon: Icon }) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined} className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-100"><Icon className="size-5" />{labels[key]}</Link>)}
+              {workspace.accessState === 'internal' && <Link href="/operations" className="flex min-h-11 items-center px-3 text-sm">{locale === 'en' ? 'Operations' : 'Opérations'}</Link>}
+          </MobileMenu>
         </nav>
       </div>
     </div>

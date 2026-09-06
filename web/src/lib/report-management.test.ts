@@ -54,16 +54,16 @@ describe('report management repository', () => {
 
   it('creates an immutable first template version and audit', async () => {
     const template = {
-      id: templateId, name: 'Hebdo', locale: 'fr', periodDays: 7,
+      id: templateId, name: 'Hebdo', locale: 'fr', periodDays: 30,
       editorialComment: 'Bilan', actionPlan: null, currentVersion: 1,
     }
     const database = reportDatabase({ statementResults: [[template]] })
     mocks.databases.push(database.db)
     await createWorkspaceReportTemplate({
-      workspaceId, actorUserId, name: 'Hebdo', locale: 'fr', periodDays: 7, editorialComment: 'Bilan',
+      workspaceId, actorUserId, name: 'Hebdo', locale: 'fr', periodDays: 30, editorialComment: 'Bilan',
     })
     expect(database.capture.values[1]).toMatchObject({
-      templateId, version: 1, snapshot: expect.objectContaining({ name: 'Hebdo', locale: 'fr', periodDays: 7 }),
+      templateId, version: 1, snapshot: expect.objectContaining({ name: 'Hebdo', locale: 'fr', periodDays: 30 }),
     })
     expect(database.capture.values[2]).toMatchObject({ action: 'report.template_created', entityId: templateId })
   })
@@ -71,7 +71,7 @@ describe('report management repository', () => {
   it('fails closed when template insertion returns no row', async () => {
     mocks.databases.push(reportDatabase({ statementResults: [[]] }).db)
     await expect(createWorkspaceReportTemplate({
-      workspaceId, actorUserId, name: 'Hebdo', locale: 'fr', periodDays: 7,
+      workspaceId, actorUserId, name: 'Hebdo', locale: 'fr', periodDays: 30,
     })).rejects.toThrow('création du modèle')
   })
 
@@ -121,7 +121,7 @@ describe('report management repository', () => {
       statementResults: [[], [{ count: 1 }], [{ id: shareId }], [{ id: scheduleId }]],
       client: { id: clientId, isManager: false },
       template: {
-        id: templateId, editorialComment: 'Comment', actionPlan: 'Plan', locale: 'en', periodDays: 7,
+        id: templateId, editorialComment: 'Comment', actionPlan: 'Plan', locale: 'en', periodDays: 30,
       },
     })
     mocks.databases.push(database.db)
@@ -132,7 +132,7 @@ describe('report management repository', () => {
       entitlements: entitlementContext('active', 'studio'), now,
     })
     expect(database.capture.values[0]).toMatchObject({
-      tokenHash: 'hashed:report-token-value', locale: 'en', periodDays: 7,
+      tokenHash: 'hashed:report-token-value', locale: 'en', periodDays: 30,
     })
     expect(database.capture.values[1]).toMatchObject({
       cadence, scheduleWeekday: weekday, scheduleMonthday: monthday,

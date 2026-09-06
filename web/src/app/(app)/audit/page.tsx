@@ -20,7 +20,7 @@ const actionLabels: Record<'fr' | 'en', Record<string, string>> = {
 }
 
 export default async function AuditPage() {
-  const { workspace } = await requireWorkspacePermission('workspace:admin')
+  const { workspace } = await requireWorkspacePermission('audit:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const events = await listAuditEvents(workspace.id)

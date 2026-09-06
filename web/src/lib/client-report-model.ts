@@ -1,4 +1,6 @@
 import type { CampaignPerformance } from '@/lib/google-ads'
+import { reportPeriodSchema } from '@/lib/report-period'
+import { spreadsheetText } from '@/lib/csv'
 
 export type ClientReportModel = {
   generatedAt: Date
@@ -35,8 +37,7 @@ export function buildClientReportModel(input: {
   actionPlan?: string | null
   campaigns: CampaignPerformance[]
 }): ClientReportModel {
-  const periodDays = input.periodDays ?? 30
-  if (![30].includes(periodDays)) throw new Error('La période de rapport n’est pas prise en charge par la collecte actuelle.')
+  const periodDays = reportPeriodSchema.parse(input.periodDays ?? 30)
   const totals = input.campaigns.reduce((sum, campaign) => ({
     costMicros: sum.costMicros + Number(campaign.costMicros),
     impressions: sum.impressions + Number(campaign.impressions),
@@ -65,7 +66,7 @@ export function buildClientReportModel(input: {
 }
 
 function csvCell(value: string | number | null) {
-  const text = value === null ? '' : String(value)
+  const text = typeof value === 'string' ? spreadsheetText(value) : value === null ? '' : String(value)
   return `"${text.replaceAll('"', '""')}"`
 }
 

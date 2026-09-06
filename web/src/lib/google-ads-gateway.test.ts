@@ -4,6 +4,7 @@ const getAccessTokenMock = vi.hoisted(() => vi.fn())
 
 vi.mock('google-auth-library', () => ({
   OAuth2Client: class {
+    transporter = { defaults: {} }
     setCredentials() {}
     getAccessToken() { return getAccessTokenMock() }
     generateAuthUrl() { return 'https://accounts.google.test/oauth' }

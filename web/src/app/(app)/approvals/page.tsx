@@ -1,3 +1,4 @@
+import { featureEnabled, googleMutationKindEnabled } from '@/lib/feature-flags'
 import { formatDistanceToNow } from 'date-fns'
 import { enGB, fr } from 'date-fns/locale'
 import { Check, Layers3, ListTodo, MessageCircle, ShieldCheck, X } from 'lucide-react'
@@ -10,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { listApprovals } from '@/lib/data'
 import { formatCustomerId } from '@/lib/ids'
-import { permissionsForRole } from '@/lib/permissions'
+import { workspacePermissions } from '@/lib/workspace-decision'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function ApprovalsPage({
@@ -19,12 +20,13 @@ export default async function ApprovalsPage({
   searchParams: Promise<{ notice?: string; error?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin, role } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
-  const permissions = permissionsForRole(role)
+  const permissions = workspacePermissions(role, workspace.accessState)
+  const isAdmin = permissions.has('google:approve')
   const canManageTasks = permissions.has('tasks:manage')
-  const canPropose = permissions.has('google:propose')
+  const canPropose = permissions.has('google:propose') && featureEnabled('googleReads') && googleMutationKindEnabled('atomic_change_batch')
   const approvals = await listApprovals(workspace.id)
   const pending = approvals.filter(({ request }) => request.status === 'pending')
   const batchKinds = new Set(['campaign_status', 'campaign_budget', 'keyword_status', 'ad_status'])
@@ -153,10 +155,10 @@ export default async function ApprovalsPage({
                           <input type="hidden" name="approvalId" value={request.id} />
                           <Button variant="outline" size="sm"><X className="mr-1 size-4" />{english ? 'Reject' : 'Rejeter'}</Button>
                         </form>
-                        <form action={approveGoogleAdsChange}>
+                        {featureEnabled('googleMutations') && !featureEnabled('forceReadOnly') && googleMutationKindEnabled(request.kind) && <form action={approveGoogleAdsChange}>
                           <input type="hidden" name="approvalId" value={request.id} />
                           <Button size="sm" className="bg-[var(--brand-accent)] text-white"><Check className="mr-1 size-4" />{english ? 'Approve' : 'Approuver'}</Button>
-                        </form>
+                        </form>}
                       </>
                     )}
                   </div>
@@ -165,11 +167,11 @@ export default async function ApprovalsPage({
               <div className="mt-5 border-t pt-4">
                 <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"><MessageCircle className="size-4" />{english ? 'Discussion' : 'Discussion'} · {comments.length}</p>
                 {comments.length > 0 && <div className="mt-3 space-y-2">{comments.map((comment) => <div key={comment.id} className="rounded-xl bg-[#f7f9fa] px-4 py-3"><p className="text-sm leading-6">{comment.body}</p><p className="mt-1 text-[10px] text-muted-foreground">{comment.authorUserId} · {comment.createdAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</p></div>)}</div>}
-                <form action={addApprovalComment} className="mt-3 flex flex-col gap-2 sm:flex-row">
+                {permissions.has('workspace:read') && <form action={addApprovalComment} className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <input type="hidden" name="approvalId" value={request.id} />
                   <Textarea name="body" aria-label={english ? 'Comment' : 'Commentaire'} minLength={2} maxLength={2000} placeholder={english ? 'Add context, a question or a rationale…' : 'Ajouter un contexte, une question ou une justification…'} required className="min-h-10" />
                   <Button type="submit" variant="outline" className="shrink-0">{english ? 'Comment' : 'Commenter'}</Button>
-                </form>
+                </form>}
               </div>
             </CardContent>
           </Card>

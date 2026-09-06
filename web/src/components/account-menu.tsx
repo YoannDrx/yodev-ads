@@ -25,7 +25,7 @@ export function AccountMenu({ locale }: { locale: string }) {
   return (
     <div className="flex items-center gap-2">
       {(organizations.data?.length ?? 0) > 1 && (
-        <select aria-label={english ? 'Active workspace' : 'Workspace actif'} value={session.data?.session.activeOrganizationId ?? ''} onChange={(event) => switchOrganization(event.target.value)} className="hidden h-9 max-w-48 rounded-lg border bg-white px-2 text-sm sm:block">
+        <select aria-label={english ? 'Active workspace' : 'Workspace actif'} value={session.data?.session.activeOrganizationId ?? ''} onChange={(event) => switchOrganization(event.target.value)} className="h-9 max-w-28 sm:max-w-48 rounded-lg border bg-white px-2 text-sm">
           {organizations.data?.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}
         </select>
       )}

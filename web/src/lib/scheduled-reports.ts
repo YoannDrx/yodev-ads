@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { reportPeriodSchema } from '@/lib/report-period'
+
 import { and, eq, isNull, lte, or } from 'drizzle-orm'
 import {
   auditEvents,
@@ -53,6 +55,7 @@ export async function deliverScheduledReport(scheduleId: string, runKey: string)
   if (context.skipped) return context
 
   try {
+    reportPeriodSchema.parse(context.template?.active ? context.template.periodDays : context.share.periodDays)
     const now = new Date()
     const expiresAt = new Date(now.getTime() + 90 * 24 * 60 * 60_000)
     await withSystemTransaction(async (db) => {

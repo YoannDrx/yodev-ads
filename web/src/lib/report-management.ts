@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { reportPeriodSchema } from '@/lib/report-period'
+
 import { and, count, eq, sql } from 'drizzle-orm'
 import {
   auditEvents,
@@ -36,6 +38,7 @@ function templateSnapshot(template: typeof reportTemplates.$inferSelect) {
 }
 
 export function createWorkspaceReportTemplate(input: ActorContext & ReportTemplateInput) {
+  reportPeriodSchema.parse(input.periodDays)
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
     const [template] = await db.insert(reportTemplates).values({
       workspaceId: input.workspaceId,
@@ -71,6 +74,7 @@ export function updateWorkspaceReportTemplate(input: ActorContext & ReportTempla
   expectedVersion: number
   now?: Date
 }) {
+  reportPeriodSchema.parse(input.periodDays)
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
     const [updated] = await db.update(reportTemplates).set({
@@ -158,6 +162,7 @@ export function createWorkspaceReportSchedule(input: ActorContext & {
     requireQuota(input.entitlements, 'reports', usage[0].count)
     if (!client || client.isManager) throw new Error('Compte client introuvable.')
     if (input.templateId && !template) throw new Error('Modèle de rapport introuvable.')
+    reportPeriodSchema.parse(template?.periodDays ?? 30)
     const [share] = await db.insert(shareLinks).values({
       workspaceId: input.workspaceId,
       clientId: client.id,

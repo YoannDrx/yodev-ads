@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { featureEnabled } from '@/lib/feature-flags'
 import { runAvailableJobs, seedScheduledJobs } from '@/lib/job-runner'
+import { recoverExpiredJobs } from '@/lib/jobs'
 import {
   acquireOperationalLease,
   completeOperationalRun,
@@ -33,12 +34,13 @@ export async function GET(request: Request) {
   }
   try {
     await startOperationalRun({ component: 'scheduler', runKey: requestId, startedAt, nextExpectedAt })
+    const recovery = await recoverExpiredJobs()
     const seeded = await seedScheduledJobs()
     const configuredMaximumJobs = Number(process.env.SCHEDULER_MAX_JOBS_PER_RUN ?? 25)
     const maximumJobs = Number.isInteger(configuredMaximumJobs) && configuredMaximumJobs >= 1 && configuredMaximumJobs <= 25
       ? configuredMaximumJobs
       : 25
-    const execution = await runAvailableJobs({ workerId: `vercel-cron:${requestId}`, maximumJobs })
+    const execution = await runAvailableJobs({ workerId: `vercel-cron:${requestId}`, maximumJobs, maximumRuntimeMs: Math.max(0, 45_000 - (Date.now() - startedAt.getTime())) })
     const deadLetters = execution.results.filter((result) => result.status === 'dead_letter').length
     await completeOperationalRun({
       component: 'scheduler',
@@ -46,7 +48,7 @@ export async function GET(request: Request) {
       startedAt,
       nextExpectedAt,
       workCount: execution.processed,
-      details: { seeded: seeded.created, requested: seeded.requested, deadLetters },
+      details: { seeded: seeded.created, requested: seeded.requested, deadLetters, recovery },
     })
     console.log(JSON.stringify({
       level: deadLetters > 0 ? 'error' : 'info',

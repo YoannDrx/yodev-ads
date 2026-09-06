@@ -1,3 +1,4 @@
+import { isSupportedReportPeriod, unsupportedReportPeriodMessage } from '@/lib/report-period'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
@@ -36,6 +37,9 @@ export default async function PublicReportPage({
   })
   if (!rate.allowed) {
     return <main className="grid min-h-screen place-items-center p-8"><p>{english ? 'Too many requests. Try again in a few minutes.' : 'Trop de requêtes. Réessayez dans quelques minutes.'}</p></main>
+  }
+  if (!isSupportedReportPeriod(result.share.periodDays)) {
+    return <main className="grid min-h-screen place-items-center p-8"><p role="status">{unsupportedReportPeriodMessage(result.share.locale)}</p></main>
   }
   const [campaigns, proposals, verifiedRecipient] = await Promise.all([
     new GoogleAdsGateway(result.connection).campaignPerformance(result.client.googleCustomerId),

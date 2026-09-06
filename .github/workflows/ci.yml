@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: '23 7 * * 1'
   workflow_dispatch:
     inputs:
       release_target:
@@ -116,6 +118,8 @@ jobs:
         run: npx tsx scripts/verify-tenant-invariants.ts
       - name: Verify database concurrency and lifecycle protocols
         run: npx tsx scripts/verify-database-concurrency.ts
+      - name: Verify monitor quotas and crashed final job attempts
+        run: npx tsx scripts/verify-prod-ready-concurrency.ts
       - name: Verify database load and bounded connection pools
         env:
           DATABASE_POOL_MAX: '10'
@@ -130,6 +134,7 @@ jobs:
           python-version: '3.13'
           cache: pip
           cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade 'pip>=26.2'
       - run: python -m pip install -e '.[dev]'
       - run: python -m pip install pip-audit
       - run: python -m ruff check src tests
@@ -139,6 +144,7 @@ jobs:
         run: |
           python -m pip install cyclonedx-bom
           python -m venv .sbom-venv
+          .sbom-venv/bin/python -m pip install --upgrade 'pip>=26.2'
           .sbom-venv/bin/python -m pip install .
           cyclonedx-py environment .sbom-venv/bin/python \
             --output-reproducible \
