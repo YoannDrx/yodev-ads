@@ -69,7 +69,7 @@ describe('durable job orchestration', () => {
     const now = new Date('2026-08-12T10:00:00Z')
     const candidate = queuedJob()
     const claimed = queuedJob({ status: 'running', leaseOwner: 'worker-1', attemptCount: 1, leaseExpiresAt: new Date('2026-08-12T10:05:00Z') })
-    const database = databaseDouble({ statementResults: [[candidate], [claimed], []] })
+    const database = databaseDouble({ statementResults: [[], [candidate], [claimed], []] })
     transactionMock.databases.push(database.db)
     await expect(claimNextJob('worker-1', now, 300_000, ['notification.deliver'])).resolves.toEqual(claimed)
     expect(database.capture.sets[0]).toMatchObject({ status: 'running', leaseOwner: 'worker-1', leaseExpiresAt: new Date('2026-08-12T10:05:00Z') })

@@ -5,6 +5,8 @@ import { setTimeout as pause } from 'node:timers/promises'
 
 const workDeadline = new AsyncLocalStorage<number>()
 
+export function hasWorkDeadline() { return workDeadline.getStore() !== undefined }
+
 export class WorkDeadlineError extends Error {
   constructor() {
     super('Work deadline reached; remaining work must be resumed by the queue.')

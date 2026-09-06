@@ -1,0 +1,1 @@
+CREATE INDEX "job_attempts_workspace_started_idx" ON "job_attempts" USING btree ("workspace_id","started_at");

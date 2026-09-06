@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({ lookup: vi.fn(), request: vi.fn() }))
 vi.mock('node:dns/promises', () => ({ lookup: mocks.lookup }))
 vi.mock('node:https', () => ({ request: mocks.request }))
 
+import { withWorkDeadline } from './work-deadline'
 import { assertSafeWebhookUrl, isPrivateOrReservedIp, pinnedPublicLookup, postSafeWebhook } from './webhook-security'
 
 describe('isPrivateOrReservedIp', () => {
@@ -62,6 +63,31 @@ describe('isPrivateOrReservedIp', () => {
       addresses: ['8.8.8.8', '2606:4700:4700::1111'],
     })
     await expect(assertSafeWebhookUrl('https://1.1.1.1/hook')).resolves.toMatchObject({ addresses: ['1.1.1.1'] })
+  })
+
+  it('stops waiting for DNS at the worker deadline and never submits a late POST', async () => {
+    let resolveLookup!: (addresses: { address: string }[]) => void
+    mocks.lookup.mockReturnValue(new Promise((resolve) => { resolveLookup = resolve }))
+    await expect(withWorkDeadline(Date.now() + 30, () =>
+      postSafeWebhook('https://hooks.example.test/path', {}, { timeoutMs: 8_000 }),
+    )).rejects.toThrow()
+    resolveLookup([{ address: '8.8.8.8' }])
+    await Promise.resolve()
+    expect(mocks.request).not.toHaveBeenCalled()
+  })
+
+  it('passes the remaining total deadline to the socket after DNS', async () => {
+    mocks.lookup.mockResolvedValue([{ address: '8.8.8.8' }])
+    mocks.request.mockImplementation((_url, options) => {
+      const request = new EventEmitter() as EventEmitter & { end: () => void; destroy: (error: Error) => void }
+      request.destroy = (error) => request.emit('error', error)
+      request.end = () => options.signal.addEventListener('abort', () => request.destroy(options.signal.reason), { once: true })
+      return request
+    })
+    await expect(withWorkDeadline(Date.now() + 30, () =>
+      postSafeWebhook('https://hooks.example.test/path', {}),
+    )).rejects.toThrow()
+    expect(mocks.request).toHaveBeenCalledOnce()
   })
 
   it('pins the HTTPS socket to the validated public address to defeat DNS rebinding', async () => {

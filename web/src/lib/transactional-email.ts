@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { workSignal } from '@/lib/work-deadline'
+
 import { createHash, createHmac } from 'node:crypto'
 import { z } from 'zod'
 import { NonRetryableJobError } from '@/lib/jobs'
@@ -143,7 +145,7 @@ async function submitOne(input: TransactionalEmailInput, recipient: string, mult
         'idempotency-key': businessKey,
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
+      signal: workSignal(15_000),
     })
   } catch (error) {
     await markTransactionalEmailFailure(claim.delivery.id, 'ambiguous', error)

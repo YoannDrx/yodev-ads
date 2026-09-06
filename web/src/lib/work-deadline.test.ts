@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { pauseWithinWorkDeadline, remainingWorkMs, withWorkDeadline, workSignal } from './work-deadline'
+import { hasWorkDeadline, pauseWithinWorkDeadline, remainingWorkMs, withWorkDeadline, workSignal } from './work-deadline'
 
 afterEach(() => vi.useRealTimers())
 
@@ -8,11 +8,13 @@ describe('worker deadlines', () => {
     vi.useFakeTimers()
     vi.setSystemTime(1_000)
     await withWorkDeadline(1_500, async () => {
+      expect(hasWorkDeadline()).toBe(true)
       expect(remainingWorkMs(25_000)).toBe(500)
       vi.setSystemTime(1_500)
       expect(() => workSignal(25_000)).toThrow('deadline reached')
     })
     expect(remainingWorkMs(25_000)).toBe(25_000)
+    expect(hasWorkDeadline()).toBe(false)
   })
   it('never extends a parent deadline or leaks between concurrent runs', async () => {
     const now = Date.now()

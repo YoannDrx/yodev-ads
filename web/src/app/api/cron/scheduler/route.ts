@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { featureEnabled } from '@/lib/feature-flags'
 import { runAvailableJobs, seedScheduledJobs } from '@/lib/job-runner'
+import { withWorkDeadline } from '@/lib/work-deadline'
 import { recoverExpiredJobs } from '@/lib/jobs'
 import {
   acquireOperationalLease,
@@ -21,8 +22,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const requestId = request.headers.get('x-vercel-id') ?? crypto.randomUUID()
   const startedAt = new Date()
+  return withWorkDeadline(startedAt.getTime() + 55_000, () => runScheduler(request, startedAt))
+}
+
+async function runScheduler(request: Request, startedAt: Date) {
+  const requestId = request.headers.get('x-vercel-id') ?? crypto.randomUUID()
   const nextExpectedAt = new Date(startedAt.getTime() + 5 * 60_000)
   const leaseOwner = `scheduler:${requestId}`
   const lease = await acquireOperationalLease({ component: 'scheduler', owner: leaseOwner, now: startedAt })
@@ -34,13 +39,16 @@ export async function GET(request: Request) {
   }
   try {
     await startOperationalRun({ component: 'scheduler', runKey: requestId, startedAt, nextExpectedAt })
-    const recovery = await recoverExpiredJobs()
-    const seeded = await seedScheduledJobs()
-    const configuredMaximumJobs = Number(process.env.SCHEDULER_MAX_JOBS_PER_RUN ?? 25)
-    const maximumJobs = Number.isInteger(configuredMaximumJobs) && configuredMaximumJobs >= 1 && configuredMaximumJobs <= 25
-      ? configuredMaximumJobs
-      : 25
-    const execution = await runAvailableJobs({ workerId: `vercel-cron:${requestId}`, maximumJobs, maximumRuntimeMs: Math.max(0, 45_000 - (Date.now() - startedAt.getTime())) })
+    const { recovery, seeded, execution } = await withWorkDeadline(startedAt.getTime() + 45_000, async () => {
+      const recovery = await recoverExpiredJobs()
+      const seeded = await seedScheduledJobs()
+      const configuredMaximumJobs = Number(process.env.SCHEDULER_MAX_JOBS_PER_RUN ?? 25)
+      const maximumJobs = Number.isInteger(configuredMaximumJobs) && configuredMaximumJobs >= 1 && configuredMaximumJobs <= 25
+        ? configuredMaximumJobs
+        : 25
+      const execution = await runAvailableJobs({ workerId: `vercel-cron:${requestId}`, maximumJobs, maximumRuntimeMs: Math.max(0, 45_000 - (Date.now() - startedAt.getTime())) })
+      return { recovery, seeded, execution }
+    })
     const deadLetters = execution.results.filter((result) => result.status === 'dead_letter').length
     await completeOperationalRun({
       component: 'scheduler',

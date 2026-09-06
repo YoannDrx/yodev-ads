@@ -59,6 +59,8 @@ no real Google, payment or email action is performed. The browser runner owns po
 sessions after the run. These checks complement the deployed provider and
 authenticated release gates.
 
+Worker transactions require PostgreSQL 17 or newer. See [worker deadlines and fair scheduling](docs/WORKER_EXECUTION.md) for the runtime budgets, migration and rollback procedure.
+
 Secrets are provisioned through Vercel and must never be committed.
 
 ## Operator CLI

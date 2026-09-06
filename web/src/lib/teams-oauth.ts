@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { workSignal } from '@/lib/work-deadline'
+
 import { createHash, randomBytes } from 'node:crypto'
 import { z } from 'zod'
 
@@ -79,7 +81,7 @@ async function tokenRequest(body: URLSearchParams) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
     cache: 'no-store',
-    signal: AbortSignal.timeout(8_000),
+    signal: workSignal(8_000),
   })
   const raw: unknown = await response.json().catch(() => null)
   if (!response.ok) {
@@ -138,7 +140,7 @@ async function graphCollection<T>(path: string, accessToken: string, schema: z.Z
     const response = await fetch(target, {
       headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
       cache: 'no-store',
-      signal: AbortSignal.timeout(8_000),
+      signal: workSignal(8_000),
     })
     if (!response.ok) throw await graphError(response)
     const raw: unknown = await response.json()
@@ -197,7 +199,7 @@ export async function postTeamsChannelMessage(input: {
       headers: { Authorization: `Bearer ${input.accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ body: { contentType: 'html', content: input.html } }),
       cache: 'no-store',
-      signal: AbortSignal.timeout(8_000),
+      signal: workSignal(8_000),
     },
   )
   if (!response.ok) throw await graphError(response)

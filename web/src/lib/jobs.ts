@@ -141,6 +141,13 @@ export async function claimNextJob(
 ) {
   if (!workerId || workerId.length > 128) throw new Error('Invalid worker ID')
   return withSystemTransaction(async (db) => {
+    // Serialize only the short claim transaction, never job execution. This
+    // makes the last-served ordering effective across concurrent workers.
+    await db.execute(sql`select pg_advisory_xact_lock(hashtextextended('yodev:job-claim-fairness', 0))`)
+    const lastWorkspaceClaim = sql`case when ${jobs.workspaceId} is null then
+      (select started_at from job_attempts where workspace_id is null order by started_at desc limit 1)
+      else (select started_at from job_attempts where workspace_id = ${jobs.workspaceId} order by started_at desc limit 1)
+      end`
     const [candidate] = await db
       .select()
       .from(jobs)
@@ -153,7 +160,7 @@ export async function claimNextJob(
           excludedTypes.length > 0 ? notInArray(jobs.type, excludedTypes) : undefined,
         ),
       )
-      .orderBy(asc(jobs.priority), asc(jobs.availableAt), asc(jobs.createdAt))
+      .orderBy(sql`${lastWorkspaceClaim} asc nulls first`, asc(jobs.priority), asc(jobs.availableAt), asc(jobs.createdAt), asc(jobs.id))
       .limit(1)
       .for('update', { skipLocked: true })
 
@@ -177,6 +184,9 @@ export async function claimNextJob(
       attempt: claimed.attemptCount,
       state: 'running',
       workerId,
+      // Use database wall time after acquiring the claim lock (not transaction
+      // start or a caller-provided test/recovery clock).
+      startedAt: sql`clock_timestamp()`,
     })
     return claimed
   })

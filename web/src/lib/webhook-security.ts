@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { workSignal } from '@/lib/work-deadline'
+
 import { lookup } from 'node:dns/promises'
 import { request as httpsRequest } from 'node:https'
 import { isIP, type LookupFunction } from 'node:net'
@@ -41,7 +43,22 @@ export function isPrivateOrReservedIp(address: string) {
   )
 }
 
-export async function assertSafeWebhookUrl(destination: string) {
+async function withinSignal<T>(operation: Promise<T>, signal: AbortSignal) {
+  signal.throwIfAborted()
+  let onAbort: () => void = () => {}
+  const aborted = new Promise<never>((_resolve, reject) => {
+    onAbort = () => reject(signal.reason)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+  try {
+    return await Promise.race([operation, aborted])
+  } finally {
+    signal.removeEventListener('abort', onAbort)
+  }
+}
+
+export async function assertSafeWebhookUrl(destination: string, signal = workSignal(8_000)) {
+  signal.throwIfAborted()
   const url = new URL(destination)
   if (url.protocol !== 'https:') throw new Error('Les webhooks doivent utiliser HTTPS.')
   if (url.username || url.password) throw new Error('Les identifiants intégrés à une URL sont interdits.')
@@ -58,7 +75,7 @@ export async function assertSafeWebhookUrl(destination: string) {
   }
   const addresses = isIP(hostname)
     ? [{ address: hostname }]
-    : await lookup(hostname, { all: true, verbatim: true })
+    : await withinSignal(lookup(hostname, { all: true, verbatim: true }), signal)
   if (addresses.length === 0 || addresses.some(({ address }) => isPrivateOrReservedIp(address))) {
     throw new Error('La destination webhook doit résoudre uniquement vers des adresses IP publiques.')
   }
@@ -81,13 +98,16 @@ export async function postSafeWebhook(
   payload: Record<string, unknown>,
   options: { timeoutMs?: number; maximumResponseBytes?: number } = {},
 ) {
-  const validated = await assertSafeWebhookUrl(destination)
-  const body = JSON.stringify(payload)
   const timeoutMs = options.timeoutMs ?? 8_000
   const maximumResponseBytes = options.maximumResponseBytes ?? MAXIMUM_WEBHOOK_RESPONSE_BYTES
   if (!Number.isInteger(timeoutMs) || timeoutMs <= 0 || !Number.isInteger(maximumResponseBytes) || maximumResponseBytes <= 0) {
     throw new Error('La configuration du transport webhook est invalide.')
   }
+  // One budget covers DNS, connection establishment and the complete response body.
+  const signal = workSignal(timeoutMs)
+  const validated = await assertSafeWebhookUrl(destination, signal)
+  const body = JSON.stringify(payload)
+  signal.throwIfAborted()
   return new Promise<{ statusCode: number }>((resolve, reject) => {
     let settled = false
     const finish = (error?: Error, statusCode?: number) => {
@@ -105,6 +125,7 @@ export async function postSafeWebhook(
       lookup: pinnedPublicLookup(validated.addresses),
       servername: validated.url.hostname,
       timeout: timeoutMs,
+      signal,
       // Native https.request never follows redirects.
     }, (response) => {
       let responseBytes = 0

@@ -6,7 +6,8 @@ import { recoverNotificationDeliveries } from '../src/lib/notification-delivery-
 import { notificationDeliveryKey } from '../src/lib/notification-delivery-model'
 import { fork } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { and, count, eq } from 'drizzle-orm'
+import { and, count, eq, inArray, sql } from 'drizzle-orm'
+import { withWorkDeadline } from '../src/lib/work-deadline'
 import { alertIncidents, clients, jobAttempts, jobs, monitoringAgents, notificationChannels, notificationDeliveries, transactionalEmailDeliveries, workspaces } from '../src/db/schema'
 import { withSystemTransaction } from '../src/db/transactions'
 import { entitlementContext } from '../src/lib/entitlements'
@@ -34,6 +35,30 @@ async function main() {
   await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, workspaceId)))
   await withSystemTransaction((db) => db.insert(workspaces).values({ id: workspaceId, ownerUserId: actorUserId, name: 'Prod ready fixture', slug: 'prod-ready-fixture', plan: 'solo', accessState: 'active' }))
   try {
+    // A large agency's high-priority backlog cannot starve another agency or
+    // workspace-independent operations, including with simultaneous workers.
+    const quietWorkspaceId = '70000000-0000-4000-8000-000000000002'
+    await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, quietWorkspaceId)))
+    await withSystemTransaction((db) => db.insert(workspaces).values({ id: quietWorkspaceId, ownerUserId: actorUserId, name: 'Quiet agency fixture', slug: 'quiet-agency-fixture', plan: 'solo', accessState: 'active' }))
+    const fairnessJobs = await withSystemTransaction((db) => db.insert(jobs).values([
+      ...Array.from({ length: 2_000 }, (_, index) => ({ workspaceId, type: 'monitoring.scan', priority: index + 1 })),
+      ...Array.from({ length: 5 }, () => ({ workspaceId: quietWorkspaceId, type: 'monitoring.scan', priority: 10_000 })),
+      ...Array.from({ length: 5 }, () => ({ workspaceId: null, type: 'retention.run', priority: 20_000 })),
+    ]).returning({ id: jobs.id }))
+    try {
+      for (let round = 0; round < 2; round += 1) {
+        const claimed = await Promise.all(Array.from({ length: 6 }, (_, index) => claimNextJob(`fairness-${round}-${index}`)))
+        for (const tenant of [workspaceId, quietWorkspaceId, null]) {
+          assert.equal(claimed.filter((job) => job?.workspaceId === tenant).length, 2, 'Each ready workspace (including system jobs) must receive a turn')
+        }
+        assert.equal(new Set(claimed.map((job) => job?.id)).size, 6)
+        assert.deepEqual(claimed.filter((job) => job?.workspaceId === workspaceId).map((job) => job!.priority).sort((a, b) => a - b), [round * 2 + 1, round * 2 + 2], 'Priorities remain ordered within a workspace')
+      }
+    } finally {
+      await withSystemTransaction((db) => db.delete(jobs).where(inArray(jobs.id, fairnessJobs.map((job) => job.id))))
+      await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, quietWorkspaceId)))
+    }
+
     const agents = await withSystemTransaction((db) => db.insert(monitoringAgents).values(Array.from({ length: 5 }, (_, index) => ({
       workspaceId, createdBy: actorUserId, name: `Fixture ${index}`, description: 'Disposable', kind: 'no_delivery', threshold: '0', enabled: index < 4,
     }))).returning())
@@ -213,7 +238,30 @@ async function main() {
       else process.env.YODEV_MAIL_API_KEY = originalMailKey
     }
 
-    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed', 'deferred_reminder_cancelled_concurrently_before_transport', 'expired_retryable_attempt_audited_before_reclaim', 'terminal_recovery_alert_outbox', 'single_local_transport_across_interruption', 'late_email_receipt_reconciled_without_resend'] }))
+    // Each statement is shorter than the configured limit; their sum is not.
+    // PostgreSQL must cancel the transaction and roll back its earlier write.
+    const beforeTimeout = await withSystemTransaction((db) => db.query.workspaces.findFirst({ where: eq(workspaces.id, workspaceId) }))
+    let completedStatements = 0
+    const transactionStartedAt = Date.now()
+    await assert.rejects(withWorkDeadline(transactionStartedAt + 2_000, () => withSystemTransaction(async (db) => {
+      await db.update(workspaces).set({ name: 'Must roll back after transaction deadline' }).where(eq(workspaces.id, workspaceId))
+      await db.execute(sql`select pg_sleep(1.2)`)
+      completedStatements += 1
+      await db.execute(sql`select pg_sleep(1.2)`)
+      completedStatements += 1
+    })))
+    assert.equal(completedStatements, 1, 'The total transaction limit must interrupt a later individually-short query')
+    assert(Date.now() - transactionStartedAt < 6_000)
+    const afterTimeout = await withSystemTransaction((db) => db.query.workspaces.findFirst({ where: eq(workspaces.id, workspaceId) }))
+    assert.equal(afterTimeout?.name, beforeTimeout?.name)
+    await assert.rejects(withWorkDeadline(Date.now() + 500, () => withSystemTransaction(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 750))
+    })))
+    const connectionAfterTimeout = await withSystemTransaction((db) => db.execute(sql`select current_setting('transaction_timeout') as transaction_timeout, current_setting('statement_timeout') as statement_timeout`))
+    assert.equal(connectionAfterTimeout.rows[0]?.transaction_timeout, '0')
+    assert.equal(connectionAfterTimeout.rows[0]?.statement_timeout, '0')
+
+    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed', 'deferred_reminder_cancelled_concurrently_before_transport', 'expired_retryable_attempt_audited_before_reclaim', 'terminal_recovery_alert_outbox', 'single_local_transport_across_interruption', 'late_email_receipt_reconciled_without_resend', 'transaction_deadline_rolls_back_prior_writes', 'idle_transaction_timeout_does_not_crash_pool', 'pooled_timeouts_do_not_leak', 'fair_claims_across_2000_job_agency_quiet_agency_and_system', 'concurrent_claim_turns_and_internal_priorities'] }))
   } finally {
     for (const key of notificationAlertKeys) await withSystemTransaction((db) => db.delete(jobs).where(eq(jobs.deduplicationKey, key)))
     if (recoveryAlertKey) await withSystemTransaction((db) => db.delete(jobs).where(eq(jobs.deduplicationKey, recoveryAlertKey!)))

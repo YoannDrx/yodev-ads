@@ -1241,7 +1241,10 @@ export const jobAttempts = pgTable(
     startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
   },
-  (table) => [uniqueIndex('job_attempts_job_attempt_idx').on(table.jobId, table.attempt)],
+  (table) => [
+    uniqueIndex('job_attempts_job_attempt_idx').on(table.jobId, table.attempt),
+    index('job_attempts_workspace_started_idx').on(table.workspaceId, table.startedAt),
+  ],
 )
 
 export const exportJobs = pgTable(

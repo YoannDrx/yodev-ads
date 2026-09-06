@@ -127,3 +127,14 @@ Preuves locales : [`audits/prod-ready-lot-5/`](./audits/prod-ready-lot-5/).
 - Les échecs intermédiaires venaient du nettoyage de cette fixture (double réponse), puis d'un identifiant fournisseur fixe réutilisé alors que les enregistrements email survivaient à la suppression du workspace. Diagnostic PostgreSQL : contrainte unique `transactional_email_deliveries_message_idx`. La fixture utilise un UUID neuf et nettoie ses enregistrements avant le workspace ; les recettes ont été rejouées avec succès. L'hypothèse initiale de surcharge a été écartée par une reproduction à environ 200 ms.
 
 La migration n'a pas été appliquée à un environnement distant. Le parcours opérateur de revue des ambiguïtés et les exercices fournisseurs T18/T19 restent à compléter ; les tests locaux ne prouvent pas la réception effective d'une notification.
+
+
+## Échéances DB/HTTP et équité des agences
+
+Le budget du scheduler couvre désormais sa planification. Les transactions sous échéance utilisent les limites locales PostgreSQL 17, y compris la durée totale et les attentes de verrou. Les connexions expirées sont retirées sans arrêt du processus et leurs erreurs ne journalisent que le code. Les appels Teams, YoDevMail et les webhooks utilisent le même budget restant ; le DNS d’un webhook ne peut plus retarder le worker indéfiniment ni déclencher un POST après expiration.
+
+La migration `0045_job_workspace_fairness` ajoute un index de recherche de la dernière attribution. Le claim alterne entre workspaces admissibles et le groupe système, puis respecte les priorités internes ; son verrou court ne couvre jamais l’exécution. Le [mode opératoire](./WORKER_EXECUTION.md) documente le prérequis PostgreSQL, le changement d’ordre, les limites, le déploiement et le rollback.
+
+Preuves locales : [`audits/prod-ready-lot-6/`](./audits/prod-ready-lot-6/). 931 tests / 141 fichiers réussis ; couverture 92,73 % instructions, 86,23 % branches, 93,97 % fonctions, 95,08 % lignes. Build, types, lint, frontière des données et sérialisation transactionnelle réussis. La recette PostgreSQL applique la migration à la base précédente (46 migrations au total), puis vérifie RLS, contraintes, invariants et concurrence. Deux vagues de six claims servent chacune deux fois une agence avec 2 000 jobs, une petite agence et le groupe système, sans doublons. Une transaction comportant deux requêtes individuellement courtes est interrompue sur sa durée totale et ses écritures annulées ; le pool survit à une expiration inactive et les paramètres ne fuient pas.
+
+Seules des lectures de version ont été faites sur Neon EU et la connexion locale historique US (17.11). Aucune migration, émission fournisseur ni promotion distante ; pas de nouvelle recette navigateur pour ce lot serveur. T06 reste en cours pour les checkpoints des scans, les collectes historiques découpées et les exercices déployés.
