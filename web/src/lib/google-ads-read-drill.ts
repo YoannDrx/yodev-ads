@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm'
 import { clients, googleAdsConnections, workspaces } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { GoogleAdsError, GoogleAdsGateway } from '@/lib/google-ads'
+import { z } from 'zod'
 
 const stages = [
   'oauth_and_mcc',
@@ -50,7 +51,7 @@ export class GoogleAdsReadDrillError extends Error {
   }
 }
 
-async function loadContext(): Promise<DrillContext> {
+async function loadContext(selection?: { workspaceId: string; clientId: string }): Promise<DrillContext> {
   return withSystemTransaction(async (db) => {
     const connections = await db
       .select({
@@ -60,7 +61,8 @@ async function loadContext(): Promise<DrillContext> {
       })
       .from(googleAdsConnections)
       .innerJoin(workspaces, eq(workspaces.id, googleAdsConnections.workspaceId))
-      .where(and(eq(workspaces.accessState, 'internal'), eq(googleAdsConnections.status, 'active')))
+      .where(and(eq(workspaces.accessState, 'internal'), eq(googleAdsConnections.status, 'active'),
+        selection ? eq(workspaces.id, selection.workspaceId) : undefined))
       .orderBy(googleAdsConnections.createdAt)
       .limit(2)
 
@@ -78,6 +80,7 @@ async function loadContext(): Promise<DrillContext> {
         eq(clients.workspaceId, connections[0].workspaceId),
         eq(clients.active, true),
         eq(clients.isManager, false),
+        selection ? eq(clients.id, selection.clientId) : undefined,
       ))
       .orderBy(clients.createdAt)
       .limit(1)
@@ -95,6 +98,16 @@ const defaultDependencies: DrillDependencies = {
     encryptedRefreshToken: context.encryptedRefreshToken,
     managerCustomerId: context.managerCustomerId,
   }),
+}
+
+/** A commercial probe reads only the explicitly designated internal account. */
+export async function runGoogleAdsReadProbe() {
+  const selection = z.object({ workspaceId: z.string().uuid(), clientId: z.string().uuid() }).safeParse({
+    workspaceId: process.env.GOOGLE_ADS_VERIFICATION_WORKSPACE_ID,
+    clientId: process.env.GOOGLE_ADS_VERIFICATION_CLIENT_ID,
+  })
+  if (!selection.success) throw new GoogleAdsReadDrillError('verification_account_not_configured', 'database_context')
+  return runGoogleAdsReadDrill({ ...defaultDependencies, loadContext: () => loadContext(selection.data) })
 }
 
 export async function runGoogleAdsReadDrill(dependencies: DrillDependencies = defaultDependencies) {

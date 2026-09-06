@@ -21,7 +21,8 @@ Objectif actif créé à la demande de l’utilisateur le 6 septembre 2026 : imp
 | T05 | En cours | Création et réactivation de vigie relisent les entitlements sous verrou de workspace puis verrou de quota ; transitions idempotentes et auditées. Tests du plafond et de réactivation. Concurrence réelle création/réactivation vérifiée sur PostgreSQL jetable, avec forfait obsolète fourni par le demandeur. Autres ressources et scénarios de downgrade restent à vérifier. |
 | T06 | En cours | Budget worker décompté après planification, réserve de finalisation et refus de démarrer sans budget utile. Scans manuels en file ; anciens jobs workspace convertis en répartiteurs idempotents ; lots par client/type de données de cinq vigies maximum, insertion par groupes de 100. Résolution limitée au client du lot. Tests 50 comptes/200 vigies et concurrence PostgreSQL réussis. Contexte de deadline Google/OAuth conservé. Checkpoints internes aux lots, équité globale entre agences, budget DB et autres transports restent à finaliser. |
 | T07 | En cours | Récupération bornée des leases expirés, y compris dernière tentative, historique et audit ; finalisation conditionnée au numéro de tentative. Test PostgreSQL avec arrêt SIGKILL de la dernière tentative et deux récupérateurs concurrents réussi. Rappels indépendants du scan Google, horloge 4/12/24 h en temps écoulé, snooze/acquittement/résolution, déduplication par incident/échéance et reprise depuis acceptation persistée implémentés. Les nouveaux états de notification distinguent acceptation du transport et livraison email effective ; un échec ne fait plus avancer lastNotifiedAt. Requêtes et reprise vérifiées sur PostgreSQL sans envoi externe. Échéances réelles/réception fournisseur, notification en cours abandonnée et alertes d’exploitation après récupération restent à valider/finaliser. |
-| T08–T14 | À faire | Contrats et dépendances inchangés dans le plan. |
+| T08 | En cours | Identité exacte du candidat et origine de confiance raccordées aux scripts/CI ; sondes Google/Sentry commerciales en lecture seule, preuves Sentry et attestations de connecteurs liées à la cible/configuration. Tests locaux, couverture et build vérifiés ; exercices déployés et certificats fournisseurs réels restent à produire. |
+| T09–T14 | À faire | Contrats et dépendances inchangés dans le plan. |
 | T15 | Code et recette locale vérifiés | Menu complet, fermeture après navigation/Échap, dernier lien accessible par défilement, FR/EN à 390/768 px. Changement d’espace vers un rôle moins privilégié puis retour testé ; transition corrigée pour repartir d’un document neuf. Validation staging sur candidat restant sous T22. |
 | T16 | À faire | Portefeuille et vues d’équipe selon le plan. |
 | T17 | En cours | Identités vérifiées et vraies sessions Better Auth créées dans une base jetable ; matrice cinq rôles, accès directs et Server Actions, scénarios grâce/suspension/mobile. Runner local et intégration CI ajoutés. Parcours métier complets avec données/fournisseurs restent à couvrir. |
@@ -75,4 +76,20 @@ Vérifications réalisées :
 
 Aucune migration supplémentaire de schéma dans ces changements ; aucun worker Google réel ni envoi de notification à un tiers n'a été exécuté. Les preuves fournisseurs et les tickets encore ouverts restent explicitement à réaliser.
 
-Le lot de recette est committé sous `9b03262`. Les changements durables et leurs preuves sont enregistrés dans le commit qui introduit cette section. Le contrat de vérification de l’identité du candidat (T08) est préparé séparément ; il n’est pas encore raccordé aux sondes et ne constitue pas une gate active.
+Le lot de recette est committé sous `9b03262`. Les changements durables et leurs preuves sont enregistrés dans le commit qui introduit cette section. Le contrat de vérification de l’identité du candidat (T08) est raccordé dans le lot suivant ; sa preuve déployée reste distincte des tests locaux.
+
+
+## Identité du candidat et gates des trois environnements
+
+T08 raccorde maintenant l'origine HTTPS de confiance, le SHA attendu et la cible aux workflows, aux scripts et aux routes de vérification. Les sondes commerciales Google et Sentry utilisent des lectures seules ; le compte Google interne est choisi explicitement. La preuve Sentry est contrôlée sur l'événement réellement indexé, y compris son projet, sa release, son environnement, son âge et le masquage. Un exercice synthétique commercial distinct exige une activation temporaire et les en-têtes d'identité exacts. Les connexions facultatives peuvent être activées sous attestation fournisseur cohérente et fraîche ; aucune attestation réelle n'a été créée dans ce lot.
+
+Le mode opératoire et les limites de confiance des attestations sont décrits dans [`RELEASE_VERIFICATION.md`](./RELEASE_VERIFICATION.md). Aucun secret distant, switch de production ni variable GitHub n'a été modifié. Aucun événement Sentry réel ni appel Google réel n'a été exécuté pour cette recette.
+
+Preuves locales : [`audits/prod-ready-lot-3/`](./audits/prod-ready-lot-3/).
+
+- 905 tests applicatifs / 139 fichiers réussis ; couverture 92,63 % instructions, 86,07 % branches, 93,91 % fonctions et 94,98 % lignes.
+- Cinq tests Node du client CI réussis, inclus dans `npm run check` avec leur runner propre. Le premier passage complet avait échoué parce que Vitest découvrait aussi le fichier Node ; son nom distingue désormais les deux runners et le passage complet a été rejoué avec succès.
+- Build Next, types, lint, frontière des 77 fichiers App Router et sérialisation transactionnelle réussis. Aucune migration de schéma ; la base et les E2E déjà vérifiés au lot précédent n'ont pas été rejoués pour ces routes internes et scripts seuls.
+- La saturation du disque a temporairement empêché une écriture ; seuls les caches de compilation générés pour YoDevAds ont été supprimés avant reprise. Aucun fichier source ni preuve de recette n'a été supprimé.
+
+T08 reste en cours jusqu'aux exercices déployés des trois cibles avec leurs prérequis réels. Les contrôles de bêta, de documents, de facturation et de santé opérationnelle restent exigés.

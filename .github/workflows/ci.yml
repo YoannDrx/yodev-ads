@@ -184,6 +184,8 @@ jobs:
       RELEASE_TARGET: ${{ inputs.release_target }}
       PLAYWRIGHT_BASE_URL: ${{ inputs.base_url }}
       RELEASE_VERIFICATION_BASE_URL: ${{ inputs.base_url }}
+      RELEASE_VERIFICATION_ALLOWED_ORIGIN: ${{ vars.RELEASE_VERIFICATION_ALLOWED_ORIGIN }}
+      RELEASE_VERIFICATION_EXPECTED_SHA: ${{ github.sha }}
       RELEASE_VERIFICATION_TOKEN: ${{ secrets.RELEASE_VERIFICATION_TOKEN }}
       PLAYWRIGHT_OWNER_STORAGE_STATE_BASE64: ${{ secrets.PLAYWRIGHT_OWNER_STORAGE_STATE_BASE64 }}
       PLAYWRIGHT_ADMIN_STORAGE_STATE_BASE64: ${{ secrets.PLAYWRIGHT_ADMIN_STORAGE_STATE_BASE64 }}
@@ -204,5 +206,5 @@ jobs:
         run: npm run verify:deployed-production-config
       - name: Materialize short-lived authenticated browser states
         run: node scripts/materialize-playwright-storage-states.mjs
-      - name: Verify code, release configuration and authenticated staging
+      - name: Verify code, exact candidate configuration and authenticated release
         run: npm run release:verify

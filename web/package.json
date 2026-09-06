@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:release-verification": "node --test scripts/lib/release-verification.node-test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:local": "node scripts/verify-local-browser.mjs",
     "db:verify-local": "node scripts/verify-local-database.mjs",
@@ -20,7 +21,7 @@
     "verify:deployed-sentry": "node scripts/verify-deployed-sentry.mjs",
     "verify:deployed-google-ads-read": "node scripts/verify-deployed-google-ads-read.mjs",
     "audit:runtime": "npm audit --omit=dev --audit-level=high",
-    "check": "npm run lint && npm run typecheck && npm run verify:data-boundary && npm run verify:transaction-serialization && npm run test:coverage && npm run build && npm run audit:runtime",
+    "check": "npm run lint && npm run typecheck && npm run verify:data-boundary && npm run verify:transaction-serialization && npm run test:release-verification && npm run test:coverage && npm run build && npm run audit:runtime",
     "release:verify": "npm run check && npm run verify:deployed-production-config && npm run verify:deployed-sentry && npm run verify:deployed-google-ads-read && PLAYWRIGHT_REQUIRE_AUTH_MATRIX=1 npm run test:e2e",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
@@ -39,7 +40,9 @@
     "sentry:drill": "tsx scripts/drill-sentry.ts",
     "google:drill-read": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- tsx scripts/drill-google-ads-read.ts",
     "auth:migrate-clerk": "NODE_OPTIONS=--conditions=react-server dotenv -e .env.local -- tsx scripts/migrate-clerk-to-better-auth.ts",
-    "db:provision-logins": "tsx scripts/provision-database-logins.ts"
+    "db:provision-logins": "tsx scripts/provision-database-logins.ts",
+    "provider:configuration-hash": "tsx scripts/provider-configuration-hash.ts",
+    "verify:deployed-sentry-drill": "node scripts/verify-deployed-sentry-drill.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.6.27",

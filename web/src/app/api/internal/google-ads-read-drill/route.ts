@@ -1,25 +1,19 @@
-import { timingSafeEqual } from 'node:crypto'
 import { GoogleAdsReadDrillError, runGoogleAdsReadDrill } from '@/lib/google-ads-read-drill'
+import { releaseIdentityIssue, releaseVerificationAuthorized } from '@/lib/release-verification-access'
+import { withWorkDeadline } from '@/lib/work-deadline'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0' }
 
-function authorized(request: Request) {
-  const expected = process.env.RELEASE_VERIFICATION_TOKEN
-  const authorization = request.headers.get('authorization')
-  const provided = authorization?.startsWith('Bearer ') ? authorization.slice(7) : ''
-  if (!expected || !provided) return false
-  const expectedBytes = Buffer.from(expected)
-  const providedBytes = Buffer.from(provided)
-  return expectedBytes.length === providedBytes.length && timingSafeEqual(expectedBytes, providedBytes)
-}
-
 export async function POST(request: Request) {
-  if (!authorized(request)) {
+  const startedAt = Date.now()
+  if (!releaseVerificationAuthorized(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401, headers: noStoreHeaders })
   }
+  const identityIssue = releaseIdentityIssue(request, false)
+  if (identityIssue) return Response.json({ verified: false, code: identityIssue }, { status: 412, headers: noStoreHeaders })
   if (process.env.RELEASE_TARGET !== 'staging') {
     return Response.json({ verified: false, code: 'staging_only' }, { status: 409, headers: noStoreHeaders })
   }
@@ -32,10 +26,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const evidence = await runGoogleAdsReadDrill()
+    const evidence = await withWorkDeadline(startedAt + 50_000, runGoogleAdsReadDrill)
     return Response.json({
       ...evidence,
-      release: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      target: process.env.RELEASE_TARGET,
+      release: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.NEXT_PUBLIC_RELEASE_SHA ?? null,
       checkedAt: new Date().toISOString(),
     }, { headers: noStoreHeaders })
   } catch (error) {
