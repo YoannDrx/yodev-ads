@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   jobs: [] as Array<Record<string, unknown>>,
   claimNextJob: vi.fn(), completeJob: vi.fn(), enqueueJob: vi.fn(), enqueueJobs: vi.fn(), failJob: vi.fn(),
   runMonitoring: vi.fn(), weeklyDigest: vi.fn(), retryNotification: vi.fn(), dispatchNotifications: vi.fn(),
+  fanOutMonitoring: vi.fn(), reminder: vi.fn(), pendingReminders: vi.fn(),
   reconcile: vi.fn(), observeMutation: vi.fn(), purgeWorkspace: vi.fn(), runExport: vi.fn(), deleteExports: vi.fn(),
   externalCleanup: vi.fn(), revokeGoogleConnection: vi.fn(), recordStripeCancellation: vi.fn(),
   scheduledReport: vi.fn(), taskMention: vi.fn(), taskDigest: vi.fn(), lifecycleEmail: vi.fn(), supportEmail: vi.fn(), operationsAlert: vi.fn(),
@@ -32,7 +33,8 @@ vi.mock('@/lib/notifications', () => ({
   retryNotificationDelivery: mocks.retryNotification,
 }))
 vi.mock('@/lib/reconcile-google-mutation', () => ({ reconcileGoogleMutation: mocks.reconcile }))
-vi.mock('@/lib/run-monitoring', () => ({ runWorkspaceMonitoring: mocks.runMonitoring }))
+vi.mock('@/lib/alert-reminders', () => ({ deliverAlertReminder: mocks.reminder, pendingAlertReminderJobs: mocks.pendingReminders }))
+vi.mock('@/lib/monitoring-scan-jobs', () => ({ executeMonitoringChunk: mocks.runMonitoring, fanOutMonitoringScan: mocks.fanOutMonitoring }))
 vi.mock('@/lib/workspace-deletion', () => ({
   purgeWorkspace: mocks.purgeWorkspace,
   runWorkspaceExternalCleanup: mocks.externalCleanup,
@@ -127,6 +129,8 @@ describe('durable job runner orchestration', () => {
     job.sequence = 100
     mocks.featureEnabled.mockReturnValue(true)
     mocks.currentKid.mockReturnValue(null)
+    mocks.pendingReminders.mockResolvedValue([])
+    mocks.reminder.mockResolvedValue({ accepted: true })
     mocks.claimNextJob.mockImplementation(async () => mocks.jobs.shift() ?? null)
     mocks.completeJob.mockResolvedValue(true)
     mocks.failJob.mockResolvedValue({ updated: true, deadLettered: false, nextAttemptAt: new Date() })
@@ -138,7 +142,7 @@ describe('durable job runner orchestration', () => {
     mocks.trialDue.mockReturnValue([])
     mocks.deadLetterAlert.mockReturnValue(null)
     for (const method of [
-      mocks.runMonitoring, mocks.weeklyDigest, mocks.reconcile, mocks.observeMutation, mocks.purgeWorkspace,
+      mocks.runMonitoring, mocks.fanOutMonitoring, mocks.weeklyDigest, mocks.reconcile, mocks.observeMutation, mocks.purgeWorkspace,
       mocks.runExport, mocks.scheduledReport, mocks.taskMention, mocks.taskDigest, mocks.lifecycleEmail,
       mocks.supportEmail, mocks.operationsAlert, mocks.dispatchNotifications, mocks.stripeUpdate,
       mocks.rotateSecrets, mocks.subprocessorFanout, mocks.subprocessorDelivery, mocks.authInvitation,
@@ -154,10 +158,16 @@ describe('durable job runner orchestration', () => {
     mocks.offlineDiagnostics.mockResolvedValue([])
   })
 
+  it('does not consume an attempt when the remaining budget cannot start useful work', async () => {
+    await expect(runAvailableJobs({ workerId: 'worker', maximumRuntimeMs: 6_000 })).resolves.toMatchObject({ processed: 0 })
+    expect(mocks.claimNextJob).not.toHaveBeenCalled()
+  })
+
   it('dispatches every non-sync job contract and records completion', async () => {
     const jobs = [
       job('auth.invitation_deliver', { invitationId: entityId, workspaceId }),
       job('monitoring.scan', { workspaceId }),
+      job('monitoring.scan_chunk', { workspaceId, clientId, parentJobId: entityId, agentIds: [entityId] }),
       job('monitoring.weekly_digest', { workspaceId }),
       job('report.schedule_deliver', { scheduleId: entityId, runKey: '2026-08-10' }),
       job('task.mention_deliver', { commentId: entityId, preferenceId: clientId }),
@@ -184,7 +194,8 @@ describe('durable job runner orchestration', () => {
     expect(result.processed).toBe(jobs.length)
     expect(result.results.every((item) => item.status === 'completed')).toBe(true)
     expect(mocks.completeJob).toHaveBeenCalledTimes(jobs.length)
-    expect(mocks.runMonitoring).toHaveBeenCalledWith(workspaceId)
+    expect(mocks.fanOutMonitoring).toHaveBeenCalledWith(expect.objectContaining({ workspaceId, parentJobId: expect.any(String) }))
+    expect(mocks.runMonitoring).toHaveBeenCalledWith({ workspaceId, clientId, parentJobId: entityId, agentIds: [entityId] })
     expect(mocks.authInvitation).toHaveBeenCalledWith({ invitationId: entityId, workspaceId })
     expect(mocks.lifecycleEmail).toHaveBeenCalledWith(expect.objectContaining({ effectiveAt: new Date('2026-08-12T10:00:00.000Z') }))
     expect(mocks.stripeUpdate).toHaveBeenCalledWith('sub_123', { cancel_at_period_end: true })
@@ -250,7 +261,7 @@ describe('durable job runner orchestration', () => {
   it('alerts operations and the tenant when a critical tenant job dead-letters', async () => {
     const failed = job('monitoring.scan', { workspaceId }, { attemptCount: 5 })
     mocks.jobs.push(failed)
-    mocks.runMonitoring.mockRejectedValue(new Error('refresh_token=secret'))
+    mocks.fanOutMonitoring.mockRejectedValue(new Error('refresh_token=secret'))
     mocks.failJob.mockResolvedValue({ updated: true, deadLettered: true })
     mocks.redact.mockReturnValue('refresh_token=[REDACTED]')
     mocks.deadLetterAlert.mockReturnValue({ type: 'operations.alert', deduplicationKey: 'ops:1' })

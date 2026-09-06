@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { databaseDouble as baseDatabaseDouble } from '../../test/fluent-db'
 
 const mocks = vi.hoisted(() => ({
@@ -17,6 +17,7 @@ import {
   acknowledgeWorkspaceAlert,
   createWorkspaceMonitoringAgent,
   recordWorkspaceMonitoringScan,
+  requestWorkspaceMonitoringScan,
   setWorkspaceMonitoringAgentEnabled,
   updateWorkspaceAlertWorkflow,
   type AlertWorkflowOperation,
@@ -41,6 +42,31 @@ describe('monitoring action workflows', () => {
     mocks.databases = []
     mocks.contexts = []
     vi.clearAllMocks()
+  })
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('queues a manual scan and its audit atomically without calling Google in the action', async () => {
+    vi.stubEnv('GOOGLE_READS_ENABLED', '1')
+    vi.stubEnv('SCHEDULER_ENABLED', '1')
+    const database = databaseDouble({ statementResults: [[{ id: 'job' }]], query: { jobs: { findFirst: async () => undefined } } })
+    mocks.databases.push(database.db)
+    await expect(requestWorkspaceMonitoringScan({ workspaceId, actorUserId, agentId, now })).resolves.toEqual({ created: true, jobId: 'job' })
+    expect(database.capture.values).toEqual([
+      expect.objectContaining({ type: 'monitoring.scan', workspaceId, payload: { workspaceId, agentId } }),
+      expect.objectContaining({ action: 'monitoring.scan_requested', entityId: 'job' }),
+    ])
+  })
+
+  it('reuses outstanding work and refuses a stopped scheduler before database access', async () => {
+    vi.stubEnv('GOOGLE_READS_ENABLED', '1')
+    vi.stubEnv('SCHEDULER_ENABLED', '0')
+    await expect(requestWorkspaceMonitoringScan({ workspaceId, actorUserId })).rejects.toThrow('arrière-plan')
+    expect(mocks.transaction).not.toHaveBeenCalled()
+    vi.stubEnv('SCHEDULER_ENABLED', '1')
+    const database = databaseDouble({ query: { jobs: { findFirst: async () => ({ id: 'existing' }) } } })
+    mocks.databases.push(database.db)
+    await expect(requestWorkspaceMonitoringScan({ workspaceId, actorUserId })).resolves.toEqual({ created: false, jobId: 'existing' })
+    expect(database.capture.values).toHaveLength(0)
   })
 
   it('serializes monitor quota consumption, audits creation and records activation', async () => {

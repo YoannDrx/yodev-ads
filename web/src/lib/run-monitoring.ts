@@ -8,6 +8,7 @@ import { GoogleAdsGateway } from '@/lib/google-ads'
 import { dispatchIncidentNotifications } from '@/lib/notifications'
 import { alertNotificationEvent, alertNotificationEventKey } from '@/lib/alert-notification-events'
 import { storePerformanceSnapshot } from '@/lib/performance-history'
+import { remainingWorkMs } from '@/lib/work-deadline'
 import {
   analyzeAdsForMonitoring,
   analyzeCampaigns,
@@ -17,22 +18,19 @@ import {
   analyzeTrackingForMonitoring,
 } from '@/lib/monitoring'
 
-export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: string) {
+export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: string, scope?: { clientId: string; agentIds: string[] }) {
   const connection = await getWorkspaceConnection(workspaceId)
   if (!connection) throw new Error('Connexion Google Ads absente.')
 
   const { agents, workspaceClients } = await withSystemTransaction(async (db) => ({
     agents: await db.query.monitoringAgents.findMany({
-      where: onlyAgentId
-        ? and(
-            eq(monitoringAgents.workspaceId, workspaceId),
-            eq(monitoringAgents.id, onlyAgentId),
-            eq(monitoringAgents.enabled, true),
-          )
-        : and(eq(monitoringAgents.workspaceId, workspaceId), eq(monitoringAgents.enabled, true)),
+      where: and(eq(monitoringAgents.workspaceId, workspaceId), eq(monitoringAgents.enabled, true),
+        onlyAgentId ? eq(monitoringAgents.id, onlyAgentId) : undefined,
+        scope ? inArray(monitoringAgents.id, scope.agentIds) : undefined),
     }),
     workspaceClients: await db.query.clients.findMany({
-      where: and(eq(clients.workspaceId, workspaceId), eq(clients.active, true), eq(clients.isManager, false)),
+      where: and(eq(clients.workspaceId, workspaceId), eq(clients.active, true), eq(clients.isManager, false),
+        scope ? eq(clients.id, scope.clientId) : undefined),
     }),
   }))
   const gateway = new GoogleAdsGateway(connection)
@@ -60,15 +58,18 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
   }
   let detected = 0
   let resolved = 0
-  let delivered = 0
+  let accepted = 0
   let notificationFailures = 0
 
   for (const agent of agents) {
+    remainingWorkMs(1_000)
     const targets = agent.clientId
       ? workspaceClients.filter((client) => client.id === agent.clientId)
       : workspaceClients
+    if (targets.length === 0) continue
     const activeFingerprints = new Set<string>()
     for (const client of targets) {
+      remainingWorkMs(1_000)
       processedClients.add(client.id)
       let findings
       if (agent.kind === 'pacing_variance' || agent.kind === 'forecast_overrun') {
@@ -118,6 +119,7 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
         findings = analyzeCampaigns(agent, campaigns)
       }
       for (const finding of findings) {
+        remainingWorkMs(1_000)
         const notificationNow = new Date()
         const fingerprint = `${finding.fingerprint}:${client.id}`
         activeFingerprints.add(fingerprint)
@@ -163,7 +165,8 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
         const notificationEvent = alertNotificationEvent({
           existing: existingIncident,
           nextSeverity: finding.severity,
-          reminderIntervalHours: agent.reminderIntervalHours,
+          // Reminders have their own scheduler, independent of Google scans.
+          reminderIntervalHours: null,
           now: notificationNow,
         })
         if (notificationEvent) {
@@ -182,12 +185,8 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
             description: finding.description,
             clientName: client.name,
           })
-          delivered += notificationResult.delivered
+          accepted += notificationResult.accepted
           notificationFailures += notificationResult.failed
-          await withSystemTransaction((db) => db
-            .update(alertIncidents)
-            .set({ lastNotifiedAt: notificationNow, updatedAt: notificationNow })
-            .where(and(eq(alertIncidents.id, incident.id), eq(alertIncidents.workspaceId, workspaceId))))
         }
         detected += 1
       }
@@ -198,11 +197,14 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
         where: and(
           eq(alertIncidents.workspaceId, workspaceId),
           eq(alertIncidents.agentId, agent.id),
+          // A chunk can only resolve incidents for the client it actually read.
+          scope ? eq(alertIncidents.clientId, scope.clientId) : undefined,
           inArray(alertIncidents.status, ['open', 'reopened', 'acknowledged', 'snoozed']),
         ),
       })
       let resolvedForAgent = 0
       for (const incident of existing) {
+        remainingWorkMs(1_000)
         if (activeFingerprints.has(incident.fingerprint)) continue
         await db
           .update(alertIncidents)
@@ -223,6 +225,6 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
     clients: processedClients.size,
     detected,
     resolved,
-    notifications: { delivered, failed: notificationFailures },
+    notifications: { accepted, failed: notificationFailures },
   }
 }

@@ -1,13 +1,46 @@
 import 'server-only'
 
-import { and, count, eq, sql } from 'drizzle-orm'
-import { alertComments, alertIncidents, auditEvents, monitoringAgents } from '@/db/schema'
+import { and, count, eq, inArray, sql } from 'drizzle-orm'
+import { alertComments, alertIncidents, auditEvents, jobs, monitoringAgents } from '@/db/schema'
 import { withTenantTransaction } from '@/db/transactions'
 import { insertActivationMilestone } from '@/lib/activation'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { requireFeature } from '@/lib/feature-flags'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
+
+export async function requestWorkspaceMonitoringScan(input: ActorContext & { agentId?: string; now?: Date }) {
+  requireFeature('googleReads', 'Les lectures Google Ads sont temporairement désactivées.')
+  requireFeature('scheduler', 'Les analyses en arrière-plan sont temporairement indisponibles.')
+  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+    if (input.agentId) {
+      const agent = await db.query.monitoringAgents.findFirst({
+        where: and(eq(monitoringAgents.workspaceId, input.workspaceId), eq(monitoringAgents.id, input.agentId), eq(monitoringAgents.enabled, true)),
+      })
+      if (!agent) throw new Error('Vigie introuvable ou en pause.')
+    }
+    const active = await db.query.jobs.findFirst({
+      where: and(eq(jobs.workspaceId, input.workspaceId), inArray(jobs.type, ['monitoring.scan', 'monitoring.scan_chunk']),
+        inArray(jobs.status, ['queued', 'running', 'retrying'])),
+      columns: { id: true },
+    })
+    if (active) return { created: false, jobId: active.id }
+    const now = input.now ?? new Date()
+    const [created] = await db.insert(jobs).values({
+      workspaceId: input.workspaceId, type: 'monitoring.scan',
+      payload: { workspaceId: input.workspaceId, agentId: input.agentId }, priority: 50,
+      deduplicationKey: `monitoring.manual:${input.workspaceId}:${Math.floor(now.getTime() / 300_000)}`,
+    }).onConflictDoNothing().returning({ id: jobs.id })
+    if (!created) return { created: false, jobId: null }
+    await db.insert(auditEvents).values({
+      workspaceId: input.workspaceId, actorUserId: input.actorUserId, action: 'monitoring.scan_requested',
+      entityType: 'job', entityId: created.id, metadata: { agentId: input.agentId ?? null },
+    })
+    return { created: true, jobId: created.id }
+  })
+}
 
 export type AlertWorkflowOperation =
   | 'acknowledge'

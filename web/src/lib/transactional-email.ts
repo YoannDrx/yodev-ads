@@ -181,5 +181,6 @@ export async function sendTransactionalEmail(input: TransactionalEmailInput) {
     provider: 'yodev_mail' as const,
     providerMessageId: deliveries.length === 1 ? deliveries[0].providerMessageId : null,
     providerMessageIds: deliveries.map((delivery) => delivery.providerMessageId).filter((id): id is string => Boolean(id)),
+    deliveries,
   }
 }

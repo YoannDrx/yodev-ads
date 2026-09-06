@@ -11,6 +11,8 @@ export type JobType =
   | 'auth.email_deliver'
   | 'auth.invitation_deliver'
   | 'monitoring.scan'
+  | 'monitoring.scan_chunk'
+  | 'monitoring.reminder'
   | 'monitoring.weekly_digest'
   | 'report.schedule_deliver'
   | 'task.mention_deliver'
@@ -38,6 +40,7 @@ export type JobType =
   | 'secrets.rotate'
 
 export const NOTIFICATION_JOB_TYPES: JobType[] = [
+  'monitoring.reminder',
   'auth.email_deliver',
   'auth.invitation_deliver',
   'monitoring.weekly_digest',
@@ -54,6 +57,7 @@ export const NOTIFICATION_JOB_TYPES: JobType[] = [
 
 export const GOOGLE_READ_JOB_TYPES: JobType[] = [
   'monitoring.scan',
+  'monitoring.scan_chunk',
   'monitoring.weekly_digest',
   'google.mutation.reconcile',
   'mutation.observe',

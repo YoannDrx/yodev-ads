@@ -20,6 +20,7 @@ import { enqueueJobs, type EnqueueJobInput } from '@/lib/jobs'
 import { trialLifecycleDue } from '@/lib/lifecycle-email-model'
 import { reportScheduleRunKey } from '@/lib/report-scheduling'
 import { taskDigestRunKey } from '@/lib/task-notification-model'
+import { pendingAlertReminderJobs } from '@/lib/alert-reminders'
 
 export function localScheduleParts(date: Date, timezone: string) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -166,6 +167,7 @@ export async function seedScheduledJobs(now = new Date()) {
   })
 
   const pending: EnqueueJobInput[] = []
+  pending.push(...await pendingAlertReminderJobs(now))
   pending.push({
     workspaceId: null,
     type: 'retention.run',

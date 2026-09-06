@@ -1,0 +1,8 @@
+  ✓  1 [chromium] › e2e/prod-ready-local.spec.ts:22:9 › local production readiness regression journeys › grace permits stored views while hiding mutations (16.6s)
+  ✓  2 [chromium] › e2e/prod-ready-local.spec.ts:37:9 › local production readiness regression journeys › suspended members have an accessible recovery destination without redirect loops (2.7s)
+  ✓  3 [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 390px in fr (2.3s)
+  ✓  4 [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in fr (1.3s)
+  ✓  5 [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 390px in en (1.4s)
+  ✓  6 [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in en (1.1s)
+  ✓  7 [chromium] › e2e/prod-ready-local.spec.ts:74:9 › local production readiness regression journeys › analysts do not see monitoring controls denied by their role (1.9s)
+  7 passed (29.2s)

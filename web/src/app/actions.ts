@@ -41,7 +41,6 @@ import { LEGAL_VERSIONS, legalRequestFingerprint, requireCommercialLegalReadines
 import { LOCALE_COOKIE } from '@/lib/locale'
 import { enqueueJob } from '@/lib/jobs'
 import { agentTemplatesForLocale } from '@/lib/monitoring'
-import { runWorkspaceMonitoring } from '@/lib/run-monitoring'
 import { assertSafeWebhookUrl } from '@/lib/webhook-security'
 import { consumeRateLimit, requestIp } from '@/lib/rate-limit'
 import { sendReportOtpEmail } from '@/lib/report-otp'
@@ -88,7 +87,7 @@ import {
 import {
   acknowledgeWorkspaceAlert,
   createWorkspaceMonitoringAgent,
-  recordWorkspaceMonitoringScan,
+  requestWorkspaceMonitoringScan,
   setWorkspaceMonitoringAgentEnabled,
   updateWorkspaceAlertWorkflow,
 } from '@/lib/monitoring-workflows'
@@ -1391,9 +1390,10 @@ export async function runMonitoringScan(formData: FormData) {
     requireCapability(entitlements, 'monitoring')
     const rawId = formData.get('agentId')
     const agentId = rawId ? z.string().uuid().parse(rawId) : undefined
-    const result = await runWorkspaceMonitoring(workspace.id, agentId)
-    await recordWorkspaceMonitoringScan({ workspaceId: workspace.id, actorUserId: session.userId, result })
-    target = toUrl('/alerts', 'notice', `${result.detected} signalement(s) détecté(s), ${result.resolved} résolu(s).`)
+    const result = await requestWorkspaceMonitoringScan({ workspaceId: workspace.id, actorUserId: session.userId, agentId })
+    target = toUrl('/alerts', 'notice', result.created
+      ? 'Analyse planifiée. Les signalements seront actualisés après son traitement.'
+      : 'Une analyse est déjà planifiée ou a été demandée récemment.')
   } catch (error) {
     target = toUrl('/agents', 'error', message(error))
   }

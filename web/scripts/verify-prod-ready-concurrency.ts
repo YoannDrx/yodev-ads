@@ -2,11 +2,14 @@ import assert from 'node:assert/strict'
 import { fork } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { and, count, eq } from 'drizzle-orm'
-import { jobAttempts, jobs, monitoringAgents, workspaces } from '../src/db/schema'
+import { alertIncidents, clients, jobAttempts, jobs, monitoringAgents, notificationChannels, notificationDeliveries, workspaces } from '../src/db/schema'
 import { withSystemTransaction } from '../src/db/transactions'
 import { entitlementContext } from '../src/lib/entitlements'
 import { claimNextJob, completeJob, enqueueJob, recoverExpiredJobs, type ClaimedJob } from '../src/lib/jobs'
-import { createWorkspaceMonitoringAgent, setWorkspaceMonitoringAgentEnabled } from '../src/lib/monitoring-workflows'
+import { createWorkspaceMonitoringAgent, requestWorkspaceMonitoringScan, setWorkspaceMonitoringAgentEnabled } from '../src/lib/monitoring-workflows'
+import { fanOutMonitoringScan } from '../src/lib/monitoring-scan-jobs'
+import { deliverAlertReminder, pendingAlertReminderJobs } from '../src/lib/alert-reminders'
+import { alertReminderEventKey } from '../src/lib/alert-reminder-plan'
 
 const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
 assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathname.startsWith('/yodev_test'), 'Disposable local database required')
@@ -55,7 +58,50 @@ async function main() {
     }))
     assert.equal(evidence.job?.status, 'dead_letter')
     assert.equal(evidence.attempt?.state, 'dead_letter')
-    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected'] }))
+
+    // These flags authorize only queue/fixture operations here. No Google
+    // worker executes, and the only notification channel is disabled.
+    process.env.GOOGLE_READS_ENABLED = '1'
+    process.env.SCHEDULER_ENABLED = '1'
+    process.env.NOTIFICATIONS_ENABLED = '1'
+    const accounts = await withSystemTransaction((db) => db.insert(clients).values([0, 1].map((index) => ({
+      workspaceId, googleCustomerId: `700000000${index}`, name: `Fixture client ${index}`, currencyCode: 'EUR', timezone: 'Europe/Paris',
+    }))).returning())
+    const manual = await Promise.all([
+      requestWorkspaceMonitoringScan({ workspaceId, actorUserId }), requestWorkspaceMonitoringScan({ workspaceId, actorUserId }),
+    ])
+    assert.equal(manual.filter((item) => item.created).length, 1)
+    const parentJobId = manual.find((item) => item.created)!.jobId!
+    const chunks = await Promise.all([
+      fanOutMonitoringScan({ workspaceId, parentJobId }), fanOutMonitoringScan({ workspaceId, parentJobId }),
+    ])
+    assert.equal(chunks.reduce((sum, item) => sum + item.created, 0), 2)
+    const storedChunks = await withSystemTransaction((db) => db.query.jobs.findMany({ where: and(eq(jobs.workspaceId, workspaceId), eq(jobs.type, 'monitoring.scan_chunk')) }))
+    assert.equal(storedChunks.length, 2)
+    assert.equal(new Set(storedChunks.map((item) => item.payload.clientId)).size, 2)
+
+    const reminderNow = new Date()
+    const createdAt = new Date(reminderNow.getTime() - 4 * 3_600_000)
+    await withSystemTransaction((db) => db.update(monitoringAgents).set({ reminderIntervalHours: 4 }).where(eq(monitoringAgents.id, agents[0].id)))
+    const [incident] = await withSystemTransaction((db) => db.insert(alertIncidents).values({
+      workspaceId, agentId: agents[0].id, clientId: accounts[0].id, fingerprint: 'local-reminder', title: 'Local reminder', description: 'No external send', createdAt,
+    }).returning())
+    const reminder = (await pendingAlertReminderJobs(reminderNow)).find((item) => item.payload?.incidentId === incident.id)
+    assert(reminder, 'A reminder must be due independently of the daily scan')
+    const reminderInput = reminder.payload as { workspaceId: string; incidentId: string; dueAt: string }
+    assert.equal((await deliverAlertReminder(reminderInput, reminderNow)).reason, 'not_accepted')
+    const [channel] = await withSystemTransaction((db) => db.insert(notificationChannels).values({
+      workspaceId, createdBy: actorUserId, kind: 'email', label: 'Disabled fixture', encryptedDestination: 'never-decrypted', destinationHint: 'fixture', enabled: false,
+    }).returning())
+    await withSystemTransaction((db) => db.insert(notificationDeliveries).values({
+      workspaceId, channelId: channel.id, incidentId: incident.id, status: 'accepted', terminalAt: reminderNow,
+      eventKey: alertReminderEventKey(incident.id, new Date(reminderInput.dueAt)),
+    }))
+    const accepted = await deliverAlertReminder(reminderInput, reminderNow)
+    assert.equal(accepted.accepted, true)
+    assert.equal((await deliverAlertReminder(reminderInput, reminderNow)).reason, 'stale')
+    assert(!(await pendingAlertReminderJobs(reminderNow)).some((item) => item.payload?.incidentId === incident.id))
+    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed'] }))
   } finally {
     await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, workspaceId)))
   }

@@ -39,7 +39,9 @@ import {
   type ClaimedJob,
 } from '@/lib/jobs'
 import { reconcileGoogleMutation } from '@/lib/reconcile-google-mutation'
-import { runWorkspaceMonitoring } from '@/lib/run-monitoring'
+import { executeMonitoringChunk, fanOutMonitoringScan } from '@/lib/monitoring-scan-jobs'
+import { MONITORING_AGENTS_PER_CHUNK } from '@/lib/monitoring-scan-plan'
+import { deliverAlertReminder } from '@/lib/alert-reminders'
 import {
   purgeWorkspace,
   recordWorkspaceDeletionStripeCancellation,
@@ -73,6 +75,13 @@ import { completeOperationalRun, failOperationalRun, startOperationalRun } from 
 import { RETENTION_POLICY, retentionCutoff } from '@/lib/retention-policy'
 
 const workspacePayload = z.object({ workspaceId: z.string().uuid() })
+const monitoringScanPayload = workspacePayload.extend({ agentId: z.string().uuid().optional() })
+const reminderPayload = workspacePayload.extend({ incidentId: z.string().uuid(), dueAt: z.string().datetime() })
+const monitoringChunkPayload = workspacePayload.extend({
+  clientId: z.string().uuid(),
+  parentJobId: z.string().uuid(),
+  agentIds: z.array(z.string().uuid()).min(1).max(MONITORING_AGENTS_PER_CHUNK),
+})
 const authInvitationPayload = z.object({ invitationId: z.string().uuid(), workspaceId: z.string().uuid() })
 const authEmailPayload = z.object({ envelope: z.string().min(1).max(50_000) }).strict()
 const approvalPayload = z.object({ approvalId: z.string().uuid() })
@@ -127,8 +136,13 @@ async function executeJob(job: ClaimedJob) {
     case 'auth.invitation_deliver':
       return deliverAuthInvitation(authInvitationPayload.parse(job.payload))
     case 'monitoring.scan': {
-      const { workspaceId } = workspacePayload.parse(job.payload)
-      return runWorkspaceMonitoring(workspaceId)
+      return fanOutMonitoringScan({ ...monitoringScanPayload.parse(job.payload), parentJobId: job.id })
+    }
+    case 'monitoring.scan_chunk': {
+      return executeMonitoringChunk(monitoringChunkPayload.parse(job.payload))
+    }
+    case 'monitoring.reminder': {
+      return deliverAlertReminder(reminderPayload.parse(job.payload))
     }
     case 'monitoring.weekly_digest': {
       const { workspaceId } = workspacePayload.parse(job.payload)
@@ -519,7 +533,7 @@ async function executeJob(job: ClaimedJob) {
             counts[category] = (await operation).length
           }
           await remove('notificationDeliveries', db.delete(notificationDeliveries).where(and(
-            inArray(notificationDeliveries.status, ['delivered', 'dead_letter']),
+            inArray(notificationDeliveries.status, ['accepted', 'delivered', 'dead_letter']),
             isNotNull(notificationDeliveries.terminalAt),
             lt(notificationDeliveries.terminalAt, daysAgo(RETENTION_POLICY.deliveryEvidenceDays)),
           )).returning({ id: notificationDeliveries.id }))
@@ -593,7 +607,9 @@ export async function runAvailableJobs(options: {
     ...(featureEnabled('notifications') ? [] : NOTIFICATION_JOB_TYPES),
     ...(featureEnabled('googleReads') ? [] : GOOGLE_READ_JOB_TYPES),
   ])
-  while (results.length < maximumJobs && Date.now() - startedAt < maximumRuntimeMs) {
+  const finalizationReserveMs = 2_000
+  const minimumStartBudgetMs = 5_000
+  while (results.length < maximumJobs && Date.now() - startedAt + finalizationReserveMs + minimumStartBudgetMs < maximumRuntimeMs) {
     const job = await claimNextJob(
       options.workerId,
       new Date(),
@@ -602,7 +618,7 @@ export async function runAvailableJobs(options: {
     )
     if (!job) break
     try {
-      const result = await withWorkDeadline(startedAt + maximumRuntimeMs, () =>
+      const result = await withWorkDeadline(startedAt + maximumRuntimeMs - finalizationReserveMs, () =>
         runWithTransactionalEmailRetryGeneration(job.payload, () => executeJob(job)))
       const providerMessageId = result && typeof result === 'object' && 'providerMessageId' in result && typeof result.providerMessageId === 'string'
         ? result.providerMessageId.slice(0, 128)

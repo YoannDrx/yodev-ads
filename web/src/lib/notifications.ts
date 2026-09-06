@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { and, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm'
-import { notificationChannels, notificationDeliveries, performanceSnapshots, workspaces } from '@/db/schema'
+import { alertIncidents, notificationChannels, notificationDeliveries, performanceSnapshots, workspaces } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { decryptSecret, encryptSecret } from '@/lib/crypto'
 import { featureEnabled } from '@/lib/feature-flags'
@@ -117,6 +117,10 @@ async function deliverChannel(
       workspaceId: channel.workspaceId,
       referenceId: payload.eventKey,
     })
+    if (!result.deliveries.length || result.deliveries.some((delivery) =>
+      !delivery.providerMessageId || !['queued', 'sending', 'sent', 'accepted', 'delivered'].includes(delivery.status))) {
+      throw new Error('YoDevMail has not accepted this notification for delivery')
+    }
     return result.providerMessageId ?? undefined
   }
   if (channel.kind === 'teams') {
@@ -184,6 +188,7 @@ export async function retryNotificationDelivery(deliveryId: string) {
   })
   const { claimed, channel } = claimResult
   if (!claimed) {
+    if (claimResult.existingStatus === 'accepted') return 'accepted' as const
     if (claimResult.existingStatus === 'delivered') return 'delivered' as const
     if (claimResult.existingStatus === 'dead_letter') return 'dead_letter' as const
     return 'not_available' as const
@@ -202,14 +207,19 @@ export async function retryNotificationDelivery(deliveryId: string) {
     await withSystemTransaction(async (db) => {
       await db
         .update(notificationDeliveries)
-        .set({ status: 'delivered', providerMessageId, errorMessage: null, terminalAt: now })
+        .set({ status: 'accepted', providerMessageId, errorMessage: null, terminalAt: now })
         .where(eq(notificationDeliveries.id, deliveryId))
       await db
         .update(notificationChannels)
+        // This legacy timestamp records transport acceptance. Actual email
+        // delivery/bounces are evidenced by transactional_email_deliveries.
         .set({ lastDeliveredAt: now, lastError: null, updatedAt: now })
         .where(eq(notificationChannels.id, channel.id))
+      if (claimed.incidentId) await db.update(alertIncidents).set({
+        lastNotifiedAt: sql`greatest(${alertIncidents.lastNotifiedAt}, ${now})`, updatedAt: now,
+      }).where(and(eq(alertIncidents.id, claimed.incidentId), eq(alertIncidents.workspaceId, claimed.workspaceId)))
     })
-    return 'delivered' as const
+    return 'accepted' as const
   } catch (error) {
     const now = new Date()
     const errorMessage = error instanceof Error ? error.message : 'Erreur de notification'
@@ -234,7 +244,7 @@ export async function retryNotificationDelivery(deliveryId: string) {
 }
 
 export async function dispatchIncidentNotifications(payload: NotificationPayload) {
-  if (!featureEnabled('notifications')) return { delivered: 0, failed: 0, skipped: true }
+  if (!featureEnabled('notifications')) return { accepted: 0, failed: 0, skipped: true }
   const channels = await withSystemTransaction(async (db) => {
     const workspace = await db.query.workspaces.findFirst({
       where: eq(workspaces.id, payload.workspaceId),
@@ -245,7 +255,7 @@ export async function dispatchIncidentNotifications(payload: NotificationPayload
     })
     return channelsAllowedByWorkspace(workspace, candidates)
   })
-  let delivered = 0
+  let accepted = 0
   let failed = 0
   for (const channel of channels) {
     if (severityRank[payload.severity] < severityRank[channel.minimumSeverity as keyof typeof severityRank]) continue
@@ -263,8 +273,8 @@ export async function dispatchIncidentNotifications(payload: NotificationPayload
       .returning({ id: notificationDeliveries.id }))
     if (!claim) continue
     const result = await retryNotificationDelivery(claim.id)
-    if (result === 'delivered') {
-      delivered += 1
+    if (result === 'accepted' || result === 'delivered') {
+      accepted += 1
     } else {
       if (result === 'retrying') {
         const delivery = await withSystemTransaction((db) => db.query.notificationDeliveries.findFirst({
@@ -284,7 +294,7 @@ export async function dispatchIncidentNotifications(payload: NotificationPayload
       failed += 1
     }
   }
-  return { delivered, failed }
+  return { accepted, failed }
 }
 
 export async function dispatchWeeklyDigest(workspaceId: string, date = new Date()) {
@@ -298,7 +308,7 @@ export async function dispatchWeeklyDigest(workspaceId: string, date = new Date(
       ),
     }),
   }))
-  if (!workspace || snapshots.length === 0) return { delivered: 0, failed: 0, skipped: true }
+  if (!workspace || snapshots.length === 0) return { accepted: 0, failed: 0, skipped: true }
   const totals = snapshots.reduce(
     (sum, snapshot) => ({
       costMicros: sum.costMicros + Number(snapshot.costMicros),

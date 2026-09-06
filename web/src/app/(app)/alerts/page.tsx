@@ -20,7 +20,7 @@ export default async function AlertsPage({
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const canManageAlerts = workspacePermissions(role, workspace.accessState).has('alerts:manage')
-  const canRun = workspacePermissions(role, workspace.accessState).has('monitoring:run') && featureEnabled('googleReads')
+  const canRun = workspacePermissions(role, workspace.accessState).has('monitoring:run') && featureEnabled('googleReads') && featureEnabled('scheduler')
   const canManageTasks = workspacePermissions(role, workspace.accessState).has('tasks:manage')
   const incidents = await listAlertIncidents(workspace.id)
   const open = incidents.filter(({ incident }) => incident.status === 'open')

@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { PgDialect } from 'drizzle-orm/pg-core'
+import type { SQL } from 'drizzle-orm'
 import { databaseDouble } from '../../test/fluent-db'
 
 const mocks = vi.hoisted(() => ({
@@ -100,7 +102,7 @@ describe('workspace monitoring orchestration', () => {
     vi.clearAllMocks()
     agent.sequence = 10
     mocks.getWorkspaceConnection.mockResolvedValue({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
-    mocks.dispatchNotifications.mockResolvedValue({ delivered: 1, failed: 0 })
+    mocks.dispatchNotifications.mockResolvedValue({ accepted: 1, failed: 0 })
     mocks.campaignPerformance.mockResolvedValue([])
     mocks.searchTermPerformance.mockResolvedValue([])
     mocks.keywordPerformance.mockResolvedValue([])
@@ -122,7 +124,7 @@ describe('workspace monitoring orchestration', () => {
   it('handles a workspace with no enabled vigies without Google reads', async () => {
     mocks.databases.push(initialDatabase([]).db)
     await expect(runWorkspaceMonitoring(workspaceId)).resolves.toEqual({
-      agents: 0, clients: 0, detected: 0, resolved: 0, notifications: { delivered: 0, failed: 0 },
+      agents: 0, clients: 0, detected: 0, resolved: 0, notifications: { accepted: 0, failed: 0 },
     })
     expect(mocks.campaignPerformance).not.toHaveBeenCalled()
   })
@@ -132,25 +134,23 @@ describe('workspace monitoring orchestration', () => {
     mocks.analyzeCampaigns.mockReturnValue([finding])
     const initial = initialDatabase([campaignAgent])
     const upsert = findingDatabase()
-    const notified = databaseDouble()
     const resolution = resolutionDatabase()
-    mocks.databases.push(initial.db, upsert.db, notified.db, resolution.db)
+    mocks.databases.push(initial.db, upsert.db, resolution.db)
     await expect(runWorkspaceMonitoring(workspaceId)).resolves.toEqual({
-      agents: 1, clients: 1, detected: 1, resolved: 0, notifications: { delivered: 1, failed: 0 },
+      agents: 1, clients: 1, detected: 1, resolved: 0, notifications: { accepted: 1, failed: 0 },
     })
     expect(mocks.campaignPerformance).toHaveBeenCalledWith(client.googleCustomerId)
     expect(mocks.storeSnapshot).toHaveBeenCalledWith(expect.objectContaining({ workspaceId, clientId: client.id }))
     expect(mocks.dispatchNotifications).toHaveBeenCalledWith(expect.objectContaining({
       workspaceId, severity: 'critical', eventKey: expect.stringContaining(':opened:'),
     }))
-    expect(notified.capture.sets[0]).toMatchObject({ lastNotifiedAt: expect.any(Date) })
   })
 
   it('reopens a resolved incident and retains acknowledged incidents without duplicate notifications', async () => {
     const campaignAgent = agent('budget_pressure')
     mocks.analyzeCampaigns.mockReturnValue([finding])
     const resolved = { status: 'resolved', severity: 'warning', createdAt: new Date('2026-08-01'), lastNotifiedAt: null }
-    mocks.databases.push(initialDatabase([campaignAgent]).db, findingDatabase(resolved).db, databaseDouble().db, resolutionDatabase().db)
+    mocks.databases.push(initialDatabase([campaignAgent]).db, findingDatabase(resolved).db, resolutionDatabase().db)
     await runWorkspaceMonitoring(workspaceId)
     expect(mocks.dispatchNotifications).toHaveBeenLastCalledWith(expect.objectContaining({ eventKey: expect.stringContaining(':reopened:') }))
 
@@ -162,6 +162,18 @@ describe('workspace monitoring orchestration', () => {
     mocks.databases.push(initialDatabase([campaignAgent]).db, findingDatabase(acknowledged).db, resolutionDatabase().db)
     await runWorkspaceMonitoring(workspaceId)
     expect(mocks.dispatchNotifications).not.toHaveBeenCalled()
+  })
+
+  it('leaves the reminder cadence to its independent scheduler and never counts a failed send as notified', async () => {
+    const selected = agent('no_delivery', { reminderIntervalHours: 4 })
+    mocks.analyzeCampaigns.mockReturnValue([finding])
+    mocks.databases.push(initialDatabase([selected]).db, findingDatabase({ status: 'open', severity: 'critical', createdAt: new Date('2020-01-01'), lastNotifiedAt: null }).db, resolutionDatabase().db)
+    await runWorkspaceMonitoring(workspaceId)
+    expect(mocks.dispatchNotifications).not.toHaveBeenCalled()
+    mocks.dispatchNotifications.mockResolvedValue({ accepted: 0, failed: 1 })
+    mocks.databases.push(initialDatabase([selected]).db, findingDatabase().db, resolutionDatabase().db)
+    await expect(runWorkspaceMonitoring(workspaceId)).resolves.toMatchObject({ notifications: { accepted: 0, failed: 1 } })
+    expect(mocks.databases).toHaveLength(0)
   })
 
   it.each([
@@ -209,6 +221,24 @@ describe('workspace monitoring orchestration', () => {
     mocks.databases.push(initialDatabase([campaignAgent]).db, resolutionDatabase([stale]).db)
     const result = await runWorkspaceMonitoring(workspaceId)
     expect(result.resolved).toBe(1)
+  })
+
+  it('limits the resolution query to the client actually scanned by a chunk', async () => {
+    const selected = agent('no_delivery', { clientId: null })
+    const resolutionQueries = queryDouble()
+    mocks.databases.push(initialDatabase([selected]).db, databaseDouble({ query: resolutionQueries }).db)
+    await runWorkspaceMonitoring(workspaceId, undefined, { clientId: client.id, agentIds: [selected.id] })
+    const options = resolutionQueries.alertIncidents.findMany.mock.calls[0] as unknown as [{ where: SQL }]
+    const query = new PgDialect().sqlToQuery(options[0].where)
+    expect(query.sql).toContain('"alert_incidents"."client_id" =')
+    expect(query.params).toContain(client.id)
+  })
+
+  it('does not resolve any historical incident for an inactive or removed target', async () => {
+    mocks.databases.push(initialDatabase([agent('no_delivery', { clientId: null })], []).db)
+    await expect(runWorkspaceMonitoring(workspaceId, undefined, { clientId: client.id, agentIds: ['agent'] })).resolves.toMatchObject({ clients: 0, resolved: 0 })
+    expect(mocks.runTransaction).toHaveBeenCalledTimes(1)
+    expect(mocks.campaignPerformance).not.toHaveBeenCalled()
   })
 
   it('isolates agent scope and excludes manager or inactive clients from targets', async () => {

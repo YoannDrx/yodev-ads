@@ -19,7 +19,7 @@ export default async function AgentsPage({
   const query = await searchParams
   const { workspace, role, entitlements } = await requireWorkspacePermission('portfolio:read')
   const canManage = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'monitoring' }).allowed
-  const canRun = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'monitoring', features: ['googleReads'] }).allowed
+  const canRun = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'monitoring', features: ['googleReads', 'scheduler'] }).allowed
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const agentTemplates = agentTemplatesForLocale(locale)
