@@ -9,6 +9,7 @@ import { claimNextJob, completeJob, enqueueJob, recoverExpiredJobs, type Claimed
 import { createWorkspaceMonitoringAgent, requestWorkspaceMonitoringScan, setWorkspaceMonitoringAgentEnabled } from '../src/lib/monitoring-workflows'
 import { fanOutMonitoringScan } from '../src/lib/monitoring-scan-jobs'
 import { deliverAlertReminder, pendingAlertReminderJobs } from '../src/lib/alert-reminders'
+import { retryNotificationDelivery } from '../src/lib/notifications'
 import { alertReminderEventKey } from '../src/lib/alert-reminder-plan'
 
 const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
@@ -101,7 +102,24 @@ async function main() {
     assert.equal(accepted.accepted, true)
     assert.equal((await deliverAlertReminder(reminderInput, reminderNow)).reason, 'stale')
     assert(!(await pendingAlertReminderJobs(reminderNow)).some((item) => item.payload?.incidentId === incident.id))
-    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed'] }))
+    // A resolved occurrence must cancel before decrypting this deliberately
+    // unusable destination. Two workers contend for the same deferred delivery.
+    const [queuedChannel] = await withSystemTransaction((db) => db.insert(notificationChannels).values({
+      workspaceId, createdBy: actorUserId, kind: 'email', label: 'Cancellation fixture', encryptedDestination: 'never-decrypted', destinationHint: 'fixture', enabled: true,
+    }).returning())
+    await withSystemTransaction((db) => db.update(alertIncidents).set({ status: 'resolved' }).where(eq(alertIncidents.id, incident.id)))
+    const eventKey = alertReminderEventKey(incident.id, new Date(reminderInput.dueAt))
+    const [deferred] = await withSystemTransaction((db) => db.insert(notificationDeliveries).values({
+      workspaceId, channelId: queuedChannel.id, incidentId: incident.id, status: 'retrying', eventKey,
+      payload: { workspaceId, incidentId: incident.id, eventKey, severity: 'warning', title: 'Local', description: 'No send', clientName: 'Fixture' },
+    }).returning())
+    assert.deepEqual(await Promise.all([retryNotificationDelivery(deferred.id), retryNotificationDelivery(deferred.id)]), ['cancelled', 'cancelled'])
+    const cancelled = await withSystemTransaction((db) => db.query.notificationDeliveries.findFirst({ where: eq(notificationDeliveries.id, deferred.id) }))
+    assert.equal(cancelled?.status, 'cancelled')
+    assert.equal(cancelled?.attemptCount, 1)
+    assert.equal(cancelled?.providerMessageId, null)
+
+    console.log(JSON.stringify({ ok: true, verified: ['monitor_quota_concurrent_create_reactivate', 'current_plan_under_lock', 'worker_sigkill_final_attempt', 'concurrent_lease_recovery', 'stale_worker_finalization_rejected', 'manual_scan_concurrency', 'fanout_concurrency_and_client_scope', 'independent_reminder_due_query', 'reminder_acceptance_recovery_without_send', 'stale_reminder_suppressed', 'deferred_reminder_cancelled_concurrently_before_transport'] }))
   } finally {
     await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, workspaceId)))
   }

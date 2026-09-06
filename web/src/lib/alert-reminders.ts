@@ -60,6 +60,7 @@ export async function deliverAlertReminder(input: { workspaceId: string; inciden
   const eventKey = alertReminderEventKey(input.incidentId, dueAt)
   await dispatchIncidentNotifications({
     workspaceId: input.workspaceId, incidentId: input.incidentId, eventKey,
+    reminderDueAt: dueAt.toISOString(), reminderIntervalHours: context.agent.reminderIntervalHours!,
     severity: context.incident.severity === 'critical' ? 'critical' : 'warning',
     title: context.incident.title, description: context.incident.description, clientName: context.client.name,
     locale: context.workspace.locale === 'en' ? 'en' : 'fr',

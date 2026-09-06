@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alertReminderDueAt, alertReminderEventKey } from './alert-reminder-plan'
+import { alertReminderDueAt, alertReminderEventKey, reminderDeliveryIsCurrent } from './alert-reminder-plan'
 
 const incident = { status: 'open', createdAt: new Date('2026-10-24T23:00:00Z'), lastNotifiedAt: null, snoozedUntil: null }
 
@@ -21,5 +21,28 @@ describe('independent incident reminder clock', () => {
     const key = alertReminderEventKey('00000000-0000-4000-8000-000000000001', due)
     expect(key.length).toBeLessThanOrEqual(180)
     expect(key).toBe(alertReminderEventKey('00000000-0000-4000-8000-000000000001', new Date(due)))
+  })
+})
+
+
+describe('deferred reminder transport eligibility', () => {
+  const expectedDueAt = '2026-10-25T03:00:00.000Z'
+  const now = new Date('2026-10-25T03:10:00Z')
+  const acceptance = new Date('2026-10-25T03:05:00Z')
+  it('allows the due occurrence and the remaining channels after its first acceptance', () => {
+    expect(reminderDeliveryIsCurrent({ incident, intervalHours: 4, expectedDueAt }, now)).toBe(true)
+    expect(reminderDeliveryIsCurrent({ incident: { ...incident, lastNotifiedAt: acceptance }, intervalHours: 4,
+      expectedDueAt, acceptedOccurrenceAt: acceptance }, now)).toBe(true)
+  })
+  it('suppresses stale, future or invalid occurrences even when another channel was accepted', () => {
+    for (const change of [
+      { status: 'resolved' }, { status: 'acknowledged' },
+      { status: 'snoozed', snoozedUntil: new Date('2026-10-26T03:00:00Z') },
+      { lastNotifiedAt: new Date('2026-10-25T03:06:00Z') },
+    ]) expect(reminderDeliveryIsCurrent({ incident: { ...incident, lastNotifiedAt: acceptance, ...change },
+      intervalHours: 4, expectedDueAt, acceptedOccurrenceAt: acceptance }, now)).toBe(false)
+    for (const invalid of ['bad', '2026-10-25T04:00:00Z']) expect(reminderDeliveryIsCurrent({ incident, intervalHours: 4, expectedDueAt: invalid }, now)).toBe(false)
+    expect(reminderDeliveryIsCurrent({ incident: { ...incident, lastNotifiedAt: acceptance }, intervalHours: 4,
+      expectedDueAt, acceptedOccurrenceAt: acceptance }, new Date('2026-10-25T07:00:00Z'))).toBe(false)
   })
 })

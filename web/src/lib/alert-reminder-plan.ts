@@ -19,3 +19,24 @@ export function alertReminderEventKey(incidentId: string, dueAt: Date) {
   // fingerprint alone can already occupy 128 of those characters.
   return `alert-reminder:${incidentId}:${dueAt.toISOString()}`
 }
+
+/** Recheck a queued transport, including remaining channels of an accepted occurrence. */
+export function reminderDeliveryIsCurrent(input: {
+  incident: ReminderIncident
+  intervalHours: number | null
+  expectedDueAt: string
+  acceptedOccurrenceAt?: Date | null
+}, now = new Date()) {
+  const { incident, intervalHours } = input
+  const due = alertReminderDueAt(incident, intervalHours)
+  const expected = new Date(input.expectedDueAt).getTime()
+  if (!due || !Number.isFinite(expected) || expected > now.getTime()) return false
+  if (incident.status === 'snoozed' && (!incident.snoozedUntil || incident.snoozedUntil > now)) return false
+  if (due.getTime() === expected) return true
+  // Acceptance on the first channel advances the incident clock. Other channels
+  // of the same occurrence remain eligible until the next reminder interval,
+  // unless another notification has since advanced that clock again.
+  return Boolean(input.acceptedOccurrenceAt && incident.lastNotifiedAt &&
+    input.acceptedOccurrenceAt.getTime() === incident.lastNotifiedAt.getTime() &&
+    now.getTime() < expected + intervalHours! * 3_600_000)
+}

@@ -100,6 +100,60 @@ describe('notification delivery orchestration', () => {
     vi.unstubAllGlobals()
   })
 
+  it('honors the notification kill switch at retry time before claiming', async () => {
+    mocks.featureEnabled.mockReturnValue(false)
+    await expect(retryNotificationDelivery(delivery().id)).resolves.toBe('disabled')
+    expect(mocks.runTransaction).not.toHaveBeenCalled()
+    expect(mocks.emailSend).not.toHaveBeenCalled()
+  })
+
+  it('cancels a queued warning after the channel preference changes to critical', async () => {
+    const claimDb = databaseDouble({ statementResults: [[delivery({ payload: { ...payload, severity: 'warning' } })]],
+      query: queryDouble({ channel: channel({ minimumSeverity: 'critical' }) }) })
+    mocks.databases.push(claimDb.db)
+    expect(await retryNotificationDelivery(delivery().id)).toBe('cancelled')
+    expect(claimDb.capture.sets.at(-1)).toMatchObject({ status: 'cancelled' })
+    expect(mocks.emailSend).not.toHaveBeenCalled()
+  })
+
+  it.each(['resolved', 'acknowledged', 'snoozed', 'disabled_agent', 'inactive_client', 'changed_interval', 'removed_incident'])('cancels a deferred reminder after %s', async (state) => {
+    const dueAt = new Date(Date.now() - 60_000)
+    const reminderPayload = { ...payload, eventKey: `alert-reminder:${payload.incidentId}:${dueAt.toISOString()}`,
+      reminderDueAt: dueAt.toISOString(), reminderIntervalHours: 4 }
+    const context = {
+      incident: { status: ['resolved', 'acknowledged', 'snoozed'].includes(state) ? state : 'open',
+        createdAt: new Date(dueAt.getTime() - 4 * 3_600_000), lastNotifiedAt: null,
+        snoozedUntil: state === 'snoozed' ? new Date(Date.now() + 3_600_000) : null },
+      agent: { enabled: state !== 'disabled_agent', reminderIntervalHours: state === 'changed_interval' ? 12 : 4 },
+      client: { active: state !== 'inactive_client', isManager: false },
+    }
+    const claimDb = databaseDouble({ statementResults: [[delivery({ eventKey: reminderPayload.eventKey, payload: reminderPayload,
+      incidentId: state === 'removed_incident' ? null : payload.incidentId })], state === 'removed_incident' ? [] : [context]],
+      query: queryDouble({ channel: channel() }) })
+    mocks.databases.push(claimDb.db)
+    expect(await retryNotificationDelivery(delivery().id)).toBe('cancelled')
+    expect(claimDb.capture.sets.at(-1)).toMatchObject({ status: 'cancelled', errorMessage: 'Reminder occurrence is no longer current' })
+    expect(mocks.emailSend).not.toHaveBeenCalled()
+    expect(mocks.postSafeWebhook).not.toHaveBeenCalled()
+  })
+
+  it('still delivers a second channel of the same accepted reminder occurrence', async () => {
+    const dueAt = new Date(Date.now() - 60_000)
+    const acceptedAt = new Date(Date.now() - 30_000)
+    const eventKey = `alert-reminder:${payload.incidentId}:${dueAt.toISOString()}`
+    // This legacy payload has no explicit reminder metadata; its occurrence key is sufficient.
+    const claimed = delivery({ eventKey, payload: { ...payload, eventKey } })
+    const claimDb = databaseDouble({ statementResults: [[claimed], [{
+      incident: { status: 'open', createdAt: new Date(dueAt.getTime() - 4 * 3_600_000), lastNotifiedAt: acceptedAt, snoozedUntil: null },
+      agent: { enabled: true, reminderIntervalHours: 4 }, client: { active: true, isManager: false },
+    }]], query: queryDouble({ channel: channel(), delivery: { terminalAt: acceptedAt } }) })
+    const successDb = databaseDouble()
+    mocks.databases.push(claimDb.db, successDb.db)
+    mocks.emailSend.mockResolvedValue({ providerMessageId: 'second-channel', deliveries: [{ providerMessageId: 'second-channel', status: 'accepted' }] })
+    expect(await retryNotificationDelivery(claimed.id)).toBe('accepted')
+    expect(mocks.emailSend).toHaveBeenCalledOnce()
+  })
+
   it('delivers a claimed email and persists provider evidence', async () => {
     const claimed = delivery()
     const claimDb = databaseDouble({ statementResults: [[claimed]], query: queryDouble({ channel: channel() }) })

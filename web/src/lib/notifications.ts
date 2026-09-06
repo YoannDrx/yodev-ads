@@ -1,7 +1,7 @@
 import 'server-only'
 
-import { and, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm'
-import { alertIncidents, notificationChannels, notificationDeliveries, performanceSnapshots, workspaces } from '@/db/schema'
+import { and, desc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm'
+import { alertIncidents, clients, monitoringAgents, notificationChannels, notificationDeliveries, performanceSnapshots, workspaces } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { decryptSecret, encryptSecret } from '@/lib/crypto'
 import { featureEnabled } from '@/lib/feature-flags'
@@ -9,6 +9,7 @@ import { enqueueJob, jobRetryDelay } from '@/lib/jobs'
 import { postSafeWebhook } from '@/lib/webhook-security'
 import { entitlementContext, isPlan, isWorkspaceAccessState } from '@/lib/entitlements'
 import { sendTransactionalEmail } from '@/lib/transactional-email'
+import { reminderDeliveryIsCurrent } from '@/lib/alert-reminder-plan'
 import {
   parseTeamsDestination,
   postTeamsChannelMessage,
@@ -26,6 +27,8 @@ export type NotificationPayload = {
   clientName: string
   eventType?: 'alert' | 'digest'
   locale?: 'fr' | 'en'
+  reminderDueAt?: string
+  reminderIntervalHours?: number
 }
 
 const severityRank = { warning: 1, critical: 2 } as const
@@ -153,6 +156,7 @@ async function deliverChannel(
 }
 
 export async function retryNotificationDelivery(deliveryId: string) {
+  if (!featureEnabled('notifications')) return 'disabled' as const
   const claimResult = await withSystemTransaction(async (db) => {
     const [claimed] = await db
       .update(notificationDeliveries)
@@ -184,6 +188,32 @@ export async function retryNotificationDelivery(deliveryId: string) {
       where: and(eq(notificationChannels.workspaceId, claimed.workspaceId), eq(notificationChannels.enabled, true)),
     })
     const channel = channelsAllowedByWorkspace(workspace, channels).find((candidate) => candidate.id === claimed.channelId)
+    const payload = claimed.payload as NotificationPayload
+    let cancellationReason: string | null = channel && severityRank[payload.severity] < severityRank[channel.minimumSeverity as keyof typeof severityRank]
+      ? 'Notification no longer meets channel severity preference' : null
+    if (channel && (payload.reminderDueAt !== undefined || claimed.eventKey.startsWith('alert-reminder:'))) {
+      const [context] = await db.select({ incident: alertIncidents, agent: monitoringAgents, client: clients })
+        .from(alertIncidents)
+        .innerJoin(monitoringAgents, and(eq(monitoringAgents.id, alertIncidents.agentId), eq(monitoringAgents.workspaceId, alertIncidents.workspaceId)))
+        .innerJoin(clients, and(eq(clients.id, alertIncidents.clientId), eq(clients.workspaceId, alertIncidents.workspaceId)))
+        .where(and(claimed.incidentId ? eq(alertIncidents.id, claimed.incidentId) : sql`false`, eq(alertIncidents.workspaceId, claimed.workspaceId))).limit(1)
+      const accepted = await db.query.notificationDeliveries.findFirst({
+        where: and(eq(notificationDeliveries.workspaceId, claimed.workspaceId), eq(notificationDeliveries.eventKey, claimed.eventKey),
+          inArray(notificationDeliveries.status, ['accepted', 'delivered'])),
+        columns: { terminalAt: true }, orderBy: [desc(notificationDeliveries.terminalAt)],
+      })
+      const prefix = `alert-reminder:${claimed.incidentId}:`
+      const expectedDueAt = payload.reminderDueAt ?? (claimed.eventKey.startsWith(prefix) ? claimed.eventKey.slice(prefix.length) : '')
+      if (!context || !context.agent.enabled || !context.client.active || context.client.isManager ||
+        (payload.reminderIntervalHours !== undefined && payload.reminderIntervalHours !== context.agent.reminderIntervalHours) ||
+        !reminderDeliveryIsCurrent({ incident: context.incident, intervalHours: context.agent.reminderIntervalHours,
+          expectedDueAt, acceptedOccurrenceAt: accepted?.terminalAt })) cancellationReason = 'Reminder occurrence is no longer current'
+    }
+    if (cancellationReason) {
+      await db.update(notificationDeliveries).set({ status: 'cancelled', terminalAt: new Date(), errorMessage: cancellationReason })
+        .where(and(eq(notificationDeliveries.id, deliveryId), eq(notificationDeliveries.attemptCount, claimed.attemptCount), eq(notificationDeliveries.status, 'sending')))
+      return { claimed: null, channel: null, existingStatus: 'cancelled' }
+    }
     return { claimed, channel: channel ?? null, existingStatus: undefined }
   })
   const { claimed, channel } = claimResult
@@ -191,6 +221,7 @@ export async function retryNotificationDelivery(deliveryId: string) {
     if (claimResult.existingStatus === 'accepted') return 'accepted' as const
     if (claimResult.existingStatus === 'delivered') return 'delivered' as const
     if (claimResult.existingStatus === 'dead_letter') return 'dead_letter' as const
+    if (claimResult.existingStatus === 'cancelled') return 'cancelled' as const
     return 'not_available' as const
   }
   if (!channel) {
@@ -275,7 +306,7 @@ export async function dispatchIncidentNotifications(payload: NotificationPayload
     const result = await retryNotificationDelivery(claim.id)
     if (result === 'accepted' || result === 'delivered') {
       accepted += 1
-    } else {
+    } else if (result !== 'cancelled' && result !== 'disabled') {
       if (result === 'retrying') {
         const delivery = await withSystemTransaction((db) => db.query.notificationDeliveries.findFirst({
           where: eq(notificationDeliveries.id, claim.id),

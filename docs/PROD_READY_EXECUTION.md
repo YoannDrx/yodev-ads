@@ -93,3 +93,17 @@ Preuves locales : [`audits/prod-ready-lot-3/`](./audits/prod-ready-lot-3/).
 - La saturation du disque a temporairement empêché une écriture ; seuls les caches de compilation générés pour YoDevAds ont été supprimés avant reprise. Aucun fichier source ni preuve de recette n'a été supprimé.
 
 T08 reste en cours jusqu'aux exercices déployés des trois cibles avec leurs prérequis réels. Les contrôles de bêta, de documents, de facturation et de santé opérationnelle restent exigés.
+
+
+## Annulation des transports de rappel devenus obsolètes
+
+Le retry d'une notification relit maintenant l'incident, le compte, la vigie et les préférences du canal avant le transport. Résolution, acquittement, snooze actif, compte/vigie désactivé, changement d'intervalle ou préférence de sévérité devenue incompatible produisent un état terminal `cancelled`, sans acceptation ni avance de l'horloge. Les clés de rappel déjà en file restent comprises. L'acceptation par un premier canal laisse les autres canaux de la même occurrence admissibles, jusqu'à l'intervalle suivant, tant qu'une autre notification ou un changement d'état ne la rend pas obsolète.
+
+Un job de transport encore indisponible ou désactivé n'est plus déclaré terminé. Le traitement existant des `sending` abandonnés doit encore être complété par une récupération et une réconciliation explicites ; cette correction ne revendique pas sa clôture. La rétention inclut l'état terminal `cancelled`.
+
+Preuves locales : [`audits/prod-ready-lot-4/`](./audits/prod-ready-lot-4/).
+
+- 57 tests ciblés réussis : orchestration des transports/workers, horloge et rappels ; contrôles de types et lint.
+- Recette PostgreSQL 17 depuis une base vide : 44 migrations, RLS/rôles/contraintes/invariants et concurrence. Deux workers tentant un même rappel résolu obtiennent `cancelled`, avec une seule tentative persistée et sans identifiant de transport. La destination de fixture est volontairement indéchiffrable ; aucune émission externe n'est possible dans ce scénario.
+- Docker ne répondait plus aux diagnostics ; le premier runner a été arrêté, sans redémarrer le moteur partagé. La recette a réussi sur une nouvelle instance native isolée : `postgresql://postgres@127.0.0.1:56187/yodev_test`, données temporaires dans `/tmp/yodev-prod-ready-pg-20260907-0058`. Le runner vérifie désormais la connexion avec une attente maximale de dix secondes avant les migrations ; le refus d'une base inaccessible a été exercé.
+- Aucun changement de schéma, aucun envoi fournisseur réel. Les E2E et le build du lot T08 ne sont pas présentés comme des preuves de ces nouvelles branches serveur ; les tests ciblés, les types et la base réelle constituent la validation de ce correctif.

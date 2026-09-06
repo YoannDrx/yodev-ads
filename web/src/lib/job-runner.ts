@@ -196,6 +196,7 @@ async function executeJob(job: ClaimedJob) {
       const result = await retryNotificationDelivery(deliveryId)
       if (result === 'dead_letter') throw new NonRetryableJobError('Notification delivery reached dead-letter')
       if (result === 'retrying') throw new Error('Notification delivery failed and is scheduled for retry')
+      if (result === 'not_available' || result === 'disabled') throw new Error('Notification delivery is not yet available for completion')
       return result
     }
     case 'workspace.purge': {
@@ -533,7 +534,7 @@ async function executeJob(job: ClaimedJob) {
             counts[category] = (await operation).length
           }
           await remove('notificationDeliveries', db.delete(notificationDeliveries).where(and(
-            inArray(notificationDeliveries.status, ['accepted', 'delivered', 'dead_letter']),
+            inArray(notificationDeliveries.status, ['accepted', 'delivered', 'dead_letter', 'cancelled']),
             isNotNull(notificationDeliveries.terminalAt),
             lt(notificationDeliveries.terminalAt, daysAgo(RETENTION_POLICY.deliveryEvidenceDays)),
           )).returning({ id: notificationDeliveries.id }))

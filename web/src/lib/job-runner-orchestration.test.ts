@@ -230,6 +230,14 @@ describe('durable job runner orchestration', () => {
     ]))
   })
 
+  it.each(['not_available', 'disabled'])('keeps a notification job retryable when transport is %s', async (status) => {
+    mocks.retryNotification.mockResolvedValueOnce(status)
+    mocks.jobs.push(job('notification.deliver', { deliveryId: entityId }))
+    mocks.failJob.mockResolvedValueOnce({ updated: true, deadLettered: false })
+    expect(await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })).toMatchObject({ results: [{ status: 'retrying' }] })
+    expect(mocks.completeJob).not.toHaveBeenCalled()
+  })
+
   it('applies notification retry semantics and non-retryable dead-letter semantics', async () => {
     mocks.retryNotification.mockResolvedValueOnce('retrying').mockResolvedValueOnce('dead_letter')
     const retry = job('notification.deliver', { deliveryId: entityId })
