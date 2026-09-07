@@ -1,6 +1,6 @@
 # Ads by Yodev — registre de fonctionnalités et état de livraison
 
-Mis à jour le **7 septembre 2026**, après les lots 25–28 sur `codex/prod-ready` ; la recette générale du lot 25 précède les corrections ciblées de landing et de digest.
+Mis à jour le **7 septembre 2026**, après les lots 25–29 sur `codex/prod-ready` ; la recette générale du lot 25 précède les corrections ciblées de landing, de digest et d’analyse.
 
 **La préparation à la production est en cours.** Le dépôt possède les fonctionnalités et les preuves locales ci-dessous. Le candidat courant n’a pas été déployé ni certifié auprès des prestataires par cette exécution. Les validations d’août ne valent pas validation du code de septembre. L’ancien registre est conservé dans [l’archive datée](./audits/implementation-status-before-2026-09-07-refresh.md).
 
@@ -8,9 +8,9 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 
 ## Référence de vérification actuelle
 
-- **1 328 tests applicatifs / 182 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 28](./audits/prod-ready-lot-28/README.md).
-- **53 scénarios navigateur réussis sans skip en 2,4 minutes** au [lot 25](./audits/prod-ready-lot-25/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les neuf parcours publics/authentification touchés par le lot 27 passent ensuite en 29,2 s. Les appels fournisseurs sont désactivés.
-- **56 migrations cumulées**, de `0000` à `0055`, et la recette PostgreSQL complète depuis une base vide : [lot 24](./audits/prod-ready-lot-24/README.md). Aucun report automatique de ce numéro vers une base distante.
+- **1 331 tests applicatifs / 183 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 29](./audits/prod-ready-lot-29/README.md).
+- **53 scénarios navigateur réussis sans skip en 2,4 minutes** au [lot 25](./audits/prod-ready-lot-25/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les neuf parcours publics/authentification touchés par le lot 27 passent ensuite en 29,2 s. Cinq parcours analyse/opérations passent ensuite au lot 29 en 12,7 s. Les appels fournisseurs sont désactivés.
+- **57 migrations cumulées**, de `0000` à `0056`, et la recette PostgreSQL complète depuis une base vide : [lot 29](./audits/prod-ready-lot-29/README.md). Aucun report automatique de ce numéro vers une base distante.
 - La CI utilise désormais le même runner de protocoles PostgreSQL que le local et conserve son test de charge distinct. Une exécution GitHub sur le SHA final reste requise.
 - Les preuves Python, secrets et fournisseurs antérieures gardent leur date et leur commit ; elles devront faire partie du contrôle du candidat final.
 
@@ -24,7 +24,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 | Connexion et inventaire Google Ads | OAuth chiffré, découverte MCC, comptes managers distingués des annonceurs, sélection explicite et quotas de 3/15/50 annonceurs payants. [Sélection](./ACCOUNT_SELECTION.md). | Credentials, permissions et inventaire du candidat contrôlé ; plusieurs MCC restent hors périmètre actuel. |
 | Historique journalier | Séries compte/campagne séparées, reprise, rattrapage, monnaie/fuseau et qualification des jours. [Contrat](./METRIC_HISTORY.md). | Mesures réelles de backfill, coût, charge et cohérence des chiffres fournisseur. |
 | Cockpit et score | Compteurs du client exact, fraîcheur et couverture explicites, absence de score non qualifié, distinction entre zéro observé et absence de données. [Contrat](./COCKPIT_AND_PUBLIC_STATUS.md). | Validation avec les comptes réels du candidat. |
-| Analyse et insights | Collectes stockées par famille, périodes explicites, erreurs et versions conservées ; 17 familles consultables, recherchables et exportables. [Collections](./ANALYTICAL_COLLECTION_PAGES.md). | Qualification homogène de tous les scores/activations ; GAQL réel pour chaque famille. |
+| Analyse et insights | Collectes stockées par famille, périodes explicites, erreurs et versions conservées ; 17 familles consultables, recherchables et exportables. [Collections](./ANALYTICAL_COLLECTION_PAGES.md). | Score et première analyse qualifiés par cinq sources au [lot 29](./audits/prod-ready-lot-29/README.md) ; GAQL réel restant à certifier pour chaque famille. |
 | Pagination Google | REST Search paginé, échéance commune, limites de corps/pages/octets/lignes, échec sans inventaire partiel et couverture enregistrée. [Limites](./GOOGLE_COLLECTION_LIMITS.md). | Partitionnement des familles dépassant les plafonds GAQL ou de stockage ; ce transport ne garantit pas une collecte sans limite. |
 | Vigies | Dix modèles, règles explicables, exécution manuelle/quotidienne, fan-out, checkpoints, reprise sans renvoi des morceaux acquis. [Contrat](./MONITORING_CHECKPOINTS.md). | Calibration des seuils et qualité des alertes sur données réelles ; mesure de charge déployée. |
 | Jobs et notifications durables | Leases, tentatives finales récupérables, quotas sérialisés, deadlines HTTP/DB, équité entre agences, registre de livraison et réconciliation des réponses ambiguës. Le digest stocké est indépendant des lectures Google. [Workers](./WORKER_EXECUTION.md), [reprise](./NOTIFICATION_RECOVERY.md), [lot 28](./audits/prod-ready-lot-28/README.md). | Réception YoDevMail/Slack/Teams, bounces/plaintes, charge et drills réels. |
@@ -37,7 +37,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 | Stripe et documents B2B | Catalogue/Price autoritatif, traitement idempotent, upgrade après paiement, downgrade programmé, versions d’acceptation et contrôles serveur présents. | Compte live, achat/renouvellement/remboursement, entité, pièces et validations professionnelles du dossier commercial. |
 | Export, rétention et suppression | Export privé asynchrone, révocation immédiate, purge différée, tombstones, rétention et courses annulation/purge éprouvées localement. | Artefacts réels, nettoyage fournisseur, sauvegarde/restauration du candidat et recette utilisateur complète. |
 | Observabilité et statut | Redaction, diagnostics opérationnels, registre public paginé, incidents anciens inclus et statut inconnu sans observation. | Alertes externes reçues, sonde indépendante, incidents/restaurations exercés et mesures d’exploitation. |
-| Activation | Milestones durables ; compte explicitement sélectionné et rapport réellement publié distingués des anciennes intentions/programmations. [Lot 20](./audits/prod-ready-lot-20/README.md). | Première analyse qualifiée, aide aux abandons, coûts par offre et mesure de qualité/support. |
+| Activation | Milestones durables ; compte explicitement sélectionné et rapport réellement publié distingués des anciennes intentions/programmations. [Lot 20](./audits/prod-ready-lot-20/README.md). | Première analyse qualifiée livrée au [lot 29](./audits/prod-ready-lot-29/README.md) ; aide aux abandons, coûts par offre et mesure de qualité/support restent ouverts. |
 
 ## Dix modèles de vigies
 

@@ -7,7 +7,7 @@ export const ACTIVATION_MILESTONES = [
   'google_connected',
   'accounts_synced',
   'accounts_selected',
-  'first_analysis',
+  'first_qualified_analysis',
   'first_monitor',
   'first_report_published',
   'legal_accepted',

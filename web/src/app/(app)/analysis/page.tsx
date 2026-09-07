@@ -30,6 +30,7 @@ import { analyticalSnapshotData } from '@/lib/analytical-model'
 import { CollectionStatus } from '@/components/collection-status'
 import { requireWorkspacePermission } from '@/lib/workspace'
 import { recordActivationMilestone } from '@/lib/activation'
+import { qualifiedAnalysisEvidence } from '@/lib/analysis-evidence'
 
 type AnalysisPageProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string; sync?: string }> }
 
@@ -62,9 +63,9 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
   const data = campaigns && searchTerms && keywords && ads && conversionTracking && periods.size === 1 ? { campaigns, searchTerms, keywords, ads, conversionTracking } : undefined
   const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
   const canRefresh = connection?.status === 'active' && workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
-  if (data && client && entitlements.capabilities.has('google.read')) await recordActivationMilestone({ workspaceId: workspace.id, milestone: 'first_analysis', actorUserId: session.userId, sourceEntityId: client.id }).catch(() => undefined)
-
   const analysis = data?.campaigns.length ? analyzeAccount(data, locale) : undefined
+  const evidence = analysis && Number.isFinite(analysis.score) && client ? qualifiedAnalysisEvidence(collection.snapshots, client) : null
+  if (evidence && client && entitlements.capabilities.has('google.read')) await recordActivationMilestone({ workspaceId: workspace.id, milestone: 'first_qualified_analysis', actorUserId: session.userId, sourceEntityId: client.id, metadata: evidence }).catch(() => undefined)
   const currency = client?.currencyCode ?? 'EUR'
 
   return (
@@ -114,13 +115,13 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
               <CardContent className="p-5">
                 <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">{english ? 'Opportunity score' : 'Score d’opportunité'}</p>
                 <div className="mt-5 flex items-end gap-2">
-                  <span className="text-5xl font-semibold tracking-[-.06em]">{analysis.score}</span>
+                  <span data-analysis-score className="text-5xl font-semibold tracking-[-.06em]">{evidence ? analysis.score : '—'}</span>
                   <span className="mb-1 text-sm text-white/45">/ 100</span>
                 </div>
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-[#19A58F]" style={{ width: `${analysis.score}%` }} />
-                </div>
-                <p className="mt-3 text-xs leading-5 text-white/50">{english ? 'Explainable score calculated from the anomalies shown below.' : 'Score explicable, calculé à partir des anomalies visibles ci-dessous.'}</p>
+                {evidence ? <progress aria-label={english ? 'Opportunity score' : 'Score d’opportunité'} value={analysis.score} max={100} className="mt-4 h-1.5 w-full accent-emerald-500" /> : <div aria-hidden="true" className="mt-4 h-1.5 rounded-full bg-white/10" />}
+                <p className="mt-3 text-xs leading-5 text-white/50">{evidence
+                  ? (english ? 'Explainable score based on the findings below and the received query data.' : 'Score explicable fondé sur les constats ci-dessous et les données des requêtes reçues.')
+                  : (english ? 'Score unavailable: all five sections must be recent, versioned and have verified query coverage. Stored findings remain available below.' : 'Score indisponible : les cinq sections doivent être récentes, versionnées et de couverture vérifiée. Les constats enregistrés restent consultables ci-dessous.')}</p>
               </CardContent>
             </Card>
             <SummaryCard

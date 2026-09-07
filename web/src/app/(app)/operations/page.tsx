@@ -17,7 +17,7 @@ const funnel = [
   ['google_connected', 'Google connecté'],
   ['accounts_synced', 'Inventaire synchronisé'],
   ['accounts_selected', 'Compte géré sélectionné'],
-  ['first_analysis', 'Première analyse'],
+  ['first_qualified_analysis', 'Première analyse qualifiée'],
   ['first_monitor', 'Première vigie'],
   ['first_report_published', 'Premier rapport publié'],
   ['legal_accepted', 'Cadre légal accepté'],
