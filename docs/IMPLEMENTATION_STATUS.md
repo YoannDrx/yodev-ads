@@ -1,6 +1,6 @@
 # Ads by Yodev — registre de fonctionnalités et état de livraison
 
-Mis à jour le **7 septembre 2026**, après les lots 25–31 sur `codex/prod-ready` ; la recette générale du lot 31 couvre les corrections précédentes.
+Mis à jour le **7 septembre 2026**, après les lots 25–32 sur `codex/prod-ready` ; la recette générale du lot 31 précède les quatre parcours ciblés du lot 32.
 
 **La préparation à la production est en cours.** Le dépôt possède les fonctionnalités et les preuves locales ci-dessous. Le candidat courant n’a pas été déployé ni certifié auprès des prestataires par cette exécution. Les validations d’août ne valent pas validation du code de septembre. L’ancien registre est conservé dans [l’archive datée](./audits/implementation-status-before-2026-09-07-refresh.md).
 
@@ -8,9 +8,9 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 
 ## Référence de vérification actuelle
 
-- **1 343 tests applicatifs / 185 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 31](./audits/prod-ready-lot-31/README.md).
-- **57 scénarios navigateur réussis sans skip en 2,6 minutes** au [lot 31](./audits/prod-ready-lot-31/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les deux parcours de démarrage passent ensuite en 5,8 s après ajustement final des descriptions. Les appels fournisseurs sont désactivés.
-- **57 migrations cumulées**, de `0000` à `0056`, et la recette PostgreSQL complète depuis une base vide : [lot 29](./audits/prod-ready-lot-29/README.md). Aucun report automatique de ce numéro vers une base distante.
+- **1 362 tests applicatifs / 188 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 32](./audits/prod-ready-lot-32/README.md).
+- **57 scénarios navigateur réussis sans skip en 2,6 minutes** au [lot 31](./audits/prod-ready-lot-31/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les deux parcours de démarrage passent ensuite en 5,8 s après ajustement final des descriptions. Les quatre parcours alertes/listes du lot 32 passent ensuite en 37,2 s. Les appels fournisseurs sont désactivés.
+- **59 migrations cumulées**, de `0000` à `0058`, et la recette PostgreSQL complète depuis une base vide : [lot 32](./audits/prod-ready-lot-32/README.md). Aucun report automatique de ce numéro vers une base distante.
 - La CI utilise désormais le même runner de protocoles PostgreSQL que le local et conserve son test de charge distinct. Une exécution GitHub sur le SHA final reste requise.
 - Les preuves Python, secrets et fournisseurs antérieures gardent leur date et leur commit ; elles devront faire partie du contrôle du candidat final.
 
@@ -32,13 +32,13 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 | Rapports | Éditions immuables, 7/30/90 jours et périodes calendrier/personnalisées, historique qualifié, versions/corrections, HTML/PDF/CSV cohérents, branding normalisé. [Éditions](./REPORT_EDITIONS.md), [rendu](./REPORT_RENDERING.md). | Livraison fournisseur, Blob/domaines/certificats et cas de volumes extrêmes. L’ouverture d’un rapport ne relit pas Google en direct. |
 | Partage client | Liens révocables, expiration, host/tenant, accès aux éditions et retours protégés par OTP. | Réception OTP et revue des listes de retours restantes. |
 | Portefeuille agence | Agrégats par monnaie/fuseau, 30 jours qualifiés, charge d’équipe, recherche et vues personnelles persistantes avec concurrence/quota. [Contrat](./PORTFOLIO.md). | Retours de pilotes, volumes et coûts réels ; montants de monnaies différentes jamais additionnés comme un total unique. |
-| Alertes, tâches, discussions et support | États, affectation, SLA/fuseau, commentaires/mentions, audit ; cinq listes paginées et historique de discussion complet. [Contrat](./WORKSPACE_COLLECTIONS.md). | Qualification utile/bruit/faux positif et engagement opérationnel de support à finaliser. |
+| Alertes, tâches, discussions et support | États, affectation, SLA/fuseau, commentaires/mentions, audit ; cinq listes paginées et historique de discussion complet. [Contrat](./WORKSPACE_COLLECTIONS.md). | Qualification utile/bruit/faux positif liée à l’observation livrée : [contrat](./ALERT_QUALITY.md). Calibration pilote et engagement opérationnel de support restent ouverts. |
 | Approbations et changements Google | Lecture, sécurité, validation Google, votes, claim unique, contrôle de dérive, tentative durable, issue confirmée/ambiguë et réconciliation. Budgets/statuts/mots-clés/annonces/batches sont dans le code. | Certification contrôlée par famille avant activation. Aucun changement Google réel n’a été effectué dans ces lots. |
 | API privée | Scopes, expirations, quotas, curseurs liés à la collection/au filtre/tenant ; accès réservé aux espaces autorisés. [Pagination](./API_PAGINATION.md). | Recette HTTP déployée et charge. L’API n’est pas une offre publique et ne peut approuver ou exécuter des changements. |
 | Stripe et documents B2B | Catalogue/Price autoritatif, traitement idempotent, upgrade après paiement, downgrade programmé, versions d’acceptation et contrôles serveur présents. | Compte live, achat/renouvellement/remboursement, entité, pièces et validations professionnelles du dossier commercial. |
 | Export, rétention et suppression | Export privé asynchrone, révocation immédiate, purge différée, tombstones, rétention et courses annulation/purge éprouvées localement. | Artefacts réels, nettoyage fournisseur, sauvegarde/restauration du candidat et recette utilisateur complète. |
 | Observabilité et statut | Redaction, diagnostics opérationnels, registre public paginé, incidents anciens inclus et statut inconnu sans observation. | Alertes externes reçues, sonde indépendante, incidents/restaurations exercés et mesures d’exploitation. |
-| Activation | Huit jalons durables, cohortes UTC et délais médians qualifiés ; compte explicitement sélectionné et rapport réellement publié distingués des anciennes intentions/programmations. [Cohortes](./audits/prod-ready-lot-30/README.md). [Lot 20](./audits/prod-ready-lot-20/README.md). | Première analyse qualifiée livrée au [lot 29](./audits/prod-ready-lot-29/README.md) ; aide guidée livrée au [lot 31](./audits/prod-ready-lot-31/README.md) ; coûts par offre, qualification des alertes et mesure de qualité/support restent ouverts. |
+| Activation | Huit jalons durables, cohortes UTC et délais médians qualifiés ; compte explicitement sélectionné et rapport réellement publié distingués des anciennes intentions/programmations. [Cohortes](./audits/prod-ready-lot-30/README.md). [Lot 20](./audits/prod-ready-lot-20/README.md). | Première analyse qualifiée livrée au [lot 29](./audits/prod-ready-lot-29/README.md) ; aide guidée livrée au [lot 31](./audits/prod-ready-lot-31/README.md) ; qualification des alertes livrée au [lot 32](./audits/prod-ready-lot-32/README.md) ; coûts par offre, calibration et mesure de support restent ouverts. |
 
 ## Dix modèles de vigies
 
@@ -48,7 +48,7 @@ La source est `web/src/lib/monitoring.ts` : absence de diffusion, dépenses sans
 
 1. Terminer les suites locales T04/T05/T14/T15/T16/T17 : mutations restantes, volumes au-delà des plafonds, accessibilité, réception du digest et export/suppression.
 2. Finaliser aide, support et documents commerciaux (T20). La landing et l’inscription suivent désormais le statut de bêta, qualifient l’aperçu fictif et dérivent leurs quotas du produit ; les quatre combinaisons FR/EN et public/privé sont testées au lot 27.
-3. Livrer le suivi de coûts et la qualité des alertes, puis calibrer l’aide contextuelle et les seuils sur les pilotes (T21).
+3. Livrer le suivi des coûts, puis calibrer les avis de qualité, l’aide contextuelle et les seuils sur les pilotes (T21).
 4. Rejouer les fournisseurs et les opérations sur le SHA déployé exact, avec environnement/configuration et preuve reçue ; fermer les anomalies A01–A16 et compiler le dossier de lancement (T18–T22).
 5. Respecter le contrat de bêta du plan : 3–5 agences, au moins trois actives au démarrage du compteur, paiements/email/supervision, documents validés, famille de mutation contrôlée et 30 jours éligibles. L’ancien texte autorisant à lui seul une bêta lecture seule ne clôture pas T23.
 

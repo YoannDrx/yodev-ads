@@ -4,6 +4,8 @@ import { cookies, headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { reviewAlertQuality } from '@/lib/alert-quality'
+import { alertQualityReviewSchema, AlertQualityConflict } from '@/lib/alert-quality-model'
 import { preserveCollectionRecord } from '@/lib/collection-navigation'
 import { preserveReportEdition } from '@/lib/report-navigation'
 import { reportPeriodFromForm, storedReportPeriod } from '@/lib/report-period-selection'
@@ -1450,6 +1452,24 @@ export async function updateAlertWorkflow(formData: FormData) {
   revalidatePath('/alerts')
   const discussionId = z.string().uuid().safeParse(formData.get('incidentId'))
   if (discussionId.success) revalidatePath(`/discussions/alerts/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('incidentId')))
+}
+
+export async function reviewWorkspaceAlertQuality(formData: FormData) {
+  let target: string
+  let english = false
+  try {
+    const { workspace, session } = await requireWorkspacePermission('alerts:manage')
+    english = workspace.locale === 'en'
+    const input = alertQualityReviewSchema.parse(Object.fromEntries(formData))
+    await reviewAlertQuality({ ...input, workspaceId: workspace.id, actorUserId: session.userId })
+    target = toUrl('/alerts', 'notice', english ? 'Alert quality review saved.' : 'Avis sur la qualité de l’alerte enregistré.')
+  } catch (error) {
+    target = toUrl('/alerts', 'error', error instanceof AlertQualityConflict
+      ? english ? 'This observation or review has changed. Refresh the page before reviewing it again.' : 'Cette observation ou cet avis a changé. Actualisez la page avant de l’évaluer à nouveau.'
+      : english ? 'Unable to save this review. Refresh the page and check your access.' : 'Impossible d’enregistrer cet avis. Actualisez la page et vérifiez vos droits.')
+  }
+  revalidatePath('/alerts')
   redirect(preserveCollectionRecord(target, formData.get('incidentId')))
 }
 

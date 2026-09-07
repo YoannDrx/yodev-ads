@@ -1,6 +1,7 @@
 import { featureEnabled } from '@/lib/feature-flags'
 import { AlertTriangle, CheckCircle2, Clock3, Play, Siren, UserRoundCheck, Workflow } from 'lucide-react'
 import { createWorkspaceTask, runMonitoringScan, updateAlertWorkflow } from '@/app/actions'
+import { AlertQualityPanel, AlertQualitySummary } from '@/components/alert-quality-panel'
 import { FlashMessage } from '@/components/flash-message'
 import { PageHeading } from '@/components/page-heading'
 import { StatusBadge } from '@/components/status-badge'
@@ -57,6 +58,7 @@ export default async function AlertsPage({
           tone="positive"
         />
       </section>
+      {!collection.invalidCursor && <AlertQualitySummary counts={collection.summary} total={collection.total} english={english} />}
       <CollectionControls path="/alerts" query={query} page={collection} locale={locale} statuses={COLLECTION_STATUSES.alerts} />
       <div className="space-y-3">
         {incidents.map(({ incident, client, agent }) => (
@@ -64,7 +66,7 @@ export default async function AlertsPage({
             key={incident.id}
             className={`border-l-4 shadow-none ${['open', 'reopened'].includes(incident.status) ? (incident.severity === 'critical' ? 'border-l-red-500' : 'border-l-amber-400') : 'border-l-emerald-400 opacity-70'}`}
           >
-            <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
+            <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge status={incident.status} locale={locale} />
@@ -96,6 +98,7 @@ export default async function AlertsPage({
               )}
               {canManageAlerts && incident.status === 'resolved' && <form action={updateAlertWorkflow}><input type="hidden" name="incidentId" value={incident.id} /><input type="hidden" name="operation" value="reopen" /><Button type="submit" size="sm" variant="outline">{english ? 'Reopen' : 'Rouvrir'}</Button></form>}
               {canManageTasks && <form action={createWorkspaceTask} className="grid shrink-0 gap-2"><input type="hidden" name="sourceType" value="alert" /><input type="hidden" name="sourceEntityId" value={incident.id} /><input type="hidden" name="returnTo" value="alerts" /><input type="hidden" name="priority" value={incident.severity === 'critical' ? 'urgent' : 'high'} /><input type="hidden" name="slaHours" value={incident.severity === 'critical' ? '4' : '24'} /><input type="hidden" name="assignSelf" value="true" /><Button type="submit" size="sm" variant="outline"><Workflow className="mr-2 size-4" />{english ? 'Create task' : 'Créer une tâche'}</Button></form>}
+              <AlertQualityPanel incident={incident} english={english} canManage={canManageAlerts} />
             </CardContent>
           </Card>
         ))}

@@ -1,0 +1,12 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/components/alert-quality-panel.test.tsx src/lib/alert-quality.test.ts src/lib/workspace-actor-guard.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  3 passed (3)
+      Tests  19 passed (19)
+   Start at  10:58:04
+   Duration  1.16s (transform 184ms, setup 0ms, import 949ms, tests 116ms, environment 653ms)

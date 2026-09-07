@@ -66,12 +66,18 @@ export async function listAlertPage(workspaceId: string, raw: CollectionQuery = 
   return read(workspaceId, async (db) => {
     const window = await collectionWindow(db, scope(workspaceId, 'alerts', query), query, alertIncidents)
     type Row = { incident: typeof alertIncidents.$inferSelect; client: typeof clients.$inferSelect; agent: typeof monitoringAgents.$inferSelect; at: string }
-    const emptySummary = { open: 0, critical: 0, resolved: 0 }
+    const emptySummary = { open: 0, critical: 0, resolved: 0, useful: 0, noise: 0, falsePositive: 0, staleReviews: 0, unreviewed: 0 }
     if (!window) return { ...invalidCollectionPage<Row>(), summary: emptySummary }
     const base = and(eq(alertIncidents.workspaceId, workspaceId), validId(query.id) ? eq(alertIncidents.id, query.id!) : undefined, query.status ? eq(alertIncidents.status, query.status) : undefined, query.client ? eq(alertIncidents.clientId, query.client) : undefined,
       query.assignee ? eq(alertIncidents.assignedTo, query.assignee) : undefined, query.severity ? eq(alertIncidents.severity, query.severity) : undefined,
       query.q ? or(ilike(alertIncidents.title, searchPattern(query.q)), ilike(alertIncidents.description, searchPattern(query.q))) : undefined)
-    const [summary] = await db.select({ total: count(), open: sql<number>`count(*) filter (where ${alertIncidents.status} in ('open','reopened'))`.mapWith(Number), critical: sql<number>`count(*) filter (where ${alertIncidents.status} in ('open','reopened') and ${alertIncidents.severity}='critical')`.mapWith(Number), resolved: sql<number>`count(*) filter (where ${alertIncidents.status}='resolved')`.mapWith(Number) }).from(alertIncidents).where(collectionWhere(base, window, false))
+    const [summary] = await db.select({ total: count(), open: sql<number>`count(*) filter (where ${alertIncidents.status} in ('open','reopened'))`.mapWith(Number), critical: sql<number>`count(*) filter (where ${alertIncidents.status} in ('open','reopened') and ${alertIncidents.severity}='critical')`.mapWith(Number), resolved: sql<number>`count(*) filter (where ${alertIncidents.status}='resolved')`.mapWith(Number),
+      useful: sql<number>`count(*) filter (where ${alertIncidents.qualityLabel}='useful' and ${alertIncidents.qualityOccurrence}=${alertIncidents.occurrenceCount})`.mapWith(Number),
+      noise: sql<number>`count(*) filter (where ${alertIncidents.qualityLabel}='noise' and ${alertIncidents.qualityOccurrence}=${alertIncidents.occurrenceCount})`.mapWith(Number),
+      falsePositive: sql<number>`count(*) filter (where ${alertIncidents.qualityLabel}='false_positive' and ${alertIncidents.qualityOccurrence}=${alertIncidents.occurrenceCount})`.mapWith(Number),
+      staleReviews: sql<number>`count(*) filter (where ${alertIncidents.qualityLabel} is not null and ${alertIncidents.qualityOccurrence} is distinct from ${alertIncidents.occurrenceCount})`.mapWith(Number),
+      unreviewed: sql<number>`count(*) filter (where ${alertIncidents.qualityLabel} is null)`.mapWith(Number),
+    }).from(alertIncidents).where(collectionWhere(base, window, false))
     const rows = await db.select({ incident: alertIncidents, client: clients, agent: monitoringAgents, at: exactTimestamp(alertIncidents.createdAt) }).from(alertIncidents)
       .innerJoin(clients, and(eq(clients.id, alertIncidents.clientId), eq(clients.workspaceId, workspaceId))).innerJoin(monitoringAgents, and(eq(monitoringAgents.id, alertIncidents.agentId), eq(monitoringAgents.workspaceId, workspaceId)))
       .where(collectionWhere(base, window)).orderBy(desc(alertIncidents.createdAt), desc(alertIncidents.id)).limit(COLLECTION_PAGE_SIZE + 1)

@@ -400,6 +400,20 @@
       "when": 1788768270823,
       "tag": "0056_qualified_analysis_activation",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1788770726380,
+      "tag": "0057_alert_quality_reviews",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1788771387569,
+      "tag": "0058_locked_actor_expiry",
+      "breakpoints": true
     }
   ]
 }
