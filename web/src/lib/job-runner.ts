@@ -8,6 +8,7 @@ import {
   alertIncidents,
   approvalRequests,
   auditEvents,
+  reportEditions,
   clients,
   dailyAccountMetrics,
   dailyCampaignMetrics,
@@ -154,7 +155,7 @@ async function executeJob(job: ClaimedJob) {
     }
     case 'report.schedule_deliver': {
       const { scheduleId, runKey } = scheduledReportPayload.parse(job.payload)
-      return deliverScheduledReport(scheduleId, runKey)
+      return deliverScheduledReport(scheduleId, runKey, job)
     }
     case 'task.mention_deliver': {
       const { commentId, preferenceId } = taskMentionPayload.parse(job.payload)
@@ -472,6 +473,7 @@ async function executeJob(job: ClaimedJob) {
           const remove = async (category: string, operation: Promise<Array<{ id: string }>>) => {
             counts[category] = (await operation).length
           }
+          await remove('reportEditions', db.delete(reportEditions).where(lt(reportEditions.expiresAt, now)).returning({ id: reportEditions.id }))
           await remove('notificationDeliveries', db.delete(notificationDeliveries).where(and(
             inArray(notificationDeliveries.status, ['accepted', 'delivered', 'dead_letter', 'cancelled']),
             isNotNull(notificationDeliveries.terminalAt),

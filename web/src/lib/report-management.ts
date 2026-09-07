@@ -1,6 +1,7 @@
 import 'server-only'
 
-import { reportPeriodSchema } from '@/lib/report-period'
+import { storedReportPeriod, type ReportPeriodSelection } from '@/lib/report-period-selection'
+import { lockWorkspaceAccessBoundary, lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
 
 import { and, count, eq, sql } from 'drizzle-orm'
 import {
@@ -23,6 +24,7 @@ export type ReportTemplateInput = {
   name: string
   locale: 'fr' | 'en'
   periodDays: number
+  periodConfig?: ReportPeriodSelection
   editorialComment?: string
   actionPlan?: string
 }
@@ -32,13 +34,14 @@ function templateSnapshot(template: typeof reportTemplates.$inferSelect) {
     name: template.name,
     locale: template.locale as 'fr' | 'en',
     periodDays: template.periodDays,
+    periodConfig: template.periodConfig,
     editorialComment: template.editorialComment,
     actionPlan: template.actionPlan,
   }
 }
 
 export function createWorkspaceReportTemplate(input: ActorContext & ReportTemplateInput) {
-  reportPeriodSchema.parse(input.periodDays)
+  const periodConfig = storedReportPeriod(input)
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
     const [template] = await db.insert(reportTemplates).values({
       workspaceId: input.workspaceId,
@@ -46,6 +49,7 @@ export function createWorkspaceReportTemplate(input: ActorContext & ReportTempla
       name: input.name,
       locale: input.locale,
       periodDays: input.periodDays,
+      periodConfig,
       editorialComment: input.editorialComment || null,
       actionPlan: input.actionPlan || null,
     }).returning()
@@ -74,13 +78,14 @@ export function updateWorkspaceReportTemplate(input: ActorContext & ReportTempla
   expectedVersion: number
   now?: Date
 }) {
-  reportPeriodSchema.parse(input.periodDays)
+  const periodConfig = storedReportPeriod(input)
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
     const [updated] = await db.update(reportTemplates).set({
       name: input.name,
       locale: input.locale,
       periodDays: input.periodDays,
+      periodConfig,
       editorialComment: input.editorialComment || null,
       actionPlan: input.actionPlan || null,
       currentVersion: input.expectedVersion + 1,
@@ -149,6 +154,7 @@ export function createWorkspaceReportSchedule(input: ActorContext & {
 }) {
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
     await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:reports`}))`)
     const usage = await db.select({ count: count() }).from(shareLinks).where(and(eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.active, true)))
     const client = await db.query.clients.findFirst({
@@ -159,10 +165,10 @@ export function createWorkspaceReportSchedule(input: ActorContext & {
           where: and(eq(reportTemplates.id, input.templateId), eq(reportTemplates.workspaceId, input.workspaceId), eq(reportTemplates.active, true)),
         })
       : undefined
-    requireQuota(input.entitlements, 'reports', usage[0].count)
+    requireQuota(entitlements, 'reports', usage[0].count)
     if (!client || client.isManager) throw new Error('Compte client introuvable.')
     if (input.templateId && !template) throw new Error('Modèle de rapport introuvable.')
-    reportPeriodSchema.parse(template?.periodDays ?? 30)
+    const periodConfig = storedReportPeriod({ periodDays: template?.periodDays ?? 30, periodConfig: template?.periodConfig })
     const [share] = await db.insert(shareLinks).values({
       workspaceId: input.workspaceId,
       clientId: client.id,
@@ -172,6 +178,9 @@ export function createWorkspaceReportSchedule(input: ActorContext & {
       actionPlan: template?.actionPlan ?? null,
       locale: template?.locale ?? input.workspaceLocale,
       periodDays: template?.periodDays ?? 30,
+      periodConfig,
+      mode: 'fixed',
+      encryptedReportToken: encryptSecret(input.token),
       tokenHash: hashToken(input.token),
       tokenPrefix: input.token.slice(0, 12),
       expiresAt: new Date(now.getTime() + 90 * 24 * 60 * 60_000),
@@ -220,6 +229,7 @@ export function setWorkspaceReportScheduleEnabled(input: ActorContext & {
 }) {
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
     await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:reports`}))`)
     const schedule = await db.query.reportSchedules.findFirst({
       where: and(eq(reportSchedules.id, input.scheduleId), eq(reportSchedules.workspaceId, input.workspaceId)),
@@ -230,7 +240,7 @@ export function setWorkspaceReportScheduleEnabled(input: ActorContext & {
       const [usage] = await db.select({ count: count() }).from(shareLinks).where(and(
         eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.active, true),
       ))
-      requireQuota(input.entitlements, 'reports', usage.count)
+      requireQuota(entitlements, 'reports', usage.count)
     }
     await db.update(reportSchedules).set({
       enabled: input.enabled,
@@ -240,6 +250,7 @@ export function setWorkspaceReportScheduleEnabled(input: ActorContext & {
     }).where(and(eq(reportSchedules.id, schedule.id), eq(reportSchedules.workspaceId, input.workspaceId)))
     await db.update(shareLinks).set({
       active: input.enabled,
+      encryptedReportToken: input.replacementToken ? encryptSecret(input.replacementToken) : undefined,
       tokenHash: input.replacementToken ? hashToken(input.replacementToken) : undefined,
       tokenPrefix: input.replacementToken ? input.replacementToken.slice(0, 12) : undefined,
       expiresAt: input.enabled
@@ -266,12 +277,14 @@ export function rotateWorkspaceScheduledReportToken(input: ActorContext & {
 }) {
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    await lockWorkspaceAccessBoundary(db, input.workspaceId)
     const schedule = await db.query.reportSchedules.findFirst({
       where: and(eq(reportSchedules.id, input.scheduleId), eq(reportSchedules.workspaceId, input.workspaceId)),
     })
     if (!schedule) throw new Error('Planification introuvable.')
     if (schedule.deliveryLeaseUntil && schedule.deliveryLeaseUntil > now) throw new Error('Un envoi est en cours. Réessayez dans quelques minutes.')
     await db.update(shareLinks).set({
+      encryptedReportToken: encryptSecret(input.token),
       tokenHash: hashToken(input.token),
       tokenPrefix: input.token.slice(0, 12),
       expiresAt: new Date(now.getTime() + 90 * 24 * 60 * 60_000),

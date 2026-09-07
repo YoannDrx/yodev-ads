@@ -132,6 +132,8 @@ async function submitOne(input: TransactionalEmailInput, recipient: string, mult
     contentHash: createHash('sha256').update(JSON.stringify(body)).digest('hex'),
   })
   if (!claim.claimed) {
+    if (['submitting', 'pending', 'ambiguous'].includes(claim.delivery.status)) throw new YodevMailAmbiguousError()
+    if (!['accepted', 'sent', 'delivered'].includes(claim.delivery.status)) throw new NonRetryableJobError('Transactional email has a terminal unsuccessful outcome')
     return { provider: 'yodev_mail' as const, providerMessageId: claim.delivery.providerMessageId, status: claim.delivery.status }
   }
 
@@ -172,6 +174,8 @@ async function submitOne(input: TransactionalEmailInput, recipient: string, mult
     throw new YodevMailAmbiguousError()
   }
   await markTransactionalEmailAccepted(claim.delivery.id, parsed.data.data.id, parsed.data.data.status)
+  if (parsed.data.data.status === 'unknown') throw new YodevMailAmbiguousError()
+  if (['soft_bounced', 'hard_bounced', 'complained', 'suppressed', 'failed'].includes(parsed.data.data.status)) throw new NonRetryableJobError('Transactional email has a terminal unsuccessful outcome')
   return { provider: 'yodev_mail' as const, providerMessageId: parsed.data.data.id, status: parsed.data.data.status }
 }
 

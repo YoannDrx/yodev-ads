@@ -17,7 +17,7 @@ async function main() {
     'offline_conversion_diagnostics', 'workspace_tasks', 'task_comments', 'report_templates',
     'report_schedules', 'member_notification_preferences', 'activation_milestones',
     'support_tickets', 'support_messages',
-    'mutation_observations', 'report_template_versions', 'analytical_collections',
+    'mutation_observations', 'report_template_versions', 'analytical_collections', 'report_editions',
   ] as const
 
   const securityMetadata = await withSystemTransaction(async (db) => {

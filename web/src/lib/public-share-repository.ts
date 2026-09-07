@@ -3,7 +3,6 @@ import 'server-only'
 import { and, eq, isNull } from 'drizzle-orm'
 import {
   clients,
-  googleAdsConnections,
   shareLinks,
   workspaceDomains,
   workspaces,
@@ -37,12 +36,11 @@ export async function publicHostBelongsToWorkspace(host: string, workspaceId: st
 
 export async function getPublicShare(token: string, host?: string | null) {
   const [result] = await withSystemTransaction((db) => db
-    .select({ share: shareLinks, client: clients, connection: googleAdsConnections, workspace: workspaces })
+    .select({ share: shareLinks, client: clients, workspace: workspaces })
     .from(shareLinks)
     .innerJoin(clients, and(eq(clients.id, shareLinks.clientId), eq(clients.workspaceId, shareLinks.workspaceId)))
-    .innerJoin(googleAdsConnections, eq(googleAdsConnections.workspaceId, shareLinks.workspaceId))
     .innerJoin(workspaces, eq(workspaces.id, shareLinks.workspaceId))
-    .where(and(eq(shareLinks.tokenHash, hashToken(token)), eq(shareLinks.active, true), eq(clients.active, true), eq(clients.isManager, false), eq(googleAdsConnections.status, 'active')))
+    .where(and(eq(shareLinks.tokenHash, hashToken(token)), eq(shareLinks.active, true), eq(clients.active, true), eq(clients.isManager, false)))
     .limit(1))
   if (!result || (result.share.expiresAt && result.share.expiresAt < new Date())) return undefined
   if (!workspaceCanCallGoogle(result.workspace.accessState)) return undefined

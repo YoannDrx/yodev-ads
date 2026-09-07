@@ -33,7 +33,11 @@ export function reportScheduleRunKey(schedule: ReportSchedule, now = new Date())
   const local = localScheduleParts(now, schedule.timezone)
   if (local.hour < schedule.sendHour) return null
   if (schedule.cadence === 'weekly' && local.weekday !== schedule.scheduleWeekday) return null
-  if (schedule.cadence === 'monthly' && local.day !== schedule.scheduleMonthday) return null
+  if (schedule.cadence === 'monthly') {
+    const [year, month] = local.date.split('-').map(Number)
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+    if (local.day !== Math.min(schedule.scheduleMonthday ?? 1, lastDay)) return null
+  }
   if (schedule.cadence !== 'weekly' && schedule.cadence !== 'monthly') throw new Error('Cadence de rapport invalide.')
   return `${schedule.cadence}:${local.date}`
 }
@@ -63,18 +67,21 @@ export function scheduledReportEmail(input: {
   reportName: string
   clientName: string
   reportUrl: string
+  edition?: { from: string; through: string; timezone: string; generatedAt: string; sourceVersion: string }
 }) {
   const subject = `${input.reportName} · ${input.clientName}`.replace(/[\r\n]+/g, ' ').slice(0, 240)
   const brand = escapeHtml(input.brandName)
   const report = escapeHtml(input.reportName)
   const client = escapeHtml(input.clientName)
   const url = escapeHtml(input.reportUrl)
+  const edition = input.edition
+    ? `<p style="font-size:12px;color:#52626f">${escapeHtml(input.edition.from)} → ${escapeHtml(input.edition.through)} · ${escapeHtml(input.edition.timezone)}<br>${input.locale === 'en' ? 'Published' : 'Publié'} : ${escapeHtml(input.edition.generatedAt)}<br>Version : ${escapeHtml(input.edition.sourceVersion.slice(0, 12))}</p>` : ''
   if (input.locale === 'en') return {
     subject,
-    html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#12202b"><p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#19A58F">${brand} · Google Ads report</p><h1 style="font-size:24px">${report}</h1><p style="line-height:1.65;color:#52626f">The latest report for <strong>${client}</strong> is ready.</p><p style="margin:28px 0"><a href="${url}" style="display:inline-block;border-radius:10px;background:#176646;color:white;padding:12px 18px;text-decoration:none">Open the report</a></p><p style="font-size:12px;color:#80909b">This read-only link can be revoked by the workspace at any time.</p></div>`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#12202b"><p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#19A58F">${brand} · Google Ads report</p><h1 style="font-size:24px">${report}</h1><p style="line-height:1.65;color:#52626f">The latest report for <strong>${client}</strong> is ready.</p>${edition}<p style="margin:28px 0"><a href="${url}" style="display:inline-block;border-radius:10px;background:#176646;color:white;padding:12px 18px;text-decoration:none">Open the report</a></p><p style="font-size:12px;color:#80909b">This read-only link can be revoked by the workspace at any time.</p></div>`,
   }
   return {
     subject,
-    html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#12202b"><p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#19A58F">${brand} · rapport Google Ads</p><h1 style="font-size:24px">${report}</h1><p style="line-height:1.65;color:#52626f">Le dernier rapport de <strong>${client}</strong> est prêt.</p><p style="margin:28px 0"><a href="${url}" style="display:inline-block;border-radius:10px;background:#176646;color:white;padding:12px 18px;text-decoration:none">Ouvrir le rapport</a></p><p style="font-size:12px;color:#80909b">Ce lien en lecture seule peut être révoqué à tout moment par l’espace de travail.</p></div>`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#12202b"><p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#19A58F">${brand} · rapport Google Ads</p><h1 style="font-size:24px">${report}</h1><p style="line-height:1.65;color:#52626f">Le dernier rapport de <strong>${client}</strong> est prêt.</p>${edition}<p style="margin:28px 0"><a href="${url}" style="display:inline-block;border-radius:10px;background:#176646;color:white;padding:12px 18px;text-decoration:none">Ouvrir le rapport</a></p><p style="font-size:12px;color:#80909b">Ce lien en lecture seule peut être révoqué à tout moment par l’espace de travail.</p></div>`,
   }
 }

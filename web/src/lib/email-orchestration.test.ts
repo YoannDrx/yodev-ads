@@ -16,7 +16,6 @@ vi.mock('@/lib/auth-identities', () => ({ verifiedAuthUserEmail: mocks.verifiedA
 
 import { deliverLifecycleEmail } from './lifecycle-emails'
 import { deliverOperationsAlert } from './operations-alerts'
-import { deliverScheduledReport } from './scheduled-reports'
 import { deliverPersonalTaskDigest, deliverTaskMention } from './task-notifications'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
@@ -37,110 +36,12 @@ const workspace = {
   locale: 'fr', timezone: 'Europe/Paris', accessState: 'active', plan: 'agency',
 }
 
-function scheduledContext(overrides: Record<string, unknown> = {}, options: { workspace?: unknown; claim?: unknown[]; periodDays?: number; clientActive?: boolean } = {}) {
-  const schedule = {
-    id: entityId, workspaceId, clientId: 'client-1', shareId: 'share-1', templateId: 'template-1', enabled: true,
-    lastRunKey: null, recipientEmails: ['client@example.test'], deliveryLeaseUntil: null,
-    encryptedReportToken: 'report-token', name: 'Rapport mensuel', ...overrides,
-  }
-  return {
-    schedule,
-    database: databaseDouble({
-      statementResults: [options.claim ?? [schedule]],
-      query: queryMap({
-        reportSchedules: { first: schedule }, workspaces: { first: options.workspace ?? workspace }, clients: { first: { id: 'client-1', name: 'Client', active: options.clientActive ?? true, isManager: false } },
-        shareLinks: { first: { id: 'share-1', workspaceId, active: true, editorialComment: 'Initial', actionPlan: null, locale: 'fr', periodDays: 30 } },
-        reportTemplates: { first: { id: 'template-1', active: true, editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: options.periodDays ?? 30 } },
-        workspaceDomains: { first: { hostname: 'reports.acme.test' } },
-      }),
-    }),
-  }
-}
-
 const preference = {
   id: preferenceId, workspaceId, authUserId: 'user-1', displayName: 'Yoann', encryptedEmail: 'yoann@example.test',
   mentionNotifications: true, digestCadence: 'daily', lastDigestKey: null,
 }
 const comment = { id: entityId, workspaceId, taskId: 'task-1', body: 'Merci de vérifier.' }
 const task = { id: 'task-1', workspaceId, title: 'Vérifier le budget', status: 'todo', dueAt: new Date('2026-08-15') }
-
-describe('scheduled report delivery', () => {
-  beforeEach(() => {
-    mocks.databases = []
-    vi.clearAllMocks()
-    mocks.decryptSecret.mockImplementation((value: string) => value)
-    mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
-  })
-
-  afterEach(() => {
-    for (const key of ['NEXT_PUBLIC_APP_URL', 'OPERATIONS_ALERT_EMAIL', 'SUPPORT_EMAIL']) delete process.env[key]
-  })
-
-  it('blocks legacy unsupported periods before any share update or email and releases its lease', async () => {
-    const context = scheduledContext({}, { periodDays: 7 })
-    const failure = databaseDouble()
-    mocks.databases.push(context.database.db, failure.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('pas prise en charge')
-    expect(mocks.emailSend).not.toHaveBeenCalled()
-    expect(failure.capture.sets[0]).toMatchObject({ deliveryLeaseUntil: null, lastError: expect.stringContaining('pas prise en charge') })
-  })
-
-  it('leases, refreshes, sends and audits a localized report using its verified custom domain', async () => {
-    const context = scheduledContext()
-    const refresh = databaseDouble()
-    const success = databaseDouble()
-    mocks.databases.push(context.database.db, refresh.db, success.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ delivered: true, recipientCount: 1, providerMessageId: 'email-1' })
-    expect(refresh.capture.sets[0]).toMatchObject({ editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: 30 })
-    expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({
-      to: ['client@example.test'], html: expect.stringContaining('https://reports.acme.test/r/report-token'),
-      idempotencyKey: `report-schedule:${entityId}:2026-08-10`, category: 'scheduled_report', workspaceId,
-    }))
-    expect(success.capture.sets[0]).toMatchObject({ lastRunKey: '2026-08-10', lastError: null, deliveryLeaseUntil: null })
-  })
-
-  it('preserves the schedule but skips delivery for a paused account', async () => {
-    mocks.databases.push(scheduledContext({}, { clientActive: false }).database.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ skipped: true, reason: 'account_inactive' })
-    expect(mocks.emailSend).not.toHaveBeenCalled()
-  })
-
-  it('skips disabled and already-delivered schedules before sending', async () => {
-    for (const [overrides, reason] of [[{ enabled: false }, 'disabled'], [{ lastRunKey: '2026-08-10' }, 'already_delivered']] as const) {
-      const context = scheduledContext(overrides)
-      mocks.databases.push(context.database.db)
-      await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ skipped: true, reason })
-    }
-    expect(mocks.emailSend).not.toHaveBeenCalled()
-  })
-
-  it('rejects missing, unauthorized, recipient-less and concurrently leased schedules', async () => {
-    mocks.databases.push(databaseDouble({ query: queryMap() }).db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('introuvable')
-
-    const unauthorized = scheduledContext({}, { workspace: { ...workspace, accessState: 'suspended' } })
-    mocks.databases.push(unauthorized.database.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('non autorisé')
-
-    const noRecipients = scheduledContext({ recipientEmails: [] })
-    mocks.databases.push(noRecipients.database.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('Aucun destinataire')
-
-    const leased = scheduledContext({}, { claim: [] })
-    mocks.databases.push(leased.database.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('déjà en cours')
-  })
-
-  it('releases the lease and records provider failures', async () => {
-    const context = scheduledContext()
-    const refresh = databaseDouble()
-    const failed = databaseDouble()
-    mocks.emailSend.mockRejectedValue(new Error('provider down'))
-    mocks.databases.push(context.database.db, refresh.db, failed.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('provider down')
-    expect(failed.capture.sets[0]).toMatchObject({ lastError: 'provider down', deliveryLeaseUntil: null })
-  })
-})
 
 describe('task notification delivery', () => {
   beforeEach(() => {

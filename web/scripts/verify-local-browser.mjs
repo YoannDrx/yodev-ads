@@ -12,7 +12,7 @@ const env = { ...process.env, NODE_OPTIONS: '', NODE_ENV: 'development', DATABAS
   NEXT_PUBLIC_APP_URL: baseURL, NEXT_PUBLIC_RELEASE_TARGET: 'staging', RELEASE_TARGET: 'staging',
   BETTER_AUTH_SECRET: 'local-browser-fixture-secret-at-least-32-characters', BETTER_AUTH_EMAIL_PASSWORD_ENABLED: '1',
   BETTER_AUTH_GOOGLE_CLIENT_ID: '', BETTER_AUTH_GOOGLE_CLIENT_SECRET: '', BETTER_AUTH_TRUSTED_ORIGINS: baseURL,
-  APP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64url'),
+  APP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64url'), RATE_LIMIT_HASH_KEY: 'local-browser-fixture-rate-limit-only',
   SENTRY_DSN: '', NEXT_PUBLIC_SENTRY_DSN: '', SENTRY_AUTH_TOKEN: '',
   STRIPE_SECRET_KEY: '', YODEV_MAIL_API_KEY: '', GOOGLE_ADS_DEVELOPER_TOKEN: '',
   GOOGLE_OAUTH_CLIENT_ID: '', GOOGLE_OAUTH_CLIENT_SECRET: '',

@@ -8,6 +8,8 @@ import {
   notificationChannels,
   notificationOAuthSessions,
   reportSchedules,
+  reportEditions,
+  shareLinks,
   secretRevelations,
   workspaces,
 } from '@/db/schema'
@@ -44,6 +46,9 @@ export async function rotateWorkspaceSecrets(workspaceId: string) {
     const oauthSessions = await db.query.notificationOAuthSessions.findMany({ where: eq(notificationOAuthSessions.workspaceId, workspaceId) })
     const schedules = await db.query.reportSchedules.findMany({ where: eq(reportSchedules.workspaceId, workspaceId) })
 
+    const shares = await db.query.shareLinks.findMany({ where: eq(shareLinks.workspaceId, workspaceId) })
+    const editions = await db.query.reportEditions.findMany({ where: eq(reportEditions.workspaceId, workspaceId) })
+
     const pending = {
       googleAdsConnections: candidates(connections, (row) => row.encryptedRefreshToken, currentKid),
       memberNotificationPreferences: candidates(preferences, (row) => row.encryptedEmail, currentKid),
@@ -51,6 +56,8 @@ export async function rotateWorkspaceSecrets(workspaceId: string) {
       notificationChannels: candidates(channels, (row) => row.encryptedDestination, currentKid),
       notificationOAuthSessions: candidates(oauthSessions, (row) => row.encryptedRefreshToken, currentKid),
       reportSchedules: candidates(schedules, (row) => row.encryptedReportToken, currentKid),
+      shareLinks: candidates(shares.filter((row) => row.encryptedReportToken), (row) => row.encryptedReportToken!, currentKid),
+      reportEditions: candidates(editions.filter((row) => row.encryptedDelivery), (row) => row.encryptedDelivery!, currentKid),
     }
 
     const counts = {
@@ -60,6 +67,8 @@ export async function rotateWorkspaceSecrets(workspaceId: string) {
       notificationChannels: 0,
       notificationOAuthSessions: 0,
       reportSchedules: 0,
+      shareLinks: 0,
+      reportEditions: 0,
     }
 
     for (const row of pending.googleAdsConnections) {
@@ -103,6 +112,18 @@ export async function rotateWorkspaceSecrets(workspaceId: string) {
         .where(and(eq(reportSchedules.id, row.id), eq(reportSchedules.workspaceId, workspaceId), eq(reportSchedules.encryptedReportToken, row.encryptedValue)))
         .returning({ id: reportSchedules.id })
       counts.reportSchedules += updated.length
+    }
+
+    for (const row of pending.shareLinks) {
+      const updated = await db.update(shareLinks).set({ encryptedReportToken: rewrapSecret(row.encryptedValue) })
+        .where(and(eq(shareLinks.id, row.id), eq(shareLinks.workspaceId, workspaceId), eq(shareLinks.encryptedReportToken, row.encryptedValue))).returning({ id: shareLinks.id })
+      counts.shareLinks += updated.length
+    }
+    for (const row of pending.reportEditions) {
+      // Column-only permission: publication content and identity remain immutable.
+      const updated = await db.update(reportEditions).set({ encryptedDelivery: rewrapSecret(row.encryptedValue) })
+        .where(and(eq(reportEditions.id, row.id), eq(reportEditions.workspaceId, workspaceId), eq(reportEditions.encryptedDelivery, row.encryptedValue))).returning({ id: reportEditions.id })
+      counts.reportEditions += updated.length
     }
 
     const rotated = Object.values(counts).reduce((sum, count) => sum + count, 0)

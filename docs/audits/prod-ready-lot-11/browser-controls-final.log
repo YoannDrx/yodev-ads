@@ -1,0 +1,169 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep published report editions
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 438ms
+✓ Running next.config.ts took 668ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1522ms (next.js: 667ms, proxy.ts: 444ms, application-code: 411ms)
+ POST /api/auth/sign-in/email 200 in 919ms (next.js: 737ms, proxy.ts: 4ms, application-code: 178ms)
+ POST /api/auth/sign-in/email 200 in 96ms (next.js: 4ms, proxy.ts: 3ms, application-code: 89ms)
+ POST /api/auth/sign-in/email 200 in 103ms (next.js: 2ms, proxy.ts: 3ms, application-code: 98ms)
+ POST /api/auth/sign-in/email 200 in 84ms (next.js: 2ms, proxy.ts: 2ms, application-code: 79ms)
+ POST /api/auth/sign-in/email 200 in 143ms (next.js: 3ms, proxy.ts: 3ms, application-code: 137ms)
+ GET /dashboard 200 in 1205ms (next.js: 460ms, proxy.ts: 10ms, application-code: 735ms)
+ GET /sign-in 200 in 405ms (next.js: 125ms, proxy.ts: 18ms, application-code: 261ms)
+ GET /settings 200 in 581ms (next.js: 75ms, proxy.ts: 7ms, application-code: 499ms)
+ GET /billing 200 in 383ms (next.js: 70ms, proxy.ts: 82ms, application-code: 231ms)
+ GET /icon?a62dacc6b033a714 200 in 237ms (next.js: 85ms, proxy.ts: 6ms, application-code: 146ms)
+ GET /support 200 in 503ms (next.js: 41ms, proxy.ts: 3ms, application-code: 458ms)
+ GET /accounts 200 in 148ms (next.js: 15ms, proxy.ts: 4ms, application-code: 130ms)
+ GET /history 200 in 175ms (next.js: 15ms, proxy.ts: 2ms, application-code: 157ms)
+ GET /alerts 200 in 193ms (next.js: 39ms, proxy.ts: 1.9ms, application-code: 152ms)
+ GET /tasks 200 in 206ms (next.js: 39ms, proxy.ts: 2ms, application-code: 165ms)
+ GET /approvals 200 in 214ms (next.js: 47ms, proxy.ts: 3ms, application-code: 165ms)
+ GET /reports 200 in 286ms (next.js: 45ms, proxy.ts: 3ms, application-code: 238ms)
+ GET /audit 200 in 193ms (next.js: 28ms, proxy.ts: 2ms, application-code: 163ms)
+ GET /agents 200 in 239ms (next.js: 33ms, proxy.ts: 2.0ms, application-code: 204ms)
+ GET / 200 in 110ms (next.js: 15ms, proxy.ts: 2ms, application-code: 93ms)
+ GET /privacy 200 in 66ms (next.js: 12ms, proxy.ts: 2ms, application-code: 52ms)
+ GET /terms 200 in 60ms (next.js: 14ms, proxy.ts: 3ms, application-code: 43ms)
+ GET /subprocessors 200 in 111ms (next.js: 37ms, proxy.ts: 3ms, application-code: 70ms)
+ GET /status 200 in 108ms (next.js: 29ms, proxy.ts: 2ms, application-code: 76ms)
+ GET /sign-in 200 in 45ms (next.js: 4ms, proxy.ts: 3ms, application-code: 37ms)
+ GET /sign-up 200 in 423ms (next.js: 377ms, proxy.ts: 5ms, application-code: 41ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-ZtiahD
+
+Running 2 tests using 1 worker
+
+(node:26299) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /reports 200 in 213ms (next.js: 5ms, proxy.ts: 8ms, application-code: 200ms)
+ GET /api/auth/get-session 200 in 32ms (next.js: 7ms, proxy.ts: 3ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 14ms, proxy.ts: 3ms, application-code: 19ms)
+ POST /reports 200 in 94ms (next.js: 3ms, proxy.ts: 3ms, application-code: 89ms)
+  └─ ƒ setCookieConsent({}) in 3ms src/app/preferences-actions.ts
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=49bcc4bc-06cd-40c0-9222-67b716bc4852 200 in 91ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 86ms)
+ POST /reports 200 in 140ms (next.js: 3ms, proxy.ts: 3ms, application-code: 135ms)
+  └─ ƒ createShareLink({}) in 32ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 150ms (next.js: 115ms, proxy.ts: 6ms, application-code: 29ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 200 in 829ms (next.js: 706ms, proxy.ts: 5ms, application-code: 118ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 200 in 849ms (next.js: 770ms, proxy.ts: 4ms, application-code: 76ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 200 in 851ms (next.js: 803ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=d3369205-019d-4023-baf6-6b1f15aa42a4 200 in 63ms (next.js: 1.5ms, proxy.ts: 1.7ms, application-code: 60ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=49bcc4bc-06cd-40c0-9222-67b716bc4852 200 in 111ms (next.js: 16ms, proxy.ts: 6ms, application-code: 89ms)
+  └─ ƒ createShareLink({}) in 18ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 14ms (next.js: 1.1ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=fff950e4-dcf1-434e-bab0-8c184e85ce53 200 in 78ms (next.js: 4ms, proxy.ts: 2ms, application-code: 71ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=fff950e4-dcf1-434e-bab0-8c184e85ce53 200 in 25ms (next.js: 5ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=fff950e4-dcf1-434e-bab0-8c184e85ce53 200 in 32ms (next.js: 3ms, proxy.ts: 2ms, application-code: 26ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=39f8d259-c5ae-45ce-8c06-d24f263c46ec 200 in 97ms (next.js: 9ms, proxy.ts: 4ms, application-code: 85ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=d3369205-019d-4023-baf6-6b1f15aa42a4 200 in 152ms (next.js: 3ms, proxy.ts: 4ms, application-code: 145ms)
+  └─ ƒ createShareLink({}) in 38ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 20ms (next.js: 3ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=ea57e6aa-c45d-448d-9bb0-3712a5fa48ea 200 in 145ms (next.js: 11ms, proxy.ts: 2ms, application-code: 131ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=ea57e6aa-c45d-448d-9bb0-3712a5fa48ea 200 in 43ms (next.js: 3ms, proxy.ts: 4ms, application-code: 36ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=ea57e6aa-c45d-448d-9bb0-3712a5fa48ea 200 in 26ms (next.js: 5ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=4dcaf0cf-de1f-4c7a-b6f2-88c6c33d33de 200 in 81ms (next.js: 2ms, proxy.ts: 3ms, application-code: 76ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=39f8d259-c5ae-45ce-8c06-d24f263c46ec 200 in 109ms (next.js: 2ms, proxy.ts: 3ms, application-code: 104ms)
+  └─ ƒ createShareLink({}) in 17ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 16ms (next.js: 1.5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=e5f983e2-5c0a-4680-9e5a-f0ca2eac789e 200 in 73ms (next.js: 3ms, proxy.ts: 3ms, application-code: 67ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=e5f983e2-5c0a-4680-9e5a-f0ca2eac789e 200 in 14ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=e5f983e2-5c0a-4680-9e5a-f0ca2eac789e 200 in 23ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 17ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=aa78e4be-08c6-463e-8a2e-d546e1a3b56f 200 in 73ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 69ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=4dcaf0cf-de1f-4c7a-b6f2-88c6c33d33de 200 in 102ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 98ms)
+  └─ ƒ createShareLink({}) in 16ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 16ms (next.js: 2ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=aaca0862-733d-431c-b7a8-6409a52a12d9 200 in 76ms (next.js: 4ms, proxy.ts: 2ms, application-code: 69ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=aaca0862-733d-431c-b7a8-6409a52a12d9 200 in 23ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 18ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=aaca0862-733d-431c-b7a8-6409a52a12d9 200 in 16ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 200 in 81ms (next.js: 3ms, proxy.ts: 2ms, application-code: 76ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 200 in 14ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 200 in 13ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 10ms)
+ GET /reports?notice=R%C3%A9vision+publi%C3%A9e.+Les+%C3%A9ditions+pr%C3%A9c%C3%A9dentes+restent+inchang%C3%A9es.&reveal=report-url&revealId=1f6069ee-441c-4784-a341-049465ee4472 200 in 77ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 73ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=aa78e4be-08c6-463e-8a2e-d546e1a3b56f 200 in 104ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 100ms)
+  └─ ƒ reviseReportEdition({}) in 16ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 20ms (next.js: 2ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=837f77be-c313-487f-b39d-815be51b2a35 200 in 89ms (next.js: 4ms, proxy.ts: 2ms, application-code: 82ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=837f77be-c313-487f-b39d-815be51b2a35 200 in 16ms (next.js: 4ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /reports?error=Les+donn%C3%A9es+compl%C3%A8tes+de+cette+p%C3%A9riode+ne+sont+pas+disponibles.+Actualisez+l%E2%80%99historique+du+compte+avant+de+publier+ce+bilan. 200 in 77ms (next.js: 2ms, proxy.ts: 2ms, application-code: 72ms)
+ POST /reports?notice=R%C3%A9vision%20publi%C3%A9e.%20Les%20%C3%A9ditions%20pr%C3%A9c%C3%A9dentes%20restent%20inchang%C3%A9es.&reveal=report-url&revealId=1f6069ee-441c-4784-a341-049465ee4472 200 in 104ms (next.js: 8ms, proxy.ts: 2ms, application-code: 94ms)
+  └─ ƒ createShareLink({}) in 11ms src/app/actions.ts
+ GET /r/ya_share_REDACTED_FIXTURE?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 200 in 76ms (next.js: 4ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 429 in 11ms (next.js: 3ms, proxy.ts: 2ms, application-code: 5ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=7000e967-aba4-4b96-aee6-d33a0d8e77ba 404 in 10ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /reports 200 in 159ms (next.js: 2ms, proxy.ts: 2ms, application-code: 155ms)
+  ✓  1 [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in fr (8.6s)
+ GET /reports 200 in 134ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 129ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 5ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 3ms, application-code: 11ms)
+ POST /reports 200 in 77ms (next.js: 5ms, proxy.ts: 4ms, application-code: 68ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=813675e3-fb74-4a89-bc78-6cce2f039888 200 in 79ms (next.js: 2ms, proxy.ts: 3ms, application-code: 74ms)
+ POST /reports 200 in 110ms (next.js: 2ms, proxy.ts: 3ms, application-code: 104ms)
+  └─ ƒ createShareLink({}) in 18ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 16ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=44820f34-8fbb-49f2-b137-325e10187461 200 in 85ms (next.js: 4ms, proxy.ts: 3ms, application-code: 78ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=44820f34-8fbb-49f2-b137-325e10187461 200 in 15ms (next.js: 3ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=44820f34-8fbb-49f2-b137-325e10187461 200 in 22ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 17ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=4625aebe-6015-4b25-9b9c-2bc14b25e714 200 in 100ms (next.js: 3ms, proxy.ts: 4ms, application-code: 93ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=813675e3-fb74-4a89-bc78-6cce2f039888 200 in 149ms (next.js: 3ms, proxy.ts: 4ms, application-code: 141ms)
+  └─ ƒ createShareLink({}) in 30ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 16ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=fcc87926-8fc4-4d54-b5fa-d4b4e0c7cb44 200 in 85ms (next.js: 3ms, proxy.ts: 2ms, application-code: 80ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=fcc87926-8fc4-4d54-b5fa-d4b4e0c7cb44 200 in 19ms (next.js: 4ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=fcc87926-8fc4-4d54-b5fa-d4b4e0c7cb44 200 in 25ms (next.js: 9ms, proxy.ts: 1.6ms, application-code: 15ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=1697b8d3-b7b9-44cd-a5bd-f88038969dab 200 in 70ms (next.js: 3ms, proxy.ts: 2ms, application-code: 65ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=4625aebe-6015-4b25-9b9c-2bc14b25e714 200 in 99ms (next.js: 2ms, proxy.ts: 3ms, application-code: 94ms)
+  └─ ƒ createShareLink({}) in 19ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 15ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=e92b67d7-693a-49c7-bea0-e9ef5c7f6d58 200 in 81ms (next.js: 4ms, proxy.ts: 3ms, application-code: 75ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=e92b67d7-693a-49c7-bea0-e9ef5c7f6d58 200 in 17ms (next.js: 3ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=e92b67d7-693a-49c7-bea0-e9ef5c7f6d58 200 in 17ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 12ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=13b871b7-703a-4618-beb8-cec63434fc00 200 in 75ms (next.js: 3ms, proxy.ts: 3ms, application-code: 69ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=1697b8d3-b7b9-44cd-a5bd-f88038969dab 200 in 119ms (next.js: 4ms, proxy.ts: 4ms, application-code: 112ms)
+  └─ ƒ createShareLink({}) in 31ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 14ms (next.js: 1.4ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=3f055fa2-b8a9-4caf-b422-ac75a59fc9ff 200 in 93ms (next.js: 3ms, proxy.ts: 3ms, application-code: 88ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=3f055fa2-b8a9-4caf-b422-ac75a59fc9ff 200 in 15ms (next.js: 2ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=3f055fa2-b8a9-4caf-b422-ac75a59fc9ff 200 in 20ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 16ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=38208cf6-44cb-46fc-a864-ffab5d9d585e 200 in 72ms (next.js: 2ms, proxy.ts: 2ms, application-code: 67ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=13b871b7-703a-4618-beb8-cec63434fc00 200 in 100ms (next.js: 2ms, proxy.ts: 4ms, application-code: 94ms)
+  └─ ƒ createShareLink({}) in 15ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 14ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=6a0dd052-0cde-47a1-83b8-af02eadc2662 200 in 71ms (next.js: 4ms, proxy.ts: 2ms, application-code: 65ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=6a0dd052-0cde-47a1-83b8-af02eadc2662 200 in 16ms (next.js: 4ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=6a0dd052-0cde-47a1-83b8-af02eadc2662 200 in 17ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=44820f34-8fbb-49f2-b137-325e10187461 200 in 97ms (next.js: 3ms, proxy.ts: 2ms, application-code: 91ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=44820f34-8fbb-49f2-b137-325e10187461 200 in 16ms (next.js: 3ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=44820f34-8fbb-49f2-b137-325e10187461 200 in 13ms (next.js: 2.0ms, proxy.ts: 1.9ms, application-code: 10ms)
+ GET /reports?notice=Revision+published.+Previous+editions+remain+unchanged.&reveal=report-url&revealId=91375b17-2f5c-4078-a73d-a61f48c9aa55 200 in 94ms (next.js: 2ms, proxy.ts: 2ms, application-code: 90ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=38208cf6-44cb-46fc-a864-ffab5d9d585e 200 in 122ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 117ms)
+  └─ ƒ reviseReportEdition({}) in 17ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 16ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=0abe0524-dc39-471f-afa7-c23ac6d01a17 200 in 80ms (next.js: 4ms, proxy.ts: 2ms, application-code: 74ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=0abe0524-dc39-471f-afa7-c23ac6d01a17 200 in 18ms (next.js: 6ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /reports?error=Les+donn%C3%A9es+compl%C3%A8tes+de+cette+p%C3%A9riode+ne+sont+pas+disponibles.+Actualisez+l%E2%80%99historique+du+compte+avant+de+publier+ce+bilan. 200 in 80ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 76ms)
+ POST /reports?notice=Revision%20published.%20Previous%20editions%20remain%20unchanged.&reveal=report-url&revealId=91375b17-2f5c-4078-a73d-a61f48c9aa55 200 in 102ms (next.js: 2ms, proxy.ts: 2ms, application-code: 98ms)
+  └─ ƒ createShareLink({}) in 12ms src/app/actions.ts
+ GET /r/ya_share_REDACTED_FIXTURE?edition=44820f34-8fbb-49f2-b137-325e10187461 200 in 75ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 69ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=44820f34-8fbb-49f2-b137-325e10187461 429 in 16ms (next.js: 5ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=44820f34-8fbb-49f2-b137-325e10187461 404 in 11ms (next.js: 4ms, proxy.ts: 1.6ms, application-code: 6ms)
+ GET /reports 200 in 152ms (next.js: 4ms, proxy.ts: 4ms, application-code: 144ms)
+  ✓  2 [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in en (5.3s)
+
+  2 passed (14.6s)
+
+{"ok":true,"cleaned":"local-browser-fixtures"}

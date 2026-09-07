@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
+vi.mock('@/lib/report-editions', () => ({ createReportEditionInTransaction: vi.fn(async () => ({ edition: { id: 'edition-1' } })), ReportDataUnavailable: class extends Error {} }))
+vi.mock('@/lib/crypto', () => ({ encryptSecret: (value: string) => `encrypted:${value}` }))
+vi.mock('@/lib/tokens', () => ({ hashToken: () => 'hash' }))
 
 import { entitlementContext } from './entitlements'
 import {
@@ -90,8 +93,8 @@ describe('API v1 tenant repository', () => {
   it('checks report quota under an advisory lock before insertion', async () => {
     const expiresAt = new Date('2026-11-10T00:00:00Z')
     const database = databaseDouble({
-      statementResults: [[], [{ count: 2 }], [{ id: 'report-1', expiresAt }]],
-      query: queryMap({ clients: { first: { id: clientId } } }),
+      statementResults: [[], [], [{ count: 2 }], [{ id: 'report-1', expiresAt }]],
+      query: queryMap({ workspaces: { first: { accessState: 'active', plan: 'agency' } }, clients: { first: { id: clientId } } }),
     })
     mocks.databases.push(database.db)
     await expect(createApiReport({
@@ -99,10 +102,9 @@ describe('API v1 tenant repository', () => {
       actorId,
       clientId,
       label: 'Monthly report',
-      tokenHash: 'hash',
-      tokenPrefix: 'prefix',
+      token: 'raw-token',
       entitlements: entitlementContext('active', 'agency'),
-    })).resolves.toEqual({ id: 'report-1', expiresAt })
+    })).resolves.toMatchObject({ id: 'report-1', expiresAt, editionId: 'edition-1' })
     expect(database.capture.values[0]).toMatchObject({
       workspaceId,
       clientId,
@@ -113,16 +115,15 @@ describe('API v1 tenant repository', () => {
 
   it('fails report creation inside the transaction when the quota is exhausted', async () => {
     mocks.databases.push(databaseDouble({
-      statementResults: [[], [{ count: 3 }]],
-      query: queryMap({ clients: { first: { id: clientId } } }),
+      statementResults: [[], [], [{ count: 100 }]],
+      query: queryMap({ workspaces: { first: { accessState: 'active', plan: 'agency' } }, clients: { first: { id: clientId } } }),
     }).db)
     await expect(createApiReport({
       workspaceId,
       actorId,
       clientId,
       label: 'Over quota',
-      tokenHash: 'hash',
-      tokenPrefix: 'prefix',
+      token: 'raw-token',
       entitlements: entitlementContext('active', 'solo'),
     })).rejects.toThrow('Quota exceeded')
   })

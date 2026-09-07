@@ -14,6 +14,11 @@ import {
 import { withTenantTransaction } from '@/db/transactions'
 import { ApiV1Error, type CursorValue } from '@/lib/api-v1'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
+import { createReportEditionInTransaction, ReportDataUnavailable } from '@/lib/report-editions'
+import { storedReportPeriod, type ReportPeriodSelection } from '@/lib/report-period-selection'
+import { encryptSecret } from '@/lib/crypto'
+import { hashToken } from '@/lib/tokens'
+import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
 import { metricCoverage } from '@/lib/metric-coverage'
 
 type ApiTenant = { workspaceId: string; actorId: string }
@@ -182,6 +187,7 @@ export function listApiReports(input: ApiTenant & { cursor: CursorValue | null; 
         id: shareLinks.id,
         clientId: shareLinks.clientId,
         label: shareLinks.label,
+        mode: shareLinks.mode, periodDays: shareLinks.periodDays, periodConfig: shareLinks.periodConfig, locale: shareLinks.locale,
         active: shareLinks.active,
         allowFeedback: shareLinks.allowFeedback,
         lastViewedAt: shareLinks.lastViewedAt,
@@ -207,31 +213,38 @@ export function listApiReports(input: ApiTenant & { cursor: CursorValue | null; 
 export function createApiReport(input: ApiTenant & {
   clientId: string
   label: string
-  tokenHash: string
-  tokenPrefix: string
+  token: string
+  periodConfig?: ReportPeriodSelection
+  mode?: 'dynamic' | 'fixed'
+  locale?: 'fr' | 'en'
   entitlements: EntitlementContext
 }) {
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorId }, async (db) => {
+    const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'api.propose')
+    if (!['agency', 'internal'].includes(entitlements.plan)) throw new ApiV1Error('ENTITLEMENT_REQUIRED', 'Report creation through API requires Agency', 403)
     const client = await db.query.clients.findFirst({
-      where: and(eq(clients.id, input.clientId), eq(clients.workspaceId, input.workspaceId)),
+      where: and(eq(clients.id, input.clientId), eq(clients.workspaceId, input.workspaceId), eq(clients.active, true), eq(clients.isManager, false)),
       columns: { id: true },
     })
-    if (!client) throw new ApiV1Error('CLIENT_NOT_FOUND', 'Client not found', 404)
+    if (!client) throw new ApiV1Error('CLIENT_NOT_FOUND', 'Active advertiser account not found', 404)
     await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:reports`}))`)
-    const [usage] = await db.select({ count: count() }).from(shareLinks).where(and(
-      eq(shareLinks.workspaceId, input.workspaceId),
-      eq(shareLinks.active, true),
-    ))
-    requireQuota(input.entitlements, 'reports', usage.count)
+    const [usage] = await db.select({ count: count() }).from(shareLinks).where(and(eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.active, true)))
+    requireQuota(entitlements, 'reports', usage.count)
+    const periodConfig = storedReportPeriod({ periodDays: 30, periodConfig: input.periodConfig })
     const [created] = await db.insert(shareLinks).values({
-      workspaceId: input.workspaceId,
-      clientId: client.id,
-      createdBy: input.actorId,
-      label: input.label,
-      tokenHash: input.tokenHash,
-      tokenPrefix: input.tokenPrefix,
-      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60_000),
+      workspaceId: input.workspaceId, clientId: client.id, createdBy: input.actorId, label: input.label,
+      tokenHash: hashToken(input.token), tokenPrefix: input.token.slice(0, 12), encryptedReportToken: encryptSecret(input.token),
+      mode: input.mode ?? 'fixed', locale: input.locale ?? 'fr', periodConfig,
+      periodDays: ['7', '30', '90'].includes(periodConfig.period) ? Number(periodConfig.period) : 30,
+      expiresAt: new Date(Date.now() + 90 * 86_400_000),
     }).returning({ id: shareLinks.id, expiresAt: shareLinks.expiresAt })
-    return created
+    if (!created) throw new ApiV1Error('REPORT_UNAVAILABLE', 'Report publication failed', 409)
+    try {
+      const issued = await createReportEditionInTransaction(db, { workspaceId: input.workspaceId, shareId: created.id, actorUserId: input.actorId, kind: input.mode === 'dynamic' ? 'dynamic' : 'initial' })
+      return { ...created, editionId: issued.edition.id, periodFrom: issued.edition.periodFrom, periodThrough: issued.edition.periodThrough, timezone: issued.edition.timezone, sourceVersion: issued.edition.sourceVersion }
+    } catch (error) {
+      if (error instanceof ReportDataUnavailable) throw new ApiV1Error('REPORT_DATA_UNAVAILABLE', 'Complete stored history is required for this period', 409)
+      throw error
+    }
   })
 }

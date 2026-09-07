@@ -52,6 +52,18 @@ describe('YoDevMail transactional transport', () => {
     }))
   })
 
+  it.each(['submitting', 'ambiguous', 'pending', 'failed', 'suppressed', 'hard_bounced', 'reviewed'])('does not report an unclaimed %s delivery as accepted', async (status) => {
+    mocks.claim.mockResolvedValue({ claimed: false, delivery: { id: 'delivery-1', providerMessageId: null, status } })
+    await expect(sendTransactionalEmail({ from: 'a@example.test', to: 'b@example.test', subject: 'Report', html: '<p>Report</p>', idempotencyKey: 'report:1', category: 'scheduled_report' })).rejects.toThrow()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('reconciles a previously accepted delivery without resubmitting', async () => {
+    mocks.claim.mockResolvedValue({ claimed: false, delivery: { id: 'delivery-1', providerMessageId: messageId, status: 'accepted' } })
+    await expect(sendTransactionalEmail({ from: 'a@example.test', to: 'b@example.test', subject: 'Report', html: '<p>Report</p>', idempotencyKey: 'report:1', category: 'scheduled_report' })).resolves.toMatchObject({ providerMessageId: messageId })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('fans out recipients without exposing one recipient to another', async () => {
     vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ data: { id: messageId, status: 'queued' } }), { status: 202 }))
     await sendTransactionalEmail({

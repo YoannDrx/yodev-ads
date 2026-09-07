@@ -45,11 +45,12 @@ function header(page: PDFPage, bold: PDFFont, brandName: string, clientName: str
   page.drawText(generatedAt.toLocaleDateString('fr-FR'), { x: 465, y: 775, size: 8, font: bold, color: rgb(0.65, 0.72, 0.76) })
 }
 
-function footer(page: PDFPage, font: PDFFont, pageNumber: number, pageCount: number, poweredByYodev: boolean, periodDays: number) {
+function footer(page: PDFPage, font: PDFFont, pageNumber: number, pageCount: number, input: ClientReportModel) {
   page.drawLine({ start: { x: 38, y: 36 }, end: { x: 557, y: 36 }, color: rgb(0.86, 0.89, 0.9), thickness: 0.7 })
-  page.drawText(`Donnees Google Ads - fenetre glissante de ${periodDays} jours`, { x: 38, y: 20, size: 7, font, color: colors.muted })
+  page.drawText(input.window ? `${input.window.from} au ${input.window.through} - ${input.window.timezone}` : `Donnees Google Ads - ${input.periodDays} jours`, { x: 38, y: 20, size: 7, font, color: colors.muted })
   page.drawText(`${pageNumber} / ${pageCount}`, { x: 526, y: 20, size: 7, font, color: colors.muted })
-  if (poweredByYodev) page.drawText('Powered by Ads by Yodev', { x: 230, y: 20, size: 7, font, color: colors.muted })
+  if (input.sourceVersion) page.drawText(`Version ${input.sourceVersion.slice(0, 12)}`, { x: 38, y: 8, size: 6, font, color: colors.muted })
+  if (input.poweredByYodev) page.drawText('Powered by Ads by Yodev', { x: 350, y: 20, size: 7, font, color: colors.muted })
 }
 
 function wrapLines(text: string, font: PDFFont, size: number, width: number) {
@@ -72,6 +73,8 @@ function wrapLines(text: string, font: PDFFont, size: number, width: number) {
 
 export async function createClientReportPdf(input: ClientReportModel) {
   const pdf = await PDFDocument.create()
+  pdf.setCreationDate(input.generatedAt)
+  pdf.setModificationDate(input.generatedAt)
   const regular = await pdf.embedFont(StandardFonts.Helvetica)
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
   const generatedAt = input.generatedAt
@@ -87,8 +90,8 @@ export async function createClientReportPdf(input: ClientReportModel) {
       const metrics = [
         ['Investissement', money(totals.costMicros, input.currencyCode)],
         ['Conversions', totals.conversions.toLocaleString('fr-FR', { maximumFractionDigits: 1 })],
-        ['Clics', totals.clicks.toLocaleString('fr-FR')],
-        ['CTR', totals.impressions ? `${((totals.clicks / totals.impressions) * 100).toFixed(1)} %` : '-'],
+        ['Clics', BigInt(totals.clicks).toLocaleString('fr-FR')],
+        ['CTR', totals.ctr !== null ? `${(totals.ctr * 100).toFixed(1)} %` : '-'],
       ]
       metrics.forEach(([label, value], index) => {
         const x = 38 + index * 131
@@ -137,7 +140,7 @@ export async function createClientReportPdf(input: ClientReportModel) {
     }
   }
   const pages = pdf.getPages()
-  pages.forEach((page, index) => footer(page, regular, index + 1, pages.length, input.poweredByYodev, input.periodDays))
+  pages.forEach((page, index) => footer(page, regular, index + 1, pages.length, input))
   pdf.setTitle(`Rapport Google Ads - ${safe(input.clientName)}`)
   pdf.setAuthor(input.brandName)
   pdf.setCreationDate(generatedAt)

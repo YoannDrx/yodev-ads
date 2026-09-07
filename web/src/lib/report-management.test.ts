@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
 vi.mock('@/lib/crypto', () => ({ encryptSecret: mocks.encrypt }))
 vi.mock('@/lib/tokens', () => ({ hashToken: mocks.hash }))
+vi.mock('@/lib/workspace-transaction-guard', () => ({ lockWorkspaceAccessBoundary: vi.fn(async () => undefined), lockWorkspaceEntitlements: vi.fn(async () => entitlementContext('active', 'solo')) }))
 
 import { entitlementContext } from './entitlements'
 import {
@@ -39,6 +40,7 @@ function reportDatabase(input: {
   return databaseDouble({
     statementResults: input.statementResults,
     query: {
+      workspaces: { findFirst: vi.fn(async () => ({ accessState: 'active', plan: 'solo' })) },
       clients: { findFirst: vi.fn(async () => input.client) },
       reportTemplates: { findFirst: vi.fn(async () => input.template) },
       reportSchedules: { findFirst: vi.fn(async () => input.schedule) },

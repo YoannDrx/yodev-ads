@@ -36,6 +36,7 @@ function queryDouble(input: { workspace?: unknown; connection?: unknown; rows?: 
     conversionActionSnapshots: { findMany: many('conversions') }, offlineConversionDiagnostics: { findMany: many('offline') },
     safetyPolicies: { findMany: many('policies') }, shareLinks: { findMany: many('reports') },
     reportTemplates: { findMany: many('templates') }, reportTemplateVersions: { findMany: many('templateVersions') },
+    reportEditions: { findMany: many('editions') },
     reportSchedules: { findMany: many('schedules') }, apiKeys: { findMany: many('keys') },
     notificationChannels: { findMany: many('channels') }, legalAcceptances: { findMany: many('legal') },
   }
@@ -71,6 +72,7 @@ describe('workspace export orchestration', () => {
         memberPreferences: [{ id: 'preference-1', mentionHandle: 'owner' }],
         templates: [{ id: 'template-1', name: 'Monthly' }],
         templateVersions: [{ templateId: 'template-1', version: 1, snapshot: { name: 'Monthly' } }],
+        editions: [{ id: 'edition-1', periodFrom: '2026-08-01', payload: { totals: { costMicros: '123' } } }],
         schedules: [{ id: 'schedule-1' }], keys: [{ tokenPrefix: 'ak_test' }],
         channels: [{ destinationHint: 'o***@example.test' }], legal: [{ termsVersion: 'v1' }],
       },
@@ -90,6 +92,9 @@ describe('workspace export orchestration', () => {
     expect(raw).toContain('"googleAdsConnection"')
     expect(raw).not.toContain('encryptedRefreshToken')
     expect(raw).not.toContain('tokenHash')
+    expect(raw).not.toContain('encryptedDelivery')
+    expect(raw).not.toContain('encryptedReportToken')
+    expect(strFromU8(archive['reports/editions.json'])).toContain('edition-1')
     expect(raw).toContain('Archived campaign')
     expect(strFromU8(archive['reports/template-versions.csv'])).toContain('templateId,version,snapshot')
     expect(strFromU8(archive['README.txt'])).toContain('secrets OAuth')

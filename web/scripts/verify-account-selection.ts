@@ -101,7 +101,7 @@ async function main() {
     await withSystemTransaction((db) => db.update(shareLinks).set({ clientId: activeClient.id }).where(eq(shareLinks.id, share.id)))
     assert.equal((await getPublicShare(token))?.client.id, activeClient.id)
     await withSystemTransaction((db) => db.update(googleAdsConnections).set({ status: 'revoked' }).where(eq(googleAdsConnections.id, connection.id)))
-    assert.equal(await getPublicShare(token), undefined, 'A revoked connection cannot back a live report')
+    assert.equal((await getPublicShare(token))?.client.id, activeClient.id, 'A stored report context does not require provider credentials')
     await withSystemTransaction((db) => db.update(googleAdsConnections).set({ status: 'active' }).where(eq(googleAdsConnections.id, connection.id)))
     const pausedExecution = await executionFor(inactiveClient.id, 'campaign_status')
     await assert.rejects(markGoogleMutationSubmitted({ workspaceId, actorUserId: owner, executionId: pausedExecution.id, validationRequestId: 'fixture-validation' }), /plus disponible/)
@@ -122,7 +122,7 @@ async function main() {
     await withSystemTransaction((db) => db.update(workspaces).set({ accessState: 'grace' }).where(eq(workspaces.id, workspaceId)))
     stored = await getWorkspaceAccountSelection(workspaceId)
     await assert.rejects(saveManagedAccountSelection({ workspaceId, actorUserId: owner, clientIds: [], version: stored.version }))
-    console.log(JSON.stringify({ ok: true, verified: ['explicit_selection_after_mcc_discovery', 'nested_managers_free', 'quota_3_15_50', 'new_account_unselected', 'sync_preserves_priority', 'downgrade_preserves_preferences', 'upgrade_restores_selection', 'priority_only_above_quota', 'concurrent_selection_conflict', 'foreign_and_manager_rejected', 'inactive_explicit_client_never_falls_back', 'empty_inventory_blocks_older_read', 'access_restoration', 'billing_row_serialization', 'new_credentials_require_inventory', 'history_preserved', 'grace_read_without_selection_write', 'final_mutation_admission_checks_active_account_and_current_plan', 'live_report_requires_active_account_and_connection'], providerCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, verified: ['explicit_selection_after_mcc_discovery', 'nested_managers_free', 'quota_3_15_50', 'new_account_unselected', 'sync_preserves_priority', 'downgrade_preserves_preferences', 'upgrade_restores_selection', 'priority_only_above_quota', 'concurrent_selection_conflict', 'foreign_and_manager_rejected', 'inactive_explicit_client_never_falls_back', 'empty_inventory_blocks_older_read', 'access_restoration', 'billing_row_serialization', 'new_credentials_require_inventory', 'history_preserved', 'grace_read_without_selection_write', 'final_mutation_admission_checks_active_account_and_current_plan', 'stored_report_requires_active_account_without_provider_credentials'], providerCalls: 0 }))
   } finally {
     for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id)))
   }

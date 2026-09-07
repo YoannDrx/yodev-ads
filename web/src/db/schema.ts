@@ -618,6 +618,9 @@ export const shareLinks = pgTable(
     actionPlan: text('action_plan'),
     locale: varchar('locale', { length: 8 }).default('fr').notNull(),
     periodDays: integer('period_days').default(30).notNull(),
+    periodConfig: jsonb('period_config').$type<import('../lib/report-period-selection').ReportPeriodSelection>(),
+    mode: varchar('mode', { length: 16 }).default('dynamic').notNull(),
+    encryptedReportToken: text('encrypted_report_token'),
     tokenHash: varchar('token_hash', { length: 64 }).notNull(),
     tokenPrefix: varchar('token_prefix', { length: 12 }).notNull(),
     active: boolean('active').default(true).notNull(),
@@ -1380,6 +1383,7 @@ export const reportTemplates = pgTable(
     name: varchar('name', { length: 160 }).notNull(),
     locale: varchar('locale', { length: 8 }).default('fr').notNull(),
     periodDays: integer('period_days').default(30).notNull(),
+    periodConfig: jsonb('period_config').$type<import('../lib/report-period-selection').ReportPeriodSelection>(),
     editorialComment: text('editorial_comment'),
     actionPlan: text('action_plan'),
     currentVersion: integer('current_version').default(1).notNull(),
@@ -1401,6 +1405,7 @@ export const reportTemplateVersions = pgTable(
       name: string
       locale: 'fr' | 'en'
       periodDays: number
+      periodConfig?: import('../lib/report-period-selection').ReportPeriodSelection | null
       editorialComment: string | null
       actionPlan: string | null
     }>().notNull(),
@@ -1431,6 +1436,7 @@ export const reportSchedules = pgTable(
     encryptedReportToken: text('encrypted_report_token').notNull(),
     enabled: boolean('enabled').default(true).notNull(),
     deliveryLeaseUntil: timestamp('delivery_lease_until', { withTimezone: true }),
+    deliveryLeaseOwner: uuid('delivery_lease_owner'),
     lastRunKey: varchar('last_run_key', { length: 32 }),
     lastDeliveredAt: timestamp('last_delivered_at', { withTimezone: true }),
     lastError: text('last_error'),
@@ -1440,6 +1446,41 @@ export const reportSchedules = pgTable(
     uniqueIndex('report_schedules_share_idx').on(table.shareId),
     index('report_schedules_due_idx').on(table.enabled, table.cadence, table.sendHour),
     index('report_schedules_workspace_idx').on(table.workspaceId, table.createdAt),
+  ],
+)
+
+/** Issued content is append-only. Corrections create a separate edition. */
+export const reportEditions = pgTable(
+  'report_editions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+    clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }).notNull(),
+    shareId: uuid('share_id').references(() => shareLinks.id, { onDelete: 'cascade' }).notNull(),
+    scheduleId: uuid('schedule_id').references(() => reportSchedules.id, { onDelete: 'set null' }),
+    kind: varchar('kind', { length: 16 }).notNull(),
+    editionNumber: integer('edition_number').notNull(),
+    deduplicationKey: varchar('deduplication_key', { length: 200 }).notNull(),
+    // Opaque historical reference; retention must not rewrite a surviving edition.
+    previousEditionId: uuid('previous_edition_id'),
+    periodFrom: varchar('period_from', { length: 10 }).notNull(),
+    periodThrough: varchar('period_through', { length: 10 }).notNull(),
+    timezone: varchar('timezone', { length: 64 }).notNull(),
+    currencyCode: varchar('currency_code', { length: 3 }).notNull(),
+    sourceVersion: varchar('source_version', { length: 64 }).notNull(),
+    modelVersion: integer('model_version').default(1).notNull(),
+    payload: jsonb('payload').$type<import('../lib/client-report-model').SerializedClientReportModel>().notNull(),
+    runKey: varchar('run_key', { length: 32 }),
+    encryptedDelivery: text('encrypted_delivery'),
+    deliveryTokenHash: varchar('delivery_token_hash', { length: 64 }),
+    generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('report_editions_share_dedup_idx').on(table.shareId, table.deduplicationKey),
+    uniqueIndex('report_editions_share_number_idx').on(table.shareId, table.editionNumber),
+    index('report_editions_workspace_share_idx').on(table.workspaceId, table.shareId, table.generatedAt),
+    index('report_editions_expiry_idx').on(table.expiresAt),
   ],
 )
 

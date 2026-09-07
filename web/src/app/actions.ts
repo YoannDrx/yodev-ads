@@ -4,7 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { reportPeriodSchema } from '@/lib/report-period'
+import { reportPeriodFromForm, storedReportPeriod } from '@/lib/report-period-selection'
 import { del, put } from '@vercel/blob'
 import {
   billingPortalConfigurationId,
@@ -114,6 +114,7 @@ import {
 } from '@/lib/report-management'
 import {
   createWorkspacePublicReport,
+  reviseWorkspacePublicReport,
   issuePublicReportOtp,
   revokeWorkspacePublicReport,
   submitPublicReportFeedback,
@@ -1551,7 +1552,9 @@ export async function createShareLink(formData: FormData) {
     const editorialComment = z.string().trim().max(5000).optional().parse(formData.get('editorialComment') || undefined)
     const actionPlan = z.string().trim().max(5000).optional().parse(formData.get('actionPlan') || undefined)
     const locale = z.enum(['fr', 'en']).default('fr').parse(formData.get('locale') || 'fr')
-    const periodDays = reportPeriodSchema.parse(formData.get('periodDays') || 30)
+    const periodConfig = reportPeriodFromForm(Object.fromEntries(formData))
+    const periodDays = ['7', '30', '90'].includes(periodConfig.period) ? Number(periodConfig.period) : 30
+    const mode = z.enum(['dynamic', 'fixed']).parse(formData.get('mode') ?? 'fixed')
     const client = await getWorkspaceClient(workspace.id, clientId)
     if (!client || client.id !== clientId) throw new Error('Compte client introuvable.')
     const token = createShareToken()
@@ -1564,6 +1567,8 @@ export async function createShareLink(formData: FormData) {
       actionPlan,
       locale,
       periodDays,
+      periodConfig,
+      mode,
       token,
       entitlements,
       fallbackOrigin: process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr',
@@ -1576,10 +1581,26 @@ export async function createShareLink(formData: FormData) {
       maxAge: 5 * 60,
       path: '/api/secret-revelation',
     })
-    target = `/reports?notice=${encodeURIComponent('Rapport créé. Révélez son URL dans les cinq prochaines minutes.')}&reveal=report-url`
+    target = `/reports?notice=${encodeURIComponent('Rapport créé. Révélez son URL dans les cinq prochaines minutes.')}&reveal=report-url&revealId=${revelation.id}`
   } catch (error) {
     target = toUrl('/reports', 'error', message(error))
   }
+  revalidatePath('/reports')
+  redirect(target)
+}
+
+export async function reviseReportEdition(formData: FormData) {
+  let target: string
+  try {
+    const { workspace, session } = await requireWorkspacePermission('reports:manage')
+    const shareId = z.string().uuid().parse(formData.get('shareId'))
+    const previousEditionId = z.string().uuid().parse(formData.get('previousEditionId'))
+    const revelation = await reviseWorkspacePublicReport({ workspaceId: workspace.id, actorUserId: session.userId, shareId, previousEditionId,
+      fallbackOrigin: process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr' })
+    const cookieStore = await cookies()
+    cookieStore.set('yodev_secret_revelation', revelation.id, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 5 * 60, path: '/api/secret-revelation' })
+    target = `/reports?notice=${encodeURIComponent(workspace.locale === 'en' ? 'Revision published. Previous editions remain unchanged.' : 'Révision publiée. Les éditions précédentes restent inchangées.')}&reveal=report-url&revealId=${revelation.id}`
+  } catch (error) { target = toUrl('/reports', 'error', message(error)) }
   revalidatePath('/reports')
   redirect(target)
 }
@@ -1588,11 +1609,13 @@ export async function createReportTemplate(formData: FormData) {
   let target: string
   try {
     const { workspace, session } = await requireWorkspacePermission('reports:manage')
-    const input = reportTemplateInputSchema.parse(Object.fromEntries(formData))
+    const periodConfig = reportPeriodFromForm(Object.fromEntries(formData))
+    const input = reportTemplateInputSchema.parse({ ...Object.fromEntries(formData), periodDays: ['7', '30', '90'].includes(periodConfig.period) ? Number(periodConfig.period) : 30 })
     await createWorkspaceReportTemplate({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       ...input,
+      periodConfig,
     })
     target = toUrl('/reports', 'notice', 'Modèle de rapport créé.')
   } catch (error) {
@@ -1605,7 +1628,7 @@ export async function createReportTemplate(formData: FormData) {
 const reportTemplateInputSchema = z.object({
   name: z.string().trim().min(2).max(160),
   locale: z.enum(['fr', 'en']).default('fr'),
-  periodDays: reportPeriodSchema,
+  periodDays: z.coerce.number().refine((value) => { try { storedReportPeriod({ periodDays: value }); return true } catch { return false } }),
   editorialComment: z.string().trim().max(5000).optional(),
   actionPlan: z.string().trim().max(5000).optional(),
 })
@@ -1614,16 +1637,18 @@ export async function updateReportTemplate(formData: FormData) {
   let target: string
   try {
     const { workspace, session } = await requireWorkspacePermission('reports:manage')
+    const periodConfig = reportPeriodFromForm(Object.fromEntries(formData))
     const { templateId, expectedVersion, ...input } = reportTemplateInputSchema.extend({
       templateId: z.string().uuid(),
       expectedVersion: z.coerce.number().int().positive(),
-    }).parse(Object.fromEntries(formData))
+    }).parse({ ...Object.fromEntries(formData), periodDays: ['7', '30', '90'].includes(periodConfig.period) ? Number(periodConfig.period) : 30 })
     await updateWorkspaceReportTemplate({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       templateId,
       expectedVersion,
       ...input,
+      periodConfig,
     })
     target = toUrl('/reports', 'notice', 'Nouvelle version du modèle enregistrée.')
   } catch (error) {
@@ -1659,7 +1684,7 @@ export async function createReportSchedule(formData: FormData) {
       templateId: z.preprocess((value) => value === '' ? undefined : value, z.string().uuid().optional()),
       cadence: z.enum(['weekly', 'monthly']),
       scheduleWeekday: z.coerce.number().int().min(1).max(7).default(1),
-      scheduleMonthday: z.coerce.number().int().min(1).max(28).default(1),
+      scheduleMonthday: z.coerce.number().int().min(1).max(31).default(1),
       sendHour: z.coerce.number().int().min(0).max(23).default(8),
       timezone: z.string().trim().min(1).max(64),
       recipients: z.string().trim().min(3).max(5000),

@@ -1,10 +1,13 @@
 import type { CampaignPerformance } from '@/lib/google-ads'
+import { calendarDates, type CalendarWindow } from '@/lib/calendar-window'
 import { reportPeriodSchema } from '@/lib/report-period'
 import { spreadsheetText } from '@/lib/csv'
 
 export type ClientReportModel = {
   generatedAt: Date
   periodDays: number
+  window: (CalendarWindow & { timezone: string }) | null
+  sourceVersion: string | null
   locale: 'fr' | 'en'
   brandName: string
   poweredByYodev: boolean
@@ -13,11 +16,11 @@ export type ClientReportModel = {
   editorialComment: string | null
   actionPlan: string | null
   totals: {
-    costMicros: number
-    impressions: number
-    clicks: number
+    costMicros: string
+    impressions: string
+    clicks: string
     conversions: number
-    conversionValueMicros: number
+    conversionValueMicros: string
     ctr: number | null
     cpaMicros: number | null
     roas: number | null
@@ -25,9 +28,24 @@ export type ClientReportModel = {
   campaigns: CampaignPerformance[]
 }
 
+export type SerializedClientReportModel = Omit<ClientReportModel, 'generatedAt'> & { generatedAt: string }
+
+export function serializeClientReport(model: ClientReportModel): SerializedClientReportModel {
+  return { ...model, generatedAt: model.generatedAt.toISOString() }
+}
+
+export function deserializeClientReport(model: SerializedClientReportModel): ClientReportModel {
+  const generatedAt = new Date(model.generatedAt)
+  if (!Number.isFinite(generatedAt.getTime()) || !model.window || calendarDates(model.window).length !== model.periodDays || !model.sourceVersion) throw new Error('Invalid report edition')
+  return { ...model, generatedAt }
+}
+
 export function buildClientReportModel(input: {
   generatedAt?: Date
   periodDays?: number
+  window?: CalendarWindow & { timezone: string }
+  sourceVersion?: string
+  accountTotals?: { costMicros: string; impressions: string; clicks: string; conversions: number; conversionValueMicros: string }
   locale?: string
   brandName: string
   poweredByYodev?: boolean
@@ -37,17 +55,24 @@ export function buildClientReportModel(input: {
   actionPlan?: string | null
   campaigns: CampaignPerformance[]
 }): ClientReportModel {
-  const periodDays = reportPeriodSchema.parse(input.periodDays ?? 30)
-  const totals = input.campaigns.reduce((sum, campaign) => ({
-    costMicros: sum.costMicros + Number(campaign.costMicros),
-    impressions: sum.impressions + Number(campaign.impressions),
-    clicks: sum.clicks + Number(campaign.clicks),
-    conversions: sum.conversions + campaign.conversions,
-    conversionValueMicros: sum.conversionValueMicros + Number(campaign.conversionValueMicros),
-  }), { costMicros: 0, impressions: 0, clicks: 0, conversions: 0, conversionValueMicros: 0 })
+  const periodDays = input.window ? calendarDates(input.window).length : reportPeriodSchema.parse(input.periodDays ?? 30)
+  const sum = input.campaigns.reduce((total, campaign) => ({
+    costMicros: total.costMicros + BigInt(campaign.costMicros),
+    impressions: total.impressions + BigInt(campaign.impressions),
+    clicks: total.clicks + BigInt(campaign.clicks),
+    conversions: total.conversions + campaign.conversions,
+    conversionValueMicros: total.conversionValueMicros + BigInt(campaign.conversionValueMicros),
+  }), { costMicros: BigInt(0), impressions: BigInt(0), clicks: BigInt(0), conversions: 0, conversionValueMicros: BigInt(0) })
+  const totals = input.accountTotals ?? { costMicros: String(sum.costMicros), impressions: String(sum.impressions), clicks: String(sum.clicks), conversions: sum.conversions, conversionValueMicros: String(sum.conversionValueMicros) }
+  for (const field of ['costMicros', 'impressions', 'clicks', 'conversionValueMicros'] as const) {
+    if (!/^-?\d+$/.test(totals[field])) throw new Error('Invalid report metric')
+  }
+  if (!Number.isFinite(totals.conversions)) throw new Error('Invalid report conversions')
   return {
     generatedAt: input.generatedAt ?? new Date(),
     periodDays,
+    window: input.window ? { ...input.window } : null,
+    sourceVersion: input.sourceVersion ?? null,
     locale: input.locale === 'en' ? 'en' : 'fr',
     brandName: input.brandName,
     poweredByYodev: Boolean(input.poweredByYodev),
@@ -57,27 +82,42 @@ export function buildClientReportModel(input: {
     actionPlan: input.actionPlan?.trim() || null,
     totals: {
       ...totals,
-      ctr: totals.impressions > 0 ? totals.clicks / totals.impressions : null,
-      cpaMicros: totals.conversions > 0 ? totals.costMicros / totals.conversions : null,
-      roas: totals.costMicros > 0 ? totals.conversionValueMicros / totals.costMicros : null,
+      ctr: Number(totals.impressions) > 0 ? Number(totals.clicks) / Number(totals.impressions) : null,
+      cpaMicros: totals.conversions > 0 ? Number(totals.costMicros) / totals.conversions : null,
+      roas: Number(totals.costMicros) > 0 ? Number(totals.conversionValueMicros) / Number(totals.costMicros) : null,
     },
     campaigns: [...input.campaigns],
   }
 }
 
-function csvCell(value: string | number | null) {
+type CsvValue = string | number | null | { numeric: string }
+function numeric(value: string): CsvValue {
+  if (!/^-?\d+(?:\.\d+)?$/.test(value)) throw new Error('Invalid report CSV metric')
+  return { numeric: value }
+}
+function csvCell(value: CsvValue) {
+  if (value !== null && typeof value === 'object') return `"${value.numeric}"`
   const text = typeof value === 'string' ? spreadsheetText(value) : value === null ? '' : String(value)
   return `"${text.replaceAll('"', '""')}"`
 }
 
 export function clientReportCsv(model: ClientReportModel) {
-  const rows: Array<Array<string | number | null>> = [
+  const rows: CsvValue[][] = [
     ['report_generated_at', model.generatedAt.toISOString()],
     ['period_days', model.periodDays],
+    ['period_from', model.window?.from ?? null],
+    ['period_through', model.window?.through ?? null],
+    ['timezone', model.window?.timezone ?? null],
+    ['source_version', model.sourceVersion],
     ['client', model.clientName],
     ['currency', model.currencyCode],
     ['editorial_comment', model.editorialComment],
     ['action_plan', model.actionPlan],
+    ['account_cost_micros', numeric(model.totals.costMicros)],
+    ['account_impressions', numeric(model.totals.impressions)],
+    ['account_clicks', numeric(model.totals.clicks)],
+    ['account_conversions', model.totals.conversions],
+    ['account_conversion_value_micros', numeric(model.totals.conversionValueMicros)],
     [],
     ['campaign_id', 'campaign_name', 'channel', 'status', 'impressions', 'clicks', 'cost_micros', 'conversions', 'conversion_value_micros'],
     ...model.campaigns.map((campaign) => [
@@ -85,11 +125,11 @@ export function clientReportCsv(model: ClientReportModel) {
       campaign.name,
       campaign.channelType,
       campaign.status,
-      campaign.impressions,
-      campaign.clicks,
-      campaign.costMicros,
+      numeric(campaign.impressions),
+      numeric(campaign.clicks),
+      numeric(campaign.costMicros),
       campaign.conversions,
-      campaign.conversionValueMicros,
+      numeric(campaign.conversionValueMicros),
     ]),
   ]
   return `\uFEFF${rows.map((row) => row.map(csvCell).join(',')).join('\r\n')}\r\n`

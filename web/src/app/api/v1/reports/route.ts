@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { apiData, apiError, ApiV1Error, authenticateApiRequest, decodeCursor, pageResult } from '@/lib/api-v1'
-import { createShareToken, hashToken } from '@/lib/tokens'
+import { reportPeriodSelectionSchema } from '@/lib/report-period-selection'
+import { createShareToken } from '@/lib/tokens'
 import { createApiReport, listApiReports } from '@/lib/api-v1-repository'
 
 export async function GET(request: Request) {
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
   }
 }
 
-const createSchema = z.object({ clientId: z.string().uuid(), label: z.string().trim().min(2).max(160) })
+const createSchema = z.object({ clientId: z.string().uuid(), label: z.string().trim().min(2).max(160), periodConfig: reportPeriodSelectionSchema.optional(), mode: z.enum(['dynamic', 'fixed']).optional(), locale: z.enum(['fr', 'en']).optional() }).strict()
 
 export async function POST(request: Request) {
   const requestId = crypto.randomUUID()
@@ -39,8 +40,10 @@ export async function POST(request: Request) {
       actorId: `api-key:${credential.key.id}`,
       clientId: input.clientId,
       label: input.label,
-      tokenHash: hashToken(token),
-      tokenPrefix: token.slice(0, 12),
+      token,
+      periodConfig: input.periodConfig,
+      mode: input.mode,
+      locale: input.locale,
       entitlements: credential.entitlements,
     })
     return apiData({ report, token }, requestId, null, 201)

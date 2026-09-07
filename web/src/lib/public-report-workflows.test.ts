@@ -8,18 +8,21 @@ const mocks = vi.hoisted(() => ({
     mocks.contexts.push(context)
     return callback(mocks.databases.shift())
   }),
+  edition: vi.fn(async () => ({ edition: { id: 'edition-1', expiresAt: new Date('2026-11-10T08:00:00Z') } })),
   encrypt: vi.fn((value: string) => `encrypted:${value}`),
   hashToken: vi.fn((value: string) => `hashed:${value}`),
   hashOtp: vi.fn((id: string, otp: string) => `otp:${id}:${otp}`),
 }))
 
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
-vi.mock('@/lib/crypto', () => ({ encryptSecret: mocks.encrypt }))
+vi.mock('@/lib/report-editions', () => ({ createReportEditionInTransaction: mocks.edition }))
+vi.mock('@/lib/crypto', () => ({ encryptSecret: mocks.encrypt, decryptSecret: (value: string) => value.replace(/^encrypted:/, '') }))
 vi.mock('@/lib/tokens', () => ({ hashToken: mocks.hashToken, hashOtp: mocks.hashOtp }))
 
 import { entitlementContext } from './entitlements'
 import {
   createWorkspacePublicReport,
+  reviseWorkspacePublicReport,
   issuePublicReportOtp,
   revokeWorkspacePublicReport,
   submitPublicReportFeedback,
@@ -37,6 +40,7 @@ const now = new Date('2026-08-12T08:00:00.000Z')
 function publicReportDatabase(input: {
   statementResults?: unknown[]
   domain?: unknown
+  share?: unknown
   schedule?: unknown
   recipient?: unknown
   approval?: unknown
@@ -45,6 +49,7 @@ function publicReportDatabase(input: {
   return databaseDouble({
     statementResults: input.statementResults,
     query: {
+      shareLinks: { findFirst: vi.fn(async () => input.share) },
       workspaceDomains: { findFirst: vi.fn(async () => input.domain) },
       reportSchedules: { findFirst: vi.fn(async () => input.schedule) },
       reportRecipients: { findFirst: vi.fn(async () => input.recipient) },
@@ -112,9 +117,29 @@ describe('public report workflows', () => {
     await expect(createWorkspacePublicReport(input)).rejects.toThrow('révélation one-shot')
   })
 
+  it.each([false, true])('reveals a revision with a current share or legacy scheduled token (%s)', async (legacy) => {
+    const database = publicReportDatabase({ statementResults: [[], [], [{ id: 'revelation-1' }]],
+      share: { id: shareId, active: true, tokenHash: 'hashed:token', encryptedReportToken: legacy ? null : 'encrypted:token', expiresAt: now },
+      schedule: legacy ? { encryptedReportToken: 'encrypted:token' } : undefined,
+      domain: legacy ? undefined : { hostname: 'reports.example.test' },
+    })
+    mocks.databases.push(database.db)
+    await expect(reviseWorkspacePublicReport({ workspaceId, actorUserId, shareId, previousEditionId: 'previous-edition', fallbackOrigin: 'https://ads.example.test', now })).resolves.toEqual({ id: 'revelation-1' })
+    expect(mocks.edition).toHaveBeenCalledWith(database.db, expect.objectContaining({ kind: 'revision', previousEditionId: 'previous-edition' }))
+    expect(database.capture.values[0]).toMatchObject({ encryptedSecret: `encrypted:https://${legacy ? 'ads' : 'reports'}.example.test/r/token?edition=edition-1` })
+  })
+
+  it('does not rotate a missing historical token or reveal a changed capability', async () => {
+    for (const share of [undefined, { id: shareId }, { id: shareId, tokenHash: 'hashed:changed', encryptedReportToken: 'encrypted:token' }]) {
+      mocks.databases.push(publicReportDatabase({ statementResults: [[]], share }).db)
+      await expect(reviseWorkspacePublicReport({ workspaceId, actorUserId, shareId, previousEditionId: 'previous-edition', fallbackOrigin: 'https://ads.example.test', now })).rejects.toThrow()
+    }
+    expect(mocks.edition).not.toHaveBeenCalled()
+  })
+
   it('revokes a report and its schedule atomically', async () => {
     const database = publicReportDatabase({
-      statementResults: [[{ id: shareId }]], schedule: { id: 'schedule-1', deliveryLeaseUntil: null },
+      statementResults: [[], [{ id: shareId }]], schedule: { id: 'schedule-1', deliveryLeaseUntil: null },
     })
     mocks.databases.push(database.db)
     await revokeWorkspacePublicReport({ workspaceId, actorUserId, shareId, now })

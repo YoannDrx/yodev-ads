@@ -32,6 +32,8 @@ function queryDouble(encryptedValue: string, workspace: unknown = { id: workspac
     secretRevelations: { findMany: vi.fn(async () => [row('encryptedSecret')]) },
     notificationChannels: { findMany: vi.fn(async () => [row('encryptedDestination')]) },
     notificationOAuthSessions: { findMany: vi.fn(async () => [row('encryptedRefreshToken')]) },
+    shareLinks: { findMany: vi.fn(async () => [row('encryptedReportToken')]) },
+    reportEditions: { findMany: vi.fn(async () => [row('encryptedDelivery')]) },
     reportSchedules: { findMany: vi.fn(async () => [row('encryptedReportToken')]) },
   }
 }
@@ -55,7 +57,7 @@ describe('workspace secret rotation', () => {
     process.env.APP_ENCRYPTION_KEYS = JSON.stringify({ current: Buffer.alloc(32, 9).toString('base64url') })
     process.env.APP_ENCRYPTION_CURRENT_KID = 'current'
     const database = databaseDouble({
-      statementResults: [[{ id: '1' }], [{ id: '2' }], [{ id: '3' }], [{ id: '4' }], [{ id: '5' }], [{ id: '6' }], []],
+      statementResults: [[{ id: '1' }], [{ id: '2' }], [{ id: '3' }], [{ id: '4' }], [{ id: '5' }], [{ id: '6' }], [{ id: '7' }], [{ id: '8' }], []],
       query: queryDouble(legacy),
     })
     mocks.database = database.db
@@ -63,10 +65,10 @@ describe('workspace secret rotation', () => {
     await expect(rotateWorkspaceSecrets(workspaceId)).resolves.toMatchObject({
       workspaceId,
       currentKid: 'current',
-      rotated: 6,
+      rotated: 8,
       skipped: false,
     })
-    expect(database.capture.sets).toHaveLength(6)
+    expect(database.capture.sets).toHaveLength(8)
     for (const update of database.capture.sets as Array<Record<string, string>>) {
       const value = Object.entries(update).find(([key]) => key.startsWith('encrypted'))?.[1]
       expect(value).toBeDefined()
@@ -75,7 +77,7 @@ describe('workspace secret rotation', () => {
     expect(database.capture.values).toContainEqual(expect.objectContaining({
       action: 'workspace.secrets_rotated',
       actorUserId: 'system:secret-rotation',
-      metadata: expect.objectContaining({ currentKid: 'current', rotated: 6 }),
+      metadata: expect.objectContaining({ currentKid: 'current', rotated: 8 }),
     }))
     expect(JSON.stringify(database.capture.values)).not.toContain('sensitive-value')
   })

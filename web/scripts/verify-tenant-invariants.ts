@@ -6,7 +6,20 @@ type InvariantRow = { invariant: string; violations: number }
 async function main() {
   const rows = await withSystemTransaction(async (transaction) => {
     const result = await transaction.execute<InvariantRow>(sql`
-    select 'workspace_state' as invariant, count(*)::int as violations
+    select 'report_edition_client_tenant' as invariant, count(*)::int as violations
+      from report_editions child join clients parent on parent.id = child.client_id where child.workspace_id <> parent.workspace_id
+    union all
+    select 'report_edition_share_scope', count(*)::int
+      from report_editions child join share_links parent on parent.id = child.share_id where child.workspace_id <> parent.workspace_id or child.client_id <> parent.client_id
+    union all
+    select 'report_edition_content_identity', count(*)::int
+      from report_editions where source_version is distinct from payload->>'sourceVersion'
+        or period_from is distinct from payload->'window'->>'from'
+        or period_through is distinct from payload->'window'->>'through'
+        or timezone is distinct from payload->'window'->>'timezone'
+        or currency_code is distinct from payload->>'currencyCode'
+    union all
+    select 'workspace_state', count(*)::int
       from workspaces where access_state is null
     union all
     select 'duplicate_stripe_subscription', count(*)::int

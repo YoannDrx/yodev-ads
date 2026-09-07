@@ -32,6 +32,7 @@ import {
   performanceSnapshots,
   analyticalCollections,
   reportSchedules,
+  reportEditions,
   reportTemplates,
   reportTemplateVersions,
   safetyPolicies,
@@ -168,12 +169,18 @@ async function collectWorkspaceExport(workspaceId: string) {
         label: true,
         active: true,
         allowFeedback: true,
+        mode: true, periodDays: true, periodConfig: true, locale: true, editorialComment: true, actionPlan: true,
         expiresAt: true,
         lastViewedAt: true,
         createdAt: true,
         updatedAt: true,
       },
     })
+    const reportEditionRows = await db.query.reportEditions.findMany({ where: eq(reportEditions.workspaceId, workspaceId), columns: {
+      id: true, clientId: true, shareId: true, scheduleId: true, kind: true, editionNumber: true, previousEditionId: true,
+      periodFrom: true, periodThrough: true, timezone: true, currencyCode: true, sourceVersion: true, modelVersion: true,
+      payload: true, runKey: true, generatedAt: true, expiresAt: true,
+    } })
     const reportTemplateRows = await db.query.reportTemplates.findMany({ where: eq(reportTemplates.workspaceId, workspaceId) })
     const reportTemplateVersionRows = await db.query.reportTemplateVersions.findMany({ where: eq(reportTemplateVersions.workspaceId, workspaceId) })
     const reportScheduleRows = await db.query.reportSchedules.findMany({
@@ -268,6 +275,7 @@ async function collectWorkspaceExport(workspaceId: string) {
       reportTemplates: reportTemplateRows,
       reportTemplateVersions: reportTemplateVersionRows,
       reportSchedules: reportScheduleRows,
+      reportEditions: reportEditionRows,
       apiKeys: keys,
       notificationChannels: channels,
       legalAcceptances: legal,
@@ -315,6 +323,7 @@ export async function runWorkspaceExport(exportJobId: string, workspaceId: strin
       'reports/templates.csv': rowsToCsv(data.reportTemplates),
       'reports/template-versions.csv': rowsToCsv(data.reportTemplateVersions),
       'reports/schedules.csv': rowsToCsv(data.reportSchedules),
+      'reports/editions.json': JSON.stringify(data.reportEditions, null, 2),
       'README.txt': 'Export Ads by Yodev. Les secrets OAuth, clés API complètes, tokens de rapport et destinations de notification sont volontairement exclus.\n',
     }
     const archive = exportArchive(files)

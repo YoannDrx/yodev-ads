@@ -1,4 +1,4 @@
-import { isSupportedReportPeriod, unsupportedReportPeriodMessage } from '@/lib/report-period'
+import { getPublicReportEdition } from '@/lib/report-editions'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
@@ -9,9 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { getPublicShare, getVerifiedReportRecipient, listPublicClientApprovals } from '@/lib/data'
-import { buildClientReportModel } from '@/lib/client-report-model'
 import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/format'
-import { GoogleAdsGateway } from '@/lib/google-ads'
 import { consumePublicReportRateLimits, requestIp } from '@/lib/rate-limit'
 
 export const metadata: Metadata = { title: 'Rapport client', robots: { index: false, follow: false } }
@@ -21,7 +19,7 @@ export default async function PublicReportPage({
   searchParams,
 }: {
   params: Promise<{ token: string }>
-  searchParams: Promise<{ notice?: string; error?: string; otp?: string }>
+  searchParams: Promise<{ notice?: string; error?: string; otp?: string; edition?: string }>
 }) {
   const { token } = await params
   const query = await searchParams
@@ -29,41 +27,30 @@ export default async function PublicReportPage({
   const requestHost = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host')
   const result = await getPublicShare(token, requestHost)
   if (!result) notFound()
-  const english = result.share.locale === 'en'
+  const errorEnglish = result.share.locale === 'en'
   const rate = await consumePublicReportRateLimits({
     workspaceId: result.share.workspaceId,
     token,
     ip: requestIp(requestHeaders),
   })
   if (!rate.allowed) {
-    return <main className="grid min-h-screen place-items-center p-8"><p>{english ? 'Too many requests. Try again in a few minutes.' : 'Trop de requêtes. Réessayez dans quelques minutes.'}</p></main>
+    return <main className="grid min-h-screen place-items-center p-8"><p>{errorEnglish ? 'Too many requests. Try again in a few minutes.' : 'Trop de requêtes. Réessayez dans quelques minutes.'}</p></main>
   }
-  if (!isSupportedReportPeriod(result.share.periodDays)) {
-    return <main className="grid min-h-screen place-items-center p-8"><p role="status">{unsupportedReportPeriodMessage(result.share.locale)}</p></main>
+  let issued: Awaited<ReturnType<typeof getPublicReportEdition>>
+  try {
+    issued = await getPublicReportEdition({ workspaceId: result.share.workspaceId, shareId: result.share.id, editionId: query.edition })
+  } catch {
+    return <main className="grid min-h-screen place-items-center p-8"><p role="status">{errorEnglish ? 'This edition is unavailable or its period is not fully collected. Ask your agency to check the report.' : 'Cette édition n’est pas disponible ou sa période n’est pas entièrement collectée. Demandez à votre agence de vérifier le rapport.'}</p></main>
   }
-  const [campaigns, proposals, verifiedRecipient] = await Promise.all([
-    new GoogleAdsGateway(result.connection).campaignPerformance(result.client.googleCustomerId),
-    result.share.allowFeedback
-      ? listPublicClientApprovals(result.share.workspaceId, result.client.id, result.share.id)
-      : Promise.resolve([]),
-    result.share.allowFeedback
-      ? getVerifiedReportRecipient(result.share.workspaceId, result.share.id)
-      : Promise.resolve(undefined),
+  const report = issued.model
+  const english = report.locale === 'en'
+  const campaigns = report.campaigns
+  const brandName = report.brandName
+  const poweredByYodev = report.poweredByYodev
+  const [proposals, verifiedRecipient] = await Promise.all([
+    result.share.allowFeedback ? listPublicClientApprovals(result.share.workspaceId, result.client.id, result.share.id) : Promise.resolve([]),
+    result.share.allowFeedback ? getVerifiedReportRecipient(result.share.workspaceId, result.share.id) : Promise.resolve(undefined),
   ])
-  const whiteLabel = result.workspace.plan === 'studio' || result.workspace.plan === 'agency' || result.workspace.plan === 'internal'
-  const brandName = whiteLabel ? result.workspace.brandName : 'Ads by Yodev'
-  const poweredByYodev = result.workspace.plan === 'studio'
-  const report = buildClientReportModel({
-    brandName,
-    poweredByYodev,
-    clientName: result.client.name,
-    currencyCode: result.client.currencyCode,
-    campaigns,
-    periodDays: result.share.periodDays,
-    locale: result.share.locale,
-    editorialComment: result.share.editorialComment,
-    actionPlan: result.share.actionPlan,
-  })
 
   return (
     <main className="min-h-screen bg-[#f3f6f8] text-[#121b24]">
@@ -86,25 +73,27 @@ export default async function PublicReportPage({
         <div className="flex flex-col gap-4 border-b border-black/8 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">Performance · {report.periodDays} {english ? 'days' : 'jours'}</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-[-.045em]">{result.client.name}</h1>
-            <p className="mt-2 text-sm text-[#63717d]">{english ? 'Google Ads data refreshed when this report was opened.' : 'Données Google Ads actualisées à l’ouverture de ce rapport.'}</p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-[-.045em]">{report.clientName}</h1>
+            <p className="mt-2 text-sm text-[#63717d]">{report.window?.from} → {report.window?.through} · {report.window?.timezone}</p>
+            <p className="mt-2 text-xs text-[#63717d]">{!query.edition && result.share.mode === 'dynamic' ? (english ? 'Dynamic link · current stored data' : 'Lien dynamique · données enregistrées actuelles') : (english ? 'Immutable edition' : 'Édition figée')} · {english ? 'Edition' : 'Édition'} {issued.edition.editionNumber} · {report.generatedAt.toLocaleString(english ? 'en-GB' : 'fr-FR', { timeZone: report.window?.timezone })}</p>
+            <p className="mt-1 text-xs text-[#63717d]">{english ? 'Data version' : 'Version des données'} : {report.sourceVersion?.slice(0, 12)}</p>
           </div>
           <div className="flex items-center gap-2 text-xs text-[#517163]">
             <ShieldCheck className="size-4" /> {english ? 'The reader is granted no account access.' : 'Aucun accès au compte n’est accordé au lecteur.'}
           </div>
         </div>
-        <div className="mt-5 flex justify-end">
-          <a href={`/r/${token}/csv`} className="mr-2 inline-flex h-10 items-center rounded-lg border border-[#0d1722] px-4 text-sm font-medium text-[#0d1722]">
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <a href={`/r/${token}/csv?edition=${issued.edition.id}`} className="inline-flex h-10 items-center rounded-lg border border-[#0d1722] px-4 text-sm font-medium text-[#0d1722]">
             <Download className="mr-2 size-4" /> {english ? 'Download CSV' : 'Télécharger le CSV'}
           </a>
-          <a href={`/r/${token}/pdf`} className="inline-flex h-10 items-center rounded-lg bg-[#0d1722] px-4 text-sm font-medium text-white">
+          <a href={`/r/${token}/pdf?edition=${issued.edition.id}`} className="inline-flex h-10 items-center rounded-lg bg-[#0d1722] px-4 text-sm font-medium text-white">
             <Download className="mr-2 size-4" /> {english ? 'Download PDF' : 'Télécharger le PDF'}
           </a>
         </div>
         <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <ReportMetric
             label={english ? 'Spend' : 'Investissement'}
-            value={formatMoneyFromMicros(report.totals.costMicros, result.client.currencyCode)}
+            value={formatMoneyFromMicros(report.totals.costMicros, report.currencyCode)}
             icon={ReceiptText}
           />
           <ReportMetric label="Conversions" value={formatInteger(report.totals.conversions)} icon={Target} />
@@ -123,7 +112,7 @@ export default async function PublicReportPage({
         )}
         {proposals.length > 0 && (
           <section className="mt-6 rounded-3xl border border-[#d7e3de] bg-white p-6">
-            <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">{english ? 'Decisions to review' : 'Décisions à valider'}</p><h2 className="mt-2 text-xl font-semibold">{english ? 'Proposals from your agency' : 'Propositions de votre agence'}</h2><p className="mt-1 text-sm text-[#63717d]">{english ? 'Your feedback is advisory: only the agency can execute the change in Google Ads.' : 'Votre retour est consultatif : seule l’agence peut exécuter le changement dans Google Ads.'}</p></div>
+            <div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">{english ? 'Current decisions · outside the frozen report' : 'Décisions actuelles · hors du bilan figé'}</p><h2 className="mt-2 text-xl font-semibold">{english ? 'Proposals from your agency' : 'Propositions de votre agence'}</h2><p className="mt-1 text-sm text-[#63717d]">{english ? 'Your feedback is advisory: only the agency can execute the change in Google Ads.' : 'Votre retour est consultatif : seule l’agence peut exécuter le changement dans Google Ads.'}</p></div>
             {!verifiedRecipient && (
               <div className="mb-5 rounded-2xl bg-[#f3f6f8] p-4">
                 <p className="text-sm font-semibold">{english ? 'Email verification required' : 'Vérification email requise'}</p>
@@ -183,10 +172,10 @@ export default async function PublicReportPage({
                     <tr key={campaign.id}>
                       <td className="px-5 py-4 font-medium">{campaign.name}</td>
                       <td className="px-4 py-4 text-xs text-[#63717d]">
-                        {campaign.status === 'ENABLED' ? (english ? 'Active' : 'Active') : (english ? 'Paused' : 'En pause')}
+                        {campaign.status === 'ENABLED' ? 'Active' : campaign.status === 'PAUSED' ? (english ? 'Paused' : 'En pause') : campaign.status === 'REMOVED' ? (english ? 'Removed' : 'Supprimée') : campaign.status}
                       </td>
                       <td className="px-4 py-4 text-right">
-                        {formatMoneyFromMicros(campaign.costMicros, result.client.currencyCode)}
+                        {formatMoneyFromMicros(campaign.costMicros, report.currencyCode)}
                       </td>
                       <td className="px-4 py-4 text-right">{formatInteger(campaign.clicks)}</td>
                       <td className="px-5 py-4 text-right">

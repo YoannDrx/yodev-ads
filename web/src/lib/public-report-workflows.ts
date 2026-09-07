@@ -1,6 +1,7 @@
 import 'server-only'
 
-import { reportPeriodSchema } from '@/lib/report-period'
+import { storedReportPeriod, type ReportPeriodSelection } from '@/lib/report-period-selection'
+import { createReportEditionInTransaction } from '@/lib/report-editions'
 
 import { and, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm'
 import {
@@ -15,10 +16,10 @@ import {
 } from '@/db/schema'
 import { withTenantTransaction } from '@/db/transactions'
 import { insertActivationMilestone } from '@/lib/activation'
-import { encryptSecret } from '@/lib/crypto'
+import { decryptSecret, encryptSecret } from '@/lib/crypto'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { hashOtp, hashToken } from '@/lib/tokens'
-import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { lockWorkspaceAccessBoundary, lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
 
@@ -29,12 +30,14 @@ export function createWorkspacePublicReport(input: ActorContext & {
   actionPlan?: string
   locale: 'fr' | 'en'
   periodDays: number
+  periodConfig?: ReportPeriodSelection
+  mode?: 'dynamic' | 'fixed'
   token: string
   entitlements: EntitlementContext
   fallbackOrigin: string
   now?: Date
 }) {
-  reportPeriodSchema.parse(input.periodDays)
+  const periodConfig = storedReportPeriod(input)
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
     const entitlements = await lockWorkspaceEntitlements(transaction, input.workspaceId, 'monitoring')
@@ -52,11 +55,15 @@ export function createWorkspacePublicReport(input: ActorContext & {
       actionPlan: input.actionPlan || null,
       locale: input.locale,
       periodDays: input.periodDays,
+      periodConfig,
+      mode: input.mode ?? 'dynamic',
+      encryptedReportToken: encryptSecret(input.token),
       tokenHash: hashToken(input.token),
       tokenPrefix: input.token.slice(0, 12),
       expiresAt: new Date(now.getTime() + 90 * 24 * 60 * 60_000),
     }).returning({ id: shareLinks.id })
     if (!share) throw new Error('La création du rapport a échoué.')
+    const issued = await createReportEditionInTransaction(transaction, { workspaceId: input.workspaceId, shareId: share.id, actorUserId: input.actorUserId, kind: input.mode === 'fixed' ? 'initial' : 'dynamic', now })
     await transaction.insert(auditEvents).values({
       workspaceId: input.workspaceId,
       actorUserId: input.actorUserId,
@@ -85,7 +92,7 @@ export function createWorkspacePublicReport(input: ActorContext & {
       workspaceId: input.workspaceId,
       userId: input.actorUserId,
       kind: 'report_url',
-      encryptedSecret: encryptSecret(`${origin}/r/${input.token}`),
+      encryptedSecret: encryptSecret(`${origin}/r/${input.token}${input.mode === 'fixed' ? `?edition=${issued.edition.id}` : ''}`),
       expiresAt: new Date(now.getTime() + 5 * 60_000),
     }).returning({ id: secretRevelations.id })
     if (!revelation) throw new Error('La révélation one-shot du rapport a échoué.')
@@ -93,9 +100,31 @@ export function createWorkspacePublicReport(input: ActorContext & {
   })
 }
 
+export function reviseWorkspacePublicReport(input: ActorContext & { shareId: string; previousEditionId: string; fallbackOrigin: string; now?: Date }) {
+  const now = input.now ?? new Date()
+  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+    const share = await db.query.shareLinks.findFirst({ where: and(eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.id, input.shareId), eq(shareLinks.active, true)) })
+    const schedule = await db.query.reportSchedules.findFirst({ where: and(eq(reportSchedules.workspaceId, input.workspaceId), eq(reportSchedules.shareId, input.shareId)) })
+    const encryptedToken = share?.encryptedReportToken ?? schedule?.encryptedReportToken
+    if (!share || !encryptedToken) throw new Error('Ce lien historique ne permet pas de révéler une révision. Créez un nouveau rapport.')
+    const token = decryptSecret(encryptedToken)
+    if (hashToken(token) !== share.tokenHash) throw new Error('Le lien a changé. Actualisez la page.')
+    const issued = await createReportEditionInTransaction(db, { ...input, kind: 'revision', now })
+    await db.update(shareLinks).set({ expiresAt: new Date(Math.max(share.expiresAt?.getTime() ?? 0, issued.edition.expiresAt.getTime())), updatedAt: now }).where(and(eq(shareLinks.id, share.id), eq(shareLinks.workspaceId, input.workspaceId)))
+    const domain = entitlements.capabilities.has('custom_domain') ? await db.query.workspaceDomains.findFirst({ where: and(eq(workspaceDomains.workspaceId, input.workspaceId), eq(workspaceDomains.verificationStatus, 'active'), isNull(workspaceDomains.revokedAt)) }) : undefined
+    const [revelation] = await db.insert(secretRevelations).values({ workspaceId: input.workspaceId, userId: input.actorUserId, kind: 'report_url',
+      encryptedSecret: encryptSecret(`${domain ? `https://${domain.hostname}` : input.fallbackOrigin}/r/${token}?edition=${issued.edition.id}`), expiresAt: new Date(now.getTime() + 5 * 60_000),
+    }).returning({ id: secretRevelations.id })
+    if (!revelation) throw new Error('La révélation du rapport a échoué.')
+    return revelation
+  })
+}
+
 export function revokeWorkspacePublicReport(input: ActorContext & { shareId: string; now?: Date }) {
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    await lockWorkspaceAccessBoundary(db, input.workspaceId)
     const schedule = await db.query.reportSchedules.findFirst({
       where: and(eq(reportSchedules.workspaceId, input.workspaceId), eq(reportSchedules.shareId, input.shareId)),
     })

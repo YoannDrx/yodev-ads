@@ -175,7 +175,7 @@ describe('durable job runner orchestration', () => {
       job('monitoring.scan', { workspaceId }),
       job('monitoring.scan_chunk', { workspaceId, clientId, parentJobId: entityId, agentIds: [entityId] }),
       job('monitoring.weekly_digest', { workspaceId }),
-      job('report.schedule_deliver', { scheduleId: entityId, runKey: '2026-08-10' }),
+      job('report.schedule_deliver', { scheduleId: entityId, runKey: 'weekly:2026-08-10' }),
       job('task.mention_deliver', { commentId: entityId, preferenceId: clientId }),
       job('task.personal_digest', { preferenceId: entityId, runKey: '2026-08-10' }),
       job('lifecycle.email', { workspaceId, kind: 'welcome', referenceKey: 'trial-1', effectiveAt: '2026-08-12T10:00:00.000Z' }),
