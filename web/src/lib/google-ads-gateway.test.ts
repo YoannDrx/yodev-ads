@@ -204,8 +204,8 @@ describe('GoogleAdsGateway v25 contracts', () => {
       googleResponse([{}]),
       googleResponse([{}]),
       // Daily series and core analysis reports.
-      googleResponse([{}, { segments: { date: '2026-08-01' } }]),
-      googleResponse([{}, { campaign: { id: '1' }, segments: { date: '2026-08-01' } }]),
+      googleResponse([{ segments: { date: '2026-08-01' } }]),
+      googleResponse([{ campaign: { id: '1' }, segments: { date: '2026-08-01' } }]),
       googleResponse([{}]),
       googleResponse([{}]),
       googleResponse([{ adGroupAd: { ad: { responsiveSearchAd: { headlines: [{}, { text: 'Headline' }], descriptions: [{}] } } } }]),
@@ -610,6 +610,32 @@ describe('GoogleAdsGateway v25 contracts', () => {
       campaigns: [], searchTerms: [], keywords: [], ads: [],
       conversionTracking: { status: 'UNSPECIFIED', managerCustomer: null, acceptedCustomerDataTerms: false, enhancedConversionsForLeadsEnabled: false },
     })
+  })
+
+  it('rejects incomplete metric streams instead of silently dropping rows', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    for (const body of [{}, [{ error: { message: 'partial failure' } }], [{ results: {} }]]) {
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(body), { status: 200 }))
+      await expect(gateway.dailyAccountMetrics('1234567890', '2026-08-01', '2026-08-02')).rejects.toThrow('invalid Google Ads search')
+    }
+    fetchMock.mockResolvedValueOnce(googleResponse([{}]))
+    await expect(gateway.dailyAccountMetrics('1234567890', '2026-08-01', '2026-08-02')).rejects.toThrow('Incomplete Google account')
+    fetchMock.mockResolvedValueOnce(googleResponse([{ segments: { date: '2026-08-01' } }]))
+    await expect(gateway.dailyCampaignMetrics('1234567890', '2026-08-01', '2026-08-02')).rejects.toThrow('Incomplete Google campaign')
+    await expect(gateway.dailyAccountMetrics('1234567890', '2026-02-29', '2026-03-02')).rejects.toThrow('Invalid calendar date')
+  })
+
+  it('reads enabled conversion windows without a metrics filter and conservatively handles unknown settings', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    fetchMock.mockResolvedValueOnce(googleResponse([{ conversionAction: { resourceName: 'conversionActions/1', clickThroughLookbackWindowDays: '30', viewThroughLookbackWindowDays: '1' } }, { conversionAction: { resourceName: 'conversionActions/2', clickThroughLookbackWindowDays: '90', viewThroughLookbackWindowDays: 0 } }]))
+    expect(await gateway.conversionLookbackDays('1234567890')).toBe(90)
+    expect(String(fetchMock.mock.calls.at(-1)?.[1]?.body)).not.toContain('metrics.')
+    for (const rows of [[], [{}], [{ conversionAction: { resourceName: 'x' } }], [{ conversionAction: { resourceName: 'x', clickThroughLookbackWindowDays: '-1', viewThroughLookbackWindowDays: 0 } }]]) {
+      fetchMock.mockResolvedValueOnce(googleResponse(rows))
+      expect(await gateway.conversionLookbackDays('1234567890')).toBeNull()
+    }
   })
 
   it('maps daily account metrics and validates date ranges', async () => {

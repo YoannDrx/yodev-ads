@@ -1085,6 +1085,12 @@ export const dailyAccountMetrics = pgTable(
     conversions: numeric('conversions', { precision: 22, scale: 4 }).default('0').notNull(),
     conversionValueMicros: numeric('conversion_value_micros', { precision: 22, scale: 0 }).default('0').notNull(),
     collectedAt: timestamp('collected_at', { withTimezone: true }).defaultNow().notNull(),
+    timezone: varchar('timezone', { length: 64 }),
+    coverageStatus: varchar('coverage_status', { length: 24 }).default('legacy').notNull(),
+    sourceObservedAt: timestamp('source_observed_at', { withTimezone: true }),
+    sourceVersion: varchar('source_version', { length: 64 }),
+    accountRows: integer('account_rows'),
+    campaignRows: integer('campaign_rows'),
   },
   (table) => [
     uniqueIndex('daily_account_metrics_client_date_idx').on(table.clientId, table.metricDate),

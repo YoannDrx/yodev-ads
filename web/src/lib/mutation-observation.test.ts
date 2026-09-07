@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { mutationObservationCalendar, mutationObservationOutcome, type MutationObservationMetrics } from './mutation-observation'
 
 const metrics = (overrides: Partial<MutationObservationMetrics> = {}): MutationObservationMetrics => ({
-  dataPoints: 7, expectedDataPoints: 7, costMicros: '100', impressions: '1000', clicks: '100', conversions: '10', conversionValueMicros: '500', ...overrides,
+  coverageVersion: 1, dataPoints: 7, expectedDataPoints: 7, costMicros: '100', impressions: '1000', clicks: '100', conversions: '10', conversionValueMicros: '500', ...overrides,
 })
 
 describe('mutation observation', () => {
@@ -22,6 +22,8 @@ describe('mutation observation', () => {
   })
 
   it('marks incomplete daily series explicitly', () => {
+    expect(mutationObservationOutcome(metrics({ coverageVersion: undefined }), metrics())).toMatchObject({ state: 'insufficient_data', deltasPercent: { cost: null } })
+    expect(mutationObservationOutcome(metrics({ expectedDataPoints: 0 }), metrics())).toMatchObject({ state: 'insufficient_data' })
     expect(mutationObservationOutcome(metrics(), metrics({ dataPoints: 5 }))).toEqual(expect.objectContaining({ state: 'insufficient_data' }))
   })
 })

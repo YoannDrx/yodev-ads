@@ -37,6 +37,7 @@ import {
   workspaces,
 } from '@/db/schema'
 import { hashToken } from '@/lib/tokens'
+import { shiftCalendarDate } from '@/lib/calendar-window'
 import { computePacing, pacingCalendar } from '@/lib/pacing'
 import { workspaceHasCapability } from '@/lib/entitlements'
 import { insertActivationMilestone } from '@/lib/activation'
@@ -519,12 +520,16 @@ export async function getClientGoalAndPacing(workspaceId: string, clientId: stri
       where: and(eq(clientGoals.workspaceId, workspaceId), eq(clientGoals.clientId, clientId)),
     })
     if (!goal) return { goal: undefined, pacing: undefined }
-    const calendar = pacingCalendar(new Date(), timezone)
+    const currentCalendar = pacingCalendar(new Date(), timezone)
+    const calendar = { ...currentCalendar, through: shiftCalendarDate(currentCalendar.through, -1), elapsedDays: currentCalendar.elapsedDays - 1 }
     const [metrics] = await db.select({ observedDays: count(), spendMicros: sum(dailyAccountMetrics.costMicros) })
       .from(dailyAccountMetrics)
       .where(and(
         eq(dailyAccountMetrics.workspaceId, workspaceId),
         eq(dailyAccountMetrics.clientId, clientId),
+        eq(dailyAccountMetrics.timezone, timezone),
+        eq(dailyAccountMetrics.coverageStatus, 'complete'),
+        isNotNull(dailyAccountMetrics.sourceVersion),
         gte(dailyAccountMetrics.metricDate, calendar.from),
         lte(dailyAccountMetrics.metricDate, calendar.through),
       ))

@@ -27,6 +27,7 @@ export type JobType =
   | 'mutation.observe'
   | 'notification.deliver'
   | 'metrics.daily_sync'
+  | 'metrics.sync_chunk'
   | 'google.accounts_sync'
   | 'google.read_drill'
   | 'google.change_sync'
@@ -63,6 +64,7 @@ export const GOOGLE_READ_JOB_TYPES: JobType[] = [
   'google.mutation.reconcile',
   'mutation.observe',
   'metrics.daily_sync',
+  'metrics.sync_chunk',
   'google.accounts_sync',
   'google.read_drill',
   'google.change_sync',

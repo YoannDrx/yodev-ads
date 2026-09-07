@@ -19,7 +19,7 @@ export function computePacing(input: {
   daysInMonth: number
   observedDays: number
 }) {
-  if (input.monthlyBudgetMicros <= 0 || input.elapsedDays <= 0 || input.observedDays <= 0) {
+  if (input.monthlyBudgetMicros <= 0 || input.elapsedDays <= 0 || input.observedDays <= 0 || input.observedDays !== input.elapsedDays) {
     return { status: 'missing_data' as const, actualSpendMicros: input.actualSpendMicros, expectedSpendMicros: 0, varianceMicros: 0, variancePercent: null, forecastMicros: null }
   }
   const expectedSpendMicros = input.monthlyBudgetMicros * input.elapsedDays / input.daysInMonth

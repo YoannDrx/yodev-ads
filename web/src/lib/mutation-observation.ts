@@ -1,4 +1,5 @@
 export type MutationObservationMetrics = {
+  coverageVersion?: 1
   dataPoints: number
   expectedDataPoints: number
   costMicros: string
@@ -42,19 +43,19 @@ function percentageDelta(beforeRaw: string, afterRaw: string) {
 }
 
 export function mutationObservationOutcome(baseline: MutationObservationMetrics, observed: MutationObservationMetrics) {
-  const complete = baseline.dataPoints >= baseline.expectedDataPoints && observed.dataPoints >= observed.expectedDataPoints
+  const complete = baseline.coverageVersion === 1 && observed.coverageVersion === 1 && baseline.expectedDataPoints > 0 && observed.expectedDataPoints > 0 && baseline.dataPoints >= baseline.expectedDataPoints && observed.dataPoints >= observed.expectedDataPoints
   return {
     state: complete ? 'completed' : 'insufficient_data',
     coverage: {
-      baseline: baseline.expectedDataPoints ? baseline.dataPoints / baseline.expectedDataPoints : 0,
-      observed: observed.expectedDataPoints ? observed.dataPoints / observed.expectedDataPoints : 0,
+      baseline: baseline.coverageVersion === 1 && baseline.expectedDataPoints ? baseline.dataPoints / baseline.expectedDataPoints : 0,
+      observed: observed.coverageVersion === 1 && observed.expectedDataPoints ? observed.dataPoints / observed.expectedDataPoints : 0,
     },
     deltasPercent: {
-      cost: percentageDelta(baseline.costMicros, observed.costMicros),
-      impressions: percentageDelta(baseline.impressions, observed.impressions),
-      clicks: percentageDelta(baseline.clicks, observed.clicks),
-      conversions: percentageDelta(baseline.conversions, observed.conversions),
-      conversionValue: percentageDelta(baseline.conversionValueMicros, observed.conversionValueMicros),
+      cost: complete ? percentageDelta(baseline.costMicros, observed.costMicros) : null,
+      impressions: complete ? percentageDelta(baseline.impressions, observed.impressions) : null,
+      clicks: complete ? percentageDelta(baseline.clicks, observed.clicks) : null,
+      conversions: complete ? percentageDelta(baseline.conversions, observed.conversions) : null,
+      conversionValue: complete ? percentageDelta(baseline.conversionValueMicros, observed.conversionValueMicros) : null,
     },
   }
 }

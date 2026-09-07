@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   jobs: [] as Array<Record<string, unknown>>,
   claimNextJob: vi.fn(), completeJob: vi.fn(), enqueueJob: vi.fn(), enqueueJobs: vi.fn(), failJob: vi.fn(),
   runMonitoring: vi.fn(), weeklyDigest: vi.fn(), retryNotification: vi.fn(), dispatchNotifications: vi.fn(),
-  fanOutMonitoring: vi.fn(), reminder: vi.fn(), pendingReminders: vi.fn(),
+  fanOutMetrics: vi.fn(), metricsChunk: vi.fn(), fanOutMonitoring: vi.fn(), reminder: vi.fn(), pendingReminders: vi.fn(),
   reconcile: vi.fn(), observeMutation: vi.fn(), purgeWorkspace: vi.fn(), runExport: vi.fn(), deleteExports: vi.fn(),
   externalCleanup: vi.fn(), revokeGoogleConnection: vi.fn(), recordStripeCancellation: vi.fn(),
   scheduledReport: vi.fn(), taskMention: vi.fn(), taskDigest: vi.fn(), lifecycleEmail: vi.fn(), supportEmail: vi.fn(), operationsAlert: vi.fn(),
@@ -35,6 +35,7 @@ vi.mock('@/lib/notifications', () => ({
 vi.mock('@/lib/reconcile-google-mutation', () => ({ reconcileGoogleMutation: mocks.reconcile }))
 vi.mock('@/lib/alert-reminders', () => ({ deliverAlertReminder: mocks.reminder, pendingAlertReminderJobs: mocks.pendingReminders }))
 vi.mock('@/lib/notification-delivery-recovery', () => ({ recoverNotificationDeliveries: vi.fn(async () => ({ recovered: 0 })) }))
+vi.mock('@/lib/metrics-sync', () => ({ fanOutMetricSync: mocks.fanOutMetrics, executeMetricSyncChunk: mocks.metricsChunk }))
 vi.mock('@/lib/monitoring-scan-jobs', () => ({ executeMonitoringChunk: mocks.runMonitoring, fanOutMonitoringScan: mocks.fanOutMonitoring }))
 vi.mock('@/lib/workspace-deletion', () => ({
   purgeWorkspace: mocks.purgeWorkspace,
@@ -281,19 +282,14 @@ describe('durable job runner orchestration', () => {
     }))
   })
 
-  it('syncs account and campaign daily metrics with idempotent persistence', async () => {
-    const metricJob = job('metrics.daily_sync', { workspaceId, clientId })
-    mocks.jobs.push(metricJob)
-    const contextDb = databaseDouble({ statementResults: [[client], [connection]] })
-    const persistence = databaseDouble()
-    mocks.databases.push(contextDb.db, persistence.db)
-    mocks.dailyAccountMetrics.mockResolvedValue([{ date: '2026-08-12', costMicros: '100', impressions: '10', clicks: '2', conversions: 1.5, conversionValue: 12.5 }])
-    mocks.dailyCampaignMetrics.mockResolvedValue([{ campaignId: '1', date: '2026-08-12', campaignName: 'Brand', campaignType: 'SEARCH', status: 'ENABLED', costMicros: '100', impressions: '10', clicks: '2', conversions: 1.5, conversionValue: 12.5 }])
-    const result = await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
-    expect(result.results[0].status).toBe('completed')
-    expect(mocks.dailyAccountMetrics).toHaveBeenCalledWith(client.googleCustomerId, '2026-08-01', '2026-08-12')
-    expect(persistence.capture.values).toHaveLength(2)
-    expect(persistence.capture.values[0]).toMatchObject({ conversionValueMicros: '12500000', currencyCode: 'EUR' })
+  it('routes legacy daily jobs to the coordinator and date chunks to their worker', async () => {
+    const parent = job('metrics.daily_sync', { workspaceId, clientId })
+    const chunk = job('metrics.sync_chunk', { workspaceId, clientId })
+    mocks.jobs.push(parent, chunk)
+    await runAvailableJobs({ workerId: 'worker', maximumJobs: 2 })
+    expect(mocks.fanOutMetrics).toHaveBeenCalledWith(parent)
+    expect(mocks.metricsChunk).toHaveBeenCalledWith(chunk)
+    expect(mocks.completeJob).toHaveBeenCalledTimes(2)
   })
 
   it('refreshes the complete Google account inventory after a billing plan change', async () => {
@@ -328,7 +324,8 @@ describe('durable job runner orchestration', () => {
   it('dead-letters metric sync when its tenant context no longer exists', async () => {
     const metricJob = job('metrics.daily_sync', { workspaceId, clientId })
     mocks.jobs.push(metricJob)
-    mocks.databases.push(databaseDouble({ statementResults: [[], [connection]] }).db)
+    const { NonRetryableJobError } = await import('./jobs')
+    mocks.fanOutMetrics.mockRejectedValueOnce(new NonRetryableJobError('Metrics context unavailable'))
     mocks.failJob.mockResolvedValue({ updated: true, deadLettered: true })
     await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
     expect(mocks.failJob).toHaveBeenCalledWith(metricJob, 'worker', expect.any(Error), expect.objectContaining({ forceDeadLetter: true }))

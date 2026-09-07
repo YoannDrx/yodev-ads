@@ -39,6 +39,7 @@ import {
   type ClaimedJob,
 } from '@/lib/jobs'
 import { reconcileGoogleMutation } from '@/lib/reconcile-google-mutation'
+import { executeMetricSyncChunk, fanOutMetricSync } from '@/lib/metrics-sync'
 import { executeMonitoringChunk, fanOutMonitoringScan } from '@/lib/monitoring-scan-jobs'
 import { MONITORING_AGENTS_PER_CHUNK } from '@/lib/monitoring-scan-plan'
 import { deliverAlertReminder } from '@/lib/alert-reminders'
@@ -50,7 +51,6 @@ import {
 } from '@/lib/workspace-deletion'
 import { accountLimitForPlan, getStripe } from '@/lib/billing'
 import { GoogleAdsGateway } from '@/lib/google-ads'
-import { pacingCalendar } from '@/lib/pacing'
 import { deleteExpiredExportArtifacts, runWorkspaceExport } from '@/lib/workspace-export'
 import { featureEnabled } from '@/lib/feature-flags'
 import { deliverScheduledReport } from '@/lib/scheduled-reports'
@@ -306,79 +306,10 @@ async function executeJob(job: ClaimedJob) {
       }))
       return summary
     }
-    case 'metrics.daily_sync': {
-      const payload = metricsPayload.parse(job.payload)
-      const context = await withSystemTransaction(async (db) => {
-        const [client] = await db.select().from(clients).where(and(eq(clients.id, payload.clientId), eq(clients.workspaceId, payload.workspaceId), eq(clients.active, true))).limit(1)
-        const [connection] = await db.select().from(googleAdsConnections).where(and(eq(googleAdsConnections.workspaceId, payload.workspaceId), eq(googleAdsConnections.status, 'active'))).limit(1)
-        if (!client || !connection) throw new NonRetryableJobError('Metrics sync client or connection unavailable')
-        return { client, connection }
-      })
-      const calendar = pacingCalendar(new Date(), context.client.timezone)
-      const gateway = new GoogleAdsGateway(context.connection)
-      const [metrics, campaignMetrics] = await Promise.all([
-        gateway.dailyAccountMetrics(context.client.googleCustomerId, calendar.from, calendar.through),
-        gateway.dailyCampaignMetrics(context.client.googleCustomerId, calendar.from, calendar.through),
-      ])
-      await withSystemTransaction(async (db) => {
-        for (const metric of metrics) {
-          await db.insert(dailyAccountMetrics).values({
-            workspaceId: payload.workspaceId,
-            clientId: payload.clientId,
-            metricDate: metric.date,
-            currencyCode: context.client.currencyCode,
-            costMicros: metric.costMicros,
-            impressions: metric.impressions,
-            clicks: metric.clicks,
-            conversions: String(metric.conversions),
-            conversionValueMicros: String(Math.round(metric.conversionValue * 1_000_000)),
-          }).onConflictDoUpdate({
-            target: [dailyAccountMetrics.clientId, dailyAccountMetrics.metricDate],
-            set: {
-              currencyCode: context.client.currencyCode,
-              costMicros: metric.costMicros,
-              impressions: metric.impressions,
-              clicks: metric.clicks,
-              conversions: String(metric.conversions),
-              conversionValueMicros: String(Math.round(metric.conversionValue * 1_000_000)),
-              collectedAt: new Date(),
-            },
-          })
-        }
-        for (const metric of campaignMetrics) {
-          await db.insert(dailyCampaignMetrics).values({
-            workspaceId: payload.workspaceId,
-            clientId: payload.clientId,
-            campaignId: metric.campaignId,
-            metricDate: metric.date,
-            campaignName: metric.campaignName,
-            campaignType: metric.campaignType,
-            status: metric.status,
-            currencyCode: context.client.currencyCode,
-            costMicros: metric.costMicros,
-            impressions: metric.impressions,
-            clicks: metric.clicks,
-            conversions: String(metric.conversions),
-            conversionValueMicros: String(Math.round(metric.conversionValue * 1_000_000)),
-          }).onConflictDoUpdate({
-            target: [dailyCampaignMetrics.clientId, dailyCampaignMetrics.campaignId, dailyCampaignMetrics.metricDate],
-            set: {
-              campaignName: metric.campaignName,
-              campaignType: metric.campaignType,
-              status: metric.status,
-              currencyCode: context.client.currencyCode,
-              costMicros: metric.costMicros,
-              impressions: metric.impressions,
-              clicks: metric.clicks,
-              conversions: String(metric.conversions),
-              conversionValueMicros: String(Math.round(metric.conversionValue * 1_000_000)),
-              collectedAt: new Date(),
-            },
-          })
-        }
-      })
-      return { accountDays: metrics.length, campaignDays: campaignMetrics.length, period: { from: calendar.from, through: calendar.through } }
-    }
+    case 'metrics.daily_sync':
+      return fanOutMetricSync(job)
+    case 'metrics.sync_chunk':
+      return executeMetricSyncChunk(job)
     case 'google.change_sync': {
       const payload = metricsPayload.parse(job.payload)
       const context = await googleSyncContext(payload.workspaceId, payload.clientId)

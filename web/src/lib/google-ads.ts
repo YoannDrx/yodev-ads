@@ -1,4 +1,5 @@
 import 'server-only'
+import { calendarDates } from '@/lib/calendar-window'
 import { remainingWorkMs, workSignal, pauseWithinWorkDeadline } from '@/lib/work-deadline'
 
 import { OAuth2Client } from 'google-auth-library'
@@ -954,6 +955,9 @@ export class GoogleAdsGateway {
       { method: 'POST', body: JSON.stringify({ query }) },
       true,
     )
+    if (!Array.isArray(data) || data.some((batch) => !batch || typeof batch !== 'object' || 'error' in batch || (batch.results !== undefined && !Array.isArray(batch.results)))) {
+      throw new Error('Incomplete or invalid Google Ads search response')
+    }
     return data.flatMap((batch) => batch.results ?? [])
   }
 
@@ -1739,10 +1743,27 @@ export class GoogleAdsGateway {
     }
   }
 
-  async dailyAccountMetrics(customerId: string, from: string, through: string): Promise<DailyAccountMetric[]> {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(through) || from > through) {
-      throw new Error('Invalid Google Ads metric date range')
+  async conversionLookbackDays(customerId: string): Promise<number | null> {
+    const rows = await this.search<{ conversionAction?: { resourceName?: string; clickThroughLookbackWindowDays?: string | number; viewThroughLookbackWindowDays?: string | number } }>(customerId,
+      `SELECT conversion_action.resource_name, conversion_action.click_through_lookback_window_days,
+              conversion_action.view_through_lookback_window_days
+       FROM conversion_action WHERE conversion_action.status = 'ENABLED'`)
+    if (rows.length === 0) return null
+    let maximum = 0
+    for (const row of rows) {
+      if (!row.conversionAction?.resourceName) return null
+      for (const value of [row.conversionAction.clickThroughLookbackWindowDays, row.conversionAction.viewThroughLookbackWindowDays]) {
+        if (value === undefined || value === null || value === '') return null
+        const days = Number(value)
+        if (!Number.isInteger(days) || days < 0 || days > 729) return null
+        maximum = Math.max(maximum, days)
+      }
     }
+    return maximum
+  }
+
+  async dailyAccountMetrics(customerId: string, from: string, through: string): Promise<DailyAccountMetric[]> {
+    calendarDates({ from, through })
     type Row = {
       segments?: { date?: string }
       metrics?: { impressions?: string; clicks?: string; costMicros?: string; conversions?: number; conversionsValue?: number }
@@ -1756,20 +1777,21 @@ export class GoogleAdsGateway {
        FROM customer
        WHERE segments.date BETWEEN '${from}' AND '${through}'
        ORDER BY segments.date`)
-    return rows.flatMap(({ segments, metrics }) => segments?.date ? [{
+    return rows.map(({ segments, metrics }) => {
+      if (!segments?.date) throw new Error('Incomplete Google account metric row')
+      return {
       date: segments.date,
       impressions: metrics?.impressions ?? '0',
       clicks: metrics?.clicks ?? '0',
       costMicros: metrics?.costMicros ?? '0',
       conversions: metrics?.conversions ?? 0,
       conversionValue: metrics?.conversionsValue ?? 0,
-    }] : [])
+      }
+    })
   }
 
   async dailyCampaignMetrics(customerId: string, from: string, through: string): Promise<DailyCampaignMetric[]> {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(through) || from > through) {
-      throw new Error('Invalid Google Ads metric date range')
-    }
+    calendarDates({ from, through })
     type Row = {
       campaign?: { id?: string; name?: string; status?: string; advertisingChannelType?: string }
       segments?: { date?: string }
@@ -1786,10 +1808,11 @@ export class GoogleAdsGateway {
               metrics.conversions,
               metrics.conversions_value
        FROM campaign
-       WHERE campaign.status != 'REMOVED'
-         AND segments.date BETWEEN '${from}' AND '${through}'
+       WHERE segments.date BETWEEN '${from}' AND '${through}'
        ORDER BY segments.date, campaign.id`)
-    return rows.flatMap(({ campaign, segments, metrics }) => campaign?.id && segments?.date ? [{
+    return rows.map(({ campaign, segments, metrics }) => {
+      if (!campaign?.id || !segments?.date) throw new Error('Incomplete Google campaign metric row')
+      return {
       campaignId: campaign.id,
       campaignName: campaign.name ?? 'Campagne sans nom',
       campaignType: campaign.advertisingChannelType ?? 'UNKNOWN',
@@ -1800,7 +1823,8 @@ export class GoogleAdsGateway {
       costMicros: metrics?.costMicros ?? '0',
       conversions: metrics?.conversions ?? 0,
       conversionValue: metrics?.conversionsValue ?? 0,
-    }] : [])
+      }
+    })
   }
 
   async searchTermPerformance(customerId: string): Promise<SearchTermPerformance[]> {

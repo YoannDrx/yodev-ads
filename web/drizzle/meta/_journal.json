@@ -330,6 +330,13 @@
       "when": 1788739558238,
       "tag": "0046_monitoring_observation_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788740244371,
+      "tag": "0047_metric_date_coverage",
+      "breakpoints": true
     }
   ]
 }

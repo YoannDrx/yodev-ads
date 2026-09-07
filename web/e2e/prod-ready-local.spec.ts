@@ -1,5 +1,6 @@
 import { expect, test, type Browser } from '@playwright/test'
 import { Client } from 'pg'
+import { accountCalendarDate, calendarDates, shiftCalendarDate } from '../src/lib/calendar-window'
 
 // State-changing checks only run against the disposable local fixture.
 if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
@@ -19,6 +20,43 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
       await db.query('update workspaces set access_state=$1, locale=$2 where id=$3', ['internal', 'fr', workspaceId])
       await db.end()
     })
+    for (const locale of ['fr', 'en']) test(`pacing uses covered completed days and hides forecasts with a gap in ${locale}`, async ({ browser }) => {
+      const clientId = '80000000-0000-4000-8000-000000000004'
+      await db.query('update workspaces set access_state=$1, locale=$2 where id=$3', ['internal', locale, workspaceId])
+      await db.query('delete from clients where id=$1', [clientId])
+      await db.query('insert into clients(id,workspace_id,google_customer_id,name,currency_code,timezone) values($1,$2,$3,$4,$5,$6)', [clientId, workspaceId, '8000000004', 'History fixture', 'EUR', 'Europe/Paris'])
+      await db.query('insert into client_goals(workspace_id,client_id,monthly_budget_micros,primary_kpi) values($1,$2,$3,$4)', [workspaceId, clientId, '300000000', 'cpa'])
+      const today = accountCalendarDate(new Date(), 'Europe/Paris')
+      const expectedDays = Number(today.slice(-2)) - 1
+      const dates = expectedDays ? calendarDates({ from: `${today.slice(0, 7)}-01`, through: shiftCalendarDate(today, -1) }) : []
+      for (const date of dates) await db.query('insert into daily_account_metrics(workspace_id,client_id,metric_date,currency_code,cost_micros,timezone,coverage_status,source_version) values($1,$2,$3,$4,$5,$6,$7,$8)', [workspaceId, clientId, date, 'EUR', '10000000', 'Europe/Paris', 'complete', 'browser-history'])
+      const { page, context } = await pageFor(browser, 'owner', 1440)
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      try {
+        expect((await page.goto(`/dashboard?client=${clientId}`))?.status()).toBe(200)
+        const consent = page.getByRole('button', { name: /Continuer sans mesure|Continue without/ })
+        if (await consent.isVisible()) await consent.click()
+        const spend = page.locator('[data-slot="card"]').filter({ has: page.getByText(locale === 'en' ? 'MTD spend' : 'Dépense MTD', { exact: true }) }).last()
+        const forecast = page.locator('[data-slot="card"]').filter({ has: page.getByText(locale === 'en' ? 'End-of-month forecast' : 'Forecast fin de mois', { exact: true }) }).last()
+        await expect(spend).toContainText(`${expectedDays}/${expectedDays}`)
+        if (expectedDays) {
+          await expect(forecast.locator('p.text-2xl')).not.toHaveText('—')
+          await db.query('update daily_account_metrics set coverage_status=$1 where client_id=$2 and metric_date=$3', ['legacy', clientId, dates[0]])
+          await page.reload()
+          await expect(spend).toContainText(`${expectedDays - 1}/${expectedDays}`)
+        }
+        await expect(spend.locator('p.text-2xl')).toHaveText('—')
+        await expect(forecast.locator('p.text-2xl')).toHaveText('—')
+        await expect(page.getByText(locale === 'en' ? 'Daily collection required' : 'Collecte journalière requise', { exact: true })).toBeVisible()
+        await page.screenshot({ path: test.info().outputPath(`pacing-gap-${locale}-1440.png`), fullPage: true })
+        expect(errors).toEqual([])
+      } finally {
+        await context.close()
+        await db.query('delete from clients where id=$1', [clientId])
+      }
+    })
+
     test('grace permits stored views while hiding mutations', async ({ browser }) => {
       await db.query('update workspaces set access_state=$1 where id=$2', ['grace', workspaceId])
       for (const role of ['owner', 'analyst']) {

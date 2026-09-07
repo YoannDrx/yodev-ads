@@ -3,7 +3,6 @@ import { dashboardHealth } from '@/lib/dashboard-health'
 import Link from 'next/link'
 import { Activity, ArrowDownUp, BellRing, Gauge, MousePointerClick, ReceiptText, Target } from 'lucide-react'
 import { requestGoogleAdsChange, updateClientGoal } from '@/app/actions'
-import { EmptyState } from '@/components/empty-state'
 import { FlashMessage } from '@/components/flash-message'
 import { PageHeading } from '@/components/page-heading'
 import { StatusBadge } from '@/components/status-badge'
@@ -82,6 +81,12 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     incidents: alertRows.map(({ incident }) => incident),
   })
   const collectedAt = new Date()
+  const pacingStatusLabel = {
+    missing_data: english ? 'Incomplete coverage' : 'Couverture incomplète',
+    under: english ? 'Below pace' : 'Sous le rythme prévu',
+    on_track: english ? 'On track' : 'Dans le rythme prévu',
+    over: english ? 'Above pace' : 'Au-dessus du rythme prévu',
+  }[goalContext?.pacing?.status ?? 'missing_data']
 
 
   return (
@@ -116,14 +121,13 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       />
       <FlashMessage notice={query.notice} error={query.error ?? apiError} locale={locale} />
       {!connection || !client ? (
-        <EmptyState
-          title={connection ? (english ? 'Sync your client accounts' : 'Synchronisez vos comptes clients') : undefined}
-          description={
-            connection
-              ? (english ? 'The connection is active. Start a sync from settings to import MCC accounts.' : 'La connexion est active. Lancez une synchronisation depuis les réglages pour importer les comptes du MCC.')
-              : undefined
-          }
-        />
+        <div role="status" className="rounded-xl border bg-white p-6">
+          <h2 className="font-semibold">{connection ? (english ? 'Sync your client accounts' : 'Synchronisez vos comptes clients') : (english ? 'Connect Google Ads' : 'Connectez Google Ads')}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{connection
+            ? (english ? 'Start a sync from settings to import MCC accounts.' : 'Lancez une synchronisation depuis les réglages pour importer les comptes du MCC.')
+            : (english ? 'Connect your account to collect new data. Stored budget history remains available below.' : 'Connectez votre compte pour collecter de nouvelles données. L’historique budgétaire enregistré reste disponible ci-dessous.')}</p>
+          <Button asChild variant="outline" className="mt-4"><Link href="/settings">{english ? 'Connection settings' : 'Réglages de connexion'}</Link></Button>
+        </div>
       ) : apiError ? (
         <div role="status" className="rounded-xl border bg-white p-8">
           <h2 className="font-semibold">{english ? 'Performance unavailable' : 'Performances indisponibles'}</h2>
@@ -202,14 +206,17 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
             </Card>
           </section>
 
+        </>
+      )}
+      {client && (
           <Card className="mt-6 border-[#dce5e7] shadow-none">
-            <CardHeader><CardTitle>{english ? 'Goal and monthly pacing' : 'Objectif et pacing du mois'}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{english ? `Calculated over the calendar month in ${client.timezone}, without currency conversion.` : `Calculé sur le mois calendaire dans le fuseau ${client.timezone}, sans conversion entre devises.`}</p></CardHeader>
+            <CardHeader><CardTitle>{english ? 'Goal and monthly pacing' : 'Objectif et pacing du mois'}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{english ? `Calculated through the last completed day in ${client.timezone}, without currency conversion.` : `Calculé jusqu’au dernier jour terminé dans le fuseau ${client.timezone}, sans conversion entre devises.`}</p></CardHeader>
             <CardContent>
               {goalContext?.goal ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                   <MetricCard label={english ? 'Monthly budget' : 'Budget mensuel'} value={formatMoneyFromMicros(goalContext.goal.monthlyBudgetMicros, currency)} icon={Gauge} note={`KPI : ${goalContext.goal.primaryKpi.toUpperCase()}`} />
-                  <MetricCard label={english ? 'MTD spend' : 'Dépense MTD'} value={goalContext.pacing ? formatMoneyFromMicros(goalContext.pacing.actualSpendMicros, currency) : '—'} icon={ReceiptText} note={english ? `${goalContext.observedDays} collected day(s)` : `${goalContext.observedDays} jour(s) collecté(s)`} />
-                  <MetricCard label={english ? 'Expected to date' : 'Attendu à date'} value={goalContext.pacing ? formatMoneyFromMicros(goalContext.pacing.expectedSpendMicros, currency) : '—'} icon={Target} note={goalContext.pacing?.status ?? (english ? 'Missing data' : 'Données manquantes')} />
+                  <MetricCard label={english ? 'MTD spend' : 'Dépense MTD'} value={goalContext.pacing && goalContext.pacing.status !== 'missing_data' ? formatMoneyFromMicros(goalContext.pacing.actualSpendMicros, currency) : '—'} icon={ReceiptText} note={english ? `${goalContext.observedDays}/${goalContext.calendar?.elapsedDays ?? 0} covered day(s)` : `${goalContext.observedDays}/${goalContext.calendar?.elapsedDays ?? 0} jour(s) couverts`} />
+                  <MetricCard label={english ? 'Expected to date' : 'Attendu à date'} value={goalContext.pacing && goalContext.pacing.status !== 'missing_data' ? formatMoneyFromMicros(goalContext.pacing.expectedSpendMicros, currency) : '—'} icon={Target} note={pacingStatusLabel} />
                   <MetricCard label={english ? 'Variance' : 'Écart'} value={goalContext.pacing?.variancePercent === null || goalContext.pacing?.variancePercent === undefined ? '—' : formatPercent(goalContext.pacing.variancePercent)} icon={ArrowDownUp} note={english ? '± 10% = on track' : '± 10 % = dans le rythme'} />
                   <MetricCard label={english ? 'End-of-month forecast' : 'Forecast fin de mois'} value={goalContext.pacing?.forecastMicros === null || goalContext.pacing?.forecastMicros === undefined ? '—' : formatMoneyFromMicros(goalContext.pacing.forecastMicros, currency)} icon={Activity} note={goalContext.pacing?.status === 'missing_data' ? (english ? 'Daily collection required' : 'Collecte journalière requise') : (english ? 'Indicative projection' : 'Projection indicative')} />
                 </div>
@@ -295,6 +302,8 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
             </CardContent>
           </Card>
 
+      )}
+      {connection && client && !apiError && (
           <Card className="mt-6 overflow-hidden border-[#e8e5ef] shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between border-b bg-white">
               <div>
@@ -410,7 +419,6 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
               </div>
             </CardContent>
           </Card>
-        </>
       )}
     </>
   )

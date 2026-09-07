@@ -1,11 +1,12 @@
 import 'server-only'
 
-import { and, count, eq, gte, inArray, lte, sum } from 'drizzle-orm'
+import { and, count, eq, gte, inArray, isNotNull, lte, sum } from 'drizzle-orm'
 import {
   approvalRequests,
   auditEvents,
   clients,
   dailyCampaignMetrics,
+  dailyAccountMetrics,
   jobs,
   mutationObservations,
 } from '@/db/schema'
@@ -33,24 +34,33 @@ export function mutationCampaignIds(payload: Record<string, unknown>) {
     .sort((left, right) => BigInt(left) < BigInt(right) ? -1 : BigInt(left) > BigInt(right) ? 1 : 0)
 }
 
-async function aggregateMetrics(
+export async function aggregateMutationObservationMetrics(
   db: DatabaseTransaction,
   input: { workspaceId: string; clientId: string; campaignIds: string[]; from: string; through: string; windowDays: number },
 ): Promise<MutationObservationMetrics> {
   const expectedDataPoints = input.campaignIds.length * input.windowDays
   if (expectedDataPoints === 0) return {
-    dataPoints: 0,
+    coverageVersion: 1, dataPoints: 0,
     expectedDataPoints: 0,
     costMicros: '0', impressions: '0', clicks: '0', conversions: '0', conversionValueMicros: '0',
   }
+  const coverageCondition = and(
+    eq(dailyAccountMetrics.workspaceId, input.workspaceId), eq(dailyAccountMetrics.clientId, input.clientId),
+    eq(dailyAccountMetrics.timezone, clients.timezone), eq(dailyAccountMetrics.coverageStatus, 'complete'), isNotNull(dailyAccountMetrics.sourceVersion),
+    gte(dailyAccountMetrics.metricDate, input.from), lte(dailyAccountMetrics.metricDate, input.through),
+  )
+  const [coverage] = await db.select({ days: count() }).from(dailyAccountMetrics)
+    .innerJoin(clients, and(eq(clients.id, dailyAccountMetrics.clientId), eq(clients.workspaceId, dailyAccountMetrics.workspaceId))).where(coverageCondition)
   const [metrics] = await db.select({
-    dataPoints: count(),
     costMicros: sum(dailyCampaignMetrics.costMicros),
     impressions: sum(dailyCampaignMetrics.impressions),
     clicks: sum(dailyCampaignMetrics.clicks),
     conversions: sum(dailyCampaignMetrics.conversions),
     conversionValueMicros: sum(dailyCampaignMetrics.conversionValueMicros),
-  }).from(dailyCampaignMetrics).where(and(
+  }).from(dailyCampaignMetrics)
+    .innerJoin(dailyAccountMetrics, and(eq(dailyAccountMetrics.clientId, dailyCampaignMetrics.clientId), eq(dailyAccountMetrics.workspaceId, dailyCampaignMetrics.workspaceId), eq(dailyAccountMetrics.metricDate, dailyCampaignMetrics.metricDate)))
+    .innerJoin(clients, and(eq(clients.id, dailyAccountMetrics.clientId), eq(clients.workspaceId, dailyAccountMetrics.workspaceId)))
+    .where(and(coverageCondition,
     eq(dailyCampaignMetrics.workspaceId, input.workspaceId),
     eq(dailyCampaignMetrics.clientId, input.clientId),
     inArray(dailyCampaignMetrics.campaignId, input.campaignIds),
@@ -58,7 +68,8 @@ async function aggregateMetrics(
     lte(dailyCampaignMetrics.metricDate, input.through),
   ))
   return {
-    dataPoints: Number(metrics.dataPoints),
+    coverageVersion: 1,
+    dataPoints: Number(coverage.days) * input.campaignIds.length,
     expectedDataPoints,
     costMicros: metrics.costMicros ?? '0',
     impressions: metrics.impressions ?? '0',
@@ -76,7 +87,7 @@ export async function scheduleMutationObservationWithDatabase(
   const calendar = mutationObservationCalendar(input.executedAt, input.client.timezone, windowDays)
   const campaignIds = mutationCampaignIds(input.approval.payload)
   if (campaignIds.length === 0) throw new Error('Mutation observation requires at least one campaign')
-  const baselineMetrics = await aggregateMetrics(db, {
+  const baselineMetrics = await aggregateMutationObservationMetrics(db, {
     workspaceId: input.approval.workspaceId,
     clientId: input.approval.clientId,
     campaignIds,
@@ -120,7 +131,7 @@ export async function completeMutationObservation(observationId: string, complet
       eq(mutationObservations.status, 'scheduled'),
     )).limit(1).for('update')
     if (!observation) return { status: 'already_processed' as const }
-    const observedMetrics = await aggregateMetrics(db, {
+    const observedMetrics = await aggregateMutationObservationMetrics(db, {
       workspaceId: observation.workspaceId,
       clientId: observation.clientId,
       campaignIds: observation.campaignIds,
