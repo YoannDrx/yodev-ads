@@ -2,7 +2,7 @@ import 'server-only'
 
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { auditEvents, secretRevelations, workspaceDomains } from '@/db/schema'
-import { withTenantTransaction } from '@/db/transactions'
+import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { encryptSecret } from '@/lib/crypto'
 import { hashToken } from '@/lib/tokens'
 import {
@@ -12,7 +12,8 @@ import {
   removeVercelProjectDomain,
   verifyDomainDnsOwnership,
 } from '@/lib/vercel-domains'
-import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { lockWorkspaceAccessBoundary } from '@/lib/workspace-transaction-guard'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
 
@@ -23,8 +24,7 @@ export function createWorkspaceCustomDomain(input: ActorContext & {
 }) {
   const now = input.now ?? new Date()
   const dns = domainDnsRecord(input.hostname, input.token)
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'custom_domain')
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin', capability: 'custom_domain' }, async (db) => {
     await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:domains`}))`)
     const existing = await db.query.workspaceDomains.findFirst({
       where: and(eq(workspaceDomains.workspaceId, input.workspaceId), isNull(workspaceDomains.revokedAt)),
@@ -56,48 +56,55 @@ export function createWorkspaceCustomDomain(input: ActorContext & {
   })
 }
 
-async function findActiveDomain(input: ActorContext & { domainId: string }) {
-  const domain = await withTenantTransaction(
-    { workspaceId: input.workspaceId, userId: input.actorUserId },
-    (db) => db.query.workspaceDomains.findFirst({
-      where: and(
-        eq(workspaceDomains.id, input.domainId),
-        eq(workspaceDomains.workspaceId, input.workspaceId),
-        isNull(workspaceDomains.revokedAt),
-      ),
-    }),
-  )
+async function lockedDomain(db: DatabaseTransaction, input: ActorContext & { domainId: string }, expectedRevision?: string) {
+  // xmin preserves the full row revision across provider waits, including changes within one millisecond.
+  const { rows: [current] } = await db.execute<{ revision: string }>(sql`select xmin::text as revision from ${workspaceDomains}
+    where ${workspaceDomains.id} = ${input.domainId} and ${workspaceDomains.workspaceId} = ${input.workspaceId}
+    and ${workspaceDomains.revokedAt} is null for update`)
+  if (!current) throw new Error('Domaine introuvable.')
+  if (expectedRevision !== undefined && current.revision !== expectedRevision) throw new Error('Le domaine a changé. Actualisez la page avant de réessayer.')
+  const domain = await db.query.workspaceDomains.findFirst({ where: and(eq(workspaceDomains.id, input.domainId), eq(workspaceDomains.workspaceId, input.workspaceId), isNull(workspaceDomains.revokedAt)) })
   if (!domain) throw new Error('Domaine introuvable.')
-  return domain
+  return { ...domain, revision: current.revision }
 }
 
-async function recordDomainFailure(input: ActorContext & { domainId: string; error: unknown; now: Date }) {
+function findActiveDomain(input: ActorContext & { domainId: string }, customDomain: boolean, expectedRevision?: string) {
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin', ...(customDomain ? { capability: 'custom_domain' as const } : {}) },
+    (db) => lockedDomain(db, input, expectedRevision))
+}
+
+async function recordDomainFailure(input: ActorContext & { domainId: string; revision: string; customDomain: boolean }) {
   try {
-    await withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, (db) => db
+    await withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin', ...(input.customDomain ? { capability: 'custom_domain' as const } : {}) }, async (db) => {
+      await lockedDomain(db, input, input.revision)
+      await db
       .update(workspaceDomains)
-      .set({ lastError: (input.error instanceof Error ? input.error.message : String(input.error)).slice(0, 2000), updatedAt: input.now })
+      .set({ lastError: 'Opération du domaine non finalisée. Réessayez ou contactez le support.', updatedAt: new Date() })
       .where(and(
         eq(workspaceDomains.id, input.domainId),
         eq(workspaceDomains.workspaceId, input.workspaceId),
         isNull(workspaceDomains.revokedAt),
-      )))
+      ))
+    })
   } catch {
     // The provider or verification error remains the primary failure.
   }
 }
 
 export async function verifyWorkspaceCustomDomain(input: ActorContext & { domainId: string; now?: Date }) {
-  const now = input.now ?? new Date()
+  const domain = await findActiveDomain(input, true)
   try {
-    const domain = await findActiveDomain(input)
     if (!(await verifyDomainDnsOwnership(domain.hostname, domain.dnsTokenHash))) {
       throw new Error(`Le TXT _yodev-ads.${domain.hostname} est absent ou incorrect.`)
     }
-    const vercel = await addOrVerifyVercelProjectDomain(domain.hostname, domain.vercelStatus !== 'not_submitted')
+    const beforeRequest = async () => { await findActiveDomain(input, true, domain.revision) }
+    const vercel = await addOrVerifyVercelProjectDomain(domain.hostname, domain.vercelStatus !== 'not_submitted', beforeRequest)
     const configured = vercel.verified === true && vercel.configuration?.misconfigured === false
     const reachable = configured ? await domainReachesApplication(domain.hostname) : false
     const active = configured && reachable
-    const updated = await withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    const updated = await withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin', capability: 'custom_domain' }, async (db) => {
+      await lockedDomain(db, input, domain.revision)
+      const now = input.now ?? new Date()
       const [row] = await db.update(workspaceDomains).set({
         verificationStatus: active ? 'active' : 'dns_verified',
         vercelStatus: active ? 'active' : vercel.verified ? 'configuration_pending' : 'ownership_pending',
@@ -124,23 +131,28 @@ export async function verifyWorkspaceCustomDomain(input: ActorContext & { domain
     })
     return { domain: updated, active, configured, reachable }
   } catch (error) {
-    await recordDomainFailure({ ...input, error, now })
+    await recordDomainFailure({ ...input, revision: domain.revision, customDomain: true })
     throw error
   }
 }
 
 export async function revokeWorkspaceCustomDomain(input: ActorContext & { domainId: string; now?: Date }) {
-  const now = input.now ?? new Date()
-  const domain = await findActiveDomain(input)
+  // Removal remains available after a plan downgrade; it requires the current administrator, not the old capability.
+  const domain = await findActiveDomain(input, false)
   try {
     await removeVercelProjectDomain(domain.hostname)
   } catch (error) {
     if (!(error instanceof Error) || !/not found|404/i.test(error.message)) {
-      await recordDomainFailure({ ...input, error, now })
+      await recordDomainFailure({ ...input, revision: domain.revision, customDomain: false })
       throw error
     }
   }
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    // Record an already-admitted external removal even if the actor subsequently loses access.
+    // This receipt must not reactivate anything or overwrite a different domain revision.
+    await lockWorkspaceAccessBoundary(db, input.workspaceId)
+    await lockedDomain(db, input, domain.revision)
+    const now = input.now ?? new Date()
     const [revoked] = await db.update(workspaceDomains).set({
       verificationStatus: 'revoked',
       vercelStatus: 'removed',

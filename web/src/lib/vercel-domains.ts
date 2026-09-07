@@ -50,10 +50,11 @@ export async function verifyDomainDnsOwnership(hostname: string, expectedTokenHa
     .some((value) => hashToken(value.slice('yodev-domain-verification='.length)) === expectedTokenHash)
 }
 
-async function vercelRequest(path: string, init: RequestInit = {}) {
+async function vercelRequest(path: string, init: RequestInit = {}, beforeRequest?: () => Promise<void>) {
   const { token, teamId } = vercelConfiguration()
   const url = new URL(`https://api.vercel.com${path}`)
   if (teamId) url.searchParams.set('teamId', teamId)
+  await beforeRequest?.()
   const response = await fetch(url, {
     ...init,
     cache: 'no-store',
@@ -66,22 +67,22 @@ async function vercelRequest(path: string, init: RequestInit = {}) {
   return data
 }
 
-export async function addOrVerifyVercelProjectDomain(hostname: string, attemptVerification = false) {
+export async function addOrVerifyVercelProjectDomain(hostname: string, attemptVerification = false, beforeRequest?: () => Promise<void>) {
   const { project } = vercelConfiguration()
   let domain: VercelDomain
   try {
     domain = await vercelRequest(`/v10/projects/${encodeURIComponent(project)}/domains`, {
       method: 'POST',
       body: JSON.stringify({ name: hostname }),
-    })
+    }, beforeRequest)
   } catch (error) {
     if (!(error instanceof Error) || !/already|exist/i.test(error.message)) throw error
-    domain = await vercelRequest(`/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(hostname)}`)
+    domain = await vercelRequest(`/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(hostname)}`, {}, beforeRequest)
   }
   if (!domain.verified && attemptVerification) {
-    domain = await vercelRequest(`/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(hostname)}/verify`, { method: 'POST' })
+    domain = await vercelRequest(`/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(hostname)}/verify`, { method: 'POST' }, beforeRequest)
   }
-  const configuration = await vercelRequest(`/v6/domains/${encodeURIComponent(hostname)}/config`)
+  const configuration = await vercelRequest(`/v6/domains/${encodeURIComponent(hostname)}/config`, {}, beforeRequest)
   return { ...domain, configuration }
 }
 

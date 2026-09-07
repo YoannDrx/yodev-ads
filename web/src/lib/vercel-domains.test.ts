@@ -60,6 +60,30 @@ describe('custom domain validation', () => {
     expect(firstInit.headers).toMatchObject({ Authorization: 'Bearer test-token' })
   })
 
+  it('checks admission before the first provider request', async () => {
+    const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock)
+    await expect(addOrVerifyVercelProjectDomain('reports.example.com', false, async () => { throw new Error('Access revoked') })).rejects.toThrow('Access revoked')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('checks admission again after the domain was attached and before reading configuration', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ verified: true }))
+    const admit = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('Access revoked'))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(addOrVerifyVercelProjectDomain('reports.example.com', false, admit)).rejects.toThrow('Access revoked')
+    expect(fetchMock).toHaveBeenCalledTimes(1); expect(admit).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not submit ownership verification after authorization is lost during the existing-domain lookup', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(Response.json({ error: { message: 'already exists' } }, { status: 409 }))
+      .mockResolvedValueOnce(Response.json({ verified: false }))
+    const admit = vi.fn().mockResolvedValueOnce(undefined).mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('Access revoked'))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(addOrVerifyVercelProjectDomain('reports.example.com', true, admit)).rejects.toThrow('Access revoked')
+    expect(fetchMock).toHaveBeenCalledTimes(2); expect(admit).toHaveBeenCalledTimes(3)
+    expect(fetchMock.mock.calls[1][1]).not.toHaveProperty('method', 'POST')
+  })
+
   it('loads and removes only the requested project domain', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ name: 'reports.example.com', verified: true }), { status: 200 }))

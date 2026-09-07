@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
+vi.mock('@/lib/workspace-actor-guard', () => ({ withWorkspaceActorTransaction: (context: unknown, callback: (db: unknown) => unknown) => mocks.transaction(context, callback) }))
 vi.mock('@/lib/crypto', () => ({ encryptSecret: mocks.encrypt }))
 vi.mock('@/lib/tokens', () => ({ hashToken: mocks.hash }))
 vi.mock('@/lib/vercel-domains', () => ({
@@ -43,14 +44,16 @@ const domain = {
   revokedAt: null,
 }
 
-function domainDatabase(input: { statementResults?: unknown[]; domain?: unknown } = {}) {
-  return databaseDouble({
+function domainDatabase(input: { statementResults?: unknown[]; domain?: unknown; revision?: string } = {}) {
+  const result = databaseDouble({
     statementResults: input.statementResults,
     query: {
       workspaceDomains: { findFirst: vi.fn(async () => input.domain) },
       workspaces: { findFirst: vi.fn(async () => ({ accessState: 'active', plan: 'agency' })) },
     },
   })
+  result.db.execute = vi.fn(() => Promise.resolve({ rows: input.domain ? [{ revision: input.revision ?? '1' }] : [] })) as unknown as typeof result.db.execute
+  return result
 }
 
 describe('workspace custom-domain management', () => {
@@ -65,7 +68,7 @@ describe('workspace custom-domain management', () => {
 
   it('creates one live domain and a ten-minute one-shot DNS revelation', async () => {
     const database = domainDatabase({
-      statementResults: [[], [], [{ id: domainId }], [{ id: 'revelation-1' }]],
+      statementResults: [ [{ id: domainId }], [{ id: 'revelation-1' }]],
     })
     mocks.databases.push(database.db)
     await createWorkspaceCustomDomain({ workspaceId, actorUserId, hostname: domain.hostname, token: 'dns-secret', now })
@@ -80,9 +83,9 @@ describe('workspace custom-domain management', () => {
 
   it('rejects a second live domain and fails closed on missing inserts', async () => {
     mocks.databases.push(
-      domainDatabase({ statementResults: [[], []], domain }).db,
-      domainDatabase({ statementResults: [[], [], []] }).db,
-      domainDatabase({ statementResults: [[], [], [{ id: domainId }], []] }).db,
+      domainDatabase({ statementResults: [], domain }).db,
+      domainDatabase({ statementResults: [ []] }).db,
+      domainDatabase({ statementResults: [ [{ id: domainId }], []] }).db,
     )
     const input = { workspaceId, actorUserId, hostname: domain.hostname, token: 'secret', now }
     await expect(createWorkspaceCustomDomain(input)).rejects.toThrow('Révoquez le domaine existant')
@@ -92,11 +95,11 @@ describe('workspace custom-domain management', () => {
 
   it('activates a DNS-owned, configured and reachable domain', async () => {
     const read = domainDatabase({ domain })
-    const update = domainDatabase({ statementResults: [[{ id: domainId }]] })
+    const update = domainDatabase({ domain, statementResults: [[{ id: domainId }]] })
     mocks.databases.push(read.db, update.db)
     await expect(verifyWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now }))
       .resolves.toMatchObject({ active: true, configured: true, reachable: true })
-    expect(mocks.addVercel).toHaveBeenCalledWith(domain.hostname, false)
+    expect(mocks.addVercel).toHaveBeenCalledWith(domain.hostname, false, expect.any(Function))
     expect(update.capture.sets[0]).toMatchObject({
       verificationStatus: 'active', vercelStatus: 'active', activatedAt: now, lastError: null,
     })
@@ -115,11 +118,11 @@ describe('workspace custom-domain management', () => {
   ])('persists partial provider progress as $expectedStatus', async ({ vercel, expectedStatus }) => {
     mocks.addVercel.mockResolvedValue(vercel)
     const read = domainDatabase({ domain: { ...domain, vercelStatus: 'ownership_pending' } })
-    const update = domainDatabase({ statementResults: [[{ id: domainId }]] })
+    const update = domainDatabase({ domain, statementResults: [[{ id: domainId }]] })
     mocks.databases.push(read.db, update.db)
     const result = await verifyWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })
     expect(result.active).toBe(false)
-    expect(mocks.addVercel).toHaveBeenCalledWith(domain.hostname, true)
+    expect(mocks.addVercel).toHaveBeenCalledWith(domain.hostname, true, expect.any(Function))
     expect(mocks.reaches).not.toHaveBeenCalled()
     expect(update.capture.sets[0]).toMatchObject({ verificationStatus: 'dns_verified', vercelStatus: expectedStatus })
     expect(update.capture.values[0]).toMatchObject({ action: 'workspace_domain.verification_progressed' })
@@ -128,7 +131,7 @@ describe('workspace custom-domain management', () => {
   it('keeps a configured but unreachable domain inactive', async () => {
     mocks.reaches.mockResolvedValue(false)
     const read = domainDatabase({ domain })
-    const update = domainDatabase({ statementResults: [[{ id: domainId }]] })
+    const update = domainDatabase({ domain, statementResults: [[{ id: domainId }]] })
     mocks.databases.push(read.db, update.db)
     const result = await verifyWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })
     expect(result).toMatchObject({ active: false, configured: true, reachable: false })
@@ -138,27 +141,37 @@ describe('workspace custom-domain management', () => {
   it('records DNS/provider failures without overwriting a revoked domain', async () => {
     mocks.verifyDns.mockResolvedValue(false)
     const read = domainDatabase({ domain })
-    const failure = domainDatabase()
+    const failure = domainDatabase({ domain })
     mocks.databases.push(read.db, failure.db)
     await expect(verifyWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now }))
       .rejects.toThrow(`TXT _yodev-ads.${domain.hostname}`)
-    expect(failure.capture.sets[0]).toMatchObject({ lastError: expect.stringContaining('TXT'), updatedAt: now })
+    expect(failure.capture.sets[0]).toMatchObject({ lastError: 'Opération du domaine non finalisée. Réessayez ou contactez le support.' })
   })
 
   it('rejects a missing domain and a concurrent revoke during verification', async () => {
     const missing = domainDatabase()
-    const missingFailure = domainDatabase()
     const read = domainDatabase({ domain })
-    const racedUpdate = domainDatabase({ statementResults: [[]] })
+    const racedUpdate = domainDatabase({ domain, statementResults: [[]] })
     const racedFailure = domainDatabase()
-    mocks.databases.push(missing.db, missingFailure.db, read.db, racedUpdate.db, racedFailure.db)
+    mocks.databases.push(missing.db, read.db, racedUpdate.db, racedFailure.db)
     await expect(verifyWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })).rejects.toThrow('Domaine introuvable')
     await expect(verifyWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })).rejects.toThrow('révoqué pendant')
   })
 
+  it('refuses a changed row revision after DNS without overwriting its state or failure', async () => {
+    const first = domainDatabase({ domain, revision: '1' })
+    const changed = domainDatabase({ domain, revision: '2' })
+    const failure = domainDatabase({ domain, revision: '2' })
+    mocks.databases.push(first.db, changed.db, failure.db)
+    mocks.addVercel.mockImplementationOnce(async (_hostname, _verify, admit) => { await admit(); return { verified: true } })
+    await expect(verifyWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })).rejects.toThrow('a changé')
+    expect(mocks.reaches).not.toHaveBeenCalled()
+    expect(changed.capture.sets).toEqual([]); expect(failure.capture.sets).toEqual([])
+  })
+
   it('removes the provider domain then atomically revokes it', async () => {
     const read = domainDatabase({ domain })
-    const update = domainDatabase({ statementResults: [[{ id: domainId }]] })
+    const update = domainDatabase({ domain, statementResults: [[{ id: domainId }]] })
     mocks.databases.push(read.db, update.db)
     await revokeWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })
     expect(mocks.removeVercel).toHaveBeenCalledWith(domain.hostname)
@@ -171,7 +184,7 @@ describe('workspace custom-domain management', () => {
   it('treats provider 404 as already removed', async () => {
     mocks.removeVercel.mockRejectedValue(new Error('Vercel domain API: HTTP 404 not found'))
     const read = domainDatabase({ domain })
-    const update = domainDatabase({ statementResults: [[{ id: domainId }]] })
+    const update = domainDatabase({ domain, statementResults: [[{ id: domainId }]] })
     mocks.databases.push(read.db, update.db)
     await expect(revokeWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })).resolves.toEqual({ id: domainId })
   })
@@ -179,9 +192,9 @@ describe('workspace custom-domain management', () => {
   it('records provider removal failures and rejects concurrent double revocation', async () => {
     mocks.removeVercel.mockRejectedValueOnce(new Error('provider unavailable'))
     const readFailure = domainDatabase({ domain })
-    const failureAudit = domainDatabase()
+    const failureAudit = domainDatabase({ domain })
     const readRace = domainDatabase({ domain })
-    const updateRace = domainDatabase({ statementResults: [[]] })
+    const updateRace = domainDatabase({ domain, statementResults: [[]] })
     mocks.databases.push(readFailure.db, failureAudit.db, readRace.db, updateRace.db)
     await expect(revokeWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })).rejects.toThrow('provider unavailable')
     await expect(revokeWorkspaceCustomDomain({ workspaceId, actorUserId, domainId, now })).rejects.toThrow('déjà été révoqué')
