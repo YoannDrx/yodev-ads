@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { Client } from 'pg'
+import { invitationWorkspaceAdmission } from '../src/lib/auth-invitation-admission'
 
 const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
 assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathname.startsWith('/yodev_test'), 'Disposable local database required')
@@ -19,6 +20,7 @@ async function main() {
     for (const user of users) await db.query('insert into auth_users(id,name,email,email_verified) values($1,$1,$2,true)', [user, `${user}@example.test`])
     await db.query("insert into workspaces(id,name,slug,auth_organization_id,owner_user_id,auth_owner_user_id,plan,access_state) values($1,$2::text,$2::text,$2::text,$3::text,$3::text,'studio','active')", [workspaceId, org, users[0]])
     for (const user of users.slice(0, 4)) await db.query('insert into auth_members(id,user_id,organization_id,role) values($1,$1,$2,$3)', [user, org, user === users[0] ? 'owner' : 'analyst'])
+    assert.equal(await invitationWorkspaceAdmission(org), 'available')
     for (const contender of contenders) {
       await contender.connect(); await contender.query('set role yodev_auth')
       // Both requests observe the same free seat before either writes.
@@ -32,11 +34,13 @@ async function main() {
       return
     }
     assert.equal(count, 5)
+    assert.equal(await invitationWorkspaceAdmission(org), 'full')
     assert.equal(results.filter((result) => result.status === 'fulfilled').length, 1)
     const rejected = results.find((result) => result.status === 'rejected') as PromiseRejectedResult
     assert.equal(rejected.reason.code, '23514')
     for (const state of ['grace', 'suspended', 'deletion_pending', 'deleted']) {
       await db.query('update workspaces set access_state=$1 where id=$2', [state, workspaceId])
+      assert.equal(await invitationWorkspaceAdmission(org), 'unavailable')
       await assert.rejects(contenders[0].query("insert into auth_members(id,user_id,organization_id,role) values($1,$1,$2,'analyst')", [users[6], org]), (error: unknown) => (error as { code: string }).code === '23514')
     }
     await db.query("update workspaces set access_state='trial',plan='internal',trial_ends_at=now()-interval '1 hour' where id=$1", [workspaceId])

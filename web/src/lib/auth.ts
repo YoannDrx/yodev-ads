@@ -13,6 +13,7 @@ import { authInvitations, authMembers } from '@/db/schema'
 import { authOrganizationAccess, authOrganizationRoles } from '@/lib/auth-access-control'
 import { sendAuthEmail } from '@/lib/auth-emails'
 import { authRequestLocale } from '@/lib/auth-request-locale'
+import { invitationWorkspaceAdmission } from '@/lib/auth-invitation-admission'
 
 type AdsAuth = ReturnType<typeof createAuth>
 let singleton: AdsAuth | undefined
@@ -198,6 +199,15 @@ function createAuth() {
         creatorRole: 'owner',
         membershipLimit: workspaceMemberLimit,
         requireEmailVerificationOnInvitation: true,
+        organizationHooks: {
+          beforeAcceptInvitation: async ({ organization }) => {
+            const admission = await invitationWorkspaceAdmission(organization.id)
+            if (admission !== 'available') throw new APIError('FORBIDDEN', {
+              code: admission === 'full' ? 'ORGANIZATION_MEMBERSHIP_LIMIT_REACHED' : 'WORKSPACE_INVITATION_UNAVAILABLE',
+              message: 'Workspace invitation admission refused',
+            })
+          },
+        },
         schema: {
           organization: { modelName: 'authOrganizations' },
           member: { modelName: 'authMembers' },

@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { recoverAcceptedInvitation } from '@/app/invitation/actions'
+import { invitationErrorMessage } from '@/lib/invitation-error'
 
 export function InvitationPanel({ locale }: { locale: string }) {
   const english = locale === 'en'
@@ -27,7 +28,7 @@ export function InvitationPanel({ locale }: { locale: string }) {
           // The server may have accepted the invitation before the response was lost.
         }
         organizationId = result?.data?.member.organizationId ?? await recoverAcceptedInvitation(invitationId)
-        if (!organizationId) return setError(result?.error?.message || (english ? 'Invitation could not be accepted. Check your connection and try again.' : 'Impossible d’accepter l’invitation. Vérifiez votre connexion et réessayez.'))
+        if (!organizationId) return setError(invitationErrorMessage(result?.error?.code, locale))
         setAcceptedOrganizationId(organizationId)
       }
       const active = await authClient.organization.setActive({ organizationId })

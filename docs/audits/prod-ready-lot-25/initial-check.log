@@ -1,0 +1,76 @@
+
+> @yodev/ads@0.1.0 check
+> npm run lint && npm run typecheck && npm run verify:data-boundary && npm run verify:transaction-serialization && npm run test:release-verification && npm run test:coverage && npm run build && npm run audit:runtime
+
+
+> @yodev/ads@0.1.0 lint
+> eslint
+
+
+> @yodev/ads@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @yodev/ads@0.1.0 verify:data-boundary
+> tsx scripts/verify-app-data-boundary.ts
+
+App data boundary verified (90 files, allowlist: none).
+
+> @yodev/ads@0.1.0 verify:transaction-serialization
+> tsx scripts/verify-transaction-query-serialization.ts
+
+Database transaction query serialization verified.
+
+> @yodev/ads@0.1.0 test:release-verification
+> node --test scripts/lib/*.node-test.mjs
+
+✔ browser logs retain routes and outcomes without authentication or report secrets (0.855916ms)
+✔ a secret split across output chunks and an unterminated last line stay redacted (1.920334ms)
+✔ each release target verifies the exact candidate and fresh evidence (0.671042ms)
+✔ refuses wrong or incomplete identity before accepting evidence (0.195417ms)
+✔ never sends a secret to an origin supplied only by a workflow input (0.610291ms)
+✔ sends identity guards and rejects redirects or non-success evidence (11.63675ms)
+✔ reports actionable issue codes without dumping provider messages or credential fields (0.370708ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59.439625
+
+> @yodev/ads@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+      Coverage enabled with v8
+
+ ❯ src/components/auth-recovery.test.tsx (20 tests | 1 failed) 593ms
+   × does not activate a workspace when recovery cannot prove membership 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/auth-recovery.test.tsx > does not activate a workspace when recovery cannot prove membership
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  Invitation unavailable
+Received:
+  Invitation could not be accepted. Check your connection and try again.
+ ❯ src/components/auth-recovery.test.tsx:165:44
+    163|   render(<InvitationPanel locale="en" />)
+    164|   fireEvent.click(screen.getByRole('button', { name: 'Accept invitatio…
+    165|   expect(await screen.findByRole('alert')).toHaveTextContent('Invitati…
+       |                                            ^
+    166|   expect(mocks.active).not.toHaveBeenCalled()
+    167| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 180 passed (181)
+      Tests  1 failed | 1319 passed (1320)
+   Start at  09:35:30
+   Duration  12.34s (transform 4.71s, setup 0ms, import 41.23s, tests 11.68s, environment 815ms)

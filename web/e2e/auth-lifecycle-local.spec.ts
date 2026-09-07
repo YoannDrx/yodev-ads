@@ -236,8 +236,10 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         const priorAccess = (await db.query('select access_state from workspaces where auth_organization_id=$1', [organizationId])).rows[0].access_state
         try {
           await db.query("update workspaces set access_state='grace' where auth_organization_id=$1", [organizationId])
+          const deniedAcceptance = invitedPage.waitForResponse((response) => response.url().endsWith('/api/auth/organization/accept-invitation'))
           await invitedPage.getByRole('button', { name: /^(Accept invitation|Accepter l’invitation)$/ }).click()
-          await expect(invitedPage.getByRole('main').getByRole('alert')).toBeVisible()
+          expect((await deniedAcceptance).status()).toBe(403)
+          await expect(invitedPage.getByRole('main').getByRole('alert')).toContainText(locale === 'en' ? 'Ask its owner to restore access' : 'Demandez à son propriétaire de rétablir son accès')
           expect((await db.query('select status from auth_invitations where id=$1', [invitationIds[3]])).rows[0].status).toBe('pending')
           expect((await db.query('select count(*)::int as count from auth_members where organization_id=$1 and user_id=$2', [organizationId, user.id])).rows[0].count).toBe(0)
         } finally {

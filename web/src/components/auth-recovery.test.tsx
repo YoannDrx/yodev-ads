@@ -158,11 +158,12 @@ it('recovers an acceptance whose response was lost without creating another memb
 
 it('does not activate a workspace when recovery cannot prove membership', async () => {
   mocks.query.set('id', 'foreign-invitation')
-  mocks.accept.mockResolvedValue({ error: { message: 'Invitation unavailable' } })
+  mocks.accept.mockResolvedValue({ error: { code: 'INVITATION_NOT_FOUND', message: 'Raw provider detail' } })
   mocks.recover.mockResolvedValue(null)
   render(<InvitationPanel locale="en" />)
   fireEvent.click(screen.getByRole('button', { name: 'Accept invitation' }))
-  expect(await screen.findByRole('alert')).toHaveTextContent('Invitation unavailable')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Ask the workspace owner for a new invitation')
+  expect(screen.getByRole('alert')).not.toHaveTextContent('Raw provider detail')
   expect(mocks.active).not.toHaveBeenCalled()
 })
 
