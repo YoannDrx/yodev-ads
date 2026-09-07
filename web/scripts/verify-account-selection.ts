@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { Client } from 'pg'
 import { eq } from 'drizzle-orm'
 import { approvalRequests, dailyAccountMetrics, mutationExecutions, shareLinks, googleAdsConnections, workspaces } from '../src/db/schema'
 import { withSystemTransaction } from '../src/db/transactions'
@@ -17,9 +18,16 @@ const owner = 'account-selection-fixture'
 globalThis.fetch = async () => { throw new Error('Provider calls are forbidden in this fixture') }
 const inventory: ManagedGoogleCustomer[] = Array.from({ length: 57 }, (_, index) => ({ customerId: String(7400000000 + index), name: `Account ${index}`, currencyCode: 'EUR', timezone: 'Europe/Paris', isManager: index < 2 }))
 async function main() {
-  for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id)))
-  await withSystemTransaction((db) => db.insert(workspaces).values([workspaceId, foreignId].map((id) => ({ id, ownerUserId: owner, name: 'Selection fixture', slug: `selection-${id}`, plan: 'agency', accessState: 'active' }))))
+  const identity = new Client({ connectionString: url.href })
+  await identity.connect()
   try {
+    await identity.query('delete from auth_organizations where id=$1', [owner])
+    await identity.query('delete from auth_users where id=$1', [owner])
+    await identity.query("insert into auth_users(id,name,email,email_verified) values($1::text,$1::text,'account-selection@example.test',true)", [owner])
+    await identity.query('insert into auth_organizations(id,name,slug) values($1::text,$1::text,$1::text)', [owner])
+    await identity.query("insert into auth_members(id,organization_id,user_id,role) values($1,$1,$1,'owner')", [owner])
+    for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id)))
+    await withSystemTransaction((db) => db.insert(workspaces).values([workspaceId, foreignId].map((id) => ({ id, authOrganizationId: id === workspaceId ? owner : null, ownerUserId: owner, name: 'Selection fixture', slug: `selection-${id}`, plan: 'agency', accessState: 'active' }))))
     const [connection] = await withSystemTransaction((db) => db.insert(googleAdsConnections).values({ workspaceId, managerCustomerId: inventory[0].customerId, encryptedRefreshToken: 'fixture-only', connectedBy: owner }).returning())
     let clock = Date.now() - 60_000
     const base = { workspaceId, actorUserId: owner, connectionId: connection.id, connectionIdentity: googleInventoryConnectionIdentity(connection), action: 'google_ads.accounts_synced' as const, recordActivation: false }
@@ -127,6 +135,8 @@ async function main() {
     console.log(JSON.stringify({ ok: true, verified: ['explicit_selection_after_mcc_discovery', 'nested_managers_free', 'quota_3_15_50', 'new_account_unselected', 'sync_preserves_priority', 'downgrade_preserves_preferences', 'upgrade_restores_selection', 'priority_only_above_quota', 'concurrent_selection_conflict', 'foreign_and_manager_rejected', 'inactive_explicit_client_never_falls_back', 'empty_inventory_blocks_older_read', 'access_restoration', 'billing_row_serialization', 'new_credentials_require_inventory', 'history_preserved', 'grace_read_without_selection_write', 'final_mutation_admission_checks_active_account_and_current_plan', 'stored_report_requires_active_account_without_provider_credentials'], providerCalls: 0 }))
   } finally {
     for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id)))
+    await identity.query('delete from auth_organizations where id=$1', [owner])
+    await identity.query('delete from auth_users where id=$1', [owner]); await identity.end()
   }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1 })

@@ -5,6 +5,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm'
 import { auditEvents, clients, workspaces } from '@/db/schema'
 import { type DatabaseTransaction, withTenantTransaction } from '@/db/transactions'
 import { entitlementContext, isPlan, isWorkspaceAccessState, requireCapability } from '@/lib/entitlements'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 import { lockWorkspaceAccessBoundary } from '@/lib/workspace-transaction-guard'
 import { selectedAccountsWithinLimit, type AccountSelection } from '@/lib/account-selection-model'
 import { insertActivationMilestone } from '@/lib/activation'
@@ -49,7 +50,7 @@ export async function reconcileManagedAccountSelection(db: DatabaseTransaction, 
 }
 
 export function saveManagedAccountSelection(input: { workspaceId: string; actorUserId: string; clientIds: string[]; version: string; priorityOnly?: boolean }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'google:connect', capability: 'google.read' }, async (db) => {
     const { workspace, entitlements } = await lockAccountManagement(db, input.workspaceId)
     const accounts = await db.query.clients.findMany({ where: eq(clients.workspaceId, input.workspaceId) })
     if (accountSelectionVersion(accounts, workspace.plan) !== input.version) throw new Error('Account selection changed. Reload before saving.')

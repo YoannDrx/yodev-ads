@@ -18,7 +18,7 @@ function SaveButtons({ english, overQuota, sameSelection }: { english: boolean; 
   </div>
 }
 
-export function AccountSelectionEditor({ accounts, limit, version, canManage, locale }: { accounts: Account[]; limit: number | null; version: string; canManage: boolean; locale: 'fr' | 'en' }) {
+export function AccountSelectionEditor({ accounts, limit, version, workspaceId, canManage, locale }: { workspaceId: string; accounts: Account[]; limit: number | null; version: string; canManage: boolean; locale: 'fr' | 'en' }) {
   const english = locale === 'en'
   const initial = [...accounts].filter((account) => !account.isManager && account.managedSelected).sort((a, b) => a.managementPriority - b.managementPriority || a.googleCustomerId.localeCompare(b.googleCustomerId)).map((account) => account.id)
   const [selected, setSelected] = useState(initial)
@@ -42,6 +42,7 @@ export function AccountSelectionEditor({ accounts, limit, version, canManage, lo
     })
   }
   return <form action={updateManagedAccounts} className="space-y-6">
+    <input type="hidden" name="workspaceId" value={workspaceId} />
     <input type="hidden" name="version" value={version} />
     <input type="hidden" name="clientIds" value={JSON.stringify(selected)} />
     <section className="rounded-2xl border bg-white p-5" aria-labelledby="managed-selection-title">
