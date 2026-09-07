@@ -231,12 +231,34 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         const invitationLink = await emailUrl(db, recipient, 'magic_link', locale)
         expect(new URL(invitationLink).searchParams.get('callbackURL')).toBe(`/invitation?id=${invitationIds[3]}`)
         await invitedPage.goto(invitationLink)
+        let lostResponses = 0
+        await invitedPage.route('**/api/auth/organization/accept-invitation', async (route) => {
+          const response = await route.fetch()
+          expect(response.status()).toBe(200)
+          lostResponses++
+          await route.abort('failed')
+        })
         await invitedPage.getByRole('button', { name: /^(Accept invitation|Accepter l’invitation)$/ }).click()
         await invitedPage.waitForURL('**/dashboard')
+        await invitedPage.unroute('**/api/auth/organization/accept-invitation')
+        expect(lostResponses).toBe(1)
         expect((await session(invited)).session.activeOrganizationId).toBe(organizationId)
         expect((await db.query('select role from auth_members where organization_id=$1 and user_id=$2', [organizationId, user.id])).rows[0].role).toBe('analyst')
         expect((await db.query('select status from auth_invitations where id=$1', [invitationIds[3]])).rows[0].status).toBe('accepted')
         await expect(invitedPage.getByRole('combobox', { name: /Workspace actif|Active workspace/ })).toHaveValue(organizationId)
+        // A reload/reopened link must recover the acquired membership too.
+        await invitedPage.goto(`/invitation?id=${invitationIds[3]}`)
+        await invitedPage.getByRole('button', { name: /^(Accept invitation|Accepter l’invitation)$/ }).click()
+        await invitedPage.waitForURL('**/dashboard')
+        expect((await db.query('select count(*)::int as count from auth_members where organization_id=$1 and user_id=$2', [organizationId, user.id])).rows[0].count).toBe(1)
+        // Recovery is not a way to regain a membership that has since been removed.
+        await db.query('delete from auth_members where organization_id=$1 and user_id=$2', [organizationId, user.id])
+        await invitedPage.goto(`/invitation?id=${invitationIds[3]}`)
+        await invitedPage.getByRole('button', { name: /^(Accept invitation|Accepter l’invitation)$/ }).click()
+        await expect(invitedPage.getByRole('main').getByRole('alert')).toBeVisible()
+        expect((await db.query('select count(*)::int as count from auth_members where organization_id=$1 and user_id=$2', [organizationId, user.id])).rows[0].count).toBe(0)
+        await invitedPage.goto('/account')
+
         await invitedPage.getByRole('button', { name: /^(Sign out|Se déconnecter)$/ }).click()
         await invitedPage.waitForURL('**/sign-in')
         expect(await session(invited)).toBeNull()

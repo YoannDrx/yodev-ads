@@ -5,10 +5,12 @@ import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
+import { recoverAcceptedInvitation } from '@/app/invitation/actions'
 
 export function InvitationPanel({ locale }: { locale: string }) {
   const english = locale === 'en'
-  const invitationId = useSearchParams().get('id')
+  const invitationIds = useSearchParams().getAll('id')
+  const invitationId = invitationIds.length === 1 && /^[a-zA-Z0-9_-]{1,128}$/.test(invitationIds[0]) ? invitationIds[0] : null
   const session = authClient.useSession()
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -20,10 +22,12 @@ export function InvitationPanel({ locale }: { locale: string }) {
     try {
       let organizationId = acceptedOrganizationId
       if (!organizationId) {
-        const result = await authClient.organization.acceptInvitation({ invitationId })
-        if (result.error) return setError(result.error.message || (english ? 'Invitation could not be accepted.' : 'Impossible d’accepter l’invitation.'))
-        organizationId = result.data?.member.organizationId ?? null
-        if (!organizationId) throw new Error('Missing invitation organization')
+        let result: Awaited<ReturnType<typeof authClient.organization.acceptInvitation>> | undefined
+        try { result = await authClient.organization.acceptInvitation({ invitationId }) } catch {
+          // The server may have accepted the invitation before the response was lost.
+        }
+        organizationId = result?.data?.member.organizationId ?? await recoverAcceptedInvitation(invitationId)
+        if (!organizationId) return setError(result?.error?.message || (english ? 'Invitation could not be accepted. Check your connection and try again.' : 'Impossible d’accepter l’invitation. Vérifiez votre connexion et réessayez.'))
         setAcceptedOrganizationId(organizationId)
       }
       const active = await authClient.organization.setActive({ organizationId })

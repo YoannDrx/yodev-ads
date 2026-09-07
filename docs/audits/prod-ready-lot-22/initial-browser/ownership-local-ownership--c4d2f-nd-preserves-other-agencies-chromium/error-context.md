@@ -1,0 +1,257 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: ownership-local.spec.ts >> ownership transfer en rechecks old owner authority and preserves other agencies
+- Location: e2e/ownership-local.spec.ts:5:61
+
+# Error details
+
+```
+Test timeout of 120000ms exceeded.
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - complementary [ref=e4]:
+      - link "Ads by Yodev" [ref=e5] [cursor=pointer]:
+        - /url: /dashboard
+      - navigation "Main navigation" [ref=e15]:
+        - link "Getting started" [ref=e16] [cursor=pointer]:
+          - /url: /getting-started
+        - link "Cockpit" [ref=e22] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Portfolio" [ref=e28] [cursor=pointer]:
+          - /url: /portfolio
+        - link "Client accounts" [ref=e33] [cursor=pointer]:
+          - /url: /accounts
+        - link "360 analysis" [ref=e38] [cursor=pointer]:
+          - /url: /analysis
+        - link "Extended insights" [ref=e41] [cursor=pointer]:
+          - /url: /insights
+        - link "History" [ref=e44] [cursor=pointer]:
+          - /url: /history
+        - link "Alerts" [ref=e48] [cursor=pointer]:
+          - /url: /alerts
+        - link "Tasks" [ref=e54] [cursor=pointer]:
+          - /url: /tasks
+        - link "Autonomous monitors" [ref=e58] [cursor=pointer]:
+          - /url: /agents
+        - link "Approvals" [ref=e62] [cursor=pointer]:
+          - /url: /approvals
+        - link "Client reports" [ref=e67] [cursor=pointer]:
+          - /url: /reports
+        - link "Support" [ref=e74] [cursor=pointer]:
+          - /url: /support
+        - link "Audit log" [ref=e82] [cursor=pointer]:
+          - /url: /audit
+        - link "Settings" [ref=e86] [cursor=pointer]:
+          - /url: /settings
+        - link "Operations" [ref=e90] [cursor=pointer]:
+          - /url: /operations
+      - generic [ref=e98]:
+        - paragraph [ref=e99]: Your monitor
+        - paragraph [ref=e100]: Pilotez chaque compte avec confiance.
+    - generic [ref=e101]:
+      - banner [ref=e102]:
+        - generic "Browser main" [ref=e103]
+        - generic [ref=e104]:
+          - link "Service health unverified" [ref=e105] [cursor=pointer]:
+            - /url: /status
+          - generic [ref=e107]:
+            - combobox "Active workspace" [ref=e108]:
+              - option "Browser main" [selected]
+              - option "Browser foreign"
+            - link "Account security" [ref=e109] [cursor=pointer]:
+              - /url: /account
+            - button "Sign out" [ref=e113]
+      - main [ref=e117]:
+        - generic [ref=e119]:
+          - paragraph [ref=e120]: Organisation
+          - heading "Settings" [level=1] [ref=e121]
+          - paragraph [ref=e122]: Connection, identity and security for your workspace.
+        - generic [ref=e124]:
+          - generic [ref=e132]:
+            - heading "Workspace language" [level=2] [ref=e133]
+            - paragraph [ref=e134]: Controls the authenticated application, reports by default and operational emails.
+          - generic [ref=e135]:
+            - combobox "Workspace language" [ref=e136]:
+              - option "Français"
+              - option "English" [selected]
+            - button "Apply language" [ref=e137]
+        - generic [ref=e138]:
+          - generic [ref=e139]:
+            - generic [ref=e147]:
+              - generic [ref=e148]: Members and roles
+              - paragraph [ref=e149]: Better Auth invitations and roles are controlled server-side and count against the plan quota.
+            - generic [ref=e151]:
+              - paragraph [ref=e153]:
+                - text: "Used :"
+                - strong [ref=e154]: "5"
+                - text: / unlimited
+              - generic [ref=e155]:
+                - textbox "member@company.com" [ref=e156]
+                - combobox "Role" [ref=e157]:
+                  - option "Admin"
+                  - option "Strategist"
+                  - option "Analyst"
+                  - option "Client" [selected]
+                - button "Invite" [ref=e158]
+              - generic [ref=e159]:
+                - generic [ref=e160]:
+                  - generic [ref=e161]:
+                    - paragraph [ref=e162]: Fixture owner · you
+                    - paragraph [ref=e163]: owner@local-browser.example.test · admin
+                  - generic [ref=e164]:
+                    - generic [ref=e165]:
+                      - combobox "Role for Fixture owner" [ref=e166]:
+                        - option "Admin" [selected]
+                        - option "Strategist"
+                        - option "Analyst"
+                        - option "Client"
+                      - button "Update" [ref=e167]
+                    - button "Remove Fixture owner" [ref=e169]
+                - generic [ref=e171]:
+                  - paragraph [ref=e172]: Fixture admin
+                  - paragraph [ref=e173]: admin@local-browser.example.test · owner
+                - generic [ref=e174]:
+                  - generic [ref=e175]:
+                    - paragraph [ref=e176]: Fixture strategist
+                    - paragraph [ref=e177]: strategist@local-browser.example.test · strategist
+                  - generic [ref=e178]:
+                    - generic [ref=e179]:
+                      - combobox "Role for Fixture strategist" [ref=e180]:
+                        - option "Admin"
+                        - option "Strategist" [selected]
+                        - option "Analyst"
+                        - option "Client"
+                      - button "Update" [ref=e181]
+                    - button "Remove Fixture strategist" [ref=e183]
+                - generic [ref=e184]:
+                  - generic [ref=e185]:
+                    - paragraph [ref=e186]: Fixture analyst
+                    - paragraph [ref=e187]: analyst@local-browser.example.test · analyst
+                  - generic [ref=e188]:
+                    - generic [ref=e189]:
+                      - combobox "Role for Fixture analyst" [ref=e190]:
+                        - option "Admin"
+                        - option "Strategist"
+                        - option "Analyst" [selected]
+                        - option "Client"
+                      - button "Update" [ref=e191]
+                    - button "Remove Fixture analyst" [ref=e193]
+                - generic [ref=e194]:
+                  - generic [ref=e195]:
+                    - paragraph [ref=e196]: Fixture client
+                    - paragraph [ref=e197]: client@local-browser.example.test · client
+                  - generic [ref=e198]:
+                    - generic [ref=e199]:
+                      - combobox "Role for Fixture client" [ref=e200]:
+                        - option "Admin"
+                        - option "Strategist"
+                        - option "Analyst"
+                        - option "Client" [selected]
+                      - button "Update" [ref=e201]
+                    - button "Remove Fixture client" [ref=e203]
+          - generic [ref=e204]:
+            - generic [ref=e212]:
+              - generic [ref=e213]: Google Ads
+              - paragraph [ref=e214]: Official access through your manager account.
+            - generic [ref=e216]:
+              - generic [ref=e221]:
+                - paragraph [ref=e222]: Secure connection
+                - paragraph [ref=e223]: The OAuth token is encrypted with AES-256-GCM before storage. Secrets are never sent to the browser.
+              - generic [ref=e224]:
+                - generic [ref=e225]: MCC ID
+                - textbox "MCC ID" [ref=e226]: 972-304-2391
+                - button "Google OAuth setup required" [disabled]
+          - generic [ref=e227]:
+            - generic [ref=e235]:
+              - generic [ref=e236]: Approval policy
+              - paragraph [ref=e237]: Separate proposal and execution according to your plan.
+            - generic [ref=e239]:
+              - generic [ref=e240]:
+                - generic [ref=e241]: Required approvals
+                - combobox "Required approvals" [ref=e242]:
+                  - option "1" [selected]
+                  - option "2"
+              - generic [ref=e243]:
+                - checkbox "Allow the proposer to approve their own request. Execution still requires a separate confirmation interaction." [ref=e244]
+                - generic [ref=e245]: Allow the proposer to approve their own request. Execution still requires a separate confirmation interaction.
+              - button "Save approval policy" [ref=e246]
+          - generic [ref=e247]:
+            - generic [ref=e257]:
+              - generic [ref=e258]: White label
+              - paragraph [ref=e259]: Adapt the cockpit to your agency.
+            - generic [ref=e261]:
+              - generic [ref=e262]:
+                - generic [ref=e263]: Product name
+                - textbox "Product name" [ref=e264]: Ads by Yodev
+              - generic [ref=e265]:
+                - generic [ref=e266]: Tagline
+                - textbox "Tagline" [ref=e267]: Pilotez chaque compte avec confiance.
+              - generic [ref=e268]:
+                - paragraph [ref=e269]: External logo URLs are rejected. Files are signature-checked and stored in the controlled product bucket.
+                - generic [ref=e270]:
+                  - generic [ref=e271]: Accent
+                  - textbox "Accent" [ref=e272]: "#19a58f"
+              - button "Save identity" [ref=e273]
+          - generic [ref=e274]:
+            - generic [ref=e281]:
+              - generic [ref=e282]: Safety rules
+              - paragraph [ref=e283]: Block out-of-policy budgets before Google Ads.
+            - generic [ref=e285]:
+              - generic [ref=e286]:
+                - generic [ref=e287]: Policy scope
+                - combobox "Policy scope" [ref=e288]:
+                  - option "Workspace" [selected]
+                  - option "Client account"
+                  - option "Campaign"
+                - paragraph [ref=e289]: For a client rule, select a client below. For a campaign rule, also enter its numeric Google Ads ID.
+              - generic [ref=e290]:
+                - generic [ref=e291]:
+                  - generic [ref=e292]: Client account (scoped rules)
+                  - combobox "Client account (scoped rules)" [ref=e293]:
+                    - option "No client — workspace rule" [selected]
+                - generic [ref=e294]:
+                  - generic [ref=e295]: Campaign ID (Agency)
+                  - textbox "Campaign ID (Agency)" [ref=e296]:
+                    - /placeholder: "123456789"
+              - generic [ref=e297]:
+                - generic [ref=e298]: Policy currency
+                - textbox "Policy currency" [ref=e299]: EUR
+              - generic [ref=e300]:
+                - generic [ref=e301]: Maximum daily budget
+                - spinbutton "Maximum daily budget" [ref=e302]
+              - generic [ref=e303]:
+                - generic [ref=e304]: Maximum calendar-month spend
+                - spinbutton "Maximum calendar-month spend" [ref=e305]
+              - generic [ref=e306]:
+                - generic [ref=e307]: Maximum variation per change (%)
+                - spinbutton "Maximum variation per change (%)" [ref=e308]
+              - generic [ref=e309]:
+                - generic [ref=e310]: Operations email
+                - textbox "Operations email" [ref=e311]
+              - button "Save limits" [ref=e312]
+          - generic [ref=e319]:
+            - heading "Active security" [level=2] [ref=e320]
+            - paragraph [ref=e321]: Manage your passkeys and revoke sessions from your personal security page.
+            - link "Manage my account security" [ref=e322] [cursor=pointer]:
+              - /url: /account
+          - generic [ref=e324]:
+            - generic [ref=e331]:
+              - heading "Operational dead letter" [level=2] [ref=e332]
+              - paragraph [ref=e333]: Jobs that exhausted their attempts. Retrying is audited and adds five attempts without reusing an attempt number.
+            - paragraph [ref=e334]: No dead-letter job.
+  - button "Open Next.js Dev Tools" [ref=e342]
+  - alert [ref=e346]
+```

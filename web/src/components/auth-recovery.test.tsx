@@ -10,9 +10,10 @@ import { AccountMenu } from './account-menu'
 
 const mocks = vi.hoisted(() => ({
   email: vi.fn(), signup: vi.fn(), magic: vi.fn(), social: vi.fn(), passkey: vi.fn(), register: vi.fn(),
-  reset: vi.fn(), request: vi.fn(), revoke: vi.fn(), accept: vi.fn(), active: vi.fn(), signOut: vi.fn(),
+  reset: vi.fn(), request: vi.fn(), revoke: vi.fn(), accept: vi.fn(), recover: vi.fn(), active: vi.fn(), signOut: vi.fn(),
   query: new URLSearchParams(), authenticated: true, detailsError: false, refetchSession: vi.fn(), refetchOrganizations: vi.fn(), remove: vi.fn(), keys: [] as { id: string; name: string }[],
 }))
+vi.mock('@/app/invitation/actions', () => ({ recoverAcceptedInvitation: mocks.recover }))
 vi.mock('next/navigation', () => ({ useSearchParams: () => mocks.query }))
 vi.mock('@/lib/auth-client', () => ({ authClient: {
   signIn: { email: mocks.email, magicLink: mocks.magic, social: mocks.social, passkey: mocks.passkey },
@@ -141,4 +142,34 @@ it('explains account loading errors and retries both identity and organization r
   fireEvent.click(screen.getByRole('button', { name: 'Recharger les informations du compte' }))
   await waitFor(() => expect(mocks.refetchSession).toHaveBeenCalledOnce())
   expect(mocks.refetchOrganizations).toHaveBeenCalledOnce()
+})
+
+it('recovers an acceptance whose response was lost without creating another membership', async () => {
+  mocks.query.set('id', 'accepted-invitation')
+  mocks.accept.mockImplementation(failure)
+  mocks.recover.mockResolvedValue('invited-organization')
+  mocks.active.mockResolvedValue({ error: { message: 'Unavailable' } })
+  render(<InvitationPanel locale="en" />)
+  fireEvent.click(screen.getByRole('button', { name: 'Accept invitation' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Invitation accepted')
+  expect(mocks.recover).toHaveBeenCalledWith('accepted-invitation')
+  expect(mocks.active).toHaveBeenCalledWith({ organizationId: 'invited-organization' })
+})
+
+it('does not activate a workspace when recovery cannot prove membership', async () => {
+  mocks.query.set('id', 'foreign-invitation')
+  mocks.accept.mockResolvedValue({ error: { message: 'Invitation unavailable' } })
+  mocks.recover.mockResolvedValue(null)
+  render(<InvitationPanel locale="en" />)
+  fireEvent.click(screen.getByRole('button', { name: 'Accept invitation' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Invitation unavailable')
+  expect(mocks.active).not.toHaveBeenCalled()
+})
+
+it('rejects ambiguous invitation identifiers before attempting acceptance', () => {
+  mocks.query = new URLSearchParams('id=first&id=second')
+  render(<InvitationPanel locale="en" />)
+  expect(screen.getByText('Invalid invitation link.')).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Accept invitation' })).not.toBeInTheDocument()
+  expect(mocks.accept).not.toHaveBeenCalled()
 })

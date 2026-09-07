@@ -135,7 +135,7 @@ export default async function SettingsPage({
                     <p className="mt-2 text-xs leading-5 text-amber-800">{english ? `This changes the billing and deletion authority. To confirm, enter “${workspace.slug}”.` : `Cette action transfère l’autorité de facturation et de suppression. Pour confirmer, saisissez « ${workspace.slug} ».`}</p>
                     <form action={transferWorkspaceOwnership} className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
                       <select name="userId" aria-label={english ? 'New owner' : 'Nouveau propriétaire'} required className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="">{english ? 'Choose a member' : 'Choisir un membre'}</option>{memberRoster.members.filter((member) => member.userId !== workspace.ownerUserId).map((member) => <option key={member.id} value={member.userId}>{member.displayName} · {member.identifier}</option>)}</select>
-                      <Input name="confirmation" placeholder={workspace.slug} autoComplete="off" required />
+                      <Input name="confirmation" aria-label={english ? 'Workspace identifier confirmation' : 'Confirmation de l’identifiant de l’espace'} placeholder={workspace.slug} autoComplete="off" required />
                       <Button type="submit" variant="outline" className="border-amber-400 text-amber-900">{english ? 'Transfer' : 'Transférer'}</Button>
                     </form>
                   </details>
