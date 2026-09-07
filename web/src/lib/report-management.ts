@@ -2,6 +2,7 @@ import 'server-only'
 
 import { storedReportPeriod, type ReportPeriodSelection } from '@/lib/report-period-selection'
 import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
+import type { DatabaseTransaction } from '@/db/transactions'
 
 import { and, count, eq, sql } from 'drizzle-orm'
 import {
@@ -17,6 +18,21 @@ import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { hashToken } from '@/lib/tokens'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
+
+async function lockManagedSchedule(db: DatabaseTransaction, workspaceId: string, scheduleId: string) {
+  // Match the delivery worker's schedule-before-share order, then read the committed lease.
+  await db.execute(sql`select id from ${reportSchedules} where ${reportSchedules.id} = ${scheduleId}
+    and ${reportSchedules.workspaceId} = ${workspaceId} for update`)
+  const schedule = await db.query.reportSchedules.findFirst({
+    where: and(eq(reportSchedules.id, scheduleId), eq(reportSchedules.workspaceId, workspaceId)),
+  })
+  if (!schedule) throw new Error('Planification introuvable.')
+  if (schedule.deliveryLeaseUntil) {
+    const result = await db.execute<{ active: boolean }>(sql`select ${schedule.deliveryLeaseUntil.toISOString()}::timestamptz > clock_timestamp() as active`)
+    if (!result.rows[0] || result.rows[0].active) throw new Error('Un envoi est en cours. Réessayez dans quelques minutes.')
+  }
+  return schedule
+}
 
 export type ReportTemplateInput = {
   name: string
@@ -218,14 +234,10 @@ export function setWorkspaceReportScheduleEnabled(input: ActorContext & {
   entitlements: EntitlementContext
   now?: Date
 }) {
-  const now = input.now ?? new Date()
   return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db, { entitlements }) => {
     await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:reports`}))`)
-    const schedule = await db.query.reportSchedules.findFirst({
-      where: and(eq(reportSchedules.id, input.scheduleId), eq(reportSchedules.workspaceId, input.workspaceId)),
-    })
-    if (!schedule) throw new Error('Planification introuvable.')
-    if (schedule.deliveryLeaseUntil && schedule.deliveryLeaseUntil > now) throw new Error('Un envoi est en cours. Réessayez dans quelques minutes.')
+    const schedule = await lockManagedSchedule(db, input.workspaceId, input.scheduleId)
+    const now = input.now ?? new Date()
     if (input.enabled && !schedule.enabled) {
       const [usage] = await db.select({ count: count() }).from(shareLinks).where(and(
         eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.active, true),
@@ -265,13 +277,9 @@ export function rotateWorkspaceScheduledReportToken(input: ActorContext & {
   token: string
   now?: Date
 }) {
-  const now = input.now ?? new Date()
   return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db) => {
-    const schedule = await db.query.reportSchedules.findFirst({
-      where: and(eq(reportSchedules.id, input.scheduleId), eq(reportSchedules.workspaceId, input.workspaceId)),
-    })
-    if (!schedule) throw new Error('Planification introuvable.')
-    if (schedule.deliveryLeaseUntil && schedule.deliveryLeaseUntil > now) throw new Error('Un envoi est en cours. Réessayez dans quelques minutes.')
+    const schedule = await lockManagedSchedule(db, input.workspaceId, input.scheduleId)
+    const now = input.now ?? new Date()
     await db.update(shareLinks).set({
       encryptedReportToken: encryptSecret(input.token),
       tokenHash: hashToken(input.token),

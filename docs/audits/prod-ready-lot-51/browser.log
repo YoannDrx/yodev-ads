@@ -1,0 +1,129 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs report-management-actors-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 267ms
+✓ Running next.config.ts took 472ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1047ms (proxy.ts: 6ms)
+ GET /sign-in 200 in 2.9s (next.js: 2.4s, proxy.ts: 109ms, application-code: 413ms)
+ GET /sign-in 200 in 58ms (next.js: 7ms, proxy.ts: 13ms, application-code: 38ms)
+ POST /api/auth/sign-in/email 200 in 1384ms (next.js: 964ms, proxy.ts: 3ms, application-code: 417ms)
+ GET /sign-in 200 in 134ms (next.js: 21ms, proxy.ts: 8ms, application-code: 106ms)
+ POST /api/auth/sign-in/email 200 in 249ms (next.js: 10ms, proxy.ts: 11ms, application-code: 229ms)
+ GET /icon?a62dacc6b033a714 200 in 189ms (next.js: 42ms, proxy.ts: 10ms, application-code: 137ms)
+ POST /api/auth/sign-in/email 200 in 295ms (next.js: 112ms, proxy.ts: 103ms, application-code: 81ms)
+ POST /api/auth/sign-in/email 200 in 80ms (next.js: 2ms, proxy.ts: 2ms, application-code: 75ms)
+ POST /api/auth/sign-in/email 200 in 82ms (next.js: 2ms, proxy.ts: 2ms, application-code: 78ms)
+ GET /dashboard 200 in 486ms (next.js: 201ms, proxy.ts: 10ms, application-code: 275ms)
+ GET /settings 200 in 278ms (next.js: 34ms, proxy.ts: 1.9ms, application-code: 242ms)
+ GET /billing 200 in 162ms (next.js: 13ms, proxy.ts: 1.8ms, application-code: 147ms)
+ GET /support 200 in 137ms (next.js: 19ms, proxy.ts: 1.8ms, application-code: 116ms)
+ GET /accounts 200 in 121ms (next.js: 15ms, proxy.ts: 1.9ms, application-code: 104ms)
+ GET /history 200 in 139ms (next.js: 20ms, proxy.ts: 2ms, application-code: 117ms)
+ GET /alerts 200 in 146ms (next.js: 27ms, proxy.ts: 1.9ms, application-code: 118ms)
+ GET /tasks 200 in 153ms (next.js: 26ms, proxy.ts: 1.9ms, application-code: 125ms)
+ GET /approvals 200 in 130ms (next.js: 21ms, proxy.ts: 1.8ms, application-code: 107ms)
+ GET /reports 200 in 198ms (next.js: 20ms, proxy.ts: 1.9ms, application-code: 176ms)
+ GET /audit 200 in 120ms (next.js: 19ms, proxy.ts: 1.7ms, application-code: 98ms)
+ GET /agents 200 in 180ms (next.js: 17ms, proxy.ts: 1.9ms, application-code: 161ms)
+ GET / 200 in 117ms (next.js: 19ms, proxy.ts: 2ms, application-code: 96ms)
+ GET /privacy 200 in 51ms (next.js: 12ms, proxy.ts: 2ms, application-code: 37ms)
+ GET /terms 200 in 44ms (next.js: 11ms, proxy.ts: 2.0ms, application-code: 32ms)
+ GET /subprocessors 200 in 101ms (next.js: 38ms, proxy.ts: 1.7ms, application-code: 62ms)
+ GET /status 200 in 92ms (next.js: 31ms, proxy.ts: 1.9ms, application-code: 60ms)
+ GET /sign-in 200 in 32ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 26ms)
+ GET /sign-up 200 in 313ms (next.js: 283ms, proxy.ts: 1.7ms, application-code: 27ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-DPvEe2
+
+Running 2 tests using 1 worker
+
+(node:70103) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /reports 200 in 185ms (next.js: 2ms, proxy.ts: 2ms, application-code: 180ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 6ms, proxy.ts: 3ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 11ms, proxy.ts: 3ms, application-code: 18ms)
+ GET /reports?notice=Mod%C3%A8le+de+rapport+cr%C3%A9%C3%A9. 200 in 80ms (next.js: 3ms, proxy.ts: 4ms, application-code: 73ms)
+ POST /reports 200 in 118ms (next.js: 2ms, proxy.ts: 6ms, application-code: 110ms)
+  └─ ƒ createReportTemplate({}) in 17ms src/app/actions.ts
+ GET /reports?notice=Nouvelle+version+du+mod%C3%A8le+enregistr%C3%A9e. 200 in 109ms (next.js: 2ms, proxy.ts: 2ms, application-code: 104ms)
+ POST /reports?notice=Mod%C3%A8le%20de%20rapport%20cr%C3%A9%C3%A9. 200 in 144ms (next.js: 5ms, proxy.ts: 5ms, application-code: 135ms)
+  └─ ƒ updateReportTemplate({}) in 15ms src/app/actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+cr%C3%A9%C3%A9. 200 in 96ms (next.js: 2ms, proxy.ts: 3ms, application-code: 91ms)
+ POST /reports?notice=Nouvelle%20version%20du%20mod%C3%A8le%20enregistr%C3%A9e. 200 in 127ms (next.js: 3ms, proxy.ts: 5ms, application-code: 119ms)
+  └─ ƒ createReportSchedule({}) in 16ms src/app/actions.ts
+ GET /reports?error=Un+envoi+est+en+cours.+R%C3%A9essayez+dans+quelques+minutes. 200 in 82ms (next.js: 2ms, proxy.ts: 3ms, application-code: 76ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20cr%C3%A9%C3%A9. 200 in 101ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 97ms)
+  └─ ƒ rotateScheduledReportToken({}) in 9ms src/app/actions.ts
+ GET /reports?error=Un+envoi+est+en+cours.+R%C3%A9essayez+dans+quelques+minutes. 200 in 87ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 83ms)
+ POST /reports?error=Un%20envoi%20est%20en%20cours.%20R%C3%A9essayez%20dans%20quelques%20minutes. 200 in 107ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 103ms)
+  └─ ƒ toggleReportSchedule({}) in 7ms src/app/actions.ts
+ GET /reports?notice=Token+du+rapport+planifi%C3%A9+renouvel%C3%A9.+L%E2%80%99ancien+lien+est+imm%C3%A9diatement+invalide. 200 in 66ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 62ms)
+ POST /reports?error=Un%20envoi%20est%20en%20cours.%20R%C3%A9essayez%20dans%20quelques%20minutes. 200 in 88ms (next.js: 2ms, proxy.ts: 2ms, application-code: 83ms)
+  └─ ƒ rotateScheduledReportToken({}) in 13ms src/app/actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+suspendu+et+lien+r%C3%A9voqu%C3%A9. 200 in 77ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 73ms)
+ POST /reports?notice=Token%20du%20rapport%20planifi%C3%A9%20renouvel%C3%A9.%20L%E2%80%99ancien%20lien%20est%20imm%C3%A9diatement%20invalide. 200 in 96ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 91ms)
+  └─ ƒ toggleReportSchedule({}) in 9ms src/app/actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+activ%C3%A9. 200 in 84ms (next.js: 4ms, proxy.ts: 3ms, application-code: 77ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20suspendu%20et%20lien%20r%C3%A9voqu%C3%A9. 200 in 110ms (next.js: 3ms, proxy.ts: 3ms, application-code: 104ms)
+  └─ ƒ toggleReportSchedule({}) in 14ms src/app/actions.ts
+ GET /reports?notice=Mod%C3%A8le+d%C3%A9sactiv%C3%A9.+Les+rapports+existants+conservent+leur+snapshot. 200 in 78ms (next.js: 1.9ms, proxy.ts: 2.0ms, application-code: 74ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20activ%C3%A9. 200 in 97ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 93ms)
+  └─ ƒ deactivateReportTemplate({}) in 10ms src/app/actions.ts
+ GET /reports?error=Permission+required%3A+reports%3Amanage 200 in 43ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 40ms)
+ POST /reports?notice=Mod%C3%A8le%20d%C3%A9sactiv%C3%A9.%20Les%20rapports%20existants%20conservent%20leur%20snapshot. 200 in 60ms (next.js: 2ms, proxy.ts: 3ms, application-code: 54ms)
+  └─ ƒ createReportTemplate({}) in 5ms src/app/actions.ts
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 77ms (next.js: 2ms, proxy.ts: 2ms, application-code: 72ms)
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 65ms (next.js: 5ms, proxy.ts: 7ms, application-code: 53ms)
+  ✓  1 [chromium] › e2e/report-management-actors-local.spec.ts:6:7 › analyst manages templates and schedules and loses write access in fr (2.8s)
+ GET /reports 200 in 131ms (next.js: 2ms, proxy.ts: 2ms, application-code: 126ms)
+ GET /api/auth/get-session 200 in 35ms (next.js: 7ms, proxy.ts: 4ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 18ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /reports?notice=Mod%C3%A8le+de+rapport+cr%C3%A9%C3%A9. 200 in 76ms (next.js: 2ms, proxy.ts: 3ms, application-code: 70ms)
+ POST /reports 200 in 96ms (next.js: 3ms, proxy.ts: 3ms, application-code: 90ms)
+  └─ ƒ createReportTemplate({}) in 9ms src/app/actions.ts
+ GET /reports?notice=Nouvelle+version+du+mod%C3%A8le+enregistr%C3%A9e. 200 in 71ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 67ms)
+ POST /reports?notice=Mod%C3%A8le%20de%20rapport%20cr%C3%A9%C3%A9. 200 in 89ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 85ms)
+  └─ ƒ updateReportTemplate({}) in 9ms src/app/actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+cr%C3%A9%C3%A9. 200 in 77ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 73ms)
+ POST /reports?notice=Nouvelle%20version%20du%20mod%C3%A8le%20enregistr%C3%A9e. 200 in 100ms (next.js: 2ms, proxy.ts: 2ms, application-code: 95ms)
+  └─ ƒ createReportSchedule({}) in 13ms src/app/actions.ts
+ GET /reports?error=Un+envoi+est+en+cours.+R%C3%A9essayez+dans+quelques+minutes. 200 in 70ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 66ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20cr%C3%A9%C3%A9. 200 in 87ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 83ms)
+  └─ ƒ rotateScheduledReportToken({}) in 8ms src/app/actions.ts
+ GET /reports?error=Un+envoi+est+en+cours.+R%C3%A9essayez+dans+quelques+minutes. 200 in 80ms (next.js: 1.5ms, proxy.ts: 1.9ms, application-code: 77ms)
+ POST /reports?error=Un%20envoi%20est%20en%20cours.%20R%C3%A9essayez%20dans%20quelques%20minutes. 200 in 97ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 94ms)
+  └─ ƒ toggleReportSchedule({}) in 7ms src/app/actions.ts
+ GET /reports?notice=Token+du+rapport+planifi%C3%A9+renouvel%C3%A9.+L%E2%80%99ancien+lien+est+imm%C3%A9diatement+invalide. 200 in 72ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 68ms)
+ POST /reports?error=Un%20envoi%20est%20en%20cours.%20R%C3%A9essayez%20dans%20quelques%20minutes. 200 in 93ms (next.js: 2ms, proxy.ts: 3ms, application-code: 88ms)
+  └─ ƒ rotateScheduledReportToken({}) in 11ms src/app/actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+suspendu+et+lien+r%C3%A9voqu%C3%A9. 200 in 62ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 59ms)
+ POST /reports?notice=Token%20du%20rapport%20planifi%C3%A9%20renouvel%C3%A9.%20L%E2%80%99ancien%20lien%20est%20imm%C3%A9diatement%20invalide. 200 in 83ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 78ms)
+  └─ ƒ toggleReportSchedule({}) in 11ms src/app/actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+activ%C3%A9. 200 in 73ms (next.js: 2ms, proxy.ts: 2ms, application-code: 68ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20suspendu%20et%20lien%20r%C3%A9voqu%C3%A9. 200 in 93ms (next.js: 2ms, proxy.ts: 3ms, application-code: 88ms)
+  └─ ƒ toggleReportSchedule({}) in 10ms src/app/actions.ts
+ GET /reports?notice=Mod%C3%A8le+d%C3%A9sactiv%C3%A9.+Les+rapports+existants+conservent+leur+snapshot. 200 in 65ms (next.js: 2.0ms, proxy.ts: 2.0ms, application-code: 61ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20activ%C3%A9. 200 in 80ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 76ms)
+  └─ ƒ deactivateReportTemplate({}) in 6ms src/app/actions.ts
+ GET /reports?error=Permission+required%3A+reports%3Amanage 200 in 54ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 50ms)
+ POST /reports?notice=Mod%C3%A8le%20d%C3%A9sactiv%C3%A9.%20Les%20rapports%20existants%20conservent%20leur%20snapshot. 200 in 69ms (next.js: 2ms, proxy.ts: 2ms, application-code: 64ms)
+  └─ ƒ createReportTemplate({}) in 5ms src/app/actions.ts
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 59ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 56ms)
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 54ms (next.js: 5ms, proxy.ts: 6ms, application-code: 44ms)
+  ✓  2 [chromium] › e2e/report-management-actors-local.spec.ts:6:7 › analyst manages templates and schedules and loses write access in en (2.7s)
+
+  2 passed (6.1s)
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

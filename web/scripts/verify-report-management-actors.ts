@@ -12,6 +12,7 @@ assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathnam
 globalThis.fetch = async () => { throw new Error('Provider calls forbidden') }
 const db = new Client({ connectionString: url.href }), blocker = new Client({ connectionString: url.href })
 const [workspaceId, organizationId, actor, clientId, templateId, shareId, scheduleId] = Array.from({ length: 7 }, () => randomUUID())
+const workerOwner = randomUUID()
 const context = { workspaceId, actorUserId: actor }, oldContext = entitlementContext('active', 'agency')
 const template = { ...context, name: 'Fixture new template', locale: 'fr' as const, periodDays: 30 }
 const operations = {
@@ -70,9 +71,35 @@ async function main() {
       for (let index = 0; index < 3; index++) await db.query("insert into share_links(workspace_id,client_id,created_by,label,token_hash,token_prefix) values($1,$2,$3,'Quota fixture',$4,'fixture')", [workspaceId, clientId, actor, hashToken(randomUUID())])
       await denied(operation, 'Current plan quota')
     }
+    for (const operation of [operations.schedule_enable, operations.schedule_rotate]) {
+      await restore()
+      const before = await snapshot()
+      await blocker.query('begin')
+      await blocker.query("update report_schedules set delivery_lease_owner=$2,delivery_lease_until=clock_timestamp()+interval '1 hour' where id=$1", [scheduleId, workerOwner])
+      const pending = Promise.allSettled([operation()])
+      try { await waitFor('%"report_schedules"%') } finally { await blocker.query('commit') }
+      assert.equal((await pending)[0].status, 'rejected', 'A lease acquired during a schedule row wait blocks the mutation')
+      const after = await snapshot()
+      assert.deepEqual(after.links, before.links)
+      assert.deepEqual(after.audits, before.audits)
+      assert.equal(after.schedules[0].encrypted_report_token, before.schedules[0].encrypted_report_token)
+      assert.equal(after.schedules[0].enabled, false)
+      assert.equal(after.schedules[0].delivery_lease_owner, workerOwner)
+
+      await restore()
+      await db.query("update report_schedules set delivery_lease_owner=$2,delivery_lease_until=clock_timestamp()+interval '250 milliseconds' where id=$1", [scheduleId, workerOwner])
+      await blocker.query('begin'); await blocker.query('select id from auth_members where id=$1 for update', [actor])
+      const waiting = Promise.allSettled([operation()])
+      try {
+        await waitFor('%select * from public.lock_workspace_actor%')
+        while (!(await db.query('select delivery_lease_until<=clock_timestamp() as expired from report_schedules where id=$1', [scheduleId])).rows[0].expired) await setTimeout(20)
+      } finally { await blocker.query('commit') }
+      assert.equal((await waiting)[0].status, 'fulfilled', 'A lease expired during authorization does not falsely block a mutation')
+      assert.equal((await snapshot()).audits.length, 1)
+    }
     await restore(); const concurrent = await Promise.allSettled([operations.template_update(), operations.template_update()]); assert.equal(concurrent.filter((r) => r.status === 'fulfilled').length, 1)
     const final = await snapshot(); assert.equal(final.templates[0].current_version, 2); assert.equal(final.versions.length, 2); assert.equal(final.audits.length, 1)
-    console.log(JSON.stringify({ ok: true, verified: ['six_actor_role_and_lifecycle_denials', 'six_observed_membership_waits', 'six_post_authorization_trial_rollbacks', 'analyst_retains_all_six_operations', 'current_quota_despite_old_agency_context', 'concurrent_template_version_preserves_one_revision'], providerCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, verified: ['six_actor_role_and_lifecycle_denials', 'six_observed_membership_waits', 'six_post_authorization_trial_rollbacks', 'analyst_retains_all_six_operations', 'current_quota_despite_old_agency_context', 'concurrent_template_version_preserves_one_revision', 'two_schedule_row_waits_observe_new_worker_lease', 'two_lease_expiries_during_actor_wait_allow_mutation'], providerCalls: 0 }))
   } finally {
     await blocker.query('rollback').catch(() => {}); await blocker.end()
     await db.query('delete from workspaces where id=$1', [workspaceId]); await db.query('delete from auth_organizations where id=$1', [organizationId]); await db.query('delete from auth_users where id=$1', [actor]); await db.end()

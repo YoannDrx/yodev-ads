@@ -33,6 +33,17 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1' && process.env.PLAYWRIGHT_ANALY
       const scheduleForm = page.locator('form').filter({ has: page.locator(`[name="scheduleId"][value="${scheduleId}"]`) })
       const tokenHash = async () => (await db.query('select token_hash from share_links l join report_schedules s on s.share_id=l.id where s.id=$1', [scheduleId])).rows[0].token_hash
       const firstHash = await tokenHash()
+      await db.query("update report_schedules set delivery_lease_owner=$2,delivery_lease_until=clock_timestamp()+interval '1 hour' where id=$1", [scheduleId, randomUUID()])
+      for (const name of [/Renew link|Renouveler le lien/, /Suspend and revoke|Suspendre et révoquer/]) {
+        await Promise.all([
+          page.waitForResponse((response) => response.request().method() === 'POST' && new URL(response.url()).pathname === '/reports'),
+          scheduleForm.getByRole('button', { name, exact: true }).click(),
+        ])
+        await expect(page.getByText(locale === 'en' ? 'A delivery is in progress. Try again in a few minutes.' : 'Un envoi est en cours. Réessayez dans quelques minutes.', { exact: true })).toBeVisible()
+        expect(await tokenHash()).toBe(firstHash)
+        expect((await db.query('select enabled from report_schedules where id=$1', [scheduleId])).rows[0].enabled).toBe(true)
+      }
+      await db.query("update report_schedules set delivery_lease_until=clock_timestamp()-interval '1 second' where id=$1", [scheduleId])
       await scheduleForm.getByRole('button', { name: /Renew link|Renouveler le lien/, exact: true }).click()
       await expect.poll(tokenHash).not.toBe(firstHash)
       await scheduleForm.getByRole('button', { name: /Suspend and revoke|Suspendre et révoquer/, exact: true }).click()

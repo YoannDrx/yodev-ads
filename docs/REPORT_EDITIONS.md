@@ -27,6 +27,8 @@ La publication enregistre dans une seule transaction l’édition et le contenu 
 
 Avant le transport, puis après l'attente du registre email immédiatement avant chaque nouvelle soumission, le worker relit ses deux réservations, l’état du workspace, du compte, de la planification et du lien. Une rotation/révocation du token bloque la reprise de l’ancienne capacité. Les destinataires figés doivent toujours appartenir à la planification lors d'une nouvelle soumission ; les acceptations déjà enregistrées sont rapprochées sans renvoi même si cette liste a changé. Les échéances du job, de l'essai et des réservations sont contrôlées avec l'horloge PostgreSQL après les verrous et les écritures. La finalisation est conditionnée au propriétaire de réservation et à la tentative du job ; un ancien worker ne peut pas effacer la réservation d’un successeur. Un effet externe déjà admis ne peut pas être annulé par une révocation ultérieure.
 
+La suspension/réactivation et le renouvellement du lien verrouillent la planification avant sa lecture et avant toute écriture du lien. Un bail acquis pendant l'attente bloque la modification ; un bail expiré pendant l'autorisation ne la bloque plus. Le refus est affiché en FR/EN sans changer le token ou l'état.
+
 Le champ historique `lastDeliveredAt` correspond à la finalisation d’une acceptation du transport. La réception, les rebonds et les plaintes restent suivis dans le registre email et les webhooks fournisseur. La fixture locale prouve le protocole avec un transport intercepté ; elle ne prouve aucune réception réelle.
 
 ## Conservation et protection

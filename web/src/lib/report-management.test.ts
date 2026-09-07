@@ -193,7 +193,7 @@ describe('report management repository', () => {
 
   it('enables a disabled schedule under quota and rotates its bearer token', async () => {
     const database = reportDatabase({
-      statementResults: [[], [{ count: 1 }]],
+      statementResults: [[], [], [{ count: 1 }]],
       schedule: { id: scheduleId, shareId, enabled: false, encryptedReportToken: 'old', deliveryLeaseUntil: null },
     })
     mocks.databases.push(database.db)
@@ -226,10 +226,10 @@ describe('report management repository', () => {
     mocks.databases.push(
       reportDatabase({ statementResults: [[]] }).db,
       reportDatabase({
-        statementResults: [[]], schedule: { id: scheduleId, deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') },
+        statementResults: [[], [], { rows: [{ active: true }] }], schedule: { id: scheduleId, deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') },
       }).db,
       reportDatabase({
-        statementResults: [[], [{ count: 3 }]],
+        statementResults: [[], [], [{ count: 3 }]],
         schedule: { id: scheduleId, shareId, enabled: false, encryptedReportToken: 'old', deliveryLeaseUntil: null },
       }).db,
     )
@@ -257,11 +257,23 @@ describe('report management repository', () => {
   it('rejects token rotation for absent or leased schedules', async () => {
     mocks.databases.push(
       reportDatabase().db,
-      reportDatabase({ schedule: { id: scheduleId, deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') } }).db,
+      reportDatabase({ statementResults: [[], { rows: [{ active: true }] }], schedule: { id: scheduleId, deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') } }).db,
     )
     await expect(rotateWorkspaceScheduledReportToken({ workspaceId, actorUserId, scheduleId, token: 'x', now }))
       .rejects.toThrow('Planification introuvable')
     await expect(rotateWorkspaceScheduledReportToken({ workspaceId, actorUserId, scheduleId, token: 'x', now }))
       .rejects.toThrow('Un envoi est en cours')
   })
+  it.each(['toggle', 'rotate'] as const)('uses the post-lock clock for an expired %s lease despite an older caller timestamp', async (operation) => {
+    const database = reportDatabase({
+      statementResults: [...(operation === 'toggle' ? [[]] : []), [], { rows: [{ active: false }] }],
+      schedule: { id: scheduleId, shareId, enabled: true, encryptedReportToken: 'old', deliveryLeaseUntil: new Date(now.getTime() + 60_000) },
+    })
+    mocks.databases.push(database.db)
+    if (operation === 'toggle') await setWorkspaceReportScheduleEnabled({ workspaceId, actorUserId, scheduleId, enabled: false, replacementToken: null, entitlements: entitlementContext('active', 'solo'), now })
+    else await rotateWorkspaceScheduledReportToken({ workspaceId, actorUserId, scheduleId, token: 'renewed', now })
+    expect(database.capture.values).toHaveLength(1)
+    expect(database.capture.sets).toHaveLength(2)
+  })
+
 })
