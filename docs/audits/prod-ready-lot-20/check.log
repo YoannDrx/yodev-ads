@@ -1,0 +1,13 @@
+
+> @yodev/ads@0.1.0 check
+> npm run lint && npm run typecheck && npm run verify:data-boundary && npm run verify:transaction-serialization && npm run test:release-verification && npm run test:coverage && npm run build && npm run audit:runtime
+
+
+> @yodev/ads@0.1.0 lint
+> eslint
+
+
+> @yodev/ads@0.1.0 typecheck
+> tsc --noEmit
+
+scripts/verify-activation-evidence.ts(58,125): error TS1308: 'await' expressions are only allowed within async functions and at the top levels of modules.

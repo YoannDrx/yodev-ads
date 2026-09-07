@@ -379,6 +379,13 @@
       "when": 1788758827726,
       "tag": "0053_portfolio_saved_views",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1788760939048,
+      "tag": "0054_published_report_activation",
+      "breakpoints": true
     }
   ]
 }

@@ -11,6 +11,7 @@ import { resolveReportPeriod, storedReportPeriod, type ReportPeriodSelection } f
 import { loadReportLogo } from '@/lib/report-logo'
 import { reportAccent, DEFAULT_REPORT_ACCENT } from '@/lib/report-branding'
 import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { insertActivationMilestone } from '@/lib/activation'
 
 export const REPORT_MODEL_VERSION = 1
 export class ReportDataUnavailable extends Error {
@@ -131,6 +132,8 @@ export async function createReportEditionInTransaction(db: DatabaseTransaction, 
   }).returning()
   await db.insert(auditEvents).values({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, action: 'report.edition_created', entityType: 'report_edition', entityId: edition.id,
     metadata: { shareId: context.share.id, kind: input.kind, editionNumber: edition.editionNumber, from: window.from, through: window.through, timezone: window.timezone, sourceVersion, previousEditionId: previous?.id ?? null } })
+  await insertActivationMilestone(db, { workspaceId: input.workspaceId, actorUserId: input.actorUserId, milestone: 'first_report_published', sourceEntityId: edition.id,
+    occurredAt: now, metadata: { shareId: context.share.id, kind: input.kind, evidence: 'report_edition_v1' } })
   return { edition, model, created: true }
 }
 

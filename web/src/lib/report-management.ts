@@ -13,7 +13,6 @@ import {
   shareLinks,
 } from '@/db/schema'
 import { withTenantTransaction } from '@/db/transactions'
-import { insertActivationMilestone } from '@/lib/activation'
 import { encryptSecret } from '@/lib/crypto'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { hashToken } from '@/lib/tokens'
@@ -209,12 +208,6 @@ export function createWorkspaceReportSchedule(input: ActorContext & {
       entityType: 'report_schedule',
       entityId: schedule.id,
       metadata: { cadence: input.cadence, recipientCount: input.recipientEmails.length, clientId: client.id },
-    })
-    await insertActivationMilestone(db, {
-      workspaceId: input.workspaceId,
-      milestone: 'first_report',
-      actorUserId: input.actorUserId,
-      sourceEntityId: share.id,
     })
     return { schedule, share }
   })

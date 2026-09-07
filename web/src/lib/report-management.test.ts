@@ -118,7 +118,7 @@ describe('report management repository', () => {
   it.each([
     { cadence: 'weekly' as const, weekday: 2, monthday: null },
     { cadence: 'monthly' as const, weekday: null, monthday: 15 },
-  ])('creates a $cadence schedule, report snapshot, audit and activation', async ({ cadence, weekday, monthday }) => {
+  ])('creates a $cadence schedule and audit without claiming report publication', async ({ cadence, weekday, monthday }) => {
     const database = reportDatabase({
       statementResults: [[], [{ count: 1 }], [{ id: shareId }], [{ id: scheduleId }]],
       client: { id: clientId, isManager: false },
@@ -141,7 +141,7 @@ describe('report management repository', () => {
       encryptedReportToken: 'encrypted:report-token-value',
     })
     expect(database.capture.values[2]).toMatchObject({ action: 'report.schedule_created' })
-    expect(database.capture.values[3]).toMatchObject({ milestone: 'first_report', sourceEntityId: shareId })
+    expect(database.capture.values).not.toContainEqual(expect.objectContaining({ milestone: expect.any(String) }))
   })
 
   it('uses workspace defaults when no template is selected', async () => {

@@ -15,7 +15,6 @@ import {
   workspaceDomains,
 } from '@/db/schema'
 import { withTenantTransaction } from '@/db/transactions'
-import { insertActivationMilestone } from '@/lib/activation'
 import { decryptSecret, encryptSecret } from '@/lib/crypto'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { hashOtp, hashToken } from '@/lib/tokens'
@@ -71,12 +70,6 @@ export function createWorkspacePublicReport(input: ActorContext & {
       entityType: 'share_link',
       entityId: share.id,
       metadata: { clientId: input.clientId, locale: input.locale, periodDays: input.periodDays },
-    })
-    await insertActivationMilestone(transaction, {
-      workspaceId: input.workspaceId,
-      milestone: 'first_report',
-      actorUserId: input.actorUserId,
-      sourceEntityId: share.id,
     })
     const customDomain = entitlements.capabilities.has('custom_domain')
       ? await transaction.query.workspaceDomains.findFirst({

@@ -68,7 +68,7 @@ describe('public report workflows', () => {
 
   it('creates a quota-guarded report with an Agency domain and one-shot URL', async () => {
     const database = publicReportDatabase({
-      statementResults: [[], [], [{ count: 2 }], [{ id: shareId }], [], [], [{ id: 'revelation-1' }]],
+      statementResults: [[], [], [{ count: 2 }], [{ id: shareId }], [], [{ id: 'revelation-1' }]],
       domain: { hostname: 'reports.example.test' },
     })
     mocks.databases.push(database.db)
@@ -84,12 +84,13 @@ describe('public report workflows', () => {
       encryptedSecret: 'encrypted:https://reports.example.test/r/public-report-token',
     })
     expect(database.capture.values).toContainEqual(expect.objectContaining({ action: 'report.link_created' }))
-    expect(database.capture.values).toContainEqual(expect.objectContaining({ milestone: 'first_report' }))
+    expect(mocks.edition).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ workspaceId, shareId, actorUserId }))
+    expect(database.capture.values).not.toContainEqual(expect.objectContaining({ milestone: 'first_report' }))
   })
 
   it('falls back to the Yodev origin when custom domains are not entitled', async () => {
     const database = publicReportDatabase({
-      statementResults: [[], [], [{ count: 0 }], [{ id: shareId }], [], [], [{ id: 'revelation-1' }]],
+      statementResults: [[], [], [{ count: 0 }], [{ id: shareId }], [], [{ id: 'revelation-1' }]],
       domain: { hostname: 'ignored.example.test' },
       workspace: { accessState: 'active', plan: 'solo' },
     })

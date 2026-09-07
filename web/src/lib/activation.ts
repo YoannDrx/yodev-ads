@@ -6,9 +6,10 @@ import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactio
 export const ACTIVATION_MILESTONES = [
   'google_connected',
   'accounts_synced',
+  'accounts_selected',
   'first_analysis',
   'first_monitor',
-  'first_report',
+  'first_report_published',
   'legal_accepted',
   'paid_conversion',
 ] as const
@@ -21,6 +22,7 @@ export function insertActivationMilestone(db: DatabaseTransaction, input: {
   actorUserId: string
   sourceEntityId?: string | null
   metadata?: Record<string, unknown>
+  occurredAt?: Date
 }) {
   return db.insert(activationMilestones).values({
     workspaceId: input.workspaceId,
@@ -28,6 +30,7 @@ export function insertActivationMilestone(db: DatabaseTransaction, input: {
     actorUserId: input.actorUserId,
     sourceEntityId: input.sourceEntityId ?? null,
     metadata: input.metadata ?? {},
+    occurredAt: input.occurredAt,
   }).onConflictDoNothing({ target: [activationMilestones.workspaceId, activationMilestones.milestone] })
 }
 

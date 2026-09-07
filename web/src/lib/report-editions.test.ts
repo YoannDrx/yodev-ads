@@ -44,6 +44,7 @@ describe('report edition publication decisions', () => {
     expect(result.model.campaigns[0]).toMatchObject({ status: 'REMOVED', costMicros: '7000000' })
     expect(capture.values[0]).toMatchObject({ periodFrom: window.from, periodThrough: window.through, sourceVersion: expect.stringMatching(/^[a-f0-9]{64}$/), editionNumber: 1, kind: 'initial', encryptedDelivery: null })
     expect(capture.values[1]).toMatchObject({ action: 'report.edition_created' })
+    expect(capture.values[2]).toMatchObject({ milestone: 'first_report_published', sourceEntityId: editionId, occurredAt: now, metadata: { shareId, kind: 'initial', evidence: 'report_edition_v1' } })
   })
   it.each(['solo', 'studio', 'agency'])('applies publication branding for %s', async (plan) => {
     const { result } = await publish({ workspace: { plan }, aggregates: [] })

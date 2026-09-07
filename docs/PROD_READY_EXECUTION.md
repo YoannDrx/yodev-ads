@@ -29,7 +29,9 @@ Objectif actif créé à la demande de l’utilisateur le 6 septembre 2026 : imp
 | T15 | Code et recette locale vérifiés | Navigation active courante, sous-pages/discussions, retour arrière, clavier et lien vers le contenu ; menu complet et sidebar défilables. FR/EN 390/768/1280 px, cinq rôles et changement d’espace vérifiés. Lot 18. Accessibilité exhaustive et validation staging restant distinctes. |
 | T16 | Code et recette locale vérifiés | Portefeuille de 50 comptes, totaux qualifiés séparés par devise/fuseau/période, pacing, compteurs complets, filtres, 20 vues personnelles versionnées et partage par URL authentifiée. Charge par membre et tâches sans client ; synthèse hebdomadaire raccordée. Migration 0053, RLS/concurrence/export/purge et parcours FR/EN vérifiés au lot 19. Charge déployée et réception des notifications restent à prouver. |
 | T17 | En cours | Identités vérifiées et vraies sessions Better Auth créées dans une base jetable ; matrice cinq rôles, accès directs et Server Actions, scénarios grâce/suspension/mobile. Runner local et intégration CI ajoutés. Parcours métier complets avec données/fournisseurs restent à couvrir. |
-| T18–T23 | À faire | Conserver les critères du plan, y compris fournisseurs, bêta réelle et preuves de lancement. |
+| T18–T20 | À faire | Conserver les critères fournisseurs, opérations et documents du plan. |
+| T21 | En cours | Publication effective d’une édition distinguée de la planification ; sélection explicite distinguée de l’inventaire. Milestones et cohortes corrigés, reprise des preuves conservées par migration 0054, recette locale au lot 20. Mesure des coûts, aides d’activation et qualification des alertes restent à compléter. |
+| T22–T23 | À faire | Recette du candidat déployé et bêta réelle selon tous les critères du plan. |
 
 ## Vérifications du premier lot
 

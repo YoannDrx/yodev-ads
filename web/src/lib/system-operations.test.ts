@@ -34,8 +34,8 @@ describe('system operations snapshot', () => {
       statementResults: [
         [{ state: 'active', total: 3 }, { state: 'trial', total: 2 }],
         [{ id: 'workspace-1', createdAt: new Date('2026-08-01') }],
-        [{ milestone: 'first_report', total: 2 }],
-        [{ workspaceId: 'workspace-1', milestone: 'first_report', occurredAt: new Date('2026-08-02') }],
+        [{ milestone: 'first_report_published', total: 2 }],
+        [{ workspaceId: 'workspace-1', milestone: 'first_report_published', occurredAt: new Date('2026-08-02') }],
         [{ status: 'open', total: 1 }],
         [{ ticket, workspace: { id: 'workspace-1', name: 'ACME', accessState: 'active', plan: 'solo' } }],
         [{ total: 4 }],
@@ -58,7 +58,7 @@ describe('system operations snapshot', () => {
     mocks.database = database.db
     await expect(getSystemOperationsSnapshot()).resolves.toMatchObject({
       workspaceStates: { active: 3, trial: 2 },
-      activationFunnel: { first_report: 2 },
+      activationFunnel: { first_report_published: 2 },
       supportStatusCounts: { open: 1 },
       tickets: [{ ticket, messages: [{ id: 'message-1', ticketId: ticket.id }, { id: 'message-2', ticketId: ticket.id }] }],
       incidents: [{ incident, updates: [{ id: 'update-1', incidentId: incident.id }] }],

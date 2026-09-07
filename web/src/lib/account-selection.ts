@@ -7,6 +7,7 @@ import { type DatabaseTransaction, withTenantTransaction } from '@/db/transactio
 import { entitlementContext, isPlan, isWorkspaceAccessState, requireCapability } from '@/lib/entitlements'
 import { lockWorkspaceAccessBoundary } from '@/lib/workspace-transaction-guard'
 import { selectedAccountsWithinLimit, type AccountSelection } from '@/lib/account-selection-model'
+import { insertActivationMilestone } from '@/lib/activation'
 
 export async function lockAccountManagement(db: DatabaseTransaction, workspaceId: string) {
   await lockWorkspaceAccessBoundary(db, workspaceId)
@@ -71,6 +72,7 @@ export function saveManagedAccountSelection(input: { workspaceId: string; actorU
       where clients.workspace_id = ${input.workspaceId} and clients.id = selection.id::uuid
     `)
     const result = await reconcileManagedAccountSelection(db, input.workspaceId, limit)
+    if (result.includedAdvertisers.length > 0) await insertActivationMilestone(db, { workspaceId: input.workspaceId, actorUserId: input.actorUserId, milestone: 'accounts_selected', sourceEntityId: result.includedAdvertisers[0].id, metadata: { activeAdvertisers: result.includedAdvertisers.length } })
     await db.insert(auditEvents).values({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, action: input.priorityOnly ? 'google_ads.account_priorities_saved' : 'google_ads.account_selection_saved', entityType: 'workspace', entityId: input.workspaceId,
       metadata: { clientIds: input.clientIds, limit, activeAdvertisers: result.includedAdvertisers.length, activatedIds: result.activatedIds, deactivatedIds: result.deactivatedIds } })
     return result
