@@ -29,6 +29,16 @@ beforeEach(() => { vi.resetAllMocks(); mocks.query = new URLSearchParams(); mock
 afterEach(cleanup)
 const failure = () => Promise.reject(new TypeError('Network unavailable'))
 
+it('distinguishes invited membership from a first-workspace public trial', () => {
+  const view = render(<AuthPanel mode="sign-up" locale="en" googleEnabled={false} />)
+  expect(screen.getByText(/Private beta by invitation/)).toBeVisible()
+  view.rerender(<AuthPanel mode="sign-up" locale="en" googleEnabled={false} publicRegistration />)
+  expect(screen.getByText(/14-day trial for your first workspace/)).toBeVisible()
+  view.rerender(<AuthPanel mode="sign-up" locale="en" googleEnabled={false} publicRegistration returnTo="/invitation?id=invite" />)
+  expect(screen.getByText(/Use the invited email address/)).toBeVisible()
+  expect(screen.queryByText(/14-day trial/)).not.toBeInTheDocument()
+})
+
 describe('recoverable authentication failures', () => {
   for (const [label, mock] of [['Continue with Google', mocks.social], ['Use a passkey', mocks.passkey]] as const) {
     it(`restores controls after a rejected ${label} request`, async () => {

@@ -7,7 +7,7 @@ import { authClient } from '@/lib/auth-client'
 import { authDestination } from '@/lib/auth-destination'
 import { Button } from '@/components/ui/button'
 
-export function AuthPanel({ mode, locale, googleEnabled, returnTo, linkError = false }: { mode: 'sign-in' | 'sign-up'; locale: string; googleEnabled: boolean; returnTo?: string; linkError?: boolean }) {
+export function AuthPanel({ mode, locale, googleEnabled, returnTo, linkError = false, publicRegistration = false }: { mode: 'sign-in' | 'sign-up'; locale: string; googleEnabled: boolean; returnTo?: string; linkError?: boolean; publicRegistration?: boolean }) {
   const english = locale === 'en'
   const signUp = mode === 'sign-up'
   const destination = authDestination(returnTo, signUp ? '/onboarding' : '/dashboard')
@@ -83,7 +83,12 @@ export function AuthPanel({ mode, locale, googleEnabled, returnTo, linkError = f
           {signUp ? (english ? 'Create your account' : 'Créer votre compte') : (english ? 'Welcome back' : 'Heureux de vous revoir')}
         </h1>
         <p className="mt-2 text-center text-sm text-slate-500">
-          {signUp ? (english ? 'Start your 14-day trial after email verification.' : 'Démarrez votre essai de 14 jours après vérification de votre email.') : (english ? 'Sign in to your secure workspace.' : 'Connectez-vous à votre espace sécurisé.')}
+          {signUp ? destination.startsWith('/invitation?')
+            ? (english ? 'Use the invited email address to join the workspace after verification.' : 'Utilisez l’adresse email invitée pour rejoindre l’espace après vérification.')
+            : publicRegistration
+              ? (english ? 'Verify your email, then start a 14-day trial for your first workspace.' : 'Vérifiez votre email, puis démarrez un essai de 14 jours pour votre premier espace.')
+              : (english ? 'Private beta by invitation. Create your account with the approved email address.' : 'Bêta privée sur invitation. Créez votre compte avec l’adresse email autorisée.')
+            : (english ? 'Sign in to your secure workspace.' : 'Connectez-vous à votre espace sécurisé.')}
         </p>
         {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         {notice && <p role="status" className="mt-5 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}

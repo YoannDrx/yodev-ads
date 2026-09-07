@@ -51,9 +51,10 @@ npm run dev
 Use `npm run check` for lint, TypeScript, unit tests and a production build, then
 `npm run test:e2e` for the browser smoke suite.
 
-The newest local release evidence is in [lot 25](docs/audits/prod-ready-lot-25/README.md):
-1,320 application tests, seven script tests and 53 authenticated/public browser
-journeys. These dated results must be rerun on the final release candidate.
+The latest application check is in [lot 27](docs/audits/prod-ready-lot-27/README.md):
+1,325 application tests, seven script tests and nine focused public/authentication
+journeys. The full 53-journey browser matrix passed in [lot 25](docs/audits/prod-ready-lot-25/README.md).
+These dated results must be rerun on the final release candidate.
 
 For a fully local authenticated regression run, provision a disposable PostgreSQL 17
 instance named `yodev_test` on loopback, then run `npm run db:verify-local` and

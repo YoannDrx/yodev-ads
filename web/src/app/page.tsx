@@ -2,26 +2,39 @@ import Link from 'next/link'
 import { ArrowRight, BellRing, Bot, Check, Eye, Gauge, ShieldCheck, Sparkles, UsersRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getLocale } from '@/lib/locale'
+import { featureEnabled } from '@/lib/feature-flags'
+import { planCatalog } from '@/lib/billing'
+import { entitlementContext } from '@/lib/entitlements'
 
 export default async function Home() {
   const locale = await getLocale()
   const english = locale === 'en'
+  const publicTrial = featureEnabled('publicBeta')
+  const accessLabel = publicTrial ? (english ? 'Start free trial' : 'Démarrer l’essai') : (english ? 'I have an invitation' : 'J’ai une invitation')
+  const registrationNote = publicTrial
+    ? (english ? '14-day trial without a card for your first workspace. Choose a subscription separately when billing is available.' : '14 jours d’essai sans carte pour votre premier espace. La souscription à un abonnement se fait séparément, lorsqu’elle est ouverte.')
+    : (english ? 'Private beta by invitation. Use the approved email address to create your account. These catalogue prices do not open a subscription.' : 'Bêta privée sur invitation. Utilisez l’adresse email autorisée pour créer votre compte. Ces tarifs catalogue n’ouvrent pas une souscription.')
   const pillars = [
     { icon: Eye, title: english ? 'Detect' : 'Détecter', description: english ? 'Search terms, Quality Score, ads, tracking and budgets analyzed from actual Google Ads data.' : 'Requêtes, Quality Score, annonces, tracking et budget analysés sur les données Google Ads réelles.' },
     { icon: Sparkles, title: english ? 'Explain' : 'Expliquer', description: english ? 'Every signal shows its evidence, impact, priority and the concrete action to review.' : 'Chaque signal montre sa preuve, son impact, sa priorité et l’action concrète à examiner.' },
     { icon: ShieldCheck, title: english ? 'Approve' : 'Approuver', description: english ? 'Writes are validated by Google, approved by a human and then recorded.' : 'Les écritures sont validées par Google, approuvées par un humain puis consignées.' },
-    { icon: Bot, title: english ? 'Act' : 'Agir', description: english ? 'Daily monitors, controlled actions and client reports that work without you.' : 'Des vigies quotidiennes, des actions contrôlées et des rapports clients qui travaillent sans vous.' },
+    { icon: Bot, title: english ? 'Organize' : 'Organiser', description: english ? 'Schedule monitors and client reports, then review their results and delivery status.' : 'Programmez vos vigies et rapports clients, puis consultez leurs résultats et leur état de livraison.' },
   ]
-  const plans = [
-    { name: 'Solo', price: '29 €', note: english ? 'A clean start' : 'Pour démarrer proprement', accounts: english ? '3 client accounts' : '3 comptes clients', features: english ? ['Google Ads cockpit', '360 analysis', '5 autonomous monitors', 'Secure approvals'] : ['Cockpit Google Ads', 'Analyse 360', '5 vigies autonomes', 'Approbations sécurisées'] },
-    { name: 'Studio', price: '89 €', note: english ? 'The consultant choice' : 'Le choix des consultants', accounts: english ? '15 client accounts' : '15 comptes clients', featured: true, features: english ? ['Everything in Solo', '25 active reports', '5 members', 'Scheduled reports'] : ['Tout Solo', '25 rapports actifs', '5 membres', 'Rapports programmés'] },
-    { name: 'Agency', price: '189 €', note: english ? 'For growing teams' : 'Pour les équipes en croissance', accounts: english ? '50 client accounts' : '50 comptes clients', features: english ? ['Everything in Studio', '100 active reports', '15 members', 'White label and safety rules'] : ['Tout Studio', '100 rapports actifs', '15 membres', 'Marque blanche et règles de sécurité'] },
-  ]
+  const plans = (['solo', 'studio', 'agency'] as const).map((id) => {
+    const catalogue = planCatalog[id]
+    const limits = entitlementContext('active', id).limits
+    return {
+      name: catalogue.name, price: `${catalogue.monthlyPrice} €`, featured: id === 'studio',
+      note: id === 'solo' ? (english ? 'For independent professionals' : 'Pour les indépendants') : id === 'studio' ? (english ? 'For small teams' : 'Pour les petites équipes') : (english ? 'For growing agencies' : 'Pour les agences en croissance'),
+      accounts: english ? `${limits.advertiserAccounts} client accounts` : `${limits.advertiserAccounts} comptes clients`,
+      features: english ? [`${limits.monitors} monitors`, `${limits.reports} active reports`, `${limits.members} member${limits.members === 1 ? '' : 's'}`, id === 'solo' ? 'Cockpit and 360 analysis' : 'Teamwork and scheduled reports'] : [`${limits.monitors} vigies`, `${limits.reports} rapports actifs`, `${limits.members} membre${limits.members === 1 ? '' : 's'}`, id === 'solo' ? 'Cockpit et analyse 360' : 'Équipe et rapports programmés'],
+    }
+  })
   return (
     <main className="min-h-screen overflow-hidden bg-[#f4f7f7] text-[#0d1722]">
       <section className="relative bg-[#0d1722] text-white">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_12%,rgba(106,240,177,.17),transparent_28%),radial-gradient(circle_at_40%_100%,rgba(69,139,255,.12),transparent_34%)]" />
-        <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <nav className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-6 lg:px-8">
           <Brand />
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
@@ -30,14 +43,14 @@ export default async function Home() {
               </Link>
             </Button>
             <Button asChild className="rounded-full bg-[#19A58F] px-5 text-[#0d1722] hover:bg-[#35BDA6]">
-              <Link href="/sign-up">{english ? 'Try Ads by Yodev' : 'Essayer Ads by Yodev'}</Link>
+              <Link href="/sign-up">{accessLabel}</Link>
             </Button>
           </div>
         </nav>
         <div className="relative mx-auto grid max-w-7xl gap-14 px-6 pb-24 pt-20 lg:grid-cols-[1.06fr_.94fr] lg:px-8 lg:pb-32 lg:pt-28">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-[#67D8C4]">
-              <Sparkles className="size-4" /> {english ? 'Google Ads, with no blind spots' : 'Google Ads, sans angle mort'}
+              <Sparkles className="size-4" /> {publicTrial ? (english ? 'Public trial' : 'Essai public') : (english ? 'Private beta by invitation' : 'Bêta privée sur invitation')}
             </p>
             <h1 className="mt-7 max-w-3xl text-balance text-5xl font-semibold leading-[1.01] tracking-[-.055em] sm:text-6xl lg:text-7xl">
               {english ? 'The operating system for Google Ads agencies.' : 'Le système d’exploitation des agences Google Ads.'}
@@ -52,13 +65,15 @@ export default async function Home() {
                 className="h-12 rounded-full bg-[#19A58F] px-6 text-[#0d1722] shadow-xl shadow-emerald-500/10 hover:bg-[#35BDA6]"
               >
                 <Link href="/sign-up">
-                  {english ? 'Start free trial' : 'Démarrer l’essai'} <ArrowRight className="ml-2 size-4" />
+                  {accessLabel} <ArrowRight className="ml-2 size-4" />
                 </Link>
               </Button>
               <span className="flex items-center gap-2 text-sm text-white/55">
                 <Check className="size-4 text-[#19A58F]" /> {english ? 'Official Google Ads API' : 'API Google Ads officielle'}
               </span>
             </div>
+            <p className="mt-5 max-w-xl text-sm leading-6 text-white/60">{registrationNote}</p>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-white/60">{english ? 'Google changes and external connectors become available after validation for your workspace. No automatic Google changes.' : 'Les changements Google et connecteurs externes sont disponibles après validation pour votre espace. Aucune modification Google automatique.'}</p>
           </div>
           <ProductPreview locale={locale} />
         </div>
@@ -67,7 +82,7 @@ export default async function Home() {
       <section className="border-b border-black/6 bg-white">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-y-8 px-6 py-10 text-center sm:grid-cols-4 lg:px-8">
           {[
-            ['100 %', english ? 'traceable' : 'traçable'],
+            [english ? 'Audit' : 'Journal', english ? 'recorded actions' : 'actions consignées'],
             ['24 h', english ? 'approval validity' : 'validité des approbations'],
             ['AES-256', english ? 'token encryption' : 'chiffrement des jetons'],
             ['0', english ? 'write without validation' : 'écriture sans validation'],
@@ -116,7 +131,7 @@ export default async function Home() {
               </h2>
             </div>
             <p className="max-w-md text-sm leading-6 text-[#64717b]">
-              {english ? '14-day trial without a card, then monthly billing in euros. No commission on your advertising spend.' : '14 jours d’essai sans carte, puis facturation mensuelle en euros. Aucune commission sur vos dépenses publicitaires.'}
+              {registrationNote}
             </p>
           </div>
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
@@ -156,7 +171,7 @@ export default async function Home() {
                   variant={plan.featured ? 'default' : 'outline'}
                   className={`mt-8 w-full rounded-full ${plan.featured ? 'bg-[#19A58F] text-[#0d1722] hover:bg-[#35BDA6]' : ''}`}
                 >
-                  <Link href="/sign-up">{english ? 'Try for free' : 'Essayer gratuitement'}</Link>
+                  <Link href="/sign-up">{accessLabel}</Link>
                 </Button>
               </article>
             ))}
@@ -171,11 +186,11 @@ export default async function Home() {
             {english ? 'Your next client should not add chaos.' : 'Votre prochain client ne devrait pas ajouter de chaos.'}
           </h2>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-white/58">
-            {english ? 'Add their account to your MCC. Ads by Yodev handles the rest: monitoring, safeguards, reporting and traceability.' : 'Ajoutez son compte à votre MCC. Ads by Yodev s’occupe du reste : surveillance, garde-fous, reporting et traçabilité.'}
+            {english ? 'Connect your MCC, select the client accounts you manage, then configure their monitors and reports.' : 'Connectez votre MCC, sélectionnez les comptes clients à gérer, puis configurez leurs vigies et leurs rapports.'}
           </p>
           <Button asChild size="lg" className="mt-8 rounded-full bg-[#19A58F] px-7 text-[#0d1722]">
             <Link href="/sign-up">
-              {english ? 'Create my workspace' : 'Créer mon espace'} <ArrowRight className="ml-2 size-4" />
+              {accessLabel} <ArrowRight className="ml-2 size-4" />
             </Link>
           </Button>
         </div>
@@ -212,6 +227,7 @@ function ProductPreview({ locale }: { locale: 'fr' | 'en' }) {
     <div className="relative min-h-[460px]">
       <div className="absolute inset-0 rotate-2 rounded-[2.2rem] bg-[#19A58F] opacity-10" />
       <div className="relative rounded-[2rem] border border-white/10 bg-white/[.07] p-5 shadow-[0_45px_100px_-35px_rgba(0,0,0,.65)] backdrop-blur sm:p-6">
+        <p className="mb-4 text-xs text-white/60">{english ? 'Illustrative preview — fictional data' : 'Aperçu illustratif — données fictives'}</p>
         <div className="flex items-center justify-between border-b border-white/10 pb-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[.18em] text-white/38">{english ? 'Portfolio view' : 'Vue portefeuille'}</p>

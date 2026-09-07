@@ -1,6 +1,6 @@
 # Ads by Yodev — registre de fonctionnalités et état de livraison
 
-Mis à jour le **7 septembre 2026**, après le code `6e884f3` sur `codex/prod-ready`.
+Mis à jour le **7 septembre 2026**, après les lots 25–27 sur `codex/prod-ready` ; la recette générale du lot 25 précède la correction de landing vérifiée séparément au lot 27.
 
 **La préparation à la production est en cours.** Le dépôt possède les fonctionnalités et les preuves locales ci-dessous. Le candidat courant n’a pas été déployé ni certifié auprès des prestataires par cette exécution. Les validations d’août ne valent pas validation du code de septembre. L’ancien registre est conservé dans [l’archive datée](./audits/implementation-status-before-2026-09-07-refresh.md).
 
@@ -8,8 +8,8 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 
 ## Référence de vérification actuelle
 
-- **1 320 tests applicatifs / 181 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 25](./audits/prod-ready-lot-25/README.md).
-- **53 scénarios navigateur réussis sans skip en 2,4 minutes**, sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les appels fournisseurs sont désactivés.
+- **1 325 tests applicatifs / 182 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 27](./audits/prod-ready-lot-27/README.md).
+- **53 scénarios navigateur réussis sans skip en 2,4 minutes** au [lot 25](./audits/prod-ready-lot-25/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les neuf parcours publics/authentification touchés par le lot 27 passent ensuite en 29,2 s. Les appels fournisseurs sont désactivés.
 - **56 migrations cumulées**, de `0000` à `0055`, et la recette PostgreSQL complète depuis une base vide : [lot 24](./audits/prod-ready-lot-24/README.md). Aucun report automatique de ce numéro vers une base distante.
 - La CI utilise désormais le même runner de protocoles PostgreSQL que le local et conserve son test de charge distinct. Une exécution GitHub sur le SHA final reste requise.
 - Les preuves Python, secrets et fournisseurs antérieures gardent leur date et leur commit ; elles devront faire partie du contrôle du candidat final.
@@ -46,7 +46,7 @@ La source est `web/src/lib/monitoring.ts` : absence de diffusion, dépenses sans
 ## Prochaines livraisons et gates
 
 1. Terminer les suites locales T04/T05/T14/T15/T16/T17 : mutations restantes, volumes au-delà des plafonds, accessibilité, digest stocké et export/suppression.
-2. Aligner landing/onboarding/aide sur l’ouverture effective, les offres et les fonctions certifiées (T20). La landing contient encore des CTA d’essai public indépendants de l’état de bêta : cette correction reste à livrer.
+2. Finaliser aide, support et documents commerciaux (T20). La landing et l’inscription suivent désormais le statut de bêta, qualifient l’aperçu fictif et dérivent leurs quotas du produit ; les quatre combinaisons FR/EN et public/privé sont testées au lot 27.
 3. Livrer le suivi de coûts, la qualité des alertes, l’aide contextuelle et les preuves d’activation manquantes (T21).
 4. Rejouer les fournisseurs et les opérations sur le SHA déployé exact, avec environnement/configuration et preuve reçue ; fermer les anomalies A01–A16 et compiler le dossier de lancement (T18–T22).
 5. Respecter le contrat de bêta du plan : 3–5 agences, au moins trois actives au démarrage du compteur, paiements/email/supervision, documents validés, famille de mutation contrôlée et 30 jours éligibles. L’ancien texte autorisant à lui seul une bêta lecture seule ne clôture pas T23.

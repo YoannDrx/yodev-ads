@@ -8,8 +8,17 @@ test('public landing exposes the product proposition and account creation', asyn
   expect(response?.headers()['x-content-type-options']).toBe('nosniff')
   expect(response?.headers()['x-powered-by']).toBeUndefined()
   await expect(page.getByRole('heading', { name: /système d’exploitation des agences Google Ads/i })).toBeVisible()
-  await expect(page.getByRole('link', { name: /Créer mon espace/i })).toBeVisible()
+  await expect(page.getByRole('link', { name: /J’ai une invitation|Démarrer l’essai/i }).first()).toBeVisible()
+  if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
+    await expect(page.getByText('Bêta privée sur invitation', { exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: /Démarrer l’essai|Essayer gratuitement/i })).toHaveCount(0)
+  }
+  await expect(page.getByText('Aperçu illustratif — données fictives')).toBeVisible()
   await expect(page.getByText(/API Google Ads officielle/i)).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('landing-fr-desktop.png'), fullPage: true, caret: 'initial' })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByRole('navigation').getByRole('link', { name: /J’ai une invitation|Démarrer l’essai/ })).toBeInViewport({ ratio: 1 })
+  await page.screenshot({ path: test.info().outputPath('landing-fr-mobile.png'), fullPage: true, caret: 'initial' })
 })
 
 test('authenticated areas redirect anonymous visitors to sign-in', async ({ page }) => {
@@ -38,7 +47,12 @@ test('the public product and legal surface honor the English locale', async ({ c
   await context.addCookies([{ name: 'yodev_locale', value: 'en', url: new URL('/', baseURL).toString() }])
   await page.goto('/')
   await expect(page.getByRole('heading', { name: /operating system for Google Ads agencies/i })).toBeVisible()
-  await expect(page.getByRole('link', { name: /Create my workspace/i })).toBeVisible()
+  await expect(page.getByRole('link', { name: /I have an invitation|Start free trial/i }).first()).toBeVisible()
+  await expect(page.getByText('Illustrative preview — fictional data')).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('landing-en-desktop.png'), fullPage: true, caret: 'initial' })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByRole('navigation').getByRole('link', { name: /I have an invitation|Start free trial/ })).toBeInViewport({ ratio: 1 })
+  await page.screenshot({ path: test.info().outputPath('landing-en-mobile.png'), fullPage: true, caret: 'initial' })
   await page.goto('/privacy')
   await expect(page.getByRole('heading', { name: 'Privacy policy' })).toBeVisible()
 })
