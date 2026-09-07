@@ -20,8 +20,8 @@ import { getStripe } from '@/lib/billing'
 import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
 import { decryptSecret } from '@/lib/crypto'
 import { revokeGoogleOAuthToken } from '@/lib/google-ads'
-import { removeVercelProjectDomain } from '@/lib/vercel-domains'
 import { NonRetryableJobError, type ClaimedJob } from '@/lib/jobs'
+import { DomainCleanupAttemptUnresolved, removeDomainWithCleanupReceipt } from '@/lib/domain-cleanup-receipts'
 
 export function expectedWorkspaceDeletionConfirmation(locale: string) {
   return locale === 'en' ? 'DELETE' : 'SUPPRIMER'
@@ -264,13 +264,14 @@ export async function runWorkspaceExternalCleanup(input: ExternalCleanupInput, j
     return null
   })
   if (prepared) return { completedAt: prepared, skipped: 'already_completed' as const }
-  const admit = () => withSystemTransaction(async (db) => {
+  const admitInTransaction = async (db: DatabaseTransaction) => {
     const { tombstone } = await cleanupContext(db, input, job)
     if (tombstone.externalCleanupStatus !== 'running') throw new Error('External cleanup is no longer running')
-  })
+  }
+  const admit = () => withSystemTransaction(admitInTransaction)
   try {
     if (input.logoUrl) { await admit(); await removeBlobIfPresent(input.logoUrl) }
-    for (const hostname of input.hostnames) await removeVercelProjectDomain(hostname, admit)
+    for (const hostname of input.hostnames) await removeDomainWithCleanupReceipt({ hostname, workspaceHash: input.workspaceHash, job, admitInTransaction })
     return await withSystemTransaction(async (db) => {
       const { current, tombstone } = await cleanupContext(db, input, job)
       if (tombstone.externalCleanupStatus !== 'running') throw new Error('External cleanup is no longer running')
@@ -282,6 +283,7 @@ export async function runWorkspaceExternalCleanup(input: ExternalCleanupInput, j
       return { completedAt, deletedLogo: Boolean(input.logoUrl), removedDomains: input.hostnames.length }
     })
   } catch (error) {
+    if (error instanceof DomainCleanupAttemptUnresolved) throw error
     try {
       await withSystemTransaction(async (db) => {
         const { current, tombstone } = await cleanupContext(db, input, job)

@@ -33,14 +33,14 @@ try {
   const payload = { workspaceHash: 'a'.repeat(64), logoUrl: null, hostnames: ['legacy-cleanup.example.test'] }
   await client.query("insert into jobs(type,payload,deduplication_key,status) values('workspace.external_cleanup',$1,'legacy-cleanup','dead_letter')", [JSON.stringify(payload)])
   await migrate(database, { migrationsFolder: migrations })
-  assert.equal(Number((await client.query('select count(*) from drizzle.__drizzle_migrations')).rows[0].count), 61)
+  assert.equal(Number((await client.query('select count(*) from drizzle.__drizzle_migrations')).rows[0].count), journal.entries.length)
   const reservation = (await client.query('select hostname,workspace_hash,released_at from workspace_domain_cleanup_reservations')).rows[0]
   assert.deepEqual(reservation, { hostname: payload.hostnames[0], workspace_hash: payload.workspaceHash, released_at: null })
   await client.query("delete from jobs where deduplication_key='legacy-cleanup'")
   assert.equal((await client.query('select * from workspace_domain_cleanup_reservations')).rowCount, 1)
   await migrate(database, { migrationsFolder: migrations })
   assert.equal((await client.query('select * from workspace_domain_cleanup_reservations')).rowCount, 1)
-  console.log(JSON.stringify({ ok: true, migrations: 61, verified: ['fresh_0000_through_0059', 'legacy_dead_letter_cleanup_backfilled_by_0060', 'reservation_survives_terminal_job_deletion', 'migration_replay_idempotent'], realProviderCalls: 0 }))
+  console.log(JSON.stringify({ ok: true, migrations: journal.entries.length, verified: ['fresh_0000_through_0059', 'legacy_dead_letter_cleanup_backfilled_by_0060', 'reservation_survives_terminal_job_deletion', 'migration_replay_idempotent'], realProviderCalls: 0 }))
 } finally {
   await client.end().catch(() => {})
   await control.query(`drop database if exists "${databaseName}" with (force)`)

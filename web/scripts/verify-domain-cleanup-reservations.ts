@@ -95,6 +95,7 @@ async function main() {
   } finally {
     await blocker.query('rollback').catch(() => {}); await blocker.end(); globalThis.fetch = originalFetch
     await db.query('drop trigger if exists fixture_domain_purge_wait on workspaces'); await db.query('drop function if exists public.fixture_domain_purge_wait()')
+    await db.query('delete from domain_cleanup_attempts where workspace_hash=any($1::text[])', [[hash, extraHash]])
     await db.query('delete from jobs where deduplication_key=any($1::text[])', [[`workspace.external_cleanup:${hash}`, `workspace.external_cleanup:${extraHash}`]])
     await db.query('delete from workspace_domain_cleanup_reservations where workspace_hash=any($1::text[])', [[hash, extraHash]])
     await db.query('delete from workspace_deletion_tombstones where workspace_hash=any($1::text[])', [[hash, extraHash]])

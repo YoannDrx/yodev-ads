@@ -1414,6 +1414,27 @@ export const workspaceDomainCleanupReservations = pgTable(
   (table) => [uniqueIndex('domain_cleanup_reservation_idx').on(table.hostname, table.workspaceHash)],
 )
 
+export const domainCleanupAttempts = pgTable(
+  'domain_cleanup_attempts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    hostname: varchar('hostname', { length: 253 }).notNull(),
+    workspaceHash: varchar('workspace_hash', { length: 64 }).notNull(),
+    jobId: uuid('job_id').notNull(),
+    jobAttempt: integer('job_attempt').notNull(),
+    leaseOwner: varchar('lease_owner', { length: 128 }).notNull(),
+    providerScopeHash: varchar('provider_scope_hash', { length: 64 }).notNull(),
+    state: varchar('state', { length: 24 }).default('submitting').notNull(),
+    alreadyAbsent: boolean('already_absent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('domain_cleanup_attempt_idx').on(table.jobId, table.jobAttempt, table.hostname),
+    index('domain_cleanup_attempt_scope_idx').on(table.hostname, table.workspaceHash),
+  ],
+)
+
 export const reportRecipients = pgTable(
   'report_recipients',
   {

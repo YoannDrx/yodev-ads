@@ -1,6 +1,6 @@
 # Lot 56 — Réservation des domaines au-delà de la purge
 
-Base : `0458e52`. Suite T04/T16/T17/T18. Migration `0060_domain_cleanup_reservations` ; 61 migrations cumulées.
+Base : `0458e52`. Suite T04/T17/T18/T19. Migration `0060_domain_cleanup_reservations` ; 61 migrations cumulées.
 
 La purge supprimait la ligne `workspace_domains`, donc son unicité, avant le retrait Vercel asynchrone. Une nouvelle attribution pouvait précéder un ancien nettoyage. La table dédiée `workspace_domain_cleanup_reservations` conserve désormais hostname et empreinte de l’espace, indépendamment de la rétention des espaces et des jobs. Les comptes applicatifs/auth n’y ont aucun droit de lecture ou de mutation ; seuls les rôles système/purge disposent des opérations nécessaires.
 
@@ -16,7 +16,7 @@ Le nettoyage confirmé ne libère **pas encore automatiquement** la réservation
 
 La migration reprend les hostnames des jobs de nettoyage encore conservés, y compris les dead letters et jobs terminés. Un contenu durable invalide fait échouer la migration et doit être réconcilié, plutôt que silencieusement ignoré. Les domaines d’anciens jobs déjà supprimés ne sont pas reconstructibles depuis cette seule source : l’inventaire fournisseur reste nécessaire pour le candidat réel.
 
-Avant déploiement, interrompre les workers et drainer les opérations de domaines/purge de l’ancienne version ; appliquer la migration, puis démarrer la version compatible. Une ancienne instance de purge ne crée pas ces réservations. En cas de retour applicatif à une version antérieure, garder les opérations concernées fermées jusqu’à réconciliation ; ne pas supprimer la table ou ses réservations comme procédure de rollback. La durée de conservation et l’outillage de levée après réconciliation restent dans le travail T16/T18.
+Avant déploiement, interrompre les workers et drainer les opérations de domaines/purge de l’ancienne version ; appliquer la migration, puis démarrer la version compatible. Une ancienne instance de purge ne crée pas ces réservations. En cas de retour applicatif à une version antérieure, garder les opérations concernées fermées jusqu’à réconciliation ; ne pas supprimer la table ou ses réservations comme procédure de rollback. La durée de conservation et l’outillage de levée après réconciliation restent dans le travail T18/T19.
 
 ## Preuves
 

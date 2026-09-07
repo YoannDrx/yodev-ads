@@ -9,7 +9,7 @@ vi.mock('@/db/transactions', () => ({
   withPurgeTransaction: vi.fn(),
 }))
 vi.mock('@vercel/blob', async (original) => ({ ...await original<typeof import('@vercel/blob')>(), del: mocks.del }))
-vi.mock('@/lib/vercel-domains', () => ({ removeVercelProjectDomain: mocks.remove }))
+vi.mock('@/lib/domain-cleanup-receipts', () => ({ DomainCleanupAttemptUnresolved: class extends Error {}, removeDomainWithCleanupReceipt: ({ hostname, admitInTransaction }: { hostname: string; admitInTransaction: (db: unknown) => Promise<void> }) => mocks.remove(hostname, () => admitInTransaction(mocks.database)) }))
 import { BlobNotFoundError, BlobStoreNotFoundError } from '@vercel/blob'
 import { runWorkspaceExternalCleanup } from './workspace-deletion'
 

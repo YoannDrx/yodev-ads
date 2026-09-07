@@ -1,0 +1,306 @@
+
+> @yodev/ads@0.1.0 check
+> npm run lint && npm run typecheck && npm run verify:data-boundary && npm run verify:transaction-serialization && npm run test:release-verification && npm run test:coverage && npm run build && npm run audit:runtime
+
+
+> @yodev/ads@0.1.0 lint
+> eslint
+
+
+> @yodev/ads@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @yodev/ads@0.1.0 verify:data-boundary
+> tsx scripts/verify-app-data-boundary.ts
+
+App data boundary verified (102 files, allowlist: none).
+
+> @yodev/ads@0.1.0 verify:transaction-serialization
+> tsx scripts/verify-transaction-query-serialization.ts
+
+Database transaction query serialization verified.
+
+> @yodev/ads@0.1.0 test:release-verification
+> node --test scripts/lib/*.node-test.mjs
+
+✔ browser logs retain routes and outcomes without authentication or report secrets (0.85325ms)
+✔ a secret split across output chunks and an unterminated last line stay redacted (1.950417ms)
+✔ Playwright request failures do not print session or authorization headers (0.078292ms)
+✔ each release target verifies the exact candidate and fresh evidence (0.590583ms)
+✔ refuses wrong or incomplete identity before accepting evidence (0.191042ms)
+✔ never sends a secret to an origin supplied only by a workflow input (0.659208ms)
+✔ sends identity guards and rejects redirects or non-success evidence (11.768208ms)
+✔ reports actionable issue codes without dumping provider messages or credential fields (0.40325ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 60.148708
+
+> @yodev/ads@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+      Coverage enabled with v8
+
+
+ Test Files  203 passed (203)
+      Tests  1646 passed (1646)
+   Start at  19:29:48
+   Duration  13.56s (transform 4.73s, setup 0ms, import 44.35s, tests 13.13s, environment 3.33s)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   91.44 |    86.28 |   92.95 |   94.39 |                   
+ ...t-selection.ts |   20.31 |    11.53 |   26.31 |   19.51 | 14-37,55-81       
+ ...tion-events.ts |   94.44 |       90 |     100 |     100 | 21,33             
+ ...ality-model.ts |     100 |    78.94 |     100 |     100 | 14-15             
+ ...t-reminders.ts |   96.77 |    84.37 |     100 |     100 | 33-37,64-66,78    
+ analysis.ts       |   96.15 |    88.97 |   86.66 |   95.55 | 226-227           
+ ...collections.ts |   54.08 |    55.55 |   58.33 |   60.81 | 32-76             
+ ...tical-model.ts |      96 |    85.29 |     100 |     100 | 38,46             
+ ...tical-pages.ts |     100 |    94.11 |     100 |     100 | 97                
+ ...-repository.ts |   86.44 |    77.77 |   89.47 |   93.61 | 101,258-259       
+ api-v1.ts         |   98.07 |    93.02 |     100 |   97.61 | 106               
+ ...hange-batch.ts |   86.95 |    84.21 |     100 |     100 | 20,35-42          
+ auth-client.ts    |       0 |      100 |     100 |       0 | 1-8               
+ ...email-model.ts |     100 |    95.45 |     100 |     100 | 28                
+ auth-emails.ts    |   77.27 |    38.46 |     100 |   80.95 | 69-73             
+ ...n-admission.ts |     100 |    93.75 |     100 |     100 | 25                
+ auth.ts           |   39.47 |    43.33 |   35.29 |   42.42 | 34-67,127-218     
+ ...-management.ts |   63.82 |    52.63 |   71.42 |   65.78 | 42,158-203        
+ billing.ts        |   85.07 |    79.48 |      84 |   85.96 | 135-137,213-220   
+ ...ed-response.ts |   88.57 |      100 |   42.85 |     100 |                   
+ ...ding-assets.ts |   95.23 |       96 |     100 |     100 | 19                
+ branding-image.ts |      80 |       70 |     100 |     100 | 9-11              
+ ...eallocation.ts |   94.73 |    93.75 |     100 |   94.11 | 49                
+ budget-safety.ts  |   94.11 |    95.55 |   71.42 |   93.75 | 78-80             
+ ...ndar-window.ts |   97.82 |    97.29 |     100 |     100 | 54                
+ ...eport-model.ts |   84.61 |    92.85 |     100 |     100 | 41,71-73,99       
+ ...-report-pdf.ts |   99.01 |    94.28 |     100 |     100 | ...72-175,184-191 
+ crypto.ts         |   90.69 |    85.29 |     100 |     100 | 24-31,51,67       
+ data.ts           |      96 |    85.71 |   92.72 |   97.18 | 72,344            
+ ...up-receipts.ts |   97.14 |    95.23 |      90 |     100 | 41                
+ entitlements.ts   |   94.73 |    94.11 |     100 |     100 | 116               
+ feature-flags.ts  |   95.83 |    70.83 |     100 |     100 | 37,50,72,78-80    
+ flash-copy.ts     |   92.59 |     87.5 |     100 |   91.66 | 164,167           
+ ...tarted-data.ts |       0 |        0 |       0 |       0 | 10-22             
+ ...arted-model.ts |     100 |     92.3 |     100 |     100 | 18,22,36          
+ ...ccount-sync.ts |   97.95 |     97.5 |     100 |     100 | 81                
+ ...-read-drill.ts |   96.36 |    83.33 |   93.75 |   95.55 | 91,97             
+ google-ads.ts     |   89.82 |    87.52 |   92.96 |    93.3 | ...1780,2253,2365 
+ ...-management.ts |     100 |    81.91 |     100 |     100 | ...39,271,325-347 
+ ...-management.ts |       5 |    16.66 |      25 |    6.25 | 18-79             
+ ...ation-error.ts |     100 |    94.44 |     100 |     100 | 15                
+ job-runner.ts     |   85.46 |    77.51 |   88.88 |   87.32 | ...15-516,582,602 
+ job-scheduler.ts  |   90.47 |    78.72 |      80 |      96 | 144,146-150       
+ jobs.ts           |   98.61 |    96.73 |     100 |     100 | 183,245,257       
+ ...rd-creation.ts |   53.12 |    48.48 |     100 |   62.96 | ...49-50,81-82,93 
+ ...email-model.ts |   95.45 |    83.33 |     100 |     100 | 41,88             
+ ...ic-coverage.ts |     100 |    94.73 |     100 |     100 | 14                
+ ...c-sync-plan.ts |     100 |    92.85 |     100 |     100 | 25-26             
+ metrics-sync.ts   |   93.39 |    88.13 |     100 |     100 | ...,93,97-113,117 
+ ...bservations.ts |   98.41 |    98.27 |     100 |     100 | 83                
+ ...g-scan-jobs.ts |     100 |    91.66 |     100 |     100 | 20                
+ ...g-scan-plan.ts |   86.95 |    78.57 |     100 |   83.33 | 11-13             
+ ...g-workflows.ts |   95.08 |    86.53 |     100 |     100 | ...38,121-124,154 
+ monitoring.ts     |     100 |    98.03 |     100 |     100 | 129,145           
+ ...tion-impact.ts |   95.55 |    80.28 |    92.3 |   94.87 | 77,101            
+ ...observation.ts |   95.65 |    97.56 |     100 |     100 | 27                
+ ...bservations.ts |   97.29 |     82.5 |     100 |     100 | 34-78             
+ ...ry-recovery.ts |     100 |       96 |     100 |     100 | 48,75             
+ ...-management.ts |   94.64 |    84.21 |     100 |     100 | 21,41-61          
+ notifications.ts  |    96.7 |    85.24 |     100 |     100 | ...33-351,377,406 
+ oauth-state.ts    |   97.36 |    98.03 |     100 |   97.05 | 83                
+ ...ating-costs.ts |   93.75 |    86.48 |   81.81 |     100 | 28,40-41,68       
+ ...tional-runs.ts |     100 |    97.14 |     100 |     100 | 51                
+ ...alert-model.ts |     100 |     87.5 |     100 |     100 | 9                 
+ pacing.ts         |   90.47 |       85 |   81.25 |   95.65 | 176,210,233,236   
+ ...diagnostics.ts |   94.59 |    78.84 |     100 |   96.61 | 128-129           
+ ...nce-history.ts |     100 |       80 |     100 |     100 | 29                
+ ...-management.ts |     100 |     87.5 |     100 |     100 | 70                
+ ...form-status.ts |   90.47 |       70 |     100 |     100 | 25-29             
+ ...io-workload.ts |     100 |     92.3 |     100 |     100 | 33                
+ ...n-readiness.ts |   97.26 |    98.94 |     100 |   96.92 | 24,144            
+ ...t-workflows.ts |    98.8 |    83.33 |     100 |     100 | ...55,198,249-283 
+ public-status.ts  |     100 |    93.54 |     100 |     100 | 38,51             
+ rate-limit.ts     |     100 |    95.65 |     100 |     100 | 39                
+ ...le-mutation.ts |   98.78 |    94.38 |     100 |     100 | 60,65,106,140,161 
+ ...l-readiness.ts |     100 |    75.86 |     100 |     100 | 30-36             
+ ...tion-access.ts |   95.45 |    92.59 |     100 |     100 | 20-21             
+ ...rt-editions.ts |    98.9 |    96.82 |     100 |   98.59 | 151               
+ report-format.ts  |   85.71 |    66.66 |     100 |    90.9 | 31-32             
+ report-logo.ts    |   94.44 |    96.55 |      50 |     100 | 36                
+ ...-management.ts |     100 |     92.5 |     100 |     100 | ...69,240,260,282 
+ report-otp.ts     |     100 |    93.75 |     100 |     100 | 20                
+ ...-scheduling.ts |   89.18 |    70.37 |     100 |     100 | 23,39-79          
+ run-monitoring.ts |     100 |    95.45 |     100 |     100 | 83,85             
+ ...led-reports.ts |    81.3 |    65.45 |   83.33 |   92.39 | ...8-79,90-92,104 
+ ...-revelation.ts |    3.33 |        0 |       0 |    4.65 | 23-79             
+ ...et-rotation.ts |    98.3 |    66.66 |     100 |     100 | 33,130            
+ ...-read-probe.ts |   91.42 |     91.3 |     100 |     100 | 37-44             
+ ...y-redaction.ts |    86.2 |       75 |      80 |     100 | 25-36             
+ slack-oauth.ts    |   96.87 |      100 |   83.33 |     100 |                   
+ ...plan-change.ts |      98 |    91.66 |     100 |     100 | 14,25,84          
+ ...onciliation.ts |   98.48 |    92.85 |     100 |   98.03 | 58                
+ ...ook-service.ts |   85.71 |    67.22 |   91.66 |   88.52 | ...33-234,362,433 
+ ...-management.ts |      90 |       50 |     100 |     100 | 21-34             
+ ...tifications.ts |   92.68 |    84.61 |     100 |   96.87 | 24                
+ ...email-model.ts |     100 |    86.36 |     100 |     100 | 19,21,24          
+ ...-management.ts |   91.66 |    80.55 |     100 |     100 | ...51,163,201-204 
+ ...tifications.ts |     100 |    96.55 |     100 |     100 | 36                
+ ...rt-workflow.ts |    92.3 |    94.11 |     100 |     100 | 20                
+ system-health.ts  |     100 |    90.47 |     100 |     100 | 47,49,53,55       
+ ...-operations.ts |   93.65 |    70.73 |     100 |     100 | 27-152,234-235    
+ ...ation-model.ts |    92.1 |    91.66 |     100 |     100 | 18-19,40,55       
+ ...n-recipient.ts |   66.66 |    55.17 |     100 |   73.33 | 22-27             
+ ...tifications.ts |    71.6 |    58.44 |   68.75 |   77.77 | ...35-141,162-167 
+ task-workflow.ts  |   88.23 |    86.04 |     100 |   94.28 | 67-68             
+ teams-oauth.ts    |   85.71 |       70 |      80 |    94.8 | 126-129           
+ ...ion-context.ts |   84.21 |       70 |     100 |     100 | 15,24-27          
+ tokens.ts         |      90 |      100 |   85.71 |   88.88 | 30                
+ ...diagnostics.ts |   98.11 |    94.89 |   93.33 |      98 | 55                
+ ...ional-email.ts |   87.35 |    76.62 |   93.75 |   93.15 | ...80-181,191-192 
+ vercel-domains.ts |   91.01 |    95.77 |   76.47 |   90.54 | 64-72             
+ ...ok-security.ts |   95.45 |    95.69 |   86.95 |     100 | 13,91,134-141     
+ ...collections.ts |     100 |    94.95 |     100 |     100 | ...96,114,130,153 
+ ...ce-deletion.ts |    95.2 |    88.57 |     100 |     100 | ...35-238,269-290 
+ ...-management.ts |   98.55 |    92.59 |     100 |     100 | 57,73,113,159     
+ ...pace-export.ts |     100 |    92.59 |     100 |     100 | 249,363           
+ ...-management.ts |     100 |    81.81 |     100 |     100 | ...25-128,157,182 
+ ...ace-members.ts |   91.75 |    83.33 |     100 |     100 | ...95,241,265-328 
+ ...y-resources.ts |    94.8 |    91.11 |     100 |   98.46 | 222               
+ ...ce-settings.ts |   88.88 |    79.16 |     100 |     100 | 32,40-78,121      
+ ...ask-actions.ts |     100 |    98.38 |     100 |     100 | 113               
+ ...ction-guard.ts |     100 |    85.71 |     100 |     100 | 32                
+ workspace.ts      |   88.65 |    86.25 |     100 |   91.66 | ...04,155,187-188 
+ ...ail-webhook.ts |     100 |    91.37 |     100 |     100 | 30,74,83,85,93    
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 91.44% ( 6801/7437 )
+Branches     : 86.28% ( 6423/7444 )
+Functions    : 92.95% ( 1452/1562 )
+Lines        : 94.39% ( 5676/6013 )
+================================================================================
+
+> @yodev/ads@0.1.0 build
+> next build
+
+▲ Next.js 16.3.0 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 268ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 1514ms
+  Running next.config.js provided runAfterProductionCompile ...
+✓ Completed runAfterProductionCompile in 166ms
+  Running TypeScript ...
+  Finished TypeScript in 2.9s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/56) ...
+{"level":"error","message":"auth.session.unavailable"}
+  Generating static pages using 7 workers (14/56) 
+{"level":"error","message":"auth.session.unavailable"}
+{"level":"error","message":"auth.session.unavailable"}
+{"level":"error","message":"auth.session.unavailable"}
+  Generating static pages using 7 workers (28/56) 
+{"level":"error","message":"auth.session.unavailable"}
+{"level":"error","message":"auth.session.unavailable"}
+  Generating static pages using 7 workers (42/56) 
+✓ Generating static pages using 7 workers (56/56) in 348ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /account
+├ ƒ /account/notifications
+├ ƒ /accounts
+├ ƒ /agents
+├ ƒ /alerts
+├ ƒ /analysis
+├ ƒ /api/auth/[...all]
+├ ƒ /api/connectors/slack/callback
+├ ƒ /api/connectors/slack/connect
+├ ƒ /api/connectors/teams/callback
+├ ƒ /api/connectors/teams/connect
+├ ƒ /api/cron/monitor
+├ ƒ /api/cron/scheduler
+├ ƒ /api/exports/[exportId]
+├ ƒ /api/google-ads/callback
+├ ƒ /api/google-ads/connect
+├ ƒ /api/health
+├ ƒ /api/internal/google-ads-read-drill
+├ ƒ /api/internal/google-ads-read-probe
+├ ƒ /api/internal/release-readiness
+├ ƒ /api/internal/sentry-drill
+├ ƒ /api/internal/sentry-read-probe
+├ ƒ /api/secret-revelation
+├ ƒ /api/v1/alerts
+├ ƒ /api/v1/approvals
+├ ƒ /api/v1/performance
+├ ƒ /api/v1/portfolio
+├ ƒ /api/v1/reports
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/webhooks/yodev-mail
+├ ƒ /approvals
+├ ƒ /audit
+├ ƒ /billing
+├ ƒ /cookies
+├ ƒ /dashboard
+├ ƒ /discussions/[kind]/[id]
+├ ƒ /dpa
+├ ƒ /forgot-password
+├ ƒ /getting-started
+├ ƒ /history
+├ ○ /icon
+├ ƒ /insights
+├ ƒ /insights/[family]
+├ ƒ /insights/[family]/export
+├ ƒ /invitation
+├ ƒ /legal
+├ ƒ /maintenance
+├ ƒ /onboarding
+├ ○ /opengraph-image
+├ ƒ /operations
+├ ƒ /operations/costs
+├ ƒ /portfolio
+├ ƒ /privacy
+├ ƒ /r/[token]
+├ ƒ /r/[token]/csv
+├ ƒ /r/[token]/pdf
+├ ƒ /reports
+├ ƒ /reset-password
+├ ƒ /settings
+├ ƒ /settings/teams
+├ ƒ /sign-in/[[...sign-in]]
+├ ƒ /sign-up/[[...sign-up]]
+├ ƒ /status
+├ ƒ /status/[id]
+├ ƒ /subprocessors
+├ ƒ /support
+├ ƒ /tasks
+├ ƒ /terms
+└ ƒ /withdrawal
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+> @yodev/ads@0.1.0 audit:runtime
+> npm audit --omit=dev --audit-level=high
+
+found 0 vulnerabilities

@@ -428,6 +428,13 @@
       "when": 1788800474196,
       "tag": "0060_domain_cleanup_reservations",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1788801940338,
+      "tag": "0061_domain_cleanup_receipts",
+      "breakpoints": true
     }
   ]
 }

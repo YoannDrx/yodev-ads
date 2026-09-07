@@ -39,6 +39,7 @@ const operations = {
 }
 type Operation = keyof typeof operations
 async function restore(operation: Operation) {
+  await db.query('delete from domain_cleanup_attempts where job_id=$1', [cleanupJobId])
   onDns = undefined; onFetch = undefined; calls.length = 0; dnsCalls = 0
   await db.query("update workspaces set access_state='active',plan='agency',trial_ends_at=null where id=$1", [workspaceId])
   await db.query("insert into auth_members(id,organization_id,user_id,role) values($1,$2,$1,'admin') on conflict(id) do update set role='admin'", [actor, organizationId])
@@ -137,6 +138,7 @@ async function main() {
     await blocker.query('rollback').catch(() => {}); await blocker.end()
     globalThis.fetch = originalFetch; dns.resolveTxt = originalTxt; syncBuiltinESMExports()
     await db.query('delete from workspace_domain_cleanup_reservations where workspace_hash=$1', [workspaceHash])
+    await db.query('delete from domain_cleanup_attempts where job_id=$1', [cleanupJobId])
     await db.query('delete from jobs where id=$1', [cleanupJobId])
     await db.query('delete from workspace_deletion_tombstones where workspace_hash=$1', [workspaceHash]); await db.query('delete from workspaces where id=$1', [workspaceId]); await db.query('delete from auth_organizations where id=$1', [organizationId]); await db.query('delete from auth_users where id=$1', [actor]); await db.end()
   }

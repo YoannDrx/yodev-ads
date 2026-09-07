@@ -22,6 +22,7 @@ globalThis.fetch = async (address, init) => {
   return await onFetch?.() ?? Response.json('removed')
 }
 async function reset() {
+  await db.query('delete from domain_cleanup_attempts where job_id=$1', [jobId])
   calls.length = 0; onFetch = undefined
   await db.query("update jobs set type='workspace.external_cleanup',status='running',lease_owner='first-worker',attempt_count=1,lease_expires_at=clock_timestamp()+interval '1 minute',payload=$2,deduplication_key=$3 where id=$1", [jobId, JSON.stringify(input), `workspace.external_cleanup:${workspaceHash}`])
   await db.query("update workspace_deletion_tombstones set external_cleanup_status='pending',external_cleanup_error=null,external_cleanup_completed_at=null where workspace_hash=$1", [workspaceHash])
@@ -131,6 +132,7 @@ async function main() {
     await blocker.query('rollback').catch(() => {}); await blocker.end(); globalThis.fetch = originalFetch
     await db.query('drop trigger if exists fixture_cleanup_receipt_wait on workspace_deletion_tombstones'); await db.query('drop function if exists public.fixture_cleanup_receipt_wait()')
     await db.query('delete from workspace_domain_cleanup_reservations where workspace_hash=$1', [workspaceHash])
+    await db.query('delete from domain_cleanup_attempts where job_id=$1', [jobId])
     await db.query('delete from jobs where id=$1', [jobId]); await db.query('delete from workspace_deletion_tombstones where workspace_hash=$1', [workspaceHash]); await db.end()
   }
 }
