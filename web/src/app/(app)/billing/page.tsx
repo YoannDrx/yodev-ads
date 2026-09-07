@@ -1,3 +1,6 @@
+import Link from 'next/link'
+import { getWorkspaceAccountSelection } from '@/lib/account-selection'
+import { accountSelectionPreview } from '@/lib/account-selection-model'
 import { Check, CreditCard, Download, ExternalLink, ShieldCheck } from 'lucide-react'
 import { cancelScheduledSubscriptionPlanChange, cancelSubscriptionAtPeriodEnd, cancelWorkspaceDeletion, changeSubscriptionPlan, createCheckoutSession, openBillingPortal, reactivateSubscription, requestWorkspaceDeletion, requestWorkspaceExport } from '@/app/actions'
 import { FlashMessage } from '@/components/flash-message'
@@ -7,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { BillingActivationStatus } from '@/components/billing-activation-status'
 import { hasStripeConfiguration, planCatalog, planFeaturesForLocale, subscriptionIsActive } from '@/lib/billing'
-import { listWorkspaceClients, listWorkspaceExports } from '@/lib/data'
+import { listWorkspaceExports } from '@/lib/data'
 import { featureEnabled } from '@/lib/feature-flags'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
@@ -20,7 +23,8 @@ export default async function BillingPage({
   const { workspace, isAdmin, role } = await requireWorkspacePermission('billing:manage')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
-  const clients = (await listWorkspaceClients(workspace.id)).filter((client) => !client.isManager)
+  const selection = await getWorkspaceAccountSelection(workspace.id)
+  const clients = selection.accounts.filter((client) => client.active && !client.isManager)
   const exports = role === 'owner' ? await listWorkspaceExports(workspace.id) : []
   const stripeReady = hasStripeConfiguration()
   const checkoutReady = stripeReady && featureEnabled('stripeCheckout') && process.env.LEGAL_DOCUMENTS_APPROVED === '1' && !workspace.billingReconciliationRequired
@@ -71,6 +75,7 @@ export default async function BillingPage({
       <section className="grid gap-5 lg:grid-cols-3">
         {Object.entries(planCatalog).map(([id, plan]) => {
           const current = workspace.plan === id
+          const impact = accountSelectionPreview(selection.accounts, plan.accountLimit)
           return (
             <Card
               key={id}
@@ -96,6 +101,12 @@ export default async function BillingPage({
                     </li>
                   ))}
                 </ul>
+                {!current && <div className="mt-5 rounded-xl border bg-slate-50 p-3 text-sm">
+                  <p>{english ? `${impact.includedAdvertisers.length} accounts would remain managed with your saved priorities.` : `${impact.includedAdvertisers.length} comptes seraient gérés selon vos priorités enregistrées.`}</p>
+                  {impact.deactivated.length > 0 && <details className="mt-2"><summary className="cursor-pointer font-medium">{english ? `${impact.deactivated.length} accounts would pause` : `${impact.deactivated.length} comptes seraient mis en pause`}</summary><ul className="mt-2 list-inside list-disc">{impact.deactivated.map((account) => <li key={account.id}>{account.name} · {account.googleCustomerId}</li>)}</ul></details>}
+                  <p className="mt-2 text-xs text-muted-foreground">{english ? 'History and selections are retained. This preview follows the current Google inventory.' : 'L’historique et les sélections sont conservés. Cet aperçu utilise l’inventaire Google actuel.'}</p>
+                  <Link className="mt-2 inline-block underline" href="/accounts">{english ? 'Adjust selection and priorities' : 'Ajuster la sélection et les priorités'}</Link>
+                </div>}
                 <form action={active && !current ? changeSubscriptionPlan : active ? openBillingPortal : createCheckoutSession} className="mt-7">
                   <input type="hidden" name="plan" value={id} />
                   {!active && <input type="hidden" name="checkoutAttemptId" value={crypto.randomUUID()} />}

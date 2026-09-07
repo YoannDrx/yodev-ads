@@ -76,7 +76,7 @@ import {
 import { isControlledBrandLogoUrl, validatedBrandLogo } from '@/lib/branding-assets'
 import { approvalPolicyForPlan } from '@/lib/approval-policy'
 import { assertSafetyPolicyScope } from '@/lib/safety-policy-scope'
-import { persistTenantGoogleAccountInventory } from '@/lib/google-account-sync'
+import { googleInventoryConnectionIdentity, persistTenantGoogleAccountInventory } from '@/lib/google-account-sync'
 import {
   saveClientGoal,
   saveWorkspaceApprovalPolicy,
@@ -205,14 +205,15 @@ export async function syncGoogleAdsAccounts() {
     if (!connection) throw new Error('Connectez d’abord un compte Google Ads.')
 
     const gateway = new GoogleAdsGateway(connection)
+    const observedAt = new Date()
     const managedCustomers = await gateway.listManagedCustomers()
     const { included, excluded, limit } = await persistTenantGoogleAccountInventory({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       connectionId: connection.id,
       managedCustomers,
-      advertiserLimit: entitlements.limits.advertiserAccounts,
-      plan: workspace.plan,
+      observedAt,
+      connectionIdentity: googleInventoryConnectionIdentity(connection),
       action: 'google_ads.accounts_synced',
       recordActivation: true,
     })
@@ -221,7 +222,7 @@ export async function syncGoogleAdsAccounts() {
       'notice',
       excluded.length
         ? `${included.length} comptes synchronisés. ${excluded.length} compte annonceur hors quota (${limit ?? 'illimité'}) reste inactif.`
-        : `${included.length} comptes synchronisés.`,
+        : `${managedCustomers.length} comptes accessibles, ${included.filter((account) => !account.isManager).length} annonceurs gérés. Choisissez les comptes à gérer ci-dessous.`,
     )
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))

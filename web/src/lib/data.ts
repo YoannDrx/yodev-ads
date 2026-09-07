@@ -90,6 +90,9 @@ export function saveWorkspaceGoogleConnection(input: {
         },
       })
       .returning()
+    // New credentials must establish a fresh inventory before any client resumes.
+    // Keep the agency's selection and all historical rows for reactivation.
+    await db.update(clients).set({ active: false, googleAccessible: false, inventoryObservedAt: null, updatedAt: new Date() }).where(eq(clients.workspaceId, input.workspaceId))
     await db.insert(auditEvents).values({
       workspaceId: input.workspaceId,
       actorUserId: input.userId,
@@ -191,7 +194,7 @@ export async function getWorkspaceClient(workspaceId: string, clientId?: string)
     const selected = await tenantRead(workspaceId, (db) => db.query.clients.findFirst({
       where: and(eq(clients.workspaceId, workspaceId), eq(clients.id, clientId), eq(clients.active, true)),
     }))
-    if (selected) return selected
+    return selected
   }
   return tenantRead(workspaceId, (db) => db.query.clients.findFirst({
     where: and(eq(clients.workspaceId, workspaceId), eq(clients.active, true), eq(clients.isManager, false)),

@@ -118,14 +118,15 @@ describe('tenant-aware data repository', () => {
     await expect(repository.publicHostBelongsToWorkspace('reports.acme.test', workspaceId)).resolves.toBe(false)
   })
 
-  it('uses an explicitly selected active client and falls back to the first advertiser', async () => {
+  it('uses an explicit active client without falling back when that ID is unavailable', async () => {
     const selected = { id: clientId, name: 'Selected' }
     mocks.databases.push(queryDatabase({ clients: { first: selected } }).db)
     await expect(repository.getWorkspaceClient(workspaceId, clientId)).resolves.toEqual(selected)
 
     const fallback = { id: 'fallback', name: 'Fallback' }
     mocks.databases.push(queryDatabase({ clients: {} }).db, queryDatabase({ clients: { first: fallback } }).db)
-    await expect(repository.getWorkspaceClient(workspaceId, 'missing')).resolves.toEqual(fallback)
+    await expect(repository.getWorkspaceClient(workspaceId, 'missing')).resolves.toBeUndefined()
+    await expect(repository.getWorkspaceClient(workspaceId)).resolves.toEqual(fallback)
   })
 
   it('deduplicates latest conversion and offline diagnostic snapshots by resource identity', async () => {

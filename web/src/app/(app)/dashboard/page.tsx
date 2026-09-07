@@ -118,11 +118,12 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       {client && <CollectionStatus client={client} {...collection} locale={locale} canRefresh={canRefresh} canConnect={canConnect} destination="/dashboard" feedback={query.sync} />}
       {!client || (!campaignSnapshot && !totals) ? (
         <div role="status" className="rounded-xl border bg-white p-6">
-          <h2 className="font-semibold">{connection ? (english ? 'Sync your client accounts' : 'Synchronisez vos comptes clients') : (english ? 'Connect Google Ads' : 'Connectez Google Ads')}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{connection
-            ? (english ? 'Start a sync from settings to import MCC accounts.' : 'Lancez une synchronisation depuis les réglages pour importer les comptes du MCC.')
+          <h2 className="font-semibold">{client ? (english ? 'Collection pending' : 'Collecte en attente') : connection ? (english ? 'Choose your managed accounts' : 'Choisissez les comptes à gérer') : (english ? 'Connect Google Ads' : 'Connectez Google Ads')}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{client
+            ? (english ? 'Account data will appear after a successful collection. See the collection status above.' : 'Les données du compte apparaîtront après une collecte réussie. Consultez l’état de la collecte ci-dessus.')
+            : connection ? (english ? 'Choose the accounts to manage from your MCC inventory. Refresh the inventory from connection settings when needed.' : 'Choisissez les comptes à gérer dans l’inventaire du MCC. Actualisez cet inventaire depuis les réglages de connexion si nécessaire.')
             : (english ? 'Connect your account to collect new data. Stored budget history remains available below.' : 'Connectez votre compte pour collecter de nouvelles données. L’historique budgétaire enregistré reste disponible ci-dessous.')}</p>
-          {canConnect && <Button asChild variant="outline" className="mt-4"><Link href="/settings">{english ? 'Connection settings' : 'Réglages de connexion'}</Link></Button>}
+          {canConnect && <Button asChild variant="outline" className="mt-4"><Link href={connection ? "/accounts" : "/settings"}>{connection ? (english ? 'Choose accounts' : 'Choisir les comptes') : (english ? 'Connection settings' : 'Réglages de connexion')}</Link></Button>}
         </div>
       ) : (
         <>

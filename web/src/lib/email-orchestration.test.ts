@@ -37,7 +37,7 @@ const workspace = {
   locale: 'fr', timezone: 'Europe/Paris', accessState: 'active', plan: 'agency',
 }
 
-function scheduledContext(overrides: Record<string, unknown> = {}, options: { workspace?: unknown; claim?: unknown[]; periodDays?: number } = {}) {
+function scheduledContext(overrides: Record<string, unknown> = {}, options: { workspace?: unknown; claim?: unknown[]; periodDays?: number; clientActive?: boolean } = {}) {
   const schedule = {
     id: entityId, workspaceId, clientId: 'client-1', shareId: 'share-1', templateId: 'template-1', enabled: true,
     lastRunKey: null, recipientEmails: ['client@example.test'], deliveryLeaseUntil: null,
@@ -48,7 +48,7 @@ function scheduledContext(overrides: Record<string, unknown> = {}, options: { wo
     database: databaseDouble({
       statementResults: [options.claim ?? [schedule]],
       query: queryMap({
-        reportSchedules: { first: schedule }, workspaces: { first: options.workspace ?? workspace }, clients: { first: { id: 'client-1', name: 'Client' } },
+        reportSchedules: { first: schedule }, workspaces: { first: options.workspace ?? workspace }, clients: { first: { id: 'client-1', name: 'Client', active: options.clientActive ?? true, isManager: false } },
         shareLinks: { first: { id: 'share-1', workspaceId, active: true, editorialComment: 'Initial', actionPlan: null, locale: 'fr', periodDays: 30 } },
         reportTemplates: { first: { id: 'template-1', active: true, editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: options.periodDays ?? 30 } },
         workspaceDomains: { first: { hostname: 'reports.acme.test' } },
@@ -97,6 +97,12 @@ describe('scheduled report delivery', () => {
       idempotencyKey: `report-schedule:${entityId}:2026-08-10`, category: 'scheduled_report', workspaceId,
     }))
     expect(success.capture.sets[0]).toMatchObject({ lastRunKey: '2026-08-10', lastError: null, deliveryLeaseUntil: null })
+  })
+
+  it('preserves the schedule but skips delivery for a paused account', async () => {
+    mocks.databases.push(scheduledContext({}, { clientActive: false }).database.db)
+    await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ skipped: true, reason: 'account_inactive' })
+    expect(mocks.emailSend).not.toHaveBeenCalled()
   })
 
   it('skips disabled and already-delivered schedules before sending', async () => {

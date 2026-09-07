@@ -51,7 +51,7 @@ import {
   revokeWorkspaceGoogleConnection,
   runWorkspaceExternalCleanup,
 } from '@/lib/workspace-deletion'
-import { accountLimitForPlan, getStripe } from '@/lib/billing'
+import { getStripe } from '@/lib/billing'
 import { GoogleAdsGateway } from '@/lib/google-ads'
 import { deleteExpiredExportArtifacts, runWorkspaceExport } from '@/lib/workspace-export'
 import { featureEnabled } from '@/lib/feature-flags'
@@ -68,7 +68,7 @@ import { redactSensitiveData } from '@/lib/sentry-redaction'
 import { completeMutationObservation } from '@/lib/mutation-observations'
 import { currentEncryptionKeyId } from '@/lib/crypto'
 import { rotateWorkspaceSecrets } from '@/lib/secret-rotation'
-import { persistSystemGoogleAccountInventory } from '@/lib/google-account-sync'
+import { googleInventoryConnectionIdentity, persistSystemGoogleAccountInventory } from '@/lib/google-account-sync'
 import { deliverAuthInvitation } from '@/lib/auth-invitations'
 import { deliverQueuedAuthEmail } from '@/lib/auth-emails'
 import { reconcileStripeWorkspace } from '@/lib/stripe-reconciliation'
@@ -249,6 +249,7 @@ async function executeJob(job: ClaimedJob) {
     }
     case 'google.accounts_sync': {
       const { workspaceId } = workspacePayload.parse(job.payload)
+      if (job.workspaceId !== workspaceId) throw new NonRetryableJobError('Google inventory job scope mismatch')
       const context = await withSystemTransaction(async (db) => {
         const [workspace] = await db.select({ plan: workspaces.plan, accessState: workspaces.accessState })
           .from(workspaces)
@@ -257,20 +258,20 @@ async function executeJob(job: ClaimedJob) {
         const [connection] = await db.select().from(googleAdsConnections)
           .where(and(eq(googleAdsConnections.workspaceId, workspaceId), eq(googleAdsConnections.status, 'active')))
           .limit(1)
-        if (!workspace || !connection || !['internal', 'active'].includes(workspace.accessState)) {
+        if (!workspace || !connection || !['internal', 'active', 'trial'].includes(workspace.accessState)) {
           throw new NonRetryableJobError('Google account sync workspace or connection unavailable')
         }
         return { workspace, connection }
       })
+      const observedAt = new Date()
       const managedCustomers = await new GoogleAdsGateway(context.connection).listManagedCustomers()
-      const limit = context.workspace.plan === 'internal' ? null : accountLimitForPlan(context.workspace.plan)
-      const { included, excluded } = await persistSystemGoogleAccountInventory({
+      const { included, excluded, limit } = await persistSystemGoogleAccountInventory({
         workspaceId,
         actorUserId: 'system:billing-account-sync',
         connectionId: context.connection.id,
         managedCustomers,
-        advertiserLimit: limit,
-        plan: context.workspace.plan,
+        observedAt,
+        connectionIdentity: googleInventoryConnectionIdentity(context.connection),
         action: 'google_ads.accounts_synced_after_plan_change',
         recordActivation: false,
       })

@@ -344,6 +344,13 @@
       "when": 1788741902237,
       "tag": "0048_analytical_collections",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1788744220781,
+      "tag": "0049_managed_account_selection",
+      "breakpoints": true
     }
   ]
 }

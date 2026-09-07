@@ -268,6 +268,10 @@ export const clients = pgTable(
     timezone: varchar('timezone', { length: 64 }).default('Europe/Paris').notNull(),
     isManager: boolean('is_manager').default(false).notNull(),
     active: boolean('active').default(true).notNull(),
+    managedSelected: boolean('managed_selected').default(true).notNull(),
+    managementPriority: integer('management_priority').default(1000).notNull(),
+    googleAccessible: boolean('google_accessible').default(true).notNull(),
+    inventoryObservedAt: timestamp('inventory_observed_at', { withTimezone: true }),
     ...timestamps,
   },
   (table) => [

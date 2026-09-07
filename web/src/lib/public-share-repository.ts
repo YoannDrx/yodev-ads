@@ -39,10 +39,10 @@ export async function getPublicShare(token: string, host?: string | null) {
   const [result] = await withSystemTransaction((db) => db
     .select({ share: shareLinks, client: clients, connection: googleAdsConnections, workspace: workspaces })
     .from(shareLinks)
-    .innerJoin(clients, eq(clients.id, shareLinks.clientId))
+    .innerJoin(clients, and(eq(clients.id, shareLinks.clientId), eq(clients.workspaceId, shareLinks.workspaceId)))
     .innerJoin(googleAdsConnections, eq(googleAdsConnections.workspaceId, shareLinks.workspaceId))
     .innerJoin(workspaces, eq(workspaces.id, shareLinks.workspaceId))
-    .where(and(eq(shareLinks.tokenHash, hashToken(token)), eq(shareLinks.active, true)))
+    .where(and(eq(shareLinks.tokenHash, hashToken(token)), eq(shareLinks.active, true), eq(clients.active, true), eq(clients.isManager, false), eq(googleAdsConnections.status, 'active')))
     .limit(1))
   if (!result || (result.share.expiresAt && result.share.expiresAt < new Date())) return undefined
   if (!workspaceCanCallGoogle(result.workspace.accessState)) return undefined

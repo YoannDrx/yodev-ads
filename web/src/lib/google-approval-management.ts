@@ -11,6 +11,7 @@ import {
   mutationExecutions,
 } from '@/db/schema'
 import { withTenantTransaction } from '@/db/transactions'
+import { admitGoogleMutation } from '@/lib/google-mutation-admission'
 import { stateHash } from '@/lib/approval-state'
 import { scheduleMutationObservationWithDatabase } from '@/lib/mutation-observations'
 
@@ -237,6 +238,7 @@ export function markGoogleMutationSubmitted(input: ApprovalActorContext & {
 }) {
   const now = input.now ?? new Date()
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    await admitGoogleMutation(db, input.workspaceId, input.executionId)
     const [validated] = await db.update(mutationExecutions).set({
       state: 'validated', validationRequestId: input.validationRequestId, updatedAt: now,
     }).where(and(

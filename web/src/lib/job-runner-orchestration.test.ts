@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   scheduledReport: vi.fn(), taskMention: vi.fn(), taskDigest: vi.fn(), lifecycleEmail: vi.fn(), supportEmail: vi.fn(), operationsAlert: vi.fn(),
   subprocessorFanout: vi.fn(), subprocessorDelivery: vi.fn(),
   authInvitation: vi.fn(),
-  stripeReconciliation: vi.fn(),
+  stripeReconciliation: vi.fn(), persistInventory: vi.fn(),
   startOperationalRun: vi.fn(), completeOperationalRun: vi.fn(), failOperationalRun: vi.fn(),
   rotateSecrets: vi.fn(), currentKid: vi.fn(),
   stripeUpdate: vi.fn(), featureEnabled: vi.fn(), reportRunKey: vi.fn(), digestRunKey: vi.fn(), trialDue: vi.fn(),
@@ -22,6 +22,10 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
+vi.mock('@/lib/google-account-sync', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/google-account-sync')>(),
+  persistSystemGoogleAccountInventory: mocks.persistInventory,
+}))
 vi.mock('@/lib/jobs', async (importOriginal) => ({
   ...await importOriginal<typeof import('@/lib/jobs')>(),
   claimNextJob: mocks.claimNextJob, completeJob: mocks.completeJob, enqueueJob: mocks.enqueueJob,
@@ -121,7 +125,7 @@ function googleQueryDouble(input: { client?: unknown; connection?: unknown; appr
 const client = {
   id: clientId, workspaceId, googleCustomerId: '1234567890', timezone: 'Europe/Paris', currencyCode: 'EUR', active: true,
 }
-const connection = { id: 'connection', workspaceId, status: 'active', encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' }
+const connection = { id: 'connection', workspaceId, status: 'active', encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999', scopes: [] }
 
 describe('durable job runner orchestration', () => {
   beforeEach(() => {
@@ -298,8 +302,8 @@ describe('durable job runner orchestration', () => {
       [{ plan: 'solo', accessState: 'active' }],
       [connection],
     ] })
-    const persistence = databaseDouble()
-    mocks.databases.push(contextDb.db, persistence.db)
+    mocks.persistInventory.mockResolvedValue({ included: [], excluded: [], limit: 3 })
+    mocks.databases.push(contextDb.db)
     mocks.listManagedCustomers.mockResolvedValue([
       { customerId: '1000000000', name: 'Manager', currencyCode: 'EUR', timezone: 'Europe/Paris', isManager: true },
       { customerId: '2000000000', name: 'A', currencyCode: 'EUR', timezone: 'Europe/Paris', isManager: false },
@@ -310,15 +314,11 @@ describe('durable job runner orchestration', () => {
     const result = await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
     expect(result.results[0].status).toBe('completed')
     expect(mocks.listManagedCustomers).toHaveBeenCalledOnce()
-    expect(persistence.capture.values.slice(0, 5)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ googleCustomerId: '1000000000', active: true }),
-      expect.objectContaining({ googleCustomerId: '4000000000', active: true }),
-      expect.objectContaining({ googleCustomerId: '5000000000', active: false }),
-    ]))
-    expect(persistence.capture.values.at(-1)).toMatchObject({
+    expect(mocks.persistInventory).toHaveBeenCalledWith(expect.objectContaining({
+      workspaceId, connectionId: connection.id, managedCustomers: expect.any(Array),
+      observedAt: expect.any(Date), connectionIdentity: expect.stringMatching(/^[a-f0-9]{64}$/),
       action: 'google_ads.accounts_synced_after_plan_change',
-      metadata: expect.objectContaining({ advertiserLimit: 3, excludedCount: 1 }),
-    })
+    }))
   })
 
   it('dead-letters metric sync when its tenant context no longer exists', async () => {

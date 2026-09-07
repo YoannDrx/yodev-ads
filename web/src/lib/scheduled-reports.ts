@@ -38,6 +38,7 @@ export async function deliverScheduledReport(scheduleId: string, runKey: string)
     })
     if (!workspace || !client || !share) throw new NonRetryableJobError('Contexte du rapport planifié incomplet.')
     if (!['internal', 'active', 'trial'].includes(workspace.accessState)) throw new NonRetryableJobError('Workspace non autorisé à envoyer des rapports.')
+    if (!client.active || client.isManager) return { skipped: true as const, reason: 'account_inactive' }
     if (!schedule.enabled || !share.active) return { skipped: true as const, reason: 'disabled' }
     if (schedule.lastRunKey === runKey) return { skipped: true as const, reason: 'already_delivered' }
     if (schedule.recipientEmails.length === 0) throw new NonRetryableJobError('Aucun destinataire configuré.')
