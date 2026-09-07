@@ -22,6 +22,9 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
       page.on('pageerror', (error) => errors.push(error.message))
       try {
         await page.goto(`/insights/devices?client=${clientId}`)
+        // The workspace selector appears only after the client session loads.
+        // Before hydration, a Link legitimately performs native navigation.
+        await expect(page.getByRole('combobox', { name: /Workspace actif|Active workspace/ })).toBeVisible()
         await page.keyboard.press('Tab')
         const skip = page.getByRole('link', { name: /Aller au contenu|Skip to content/ })
         await expect(skip).toBeFocused()

@@ -14,8 +14,10 @@ const mocks = vi.hoisted(() => ({
   emailSend: vi.fn(),
   assertSafeWebhookUrl: vi.fn(),
   postSafeWebhook: vi.fn(),
+  portfolio: vi.fn(),
 }))
 
+vi.mock('@/lib/portfolio-data', () => ({ getPortfolioSnapshot: mocks.portfolio }))
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.runTransaction }))
 vi.mock('@/lib/crypto', () => ({ decryptSecret: mocks.decryptSecret, encryptSecret: mocks.encryptSecret }))
 vi.mock('@/lib/teams-oauth', async (importOriginal) => ({
@@ -98,6 +100,7 @@ describe('notification delivery orchestration', () => {
   beforeEach(() => {
     mocks.databases = []
     vi.clearAllMocks()
+    mocks.portfolio.mockResolvedValue({ summary: { accounts: 2, needs_action: 1, unqualified: 1, critical_alerts: 0, overdue_tasks: 0, pending_approvals: 0 }, groups: [] })
     mocks.featureEnabled.mockReturnValue(true)
     mocks.decryptSecret.mockImplementation((value: string) => value)
   })
@@ -372,7 +375,7 @@ describe('notification delivery orchestration', () => {
     expect(mocks.enqueueJob).not.toHaveBeenCalled()
   })
 
-  it('skips empty digests and dispatches an aggregated weekly digest', async () => {
+  it('skips missing workspaces and dispatches a qualified portfolio digest', async () => {
     mocks.databases.push(databaseDouble({ query: queryDouble() }).db)
     await expect(dispatchWeeklyDigest(payload.workspaceId, new Date('2026-08-12T12:00:00Z'))).resolves.toEqual({ accepted: 0, failed: 0, skipped: true })
 
@@ -386,6 +389,15 @@ describe('notification delivery orchestration', () => {
       databaseDouble({ query: queryDouble({ channels: [] }) }).db,
     )
     await expect(dispatchWeeklyDigest(payload.workspaceId, new Date('2026-08-12T12:00:00Z'))).resolves.toEqual({ accepted: 0, failed: 0, skipped: false })
+    expect(mocks.portfolio).toHaveBeenCalledExactlyOnceWith(payload.workspaceId)
+  })
+
+  it.each([null, { summary: { accounts: 0 } }])('skips unavailable or empty portfolios without delivery', async (portfolio) => {
+    mocks.portfolio.mockResolvedValue(portfolio)
+    mocks.databases.push(databaseDouble({ query: queryDouble({ workspace: { id: payload.workspaceId, locale: 'en' } }) }).db)
+    expect(await dispatchWeeklyDigest(payload.workspaceId)).toEqual({ accepted: 0, failed: 0, skipped: true })
+    expect(mocks.runTransaction).toHaveBeenCalledTimes(1)
+    expect(mocks.emailSend).not.toHaveBeenCalled()
   })
 
   it('renders English email subjects and weekly digests from the workspace locale', async () => {

@@ -31,6 +31,7 @@ import {
   offlineConversionDiagnostics,
   performanceSnapshots,
   analyticalCollections,
+  portfolioViews,
   reportSchedules,
   reportEditions,
   reportTemplates,
@@ -120,6 +121,7 @@ async function collectWorkspaceExport(workspaceId: string) {
     const alerts = await db.query.alertIncidents.findMany({ where: eq(alertIncidents.workspaceId, workspaceId) })
     const activation = await db.query.activationMilestones.findMany({ where: eq(activationMilestones.workspaceId, workspaceId) })
     const alertNotes = await db.query.alertComments.findMany({ where: eq(alertComments.workspaceId, workspaceId) })
+    const savedPortfolioViews = await db.query.portfolioViews.findMany({ where: eq(portfolioViews.workspaceId, workspaceId) })
     const tasks = await db.query.workspaceTasks.findMany({ where: eq(workspaceTasks.workspaceId, workspaceId) })
     const taskNotes = await db.query.taskComments.findMany({ where: eq(taskComments.workspaceId, workspaceId) })
     const support = await db.query.supportTickets.findMany({ where: eq(supportTickets.workspaceId, workspaceId) })
@@ -252,6 +254,7 @@ async function collectWorkspaceExport(workspaceId: string) {
       activationMilestones: activation,
       alertComments: alertNotes,
       tasks,
+      portfolioViews: savedPortfolioViews,
       taskComments: taskNotes,
       supportTickets: support,
       supportMessages: supportConversation,

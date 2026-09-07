@@ -25,6 +25,7 @@ function queryDouble(input: { workspace?: unknown; connection?: unknown; rows?: 
     clients: { findMany: many('clients') }, clientGoals: { findMany: many('clientGoals') },
     monitoringAgents: { findMany: many('monitoringAgents') }, alertIncidents: { findMany: many('alerts') },
     activationMilestones: { findMany: many('activation') }, alertComments: { findMany: many('alertComments') },
+    portfolioViews: { findMany: many('portfolioViews') },
     workspaceTasks: { findMany: many('tasks') }, taskComments: { findMany: many('taskComments') },
     supportTickets: { findMany: many('supportTickets') }, supportMessages: { findMany: many('supportMessages') },
     memberNotificationPreferences: { findMany: many('memberPreferences') }, approvalRequests: { findMany: many('approvals') },
@@ -59,6 +60,7 @@ describe('workspace export orchestration', () => {
       connection,
       rows: {
         clients: [{ id: 'client-1', name: 'Client' }],
+        portfolioViews: [{ id: 'view-1', userId: 'owner', name: 'Pending decisions', criteria: { attention: 'pending_approval' } }],
         approvals: [{ id: 'approval-1', title: 'Pause' }],
         observations: [{ id: 'observation-1' }],
         audit: [{ id: 'audit-1' }],
@@ -96,6 +98,7 @@ describe('workspace export orchestration', () => {
     expect(raw).not.toContain('encryptedReportToken')
     expect(strFromU8(archive['reports/editions.json'])).toContain('edition-1')
     expect(raw).toContain('Archived campaign')
+    expect(JSON.parse(raw).portfolioViews).toEqual([{ id: 'view-1', userId: 'owner', name: 'Pending decisions', criteria: { attention: 'pending_approval' } }])
     expect(strFromU8(archive['reports/template-versions.csv'])).toContain('templateId,version,snapshot')
     expect(strFromU8(archive['README.txt'])).toContain('secrets OAuth')
     expect(progress.capture.sets[0]).toMatchObject({ progress: 55 })

@@ -35,6 +35,7 @@ import { type Permission } from '@/lib/permissions'
 const navigation = [
   { href: '/getting-started', key: 'gettingStarted', icon: Rocket, permission: 'portfolio:read' },
   { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard, permission: 'portfolio:read' },
+  { href: '/portfolio', key: 'portfolio', icon: UsersRound, permission: 'portfolio:read' },
   { href: '/accounts', key: 'accounts', icon: UsersRound, permission: 'portfolio:read' },
   { href: '/analysis', key: 'analysis', icon: ChartNoAxesCombined, permission: 'portfolio:read' },
   { href: '/insights', key: 'insights', icon: Crosshair, permission: 'portfolio:read' },
@@ -51,8 +52,8 @@ const navigation = [
 ] as const satisfies ReadonlyArray<{ href: string; key: string; icon: typeof Rocket; permission: Permission }>
 
 const navigationLabels = {
-  fr: { gettingStarted: 'Démarrage', dashboard: 'Cockpit', accounts: 'Comptes clients', analysis: 'Analyse 360', insights: 'Insights étendus', history: 'Historique', alerts: 'Alertes', tasks: 'Tâches', agents: 'Vigies autonomes', approvals: 'Approbations', reports: 'Rapports clients', support: 'Support', audit: 'Journal d’audit', billing: 'Abonnement', settings: 'Réglages' },
-  en: { gettingStarted: 'Getting started', dashboard: 'Cockpit', accounts: 'Client accounts', analysis: '360 analysis', insights: 'Extended insights', history: 'History', alerts: 'Alerts', tasks: 'Tasks', agents: 'Autonomous monitors', approvals: 'Approvals', reports: 'Client reports', support: 'Support', audit: 'Audit log', billing: 'Subscription', settings: 'Settings' },
+  fr: { portfolio: 'Portefeuille', gettingStarted: 'Démarrage', dashboard: 'Cockpit', accounts: 'Comptes clients', analysis: 'Analyse 360', insights: 'Insights étendus', history: 'Historique', alerts: 'Alertes', tasks: 'Tâches', agents: 'Vigies autonomes', approvals: 'Approbations', reports: 'Rapports clients', support: 'Support', audit: 'Journal d’audit', billing: 'Abonnement', settings: 'Réglages' },
+  en: { portfolio: 'Portfolio', gettingStarted: 'Getting started', dashboard: 'Cockpit', accounts: 'Client accounts', analysis: '360 analysis', insights: 'Extended insights', history: 'History', alerts: 'Alerts', tasks: 'Tasks', agents: 'Autonomous monitors', approvals: 'Approvals', reports: 'Client reports', support: 'Support', audit: 'Audit log', billing: 'Subscription', settings: 'Settings' },
 } as const
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

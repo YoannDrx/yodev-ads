@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
 import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { alertIncidents, approvalRequests, auditEvents, clients, monitoringAgents, supportTickets, workspaceTasks, approvalComments, taskComments, supportMessages, alertComments, clientApprovalFeedback, mutationObservations } from '@/db/schema'
 import { cleanCollectionQuery, collectionScope, collectionWhere, collectionWindow, exactTimestamp, finishCollectionPage, invalidCollectionPage, searchPattern, COLLECTION_PAGE_SIZE, type CollectionQuery } from '@/lib/collection-pagination'
@@ -87,7 +87,7 @@ export async function listTaskPage(workspaceId: string, raw: CollectionQuery = {
     type Row = { task: typeof workspaceTasks.$inferSelect; client: typeof clients.$inferSelect | null; at: string } & ReturnType<Awaited<ReturnType<typeof previews>>>
     if (!window) return { ...invalidCollectionPage<Row>(), summary: { open: 0, overdue: 0, dueSoon: 0 } }
     const base = and(eq(workspaceTasks.workspaceId, workspaceId), validId(query.id) ? eq(workspaceTasks.id, query.id!) : undefined, query.status === 'open' ? inArray(workspaceTasks.status, ['todo', 'in_progress', 'blocked']) : query.status ? eq(workspaceTasks.status, query.status) : undefined,
-      query.client ? eq(workspaceTasks.clientId, query.client) : undefined, query.assignee ? eq(workspaceTasks.assignedTo, query.assignee) : undefined,
+      query.client ? eq(workspaceTasks.clientId, query.client) : undefined, query.assignee === 'unassigned' ? isNull(workspaceTasks.assignedTo) : query.assignee ? eq(workspaceTasks.assignedTo, query.assignee) : undefined,
       query.q ? or(ilike(workspaceTasks.title, searchPattern(query.q)), ilike(workspaceTasks.description, searchPattern(query.q))) : undefined)
     const [summary] = await db.select({ total: count(), open: sql<number>`count(*) filter (where ${workspaceTasks.status} not in ('done','cancelled'))`.mapWith(Number), overdue: sql<number>`count(*) filter (where ${workspaceTasks.status} not in ('done','cancelled') and ${workspaceTasks.dueAt} <= now())`.mapWith(Number), dueSoon: sql<number>`count(*) filter (where ${workspaceTasks.status} not in ('done','cancelled') and ${workspaceTasks.dueAt} > now() and ${workspaceTasks.dueAt} <= now()+interval '24 hours')`.mapWith(Number) }).from(workspaceTasks).where(collectionWhere(base, window, false))
     const rows = await db.select({ task: workspaceTasks, client: clients, at: exactTimestamp(workspaceTasks.createdAt) }).from(workspaceTasks).leftJoin(clients, and(eq(clients.id, workspaceTasks.clientId), eq(clients.workspaceId, workspaceId)))

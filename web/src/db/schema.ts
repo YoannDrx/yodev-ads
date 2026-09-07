@@ -435,6 +435,20 @@ export const alertComments = pgTable(
   (table) => [index('alert_comments_incident_idx').on(table.workspaceId, table.incidentId, table.createdAt), index('alert_comments_page_idx').on(table.workspaceId, table.incidentId, table.createdAt, table.id)],
 )
 
+export const portfolioViews = pgTable(
+  'portfolio_views',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+    userId: varchar('user_id', { length: 64 }).notNull(),
+    name: varchar('name', { length: 80 }).notNull(),
+    criteria: jsonb('criteria').$type<import('@/lib/portfolio-query').PortfolioCriteria>().notNull(),
+    version: uuid('version').defaultRandom().notNull(),
+    ...timestamps,
+  },
+  (table) => [index('portfolio_views_owner_idx').on(table.workspaceId, table.userId, table.createdAt)],
+)
+
 export const workspaceTasks = pgTable(
   'workspace_tasks',
   {

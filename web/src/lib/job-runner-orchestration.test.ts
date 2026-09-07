@@ -203,6 +203,7 @@ describe('durable job runner orchestration', () => {
     expect(mocks.fanOutMonitoring).toHaveBeenCalledWith(expect.objectContaining({ workspaceId, parentJobId: expect.any(String) }))
     expect(mocks.runMonitoring).toHaveBeenCalledWith({ workspaceId, clientId, parentJobId: entityId, agentIds: [entityId] }, expect.objectContaining({ attempt: 1, workerId: 'worker', jobId: expect.any(String) }))
     expect(mocks.authInvitation).toHaveBeenCalledWith({ invitationId: entityId, workspaceId })
+    expect(mocks.weeklyDigest).toHaveBeenCalledWith(workspaceId, jobs.find((item) => item.type === 'monitoring.weekly_digest')!.createdAt)
     expect(mocks.lifecycleEmail).toHaveBeenCalledWith(expect.objectContaining({ effectiveAt: new Date('2026-08-12T10:00:00.000Z') }))
     expect(mocks.stripeUpdate).toHaveBeenCalledWith('sub_123', { cancel_at_period_end: true })
     expect(mocks.recordStripeCancellation).toHaveBeenCalledWith(expect.objectContaining({

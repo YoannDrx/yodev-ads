@@ -372,6 +372,13 @@
       "when": 1788754234967,
       "tag": "0052_analytical_source_coverage",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1788758827726,
+      "tag": "0053_portfolio_saved_views",
+      "breakpoints": true
     }
   ]
 }

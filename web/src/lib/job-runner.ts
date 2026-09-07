@@ -151,7 +151,8 @@ async function executeJob(job: ClaimedJob) {
     }
     case 'monitoring.weekly_digest': {
       const { workspaceId } = workspacePayload.parse(job.payload)
-      return dispatchWeeklyDigest(workspaceId)
+      if (workspaceId !== job.workspaceId) throw new NonRetryableJobError('Weekly digest workspace mismatch')
+      return dispatchWeeklyDigest(workspaceId, job.createdAt)
     }
     case 'report.schedule_deliver': {
       const { scheduleId, runKey } = scheduledReportPayload.parse(job.payload)

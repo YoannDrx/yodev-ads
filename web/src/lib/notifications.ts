@@ -1,7 +1,9 @@
 import 'server-only'
 
 import { and, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm'
-import { alertIncidents, clients, jobs, monitoringAgents, notificationChannels, notificationDeliveries, performanceSnapshots, workspaces } from '@/db/schema'
+import { alertIncidents, clients, jobs, monitoringAgents, notificationChannels, notificationDeliveries, workspaces } from '@/db/schema'
+import { getPortfolioSnapshot } from '@/lib/portfolio-data'
+import { portfolioDigestDescription } from '@/lib/portfolio-digest'
 import { withSystemTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { decryptSecret, encryptSecret } from '@/lib/crypto'
 import { featureEnabled } from '@/lib/feature-flags'
@@ -380,28 +382,16 @@ export async function dispatchIncidentNotifications(payload: NotificationPayload
 }
 
 export async function dispatchWeeklyDigest(workspaceId: string, date = new Date()) {
+  // The job creation date identifies the scheduled event across retries. Metrics
+  // are qualified at the attempt time and carry their actual local periods.
   const snapshotDate = date.toISOString().slice(0, 10)
-  const { workspace, snapshots } = await withSystemTransaction(async (db) => ({
-    workspace: await db.query.workspaces.findFirst({ where: eq(workspaces.id, workspaceId) }),
-    snapshots: await db.query.performanceSnapshots.findMany({
-      where: and(
-        eq(performanceSnapshots.workspaceId, workspaceId),
-        eq(performanceSnapshots.snapshotDate, snapshotDate),
-      ),
-    }),
-  }))
-  if (!workspace || snapshots.length === 0) return { accepted: 0, failed: 0, skipped: true }
-  const totals = snapshots.reduce(
-    (sum, snapshot) => ({
-      costMicros: sum.costMicros + Number(snapshot.costMicros),
-      clicks: sum.clicks + Number(snapshot.clicks),
-      conversions: sum.conversions + Number(snapshot.conversions),
-    }),
-    { costMicros: 0, clicks: 0, conversions: 0 },
-  )
+  const workspace = await withSystemTransaction((db) => db.query.workspaces.findFirst({ where: eq(workspaces.id, workspaceId) }))
+  if (!workspace) return { accepted: 0, failed: 0, skipped: true }
+  const portfolio = await getPortfolioSnapshot(workspaceId)
+  if (!portfolio || portfolio.summary.accounts === 0) return { accepted: 0, failed: 0, skipped: true }
   const locale = workspace.locale === 'en' ? 'en' : 'fr'
   const numberLocale = locale === 'en' ? 'en-GB' : 'fr-FR'
-  const accountCount = snapshots.length.toLocaleString(numberLocale)
+  const accountCount = portfolio.summary.accounts.toLocaleString(numberLocale)
   const result = await dispatchIncidentNotifications({
     workspaceId,
     eventKey: `weekly-digest:${workspaceId}:${snapshotDate}`,
@@ -410,9 +400,7 @@ export async function dispatchWeeklyDigest(workspaceId: string, date = new Date(
     locale,
     title: locale === 'en' ? `Weekly digest ${workspace.brandName}` : `Synthèse hebdomadaire ${workspace.brandName}`,
     clientName: locale === 'en' ? `${accountCount} account(s)` : `${accountCount} compte(s)`,
-    description: locale === 'en'
-      ? `30-day window: €${(totals.costMicros / 1_000_000).toLocaleString(numberLocale, { maximumFractionDigits: 2 })} spent, ${totals.clicks.toLocaleString(numberLocale)} clicks and ${totals.conversions.toLocaleString(numberLocale, { maximumFractionDigits: 1 })} conversions.`
-      : `Fenêtre 30 jours : ${(totals.costMicros / 1_000_000).toLocaleString(numberLocale, { maximumFractionDigits: 2 })} € investis, ${totals.clicks.toLocaleString(numberLocale)} clics et ${totals.conversions.toLocaleString(numberLocale, { maximumFractionDigits: 1 })} conversions.`,
+    description: portfolioDigestDescription(portfolio.summary, portfolio.groups, locale),
   })
   return { ...result, skipped: false }
 }
