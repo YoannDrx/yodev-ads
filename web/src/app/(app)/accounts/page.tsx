@@ -5,11 +5,11 @@ import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { getWorkspaceAccountSelection } from '@/lib/account-selection'
 import { workspaceDecision } from '@/lib/workspace-decision'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 export default async function AccountsPage({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string; selection?: string }> }) {
   const query = await searchParams
-  const { workspace, role } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role } = await requireWorkspacePagePermission('portfolio:read', '/accounts')
   const english = workspace.locale === 'en'
   const selection = await getWorkspaceAccountSelection(workspace.id)
   const canManage = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed

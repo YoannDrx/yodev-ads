@@ -38,7 +38,7 @@ import { featureEnabled, privateApiWorkspaceAllowed } from '@/lib/feature-flags'
 import { formatCustomerId } from '@/lib/ids'
 import { hasSlackOAuthConfiguration } from '@/lib/slack-oauth'
 import { hasTeamsOAuthConfiguration } from '@/lib/teams-oauth'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 import { workspaceMemberRoster } from '@/lib/workspace-members'
 import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
 
@@ -48,7 +48,7 @@ export default async function SettingsPage({
   searchParams: Promise<{ notice?: string; error?: string; reveal?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin, entitlements, session } = await requireWorkspacePermission('workspace:admin')
+  const { workspace, isAdmin, entitlements, session } = await requireWorkspacePagePermission('workspace:admin', '/settings')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const canUseCustomDomain = entitlements.capabilities.has('custom_domain') && featureEnabled('customDomains')

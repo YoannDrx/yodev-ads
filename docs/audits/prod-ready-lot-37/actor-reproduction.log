@@ -1,0 +1,14 @@
+AssertionError [ERR_ASSERTION]: Revoked role: all eight mutations must refuse
+
+7 !== 0
+
+    at denied (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-settings-actors.ts:30:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-settings-actors.ts:47:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 7,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}

@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { auditEvents, portfolioViews, workspaces } from '@/db/schema'
 import { withTenantTransaction } from '@/db/transactions'
 import { portfolioCriteriaSchema } from '@/lib/portfolio-query'
-import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 import { workspaceLifecycleAllowsPermission } from '@/lib/workspace-access'
 
 export const MAX_PORTFOLIO_VIEWS = 20
@@ -25,9 +25,7 @@ export function listPortfolioViews(workspaceId: string, actorUserId: string) {
 
 export async function savePortfolioView(raw: z.input<typeof writeSchema>) {
   const input = writeSchema.parse(raw)
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    const context = await lockWorkspaceEntitlements(db, input.workspaceId)
-    if (!workspaceLifecycleAllowsPermission(context.state, 'portfolio:save_view')) throw new Error('Portfolio views unavailable')
+  return withWorkspaceActorTransaction({ ...input, permission: 'portfolio:save_view' }, async (db) => {
     let row
     if (input.id) {
       ;[row] = await db.update(portfolioViews).set({ name: input.name, criteria: input.criteria, version: randomUUID(), updatedAt: new Date() })
@@ -45,9 +43,7 @@ export async function savePortfolioView(raw: z.input<typeof writeSchema>) {
 
 export async function deletePortfolioView(raw: z.input<typeof actorSchema> & { id: string; version: string }) {
   const input = actorSchema.extend({ id: z.string().uuid(), version: z.string().uuid() }).parse(raw)
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    const context = await lockWorkspaceEntitlements(db, input.workspaceId)
-    if (!workspaceLifecycleAllowsPermission(context.state, 'portfolio:save_view')) throw new Error('Portfolio views unavailable')
+  return withWorkspaceActorTransaction({ ...input, permission: 'portfolio:save_view' }, async (db) => {
     const [row] = await db.delete(portfolioViews).where(and(eq(portfolioViews.workspaceId, input.workspaceId), eq(portfolioViews.userId, input.actorUserId), eq(portfolioViews.id, input.id), eq(portfolioViews.version, input.version))).returning({ id: portfolioViews.id })
     if (!row) throw new Error('Portfolio view conflict')
     await db.insert(auditEvents).values({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, action: 'portfolio.view_deleted', entityType: 'portfolio_view', entityId: row.id })

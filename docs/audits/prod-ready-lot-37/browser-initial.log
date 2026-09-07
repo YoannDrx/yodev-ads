@@ -1,0 +1,290 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/settings-actors-local.spec.ts e2e/portfolio-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 283ms
+✓ Running next.config.ts took 580ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.4s (next.js: 2.1s, proxy.ts: 150ms, application-code: 212ms)
+ GET / 200 in 2.4s (next.js: 1669ms, proxy.ts: 147ms, application-code: 598ms)
+ GET /icon?a62dacc6b033a714 200 in 308ms (next.js: 99ms, proxy.ts: 15ms, application-code: 194ms)
+ POST /api/auth/sign-in/email 200 in 1168ms (next.js: 973ms, proxy.ts: 3ms, application-code: 192ms)
+ POST /api/auth/sign-in/email 200 in 90ms (next.js: 4ms, proxy.ts: 3ms, application-code: 83ms)
+ POST /api/auth/sign-in/email 200 in 85ms (next.js: 3ms, proxy.ts: 4ms, application-code: 79ms)
+ POST /api/auth/sign-in/email 200 in 81ms (next.js: 2ms, proxy.ts: 2ms, application-code: 76ms)
+ POST /api/auth/sign-in/email 200 in 83ms (next.js: 2ms, proxy.ts: 2ms, application-code: 79ms)
+ GET /dashboard 200 in 717ms (next.js: 426ms, proxy.ts: 5ms, application-code: 286ms)
+ GET /settings 200 in 248ms (next.js: 40ms, proxy.ts: 3ms, application-code: 205ms)
+ GET /billing 200 in 170ms (next.js: 16ms, proxy.ts: 2ms, application-code: 151ms)
+ GET /support 200 in 158ms (next.js: 17ms, proxy.ts: 1.9ms, application-code: 139ms)
+ GET /accounts 200 in 132ms (next.js: 13ms, proxy.ts: 1.8ms, application-code: 117ms)
+ GET /history 200 in 133ms (next.js: 16ms, proxy.ts: 2.0ms, application-code: 115ms)
+ GET /alerts 200 in 145ms (next.js: 17ms, proxy.ts: 2.0ms, application-code: 126ms)
+ GET /tasks 200 in 166ms (next.js: 22ms, proxy.ts: 2ms, application-code: 141ms)
+ GET /approvals 200 in 142ms (next.js: 26ms, proxy.ts: 2ms, application-code: 113ms)
+ GET /reports 200 in 196ms (next.js: 22ms, proxy.ts: 2ms, application-code: 172ms)
+ GET /audit 200 in 129ms (next.js: 21ms, proxy.ts: 2ms, application-code: 106ms)
+ GET /agents 200 in 183ms (next.js: 20ms, proxy.ts: 1.9ms, application-code: 162ms)
+ GET / 200 in 79ms (next.js: 3ms, proxy.ts: 2ms, application-code: 74ms)
+ GET /privacy 200 in 62ms (next.js: 13ms, proxy.ts: 2ms, application-code: 47ms)
+ GET /terms 200 in 56ms (next.js: 13ms, proxy.ts: 1.8ms, application-code: 41ms)
+ GET /subprocessors 200 in 119ms (next.js: 48ms, proxy.ts: 3ms, application-code: 68ms)
+ GET /status 200 in 148ms (next.js: 34ms, proxy.ts: 1.9ms, application-code: 112ms)
+ GET /sign-in 200 in 46ms (next.js: 7ms, proxy.ts: 2.0ms, application-code: 37ms)
+ GET /sign-up 200 in 335ms (next.js: 302ms, proxy.ts: 1.9ms, application-code: 31ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-tMHgLx
+
+Running 4 tests using 1 worker
+
+(node:47804) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /portfolio?q=PORTFOLIO_ 200 in 627ms (next.js: 49ms, proxy.ts: 4ms, application-code: 575ms)
+ GET /api/auth/get-session 200 in 45ms (next.js: 13ms, proxy.ts: 6ms, application-code: 26ms)
+ GET /api/auth/organization/list 200 in 50ms (next.js: 17ms, proxy.ts: 4ms, application-code: 28ms)
+ GET /portfolio?q=PORTFOLIO_&cursor=eyJ2IjoxLCJpdiI6IkxwU2xFdTR1V0p1Ml9TQTEiLCJ0YWciOiJvM2RhWnRLazRpOFdtU3VyXzJRaTRBIiwiZGF0YSI6Inh2OEZob1JTVWFISldGTExuWTZBN01WWFdfTlVBbjVzOFJhNlQyX0pkakJ2UGNJb1hiU2VDQ1pQVDY2REt5ME9iOHN4TVM3ZE9zYk0td3YtMlE2SG9QR3l2azZmSW50Z251dGNpLUhqWFdtOXZDbWp4bndzTzQ5T2tjSTMtZEZmZW1ROG56c1N2Vm1pTy1KOXVQRlVzelAxem1HZm43c3Y4SnZ2VzR4WjRoMWJkSjAtbHB1cFRoNGFPUUdZaS03QVhtQUtJVURXaFhzUzhsSEtuMGw0WEpNOFpYVzB1V19JYXJKVWZIeUVFaTkxVnhaTmZhZHpEV1d6U2VBQkxRUENRdjFibTVaN0I0VHVNUVFjTGJBM3BhbVZhdHNYTUhCenhKRFZXOFI1bl9Ub3NOWERNMmdkbFEifQ 200 in 163ms (next.js: 6ms, proxy.ts: 4ms, application-code: 154ms)
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&currency=&assignee= 200 in 179ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 175ms)
+ GET /api/auth/get-session 200 in 31ms (next.js: 7ms, proxy.ts: 5ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 13ms, proxy.ts: 4ms, application-code: 16ms)
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 92ms (next.js: 12ms, proxy.ts: 2ms, application-code: 77ms)
+ POST /portfolio?q=PORTFOLIO_&attention=missing_data&currency=&assignee= 200 in 124ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 120ms)
+  └─ ƒ storePortfolioView({}) in 16ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 78ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 75ms)
+ POST /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 98ms (next.js: 2ms, proxy.ts: 3ms, application-code: 93ms)
+  └─ ƒ storePortfolioView({}) in 9ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_ 200 in 318ms (next.js: 10ms, proxy.ts: 3ms, application-code: 304ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 6ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 10ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /portfolio?view_notice=conflict 200 in 115ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 111ms)
+ POST /portfolio?q=PORTFOLIO_ 200 in 138ms (next.js: 2ms, proxy.ts: 3ms, application-code: 133ms)
+  └─ ƒ removePortfolioView({}) in 11ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_ 200 in 319ms (next.js: 3ms, proxy.ts: 4ms, application-code: 313ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 5ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 8ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /portfolio?view_notice=deleted 200 in 111ms (next.js: 5ms, proxy.ts: 3ms, application-code: 103ms)
+ POST /portfolio?q=PORTFOLIO_ 200 in 133ms (next.js: 1.8ms, proxy.ts: 4ms, application-code: 127ms)
+  └─ ƒ removePortfolioView({}) in 10ms src/app/portfolio-actions.ts
+ GET /tasks?status=open&assignee=unassigned 200 in 69ms (next.js: 3ms, proxy.ts: 3ms, application-code: 63ms)
+ GET /portfolio?assignee=local-browser-fixture-owner 200 in 182ms (next.js: 3ms, proxy.ts: 2ms, application-code: 176ms)
+ GET /api/auth/get-session 200 in 113ms (next.js: 46ms, proxy.ts: 6ms, application-code: 61ms)
+ GET /api/auth/organization/list 200 in 123ms (next.js: 33ms, proxy.ts: 22ms, application-code: 67ms)
+ GET /portfolio?assignee=local-browser-fixture-owner 200 in 186ms (next.js: 3ms, proxy.ts: 3ms, application-code: 180ms)
+ GET /api/auth/get-session 200 in 80ms (next.js: 43ms, proxy.ts: 15ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 83ms (next.js: 45ms, proxy.ts: 15ms, application-code: 24ms)
+ GET /portfolio?q=PORTFOLIO_ 200 in 342ms (next.js: 2ms, proxy.ts: 2ms, application-code: 338ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /portfolio?q=PORTFOLIO_ 200 in 310ms (next.js: 4ms, proxy.ts: 4ms, application-code: 303ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 11ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /portfolio?q=PORTFOLIO_ 307 in 66ms (next.js: 2ms, proxy.ts: 2ms, application-code: 61ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 101ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 97ms)
+ GET /portfolio?q=PORTFOLIO_ 307 in 56ms (next.js: 3ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /sign-in 200 in 69ms (next.js: 9ms, proxy.ts: 4ms, application-code: 57ms)
+{"locale":"fr","developmentStyleViolations":232,"applicationErrors":0}
+  ✓  1 [chromium] › e2e/portfolio-local.spec.ts:13:53 › agency portfolio › reviews 50 accounts, personal views and team workload in fr (7.7s)
+ GET /portfolio?q=PORTFOLIO_ 200 in 319ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 314ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 6ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 10ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /portfolio?q=PORTFOLIO_&cursor=eyJ2IjoxLCJpdiI6ImxZS3kxSXBxNXhHbkFhaHoiLCJ0YWciOiJHRVk1eVVfcDJPdWNYa1lBbURUU0ZRIiwiZGF0YSI6IndQRnNrRnhBSHhxZE9aZGsxbVE4V210bVZyNm8zaUV4WmViOG9OeEJXS29fbk1Zd2VjU0NvWGpyNlhKYmVpZjhyRVBueV81bnFvRmxQSHJDbGJLX0g4QjJYbDBDamgySkxERnlwdGU1WHFLVUVHLTgzQnBYY0dfQmVfc292MVVTZlJtRC1jRXNZQTN5Tlpmb1BCb3lFdVVLZW1rdzlKWGlUMnN0NVdXRExobUNIb0JPZ0FlZ2Y5ZjhUaktmU1lfSFVkRUFLaVhadDRwN2p5Ni1yTnRTbW4yOFBrWTRQT0NydmI2NEotNGF5RlluX0RuNElEME5haHBfWWFMcUR1aWJaYzhtNlJ5aElJY1M1bGlSd2VscFFaWU1mNFpQVlNoaGRKUmwwRXZxMDR6UWw1V05aQWtHSFEifQ 200 in 122ms (next.js: 2ms, proxy.ts: 2ms, application-code: 118ms)
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&currency=&assignee= 200 in 175ms (next.js: 1.6ms, proxy.ts: 2.0ms, application-code: 171ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 5ms, proxy.ts: 3ms, application-code: 22ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 8ms, proxy.ts: 4ms, application-code: 23ms)
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 82ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 79ms)
+ POST /portfolio?q=PORTFOLIO_&attention=missing_data&currency=&assignee= 200 in 101ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 96ms)
+  └─ ƒ storePortfolioView({}) in 7ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 93ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 89ms)
+ POST /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 114ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 109ms)
+  └─ ƒ storePortfolioView({}) in 9ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_ 200 in 308ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 304ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /portfolio?view_notice=conflict 200 in 218ms (next.js: 4ms, proxy.ts: 4ms, application-code: 210ms)
+ POST /portfolio?q=PORTFOLIO_ 200 in 272ms (next.js: 11ms, proxy.ts: 11ms, application-code: 250ms)
+  └─ ƒ removePortfolioView({}) in 21ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_ 200 in 438ms (next.js: 2ms, proxy.ts: 4ms, application-code: 432ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /portfolio?view_notice=deleted 200 in 127ms (next.js: 3ms, proxy.ts: 3ms, application-code: 122ms)
+ POST /portfolio?q=PORTFOLIO_ 200 in 153ms (next.js: 2ms, proxy.ts: 4ms, application-code: 147ms)
+  └─ ƒ removePortfolioView({}) in 13ms src/app/portfolio-actions.ts
+ GET /tasks?status=open&assignee=unassigned 200 in 80ms (next.js: 3ms, proxy.ts: 3ms, application-code: 74ms)
+ GET /portfolio?assignee=local-browser-fixture-owner 200 in 194ms (next.js: 2ms, proxy.ts: 3ms, application-code: 189ms)
+ GET /api/auth/get-session 200 in 94ms (next.js: 21ms, proxy.ts: 10ms, application-code: 64ms)
+ GET /api/auth/organization/list 200 in 112ms (next.js: 37ms, proxy.ts: 10ms, application-code: 65ms)
+ GET /portfolio?assignee=local-browser-fixture-owner 200 in 228ms (next.js: 8ms, proxy.ts: 13ms, application-code: 206ms)
+ GET /api/auth/get-session 200 in 82ms (next.js: 45ms, proxy.ts: 11ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 85ms (next.js: 48ms, proxy.ts: 12ms, application-code: 25ms)
+ GET /portfolio?q=PORTFOLIO_ 200 in 382ms (next.js: 2ms, proxy.ts: 2ms, application-code: 378ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 10ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /portfolio?q=PORTFOLIO_ 200 in 327ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 323ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /portfolio?q=PORTFOLIO_ 307 in 63ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 59ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 97ms (next.js: 3ms, proxy.ts: 2ms, application-code: 91ms)
+ GET /portfolio?q=PORTFOLIO_ 307 in 49ms (next.js: 2ms, proxy.ts: 2ms, application-code: 45ms)
+ GET /sign-in 200 in 42ms (next.js: 5ms, proxy.ts: 2ms, application-code: 35ms)
+{"locale":"en","developmentStyleViolations":231,"applicationErrors":0}
+  ✓  2 [chromium] › e2e/portfolio-local.spec.ts:13:53 › agency portfolio › reviews 50 accounts, personal views and team workload in en (7.1s)
+ GET /settings 200 in 180ms (next.js: 4ms, proxy.ts: 2ms, application-code: 174ms)
+ GET /api/auth/get-session 200 in 35ms (next.js: 11ms, proxy.ts: 3ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 15ms, proxy.ts: 3ms, application-code: 18ms)
+ GET /settings?notice=Workspace+language+updated. 200 in 87ms (next.js: 2ms, proxy.ts: 2ms, application-code: 83ms)
+ POST /settings 200 in 113ms (next.js: 2ms, proxy.ts: 2ms, application-code: 108ms)
+  └─ ƒ updateWorkspaceLocale({}) in 12ms src/app/actions.ts
+ GET /settings?notice=Langue+de+l%E2%80%99espace+mise+%C3%A0+jour. 200 in 95ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 91ms)
+ POST /settings?notice=Workspace%20language%20updated. 200 in 122ms (next.js: 2ms, proxy.ts: 3ms, application-code: 117ms)
+  └─ ƒ updateWorkspaceLocale({}) in 10ms src/app/actions.ts
+ GET /settings?notice=Politique+d%E2%80%99approbation+mise+%C3%A0+jour. 200 in 91ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 87ms)
+ POST /settings?notice=Langue%20de%20l%E2%80%99espace%20mise%20%C3%A0%20jour. 200 in 121ms (next.js: 3ms, proxy.ts: 3ms, application-code: 116ms)
+  └─ ƒ updateApprovalPolicy({}) in 15ms src/app/actions.ts
+ GET /settings?notice=Identit%C3%A9+de+marque+enregistr%C3%A9e. 200 in 83ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 79ms)
+ POST /settings?notice=Politique%20d%E2%80%99approbation%20mise%20%C3%A0%20jour. 200 in 103ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 98ms)
+  └─ ƒ updateBranding({}) in 10ms src/app/actions.ts
+ GET /settings?error=Capability+required%3A+approvals.dual 200 in 77ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 73ms)
+ POST /settings?notice=Identit%C3%A9%20de%20marque%20enregistr%C3%A9e. 200 in 94ms (next.js: 2ms, proxy.ts: 2ms, application-code: 89ms)
+  └─ ƒ updateApprovalPolicy({}) in 6ms src/app/actions.ts
+ GET /settings 200 in 193ms (next.js: 2ms, proxy.ts: 3ms, application-code: 188ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 46ms (next.js: 3ms, proxy.ts: 2ms, application-code: 41ms)
+ POST /settings 200 in 70ms (next.js: 2ms, proxy.ts: 3ms, application-code: 65ms)
+  └─ ƒ updateBranding({}) in 14ms src/app/actions.ts
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 109ms (next.js: 3ms, proxy.ts: 2ms, application-code: 104ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 102ms (next.js: 4ms, proxy.ts: 5ms, application-code: 92ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 117ms (next.js: 12ms, proxy.ts: 4ms, application-code: 101ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 115ms (next.js: 5ms, proxy.ts: 14ms, application-code: 96ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 105ms (next.js: 10ms, proxy.ts: 3ms, application-code: 92ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 117ms (next.js: 5ms, proxy.ts: 5ms, application-code: 107ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 132ms (next.js: 4ms, proxy.ts: 4ms, application-code: 124ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 183ms (next.js: 9ms, proxy.ts: 8ms, application-code: 166ms)
+ GET /settings 307 in 136ms (next.js: 16ms, proxy.ts: 9ms, application-code: 111ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 193ms (next.js: 6ms, proxy.ts: 10ms, application-code: 176ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 185ms (next.js: 20ms, proxy.ts: 8ms, application-code: 156ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 147ms (next.js: 15ms, proxy.ts: 19ms, application-code: 113ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 126ms (next.js: 6ms, proxy.ts: 11ms, application-code: 108ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 122ms (next.js: 4ms, proxy.ts: 9ms, application-code: 108ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 108ms (next.js: 9ms, proxy.ts: 9ms, application-code: 90ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 101ms (next.js: 3ms, proxy.ts: 8ms, application-code: 90ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 108ms (next.js: 5ms, proxy.ts: 12ms, application-code: 91ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 110ms (next.js: 3ms, proxy.ts: 4ms, application-code: 102ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 159ms (next.js: 4ms, proxy.ts: 7ms, application-code: 148ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 240ms (next.js: 5ms, proxy.ts: 9ms, application-code: 226ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 237ms (next.js: 11ms, proxy.ts: 14ms, application-code: 212ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 235ms (next.js: 28ms, proxy.ts: 10ms, application-code: 197ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 163ms (next.js: 14ms, proxy.ts: 42ms, application-code: 107ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 60ms (next.js: 6ms, proxy.ts: 14ms, application-code: 40ms)
+  ✘  3 [chromium] › e2e/settings-actors-local.spec.ts:6:7 › settings actor fr saves current policy and rejects downgraded or revoked forms (3.4s)
+⨯ Error: The destination stream closed early.
+    at ignore-listed frames {
+  digest: '2986962663'
+}
+(node:48051) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /settings 200 in 186ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 182ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 6ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 12ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /settings?notice=Langue+de+l%E2%80%99espace+mise+%C3%A0+jour. 200 in 95ms (next.js: 3ms, proxy.ts: 3ms, application-code: 89ms)
+ POST /settings 200 in 115ms (next.js: 2ms, proxy.ts: 3ms, application-code: 110ms)
+  └─ ƒ updateWorkspaceLocale({}) in 9ms src/app/actions.ts
+ GET /settings?notice=Workspace+language+updated. 200 in 92ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 89ms)
+ POST /settings?notice=Langue%20de%20l%E2%80%99espace%20mise%20%C3%A0%20jour. 200 in 113ms (next.js: 2ms, proxy.ts: 3ms, application-code: 108ms)
+  └─ ƒ updateWorkspaceLocale({}) in 10ms src/app/actions.ts
+ GET /settings?notice=Approval+policy+updated. 200 in 98ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 93ms)
+ POST /settings?notice=Workspace%20language%20updated. 200 in 121ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 116ms)
+  └─ ƒ updateApprovalPolicy({}) in 12ms src/app/actions.ts
+ GET /settings?notice=Identit%C3%A9+de+marque+enregistr%C3%A9e. 200 in 77ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 73ms)
+ POST /settings?notice=Approval%20policy%20updated. 200 in 101ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 96ms)
+  └─ ƒ updateBranding({}) in 14ms src/app/actions.ts
+ GET /settings?error=Capability+required%3A+approvals.dual 200 in 90ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 86ms)
+ POST /settings?notice=Identit%C3%A9%20de%20marque%20enregistr%C3%A9e. 200 in 111ms (next.js: 3ms, proxy.ts: 4ms, application-code: 105ms)
+  └─ ƒ updateApprovalPolicy({}) in 6ms src/app/actions.ts
+ GET /settings 200 in 167ms (next.js: 3ms, proxy.ts: 4ms, application-code: 160ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 6ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 10ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 49ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 45ms)
+ POST /settings 200 in 67ms (next.js: 2ms, proxy.ts: 3ms, application-code: 62ms)
+  └─ ƒ updateBranding({}) in 8ms src/app/actions.ts
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 71ms (next.js: 2ms, proxy.ts: 2ms, application-code: 67ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 107ms (next.js: 4ms, proxy.ts: 7ms, application-code: 95ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 107ms (next.js: 4ms, proxy.ts: 3ms, application-code: 100ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 113ms (next.js: 11ms, proxy.ts: 11ms, application-code: 91ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 100ms (next.js: 3ms, proxy.ts: 4ms, application-code: 93ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 101ms (next.js: 6ms, proxy.ts: 9ms, application-code: 87ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 115ms (next.js: 4ms, proxy.ts: 4ms, application-code: 108ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 155ms (next.js: 4ms, proxy.ts: 8ms, application-code: 143ms)
+ GET /settings 307 in 128ms (next.js: 14ms, proxy.ts: 7ms, application-code: 107ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 175ms (next.js: 4ms, proxy.ts: 3ms, application-code: 168ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 191ms (next.js: 6ms, proxy.ts: 9ms, application-code: 177ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 158ms (next.js: 19ms, proxy.ts: 15ms, application-code: 124ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 131ms (next.js: 6ms, proxy.ts: 15ms, application-code: 111ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 108ms (next.js: 4ms, proxy.ts: 14ms, application-code: 90ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 104ms (next.js: 5ms, proxy.ts: 12ms, application-code: 87ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 108ms (next.js: 4ms, proxy.ts: 3ms, application-code: 101ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 106ms (next.js: 6ms, proxy.ts: 5ms, application-code: 95ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 115ms (next.js: 3ms, proxy.ts: 8ms, application-code: 104ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 147ms (next.js: 4ms, proxy.ts: 12ms, application-code: 131ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 223ms (next.js: 4ms, proxy.ts: 4ms, application-code: 215ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 218ms (next.js: 8ms, proxy.ts: 7ms, application-code: 203ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 220ms (next.js: 14ms, proxy.ts: 8ms, application-code: 198ms)
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 79ms (next.js: 29ms, proxy.ts: 13ms, application-code: 38ms)
+⨯ Error: The destination stream closed early.
+    at ignore-listed frames {
+  digest: '2986962663'
+}
+ GET /support?error=Acc%C3%A8s+non+autoris%C3%A9 200 in 159ms (next.js: 45ms, proxy.ts: 13ms, application-code: 101ms)
+  ✘  4 [chromium] › e2e/settings-actors-local.spec.ts:6:7 › settings actor en saves current policy and rejects downgraded or revoked forms (3.4s)
+
+
+  1) [chromium] › e2e/settings-actors-local.spec.ts:6:7 › settings actor fr saves current policy and rejects downgraded or revoked forms
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 200
+
+      49 |       await branding.getByRole('button').click()
+      50 |       await expect(branding).toHaveCount(0)
+    > 51 |       expect((await page.request.get('/settings')).status()).toBe(404)
+         |                                                              ^
+      52 |       expect((await db.query('select brand_name from workspaces where id=$1', [workspaceId])).rows[0].brand_name).toBe(marker)
+      53 |       // Analysts can prepare personal views; a subsequent client role cannot submit the old form.
+      54 |       await page.goto('/portfolio')
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/settings-actors-local.spec.ts:51:62
+
+    Error Context: test-results/settings-actors-local-sett-67f8a-downgraded-or-revoked-forms-chromium/error-context.md
+
+  2) [chromium] › e2e/settings-actors-local.spec.ts:6:7 › settings actor en saves current policy and rejects downgraded or revoked forms
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 200
+
+      49 |       await branding.getByRole('button').click()
+      50 |       await expect(branding).toHaveCount(0)
+    > 51 |       expect((await page.request.get('/settings')).status()).toBe(404)
+         |                                                              ^
+      52 |       expect((await db.query('select brand_name from workspaces where id=$1', [workspaceId])).rows[0].brand_name).toBe(marker)
+      53 |       // Analysts can prepare personal views; a subsequent client role cannot submit the old form.
+      54 |       await page.goto('/portfolio')
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/settings-actors-local.spec.ts:51:62
+
+    Error Context: test-results/settings-actors-local-sett-e9c1b-downgraded-or-revoked-forms-chromium/error-context.md
+
+  2 failed
+    [chromium] › e2e/settings-actors-local.spec.ts:6:7 › settings actor fr saves current policy and rejects downgraded or revoked forms
+    [chromium] › e2e/settings-actors-local.spec.ts:6:7 › settings actor en saves current policy and rejects downgraded or revoked forms
+  2 passed (23.0s)
+{"ok":true,"cleaned":"local-browser-fixtures"}

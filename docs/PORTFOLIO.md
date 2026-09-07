@@ -19,7 +19,7 @@ Les liens partagent les **filtres**, sous authentification et avec les droits du
 
 La charge d’équipe porte sur tout l’espace, indépendamment des filtres de comptes. Elle inclut les tâches manuelles sans client, les membres sans tâche, les tâches non attribuées et les anciens responsables encore référencés. Les tâches terminées/annulées sont exclues. Des liens ouvrent la liste des tâches ou les comptes gérés associés. Les profils affichés se limitent au nom des membres de l’agence ; les adresses email ne sont pas chargées pour cette vue.
 
-La permission `portfolio:read` contrôle la page ; le rôle client n’y accède pas. Les rôles agence peuvent enregistrer leurs vues avec `portfolio:save_view`. La grâce conserve la lecture et interdit les écritures ; la suspension refuse l’accès. Le dépôt recontrôle le lifecycle sous verrou avant chaque écriture, en complément de l’autorisation des Server Actions.
+La permission `portfolio:read` contrôle la page ; le rôle client n’y accède pas. Les rôles agence peuvent enregistrer leurs vues avec `portfolio:save_view`. La grâce conserve la lecture et interdit les écritures ; la suspension refuse l’accès. Le service relit désormais aussi l’adhésion et le rôle courants dans la transaction de chaque écriture, puis vérifie de nouveau un essai après les attentes métier. Les formulaires anciens sont refusés après révocation et la page oriente vers le support accessible. Voir le [lot 37](./audits/prod-ready-lot-37/README.md).
 
 ## Synthèse hebdomadaire
 

@@ -4,7 +4,6 @@ import { MobileMenu } from '@/components/mobile-menu'
 import { workspacePermissions } from '@/lib/workspace-decision'
 import Link from 'next/link'
 import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { connection } from 'next/server'
 import {
   BellRing,
@@ -65,15 +64,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     getPublicPlatformSummary().catch(() => null),
     headers(),
   ])
-  const pathname = requestHeaders.get('x-yodev-pathname') ?? '/dashboard'
   const rolePermissions = workspacePermissions(role, workspace.accessState)
-  if (!workspaceAccessAllowsPath(workspace.accessState, pathname)) {
-    redirect(`${rolePermissions.has('billing:manage') ? '/billing' : '/support'}?notice=${encodeURIComponent(workspace.locale === 'en' ? 'Your current access is limited to billing and stored data.' : 'Votre accès actuel est limité à la facturation et aux données stockées.')}`)
-  }
-  const requestedNavigation = navigation.find(({ href }) => pathname === href || pathname.startsWith(`${href}/`))
-  if (requestedNavigation && !rolePermissions.has(requestedNavigation.permission)) {
-    redirect('/support?error=Accès%20non%20autorisé')
-  }
   const locale = workspace.locale === 'en' ? 'en' : 'fr'
   const labels = navigationLabels[locale]
   const hasDeclaredIncident = status && status.activeIncidentCount > 0

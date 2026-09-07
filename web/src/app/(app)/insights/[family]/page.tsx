@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { z } from 'zod'
 import { PageHeading } from '@/components/page-heading'
 import { AnalyticalRecord } from '@/components/analytical-record'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 import { getWorkspaceClient } from '@/lib/data'
 import { getAnalyticalPage } from '@/lib/analytical-pages'
 import { ANALYTICAL_FAMILIES, analyticalFamilies, analyticalSnapshotState, type AnalyticalFamily } from '@/lib/analytical-model'
@@ -12,7 +12,7 @@ import { googleCoverageLabel } from '@/lib/google-collection-coverage'
 export default async function AnalyticalCollectionPage({ params, searchParams }: { params: Promise<{ family: string }>; searchParams: Promise<{ client?: string; q?: string; cursor?: string }> }) {
   const { family } = await params
   if (!analyticalFamilies.includes(family as AnalyticalFamily)) notFound()
-  const { workspace } = await requireWorkspacePermission('portfolio:read')
+  const { workspace } = await requireWorkspacePagePermission('portfolio:read', '/insights/[family]')
   const query = await searchParams
   if (query.client !== undefined && !z.string().uuid().safeParse(query.client).success) notFound()
   const client = await getWorkspaceClient(workspace.id, query.client)

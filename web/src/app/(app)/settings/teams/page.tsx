@@ -9,7 +9,7 @@ import { featureEnabled } from '@/lib/feature-flags'
 import { accessTeamsOAuthSession } from '@/lib/notification-oauth-management'
 import { openOAuthState } from '@/lib/oauth-state'
 import { listJoinedTeams, listTeamChannels } from '@/lib/teams-oauth'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 const SESSION_COOKIE_NAME = 'yodev_ads_teams_session'
 
@@ -18,7 +18,7 @@ export default async function TeamsDestinationPage({
 }: {
   searchParams: Promise<{ teamId?: string }>
 }) {
-  const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
+  const { workspace, session, entitlements } = await requireWorkspacePagePermission('workspace:admin', '/settings/teams')
   if (!featureEnabled('teamsConnector')) redirect('/settings?error=Le%20connecteur%20Microsoft%20Teams%20est%20temporairement%20désactivé.')
   requireCapability(entitlements, 'notifications.webhook')
   const english = workspace.locale === 'en'

@@ -18,13 +18,13 @@ import { CollectionStatus } from '@/components/collection-status'
 import { workspaceDecision } from '@/lib/workspace-decision'
 import { buildPacingBudgetRecommendations, type PacingGoal } from '@/lib/pacing'
 import { permissionsForRole } from '@/lib/permissions'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 type DashboardProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string; sync?: string }> }
 
 export default async function DashboardPage({ searchParams }: DashboardProps) {
   const query = await searchParams
-  const { workspace, isAdmin, role, entitlements } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, isAdmin, role, entitlements } = await requireWorkspacePagePermission('portfolio:read', '/dashboard')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [connection, workspaceClients] = await Promise.all([

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { listAuditPage } from '@/lib/workspace-collections'
 import { CollectionControls } from '@/components/collection-controls'
 import type { CollectionQuery } from '@/lib/collection-pagination'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 const actionLabels: Record<'fr' | 'en', Record<string, string>> = {
   fr: {
@@ -22,7 +22,7 @@ const actionLabels: Record<'fr' | 'en', Record<string, string>> = {
 }
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<CollectionQuery> }) {
-  const { workspace } = await requireWorkspacePermission('audit:read')
+  const { workspace } = await requireWorkspacePagePermission('audit:read', '/audit')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const query = await searchParams

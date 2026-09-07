@@ -1,0 +1,1 @@
+{"ok":true,"viewsPerUser":20,"verified":["owner_and_tenant_rls","spoofed_owner_insert_denied","optimistic_concurrent_update","stale_delete_denied","concurrent_quota","independent_user_quota","grace_read_no_write","suspension_denied","workspace_deletion_cascade"],"providerCalls":0}

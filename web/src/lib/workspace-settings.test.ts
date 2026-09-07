@@ -24,6 +24,12 @@ const workspaceId = '00000000-0000-4000-8000-000000000001'
 const clientId = '00000000-0000-4000-8000-000000000002'
 const actorUserId = 'user-1'
 
+function settingsDatabase(goal = false, role = 'admin') {
+  return databaseDouble({ statementResults: [{ rows: [{ state: 'active', plan: 'agency', member_role: role, is_owner: false, trial_expired: false }] },
+    [goal ? { currencyCode: 'EUR', isManager: false } : { locale: 'en', requiredApprovals: 1, allowSelfApproval: false, logoUrl: null }]],
+  })
+}
+
 describe('workspace settings repository', () => {
   beforeEach(() => {
     mocks.databases = []
@@ -31,8 +37,21 @@ describe('workspace settings repository', () => {
     vi.clearAllMocks()
   })
 
+  it.each(['locale', 'policy', 'branding', 'logo', 'goal'])('rejects %s from an actor without management rights', async (kind) => {
+    const database = settingsDatabase(kind === 'goal', 'analyst')
+    mocks.databases.push(database.db)
+    const actor = { workspaceId, actorUserId }
+    const run = kind === 'locale' ? () => saveWorkspaceLocale({ ...actor, previousLocale: 'fr', locale: 'en' })
+      : kind === 'policy' ? () => saveWorkspaceApprovalPolicy({ ...actor, previousRequiredApprovals: 1, previousAllowSelfApproval: false, requiredApprovals: 2, allowSelfApproval: false, approvalMode: 'dual' })
+        : kind === 'branding' ? () => saveWorkspaceBranding({ ...actor, brandName: 'Brand', brandTagline: 'Tagline', accentColor: '#123456' })
+          : kind === 'logo' ? () => saveWorkspaceLogo({ ...actor, logoUrl: null })
+            : () => saveClientGoal({ ...actor, clientId, currencyCode: 'EUR', primaryKpi: 'cpa', monthlyBudget: 100, targetCpa: '', targetRoas: '', targetConversions: '', targetConversionValue: '', conversionValue: '', marginPercent: '' })
+    await expect(run()).rejects.toThrow('non autorisée')
+    expect(database.capture.values).toEqual([]); expect(database.capture.sets).toEqual([])
+  })
+
   it('normalizes monetary goals to micros and preserves nullable targets', async () => {
-    const database = databaseDouble()
+    const database = settingsDatabase(true)
     mocks.databases.push(database.db)
     await saveClientGoal({
       workspaceId,
@@ -64,9 +83,9 @@ describe('workspace settings repository', () => {
   })
 
   it('writes locale, approval policy and branding with explicit previous-state audit', async () => {
-    const locale = databaseDouble()
-    const approval = databaseDouble()
-    const branding = databaseDouble()
+    const locale = settingsDatabase()
+    const approval = settingsDatabase()
+    const branding = settingsDatabase()
     mocks.databases.push(locale.db, approval.db, branding.db)
     await saveWorkspaceLocale({ workspaceId, actorUserId, previousLocale: 'fr', locale: 'en' })
     await saveWorkspaceApprovalPolicy({
@@ -86,7 +105,7 @@ describe('workspace settings repository', () => {
       accentColor: '#123456',
     })
     expect(locale.capture.sets[0]).toMatchObject({ locale: 'en' })
-    expect(locale.capture.values[0]).toMatchObject({ action: 'workspace.locale_updated' })
+    expect(locale.capture.values[0]).toMatchObject({ action: 'workspace.locale_updated', metadata: { previousLocale: 'en', locale: 'en' } })
     expect(approval.capture.sets[0]).toMatchObject({ approvalMode: 'dual', requiredApprovals: 2 })
     expect(approval.capture.values[0]).toMatchObject({
       metadata: expect.objectContaining({ previousRequiredApprovals: 1, requiredApprovals: 2 }),
@@ -95,8 +114,8 @@ describe('workspace settings repository', () => {
   })
 
   it('audits both controlled logo upload and removal without exposing file contents', async () => {
-    const upload = databaseDouble()
-    const removal = databaseDouble()
+    const upload = settingsDatabase()
+    const removal = settingsDatabase()
     mocks.databases.push(upload.db, removal.db)
     await saveWorkspaceLogo({
       workspaceId,

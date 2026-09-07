@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { listMonitoringAgents, listWorkspaceClients } from '@/lib/data'
 import { agentTemplatesForLocale } from '@/lib/monitoring'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 export default async function AgentsPage({
   searchParams,
@@ -17,7 +17,7 @@ export default async function AgentsPage({
   searchParams: Promise<{ notice?: string; error?: string }>
 }) {
   const query = await searchParams
-  const { workspace, role, entitlements } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role, entitlements } = await requireWorkspacePagePermission('portfolio:read', '/agents')
   const canManage = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'monitoring' }).allowed
   const canRun = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'monitoring', features: ['googleReads', 'scheduler'] }).allowed
   const english = workspace.locale === 'en'

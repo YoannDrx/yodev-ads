@@ -9,11 +9,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { getPortfolioSnapshot } from '@/lib/portfolio-data'
 import { portfolioDecimal, readPortfolioCriteria } from '@/lib/portfolio-query'
 import { reportInteger, reportMoney } from '@/lib/report-format'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 export default async function PortfolioPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const raw = await searchParams
-  const { workspace, session, role } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, session, role } = await requireWorkspacePagePermission('portfolio:read', '/portfolio')
   const locale = workspace.locale === 'en' ? 'en' : 'fr', english = locale === 'en'
   let invalidFilters = false, criteria
   try { criteria = readPortfolioCriteria(raw) } catch { criteria = readPortfolioCriteria({}); invalidFilters = true }

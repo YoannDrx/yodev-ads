@@ -365,14 +365,14 @@ export async function uploadWorkspaceLogo(formData: FormData) {
       cacheControlMaxAge: 31_536_000,
     })
     uploadedUrl = uploaded.url
-    await saveWorkspaceLogo({
+    const { previousLogoUrl } = await saveWorkspaceLogo({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       logoUrl: uploaded.url,
       contentType: image.contentType,
       size: file.size,
     })
-    if (workspace.logoUrl && isControlledBrandLogoUrl(workspace.logoUrl)) await del(workspace.logoUrl).catch(() => undefined)
+    if (previousLogoUrl && isControlledBrandLogoUrl(previousLogoUrl)) await del(previousLogoUrl).catch(() => undefined)
     target = toUrl('/settings', 'notice', workspace.locale === 'en' ? 'Logo uploaded.' : 'Logo importé.')
   } catch (error) {
     if (uploadedUrl) await del(uploadedUrl).catch(() => undefined)
@@ -387,12 +387,12 @@ export async function removeWorkspaceLogo() {
   try {
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'reports.white_label')
-    await saveWorkspaceLogo({
+    const { previousLogoUrl } = await saveWorkspaceLogo({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       logoUrl: null,
     })
-    if (workspace.logoUrl && isControlledBrandLogoUrl(workspace.logoUrl)) await del(workspace.logoUrl).catch(() => undefined)
+    if (previousLogoUrl && isControlledBrandLogoUrl(previousLogoUrl)) await del(previousLogoUrl).catch(() => undefined)
     target = toUrl('/settings', 'notice', workspace.locale === 'en' ? 'Logo removed.' : 'Logo supprimé.')
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))

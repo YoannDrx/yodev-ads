@@ -28,7 +28,7 @@ import { formatInteger, formatMoneyFromMicros } from '@/lib/format'
 import { getAnalyticalCollections } from '@/lib/analytical-collections'
 import { analyticalSnapshotData } from '@/lib/analytical-model'
 import { CollectionStatus } from '@/components/collection-status'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 import { recordActivationMilestone } from '@/lib/activation'
 import { qualifiedAnalysisEvidence } from '@/lib/analysis-evidence'
 
@@ -36,7 +36,7 @@ type AnalysisPageProps = { searchParams: Promise<{ client?: string; notice?: str
 
 export default async function AnalysisPage({ searchParams }: AnalysisPageProps) {
   const query = await searchParams
-  const { workspace, entitlements, session, role } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, entitlements, session, role } = await requireWorkspacePagePermission('portfolio:read', '/analysis')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const categories: Array<{ value: AnalysisCategory | 'all'; label: string; icon: typeof SearchCheck }> = [

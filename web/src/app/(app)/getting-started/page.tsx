@@ -9,10 +9,10 @@ import { getGettingStartedEvidence } from '@/lib/getting-started-data'
 import { gettingStartedSteps } from '@/lib/getting-started-model'
 import { workspaceDecision } from '@/lib/workspace-decision'
 import { featureEnabled } from '@/lib/feature-flags'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 export default async function GettingStartedPage() {
-  const { workspace, role, session, entitlements } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role, session, entitlements } = await requireWorkspacePagePermission('portfolio:read', '/getting-started')
   const english = workspace.locale === 'en'
   const evidence = await getGettingStartedEvidence(workspace.id, session.userId)
   if (!evidence) notFound()

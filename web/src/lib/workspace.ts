@@ -4,7 +4,7 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import {
   authMembers,
   authOrganizations,
@@ -19,7 +19,7 @@ import { authUser } from '@/lib/auth-identities'
 import { entitlementContext, isPlan, isWorkspaceAccessState } from '@/lib/entitlements'
 import { getLocale } from '@/lib/locale'
 import { authRoleToWorkspaceRole, requirePermission, type Permission } from '@/lib/permissions'
-import { workspaceLifecycleAllowsPermission } from '@/lib/workspace-access'
+import { workspaceAccessAllowsPath, workspaceLifecycleAllowsPermission } from '@/lib/workspace-access'
 
 export async function currentAuthSession() {
   let value: Awaited<ReturnType<ReturnType<typeof getAuth>['api']['getSession']>>
@@ -156,6 +156,23 @@ export async function requireAdminWorkspace() {
   }
   requirePermission(context.role, 'workspace:admin')
   return context
+}
+
+/** Page routing uses its declared destination, never a pathname forwarded by another Server Action. */
+export async function requireWorkspacePagePermission(permission: Permission, pathname: string) {
+  const context = await requireWorkspace()
+  const base = { role: context.role, state: context.workspace.accessState }
+  const pathAllowed = workspaceAccessAllowsPath(base.state, pathname)
+  const decision = workspaceDecision({ ...base, permission })
+  if (pathAllowed && decision.allowed) return context
+  const lifecycleDenied = !pathAllowed || (!decision.allowed && decision.reason === 'lifecycle')
+  const destination = lifecycleDenied && workspaceDecision({ ...base, permission: 'billing:manage' }).allowed ? '/billing' : '/support'
+  if (pathname === destination || pathname.startsWith(`${destination}/`)) notFound()
+  const english = context.workspace.locale === 'en'
+  const explanation = lifecycleDenied
+    ? english ? 'Your current access is limited to billing and stored data.' : 'Votre accès actuel est limité à la facturation et aux données stockées.'
+    : english ? 'You no longer have access to this page. Choose an available section or contact an administrator.' : 'Vous n’avez plus accès à cette page. Choisissez une rubrique disponible ou contactez un administrateur.'
+  redirect(`${destination}?${lifecycleDenied ? 'notice' : 'error'}=${encodeURIComponent(explanation)}`)
 }
 
 export async function requireWorkspacePermission(permission: Permission) {

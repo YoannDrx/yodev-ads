@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/auth', () => ({ getAuth: () => ({ api: { getSession: mocks.getSession } }) }))
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }))
-vi.mock('next/navigation', () => ({ redirect: mocks.redirect }))
+vi.mock('next/navigation', () => ({ redirect: mocks.redirect, notFound: () => { throw new Error('not-found') } }))
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
 vi.mock('@/lib/locale', () => ({ getLocale: mocks.getLocale }))
 
@@ -21,6 +21,7 @@ import {
   requireAdminWorkspace,
   requireWorkspace,
   requireWorkspacePermission,
+  requireWorkspacePagePermission,
 } from './workspace'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
@@ -57,6 +58,22 @@ describe('Better Auth workspace identity and trial orchestration', () => {
   })
 
   afterEach(() => vi.useRealTimers())
+
+  it.each([
+    ['admin', 'active', 'workspace:admin', '/settings', null],
+    ['analyst', 'active', 'workspace:admin', '/settings', '/support'],
+    ['client', 'active', 'portfolio:read', '/portfolio', '/support'],
+    ['owner', 'grace', 'workspace:admin', '/settings', '/billing'],
+    ['analyst', 'grace', 'portfolio:read', '/agents', '/support'],
+    ['analyst', 'grace', 'portfolio:read', '/portfolio', null],
+    ['owner', 'suspended', 'portfolio:read', '/dashboard', '/billing'],
+    ['client', 'suspended', 'support:read', '/support', null],
+  ] as const)('routes %s in %s from declared page %s %s', async (role, accessState, permission, path, destination) => {
+    mocks.databases.push(contextDatabase({ workspace: workspace({ accessState, ownerUserId: role === 'owner' ? 'user-1' : 'another-owner', locale: 'en' }), membership: { role } }).db)
+    const operation = requireWorkspacePagePermission(permission, path)
+    if (destination) await expect(operation).rejects.toThrow(`redirect:${destination}?`)
+    else expect((await operation).role).toBe(role)
+  })
 
   it('redirects anonymous users and sessions without an active organization', async () => {
     mocks.getSession.mockResolvedValueOnce(null)

@@ -1,0 +1,25 @@
+# Paramètres, vues personnelles et accès aux pages
+
+Les actions de modification conservent leurs validations de formulaire et leur contrôle de session. Le service relit aussi l’acteur dans la transaction, au moyen de `withWorkspaceActorTransaction`. Ce contrôle porte sur l’adhésion, le rôle, le propriétaire, le lifecycle et, si nécessaire, la capacité du forfait courant. Les verrous stabilisent ces références jusqu’au commit ; un essai est vérifié de nouveau après les attentes métier et les écritures. Un refus annule l’ensemble de la transaction et son audit.
+
+## Paramètres et objectifs
+
+Les cinq opérations de `workspace-settings.ts` exigent `workspace:admin` : objectif client, langue, politique d’approbation, identité de marque et logo. Marque et logo exigent en outre `reports.white_label`. La double approbation exige `approvals.dual` ; la politique est recalculée avec l’offre relue, y compris l’interdiction d’auto-approbation sur Trial et Agency. Le mode simple/double provient du nombre d’approbations validé.
+
+L’objectif verrouille le compte ciblé dans le bon espace, refuse un compte manager et utilise sa devise actuelle dans l’audit. Les audits de langue et de politique utilisent les valeurs précédentes relues sous verrou. Les anciens arguments de contexte restent acceptés pour compatibilité avec les appelants, mais ne définissent plus ces valeurs autoritatives.
+
+La mutation de logo retourne l’URL qui était réellement enregistrée juste avant son remplacement ou son retrait. L’action utilise cette référence pour le nettoyage Blob, au lieu d’une valeur chargée avant l’attente. L’envoi, le retrait Blob effectif et la récupération d’un nettoyage fournisseur échoué ne sont pas certifiés par la recette PostgreSQL ; cette dernière n’appelle aucun fournisseur.
+
+## Vues personnelles
+
+Créer, remplacer et supprimer une vue exigent le rôle courant autorisé à `portfolio:save_view`. La restriction à l’espace/utilisateur et le jeton de version restent appliqués aux écritures. La limite de 20 vues par utilisateur/espace demeure sérialisée par le verrou commun. Un analyste conserve ces fonctions ; un membre devenu client ou retiré ne peut plus envoyer un formulaire ancien. La grâce autorise la lecture et refuse l’écriture.
+
+## Refus d’accès aux pages
+
+`requireWorkspacePagePermission` reçoit la permission et le chemin déclaré par la page. Il conserve les restrictions de chemin existantes, notamment en grâce, puis vérifie rôle et lifecycle. Un refus oriente vers une page de facturation ou de support accessible ; un refus de la destination elle-même devient terminal. Les 19 pages ordinaires du groupe authentifié l’utilisent. Les deux pages d’opérations conservent leur contrôle spécifique d’espace interne et de rôle, avec refus 404.
+
+Le layout conserve l’identité, la navigation filtrée et les styles. Il ne prend plus une décision de redirection à partir de `x-yodev-pathname` : ce contexte pouvait être repris dans une redirection de Server Action et entraîner des requêtes répétées vers le support. Les Server Actions conservent `requireWorkspacePermission`, qui refuse par exception ; leur contrôle ne dépend pas du rendu d’une page ou d’un bouton.
+
+## Périmètre de vérification
+
+Le [lot 37](./audits/prod-ready-lot-37/README.md) relie les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Il ne termine pas la revue des autres mutations : sélection des comptes, sécurité, gestion des membres, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.

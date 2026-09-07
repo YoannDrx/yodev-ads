@@ -2,14 +2,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { CollectionControls } from '@/components/collection-controls'
 import { PageHeading } from '@/components/page-heading'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 import { listDiscussionPage, type DiscussionKind } from '@/lib/workspace-collections'
 import type { CollectionQuery } from '@/lib/collection-pagination'
 
 export default async function DiscussionPage({ params, searchParams }: { params: Promise<{ kind: string; id: string }>; searchParams: Promise<CollectionQuery> }) {
   const { kind, id } = await params
   if (!['tasks', 'approvals', 'support', 'alerts'].includes(kind)) notFound()
-  const { workspace, role, session } = await requireWorkspacePermission(kind === 'support' ? 'support:read' : 'portfolio:read')
+  const { workspace, role, session } = await requireWorkspacePagePermission(kind === 'support' ? 'support:read' : 'portfolio:read', '/discussions/[kind]/[id]')
   const query = await searchParams
   const page = await listDiscussionPage(workspace.id, kind as DiscussionKind, id, kind === 'support' && role === 'client' ? session.userId : undefined, query)
   if (!page) notFound()

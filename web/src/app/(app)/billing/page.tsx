@@ -12,7 +12,7 @@ import { BillingActivationStatus } from '@/components/billing-activation-status'
 import { hasStripeConfiguration, planCatalog, planFeaturesForLocale, subscriptionIsActive } from '@/lib/billing'
 import { listWorkspaceExports } from '@/lib/data'
 import { featureEnabled } from '@/lib/feature-flags'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 export default async function BillingPage({
   searchParams,
@@ -20,7 +20,7 @@ export default async function BillingPage({
   searchParams: Promise<{ notice?: string; error?: string; checkout?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin, role } = await requireWorkspacePermission('billing:manage')
+  const { workspace, isAdmin, role } = await requireWorkspacePagePermission('billing:manage', '/billing')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const selection = await getWorkspaceAccountSelection(workspace.id)

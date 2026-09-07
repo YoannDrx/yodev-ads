@@ -14,7 +14,7 @@ import { getAnalyticalCollections } from '@/lib/analytical-collections'
 import { analyticalSnapshotData, analyticalSnapshotState, type AnalyticalFamily } from '@/lib/analytical-model'
 import { CollectionStatus } from '@/components/collection-status'
 import { workspaceDecision } from '@/lib/workspace-decision'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 type InsightsPageProps = { searchParams: Promise<{ client?: string; sync?: string }> }
 
@@ -42,7 +42,7 @@ function SectionError({ message, locale, family, clientId, shown, total }: { mes
 
 export default async function InsightsPage({ searchParams }: InsightsPageProps) {
   const query = await searchParams
-  const { workspace, role, entitlements } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role, entitlements } = await requireWorkspacePagePermission('portfolio:read', '/insights')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [connection, clients] = await Promise.all([getWorkspaceConnection(workspace.id), listWorkspaceClients(workspace.id)])

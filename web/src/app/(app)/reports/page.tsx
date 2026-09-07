@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { listReportAutomation, listShareLinks, listWorkspaceClients } from '@/lib/data'
 import { featureEnabled } from '@/lib/feature-flags'
 import { workspacePermissions } from '@/lib/workspace-decision'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 const weekdays: Record<'fr' | 'en', Record<number, string>> = {
   fr: { 1: 'lundi', 2: 'mardi', 3: 'mercredi', 4: 'jeudi', 5: 'vendredi', 6: 'samedi', 7: 'dimanche' },
@@ -38,7 +38,7 @@ export default async function ReportsPage({
   searchParams: Promise<{ notice?: string; error?: string; reveal?: string; revealId?: string }>
 }) {
   const query = await searchParams
-  const { workspace, role } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role } = await requireWorkspacePagePermission('portfolio:read', '/reports')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [links, clients, automation, editions] = await Promise.all([

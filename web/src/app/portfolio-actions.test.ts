@@ -15,8 +15,8 @@ describe('portfolio view actions', () => {
   })
   it('denies direct writes before input processing when the role or lifecycle changed', async () => {
     mocks.permission.mockRejectedValue(new Error('denied'))
-    await expect(storePortfolioView(form())).rejects.toThrow('denied')
-    await expect(removePortfolioView(form())).rejects.toThrow('denied')
+    await expect(storePortfolioView(form())).rejects.toThrow('redirect:/portfolio?view_notice=unavailable')
+    await expect(removePortfolioView(form())).rejects.toThrow('redirect:/portfolio?view_notice=unavailable')
     expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.remove).not.toHaveBeenCalled()
   })
   it('does not save malformed criteria or a missing name', async () => {

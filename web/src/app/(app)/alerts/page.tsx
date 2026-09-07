@@ -11,7 +11,7 @@ import { listAlertPage, COLLECTION_STATUSES } from '@/lib/workspace-collections'
 import { CollectionControls, DiscussionLink } from '@/components/collection-controls'
 import type { CollectionQuery } from '@/lib/collection-pagination'
 import { workspacePermissions } from '@/lib/workspace-decision'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 export default async function AlertsPage({
   searchParams,
@@ -19,7 +19,7 @@ export default async function AlertsPage({
   searchParams: Promise<CollectionQuery & { notice?: string; error?: string }>
 }) {
   const query = await searchParams
-  const { workspace, role } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role } = await requireWorkspacePagePermission('portfolio:read', '/alerts')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const canManageAlerts = workspacePermissions(role, workspace.accessState).has('alerts:manage')

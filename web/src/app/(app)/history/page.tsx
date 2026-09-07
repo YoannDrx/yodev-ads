@@ -14,11 +14,11 @@ import {
 import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/format'
 import { analyzePerformanceChanges, type PerformanceComparison } from '@/lib/performance-diagnostics'
 import { diagnoseConversionActions, diagnoseOfflineConversionImports } from '@/lib/tracking-diagnostics'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ client?: string }> }) {
   const query = await searchParams
-  const { workspace, entitlements } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, entitlements } = await requireWorkspacePagePermission('portfolio:read', '/history')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [clients, client] = await Promise.all([

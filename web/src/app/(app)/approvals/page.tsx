@@ -14,7 +14,7 @@ import { CollectionControls, DiscussionLink } from '@/components/collection-cont
 import type { CollectionQuery } from '@/lib/collection-pagination'
 import { formatCustomerId } from '@/lib/ids'
 import { workspacePermissions } from '@/lib/workspace-decision'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 export default async function ApprovalsPage({
   searchParams,
@@ -22,7 +22,7 @@ export default async function ApprovalsPage({
   searchParams: Promise<CollectionQuery & { notice?: string; error?: string }>
 }) {
   const query = await searchParams
-  const { workspace, role } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role } = await requireWorkspacePagePermission('portfolio:read', '/approvals')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const permissions = workspacePermissions(role, workspace.accessState)

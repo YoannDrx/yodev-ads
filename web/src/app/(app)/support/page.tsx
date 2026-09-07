@@ -12,7 +12,7 @@ import { listSupportPage, COLLECTION_STATUSES } from '@/lib/workspace-collection
 import { CollectionControls, DiscussionLink } from '@/components/collection-controls'
 import type { CollectionQuery } from '@/lib/collection-pagination'
 import { workspacePermissions } from '@/lib/workspace-decision'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 const categoryLabels: Record<string, { fr: string; en: string }> = {
   technical: { fr: 'Technique', en: 'Technical' },
@@ -24,7 +24,7 @@ const categoryLabels: Record<string, { fr: string; en: string }> = {
 
 export default async function SupportPage({ searchParams }: { searchParams: Promise<CollectionQuery & { notice?: string; error?: string }> }) {
   const query = await searchParams
-  const { workspace, role, session } = await requireWorkspacePermission('support:read')
+  const { workspace, role, session } = await requireWorkspacePagePermission('support:read', '/support')
   const collection = await listSupportPage(workspace.id, role === 'client' ? session.userId : undefined, query)
   const tickets = collection.items
   const canContact = workspacePermissions(role, workspace.accessState).has('support:contact')

@@ -12,10 +12,10 @@ function outcome(error: unknown) {
 }
 
 export async function storePortfolioView(form: FormData) {
-  const { workspace, session } = await requireWorkspacePermission('portfolio:save_view')
   let feedback = 'saved'
   const params = new URLSearchParams()
   try {
+    const { workspace, session } = await requireWorkspacePermission('portfolio:save_view')
     const criteria = portfolioCriteriaSchema.parse(JSON.parse(String(form.get('criteria'))))
     for (const [key, value] of Object.entries(criteria)) if (value && value !== 'all') params.set(key, value)
     const name = form.get('name')
@@ -29,9 +29,10 @@ export async function storePortfolioView(form: FormData) {
 }
 
 export async function removePortfolioView(form: FormData) {
-  const { workspace, session } = await requireWorkspacePermission('portfolio:save_view')
   let feedback = 'deleted'
-  try { await deletePortfolioView({ workspaceId: workspace.id, actorUserId: session.userId, id: String(form.get('id')), version: String(form.get('version')) }) }
+  try {
+    const { workspace, session } = await requireWorkspacePermission('portfolio:save_view')
+    await deletePortfolioView({ workspaceId: workspace.id, actorUserId: session.userId, id: String(form.get('id')), version: String(form.get('version')) }) }
   catch (error) { feedback = outcome(error) }
   revalidatePath('/portfolio')
   redirect(`/portfolio?view_notice=${feedback}`)
