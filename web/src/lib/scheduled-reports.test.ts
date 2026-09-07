@@ -19,35 +19,46 @@ const job: ClaimedJob = { id: '00000000-0000-4000-8000-000000000003', workspaceI
 const schedule = { id: scheduleId, workspaceId, clientId: 'client-1', shareId: 'share-1', templateId: 'template-1', enabled: true, lastRunKey: null, recipientEmails: ['new@example.test'], deliveryLeaseUntil: null, encryptedReportToken: 'token', name: 'New template' }
 const frozenDelivery = { from: 'Original <original@example.test>', to: ['original@example.test'], subject: 'Original report', html: '<p>Original edition</p>' }
 const issued = { edition: { id: 'edition-1', shareId: 'share-1', sourceVersion: 'abc123', encryptedDelivery: JSON.stringify(frozenDelivery), deliveryTokenHash: 'token-hash', expiresAt: new Date('2026-11-01') } }
+function clocked(input: Parameters<typeof databaseDouble>[0]) {
+  const result = databaseDouble(input)
+  result.db.execute = vi.fn(() => Promise.resolve({ rows: [{ active: true }] })) as unknown as typeof result.db.execute
+  return result
+}
 function context(input: { schedule?: object; client?: object; share?: object; workspace?: object; job?: unknown[] } = {}) {
-  return databaseDouble({ statementResults: [[], [{ ...schedule, ...input.schedule }], input.job ?? [job]], query: {
-    workspaces: { findFirst: async () => ({ id: workspaceId, accessState: 'active', plan: 'agency', ...input.workspace }) },
-    clients: { findFirst: async () => ({ id: 'client-1', active: true, isManager: false, ...input.client }) },
-    shareLinks: { findFirst: async () => ({ id: 'share-1', clientId: 'client-1', active: true, tokenHash: 'token-hash', expiresAt: new Date('2026-11-01'), periodDays: 30, ...input.share }) },
+  return clocked({ statementResults: [
+    [{ id: workspaceId, accessState: 'active', plan: 'agency', ...input.workspace }],
+    [{ ...schedule, ...input.schedule }], input.job ?? [job],
+    [{ id: 'client-1', active: true, isManager: false, ...input.client }],
+    [{ id: 'share-1', clientId: 'client-1', active: true, tokenHash: 'token-hash', expiresAt: new Date('2026-11-01'), periodDays: 30, ...input.share }],
+  ], query: {
     reportTemplates: { findFirst: async () => ({ active: true, locale: 'en', periodDays: 90, editorialComment: null, actionPlan: null }) },
     workspaceDomains: { findFirst: async () => ({ hostname: 'reports.example.test' }) },
   } })
 }
-function prepare(input: Parameters<typeof context>[0] = {}) {
+function prepare(input: Parameters<typeof context>[0] = {}, submission?: Parameters<typeof context>[0]) {
   const first = context(input)
-  const admission = () => context({ schedule: { deliveryLeaseOwner: (first.capture.sets[1] as { deliveryLeaseOwner: string }).deliveryLeaseOwner, deliveryLeaseUntil: new Date(now.getTime() + 300_000) } })
-  const success = databaseDouble({ statementResults: [[], [job], [{ id: scheduleId }]] })
-  // Resolve the admission database after the first transaction has stored its lease owner.
-  let admissionDatabase: ReturnType<typeof context> | undefined
-  mocks.databases.push(first.db, new Proxy({}, { get: (_target, key) => { admissionDatabase ??= admission(); return Reflect.get(admissionDatabase.db, key) } }), success.db)
-  return { first, success }
+  const leased = () => ({ ...schedule, deliveryLeaseOwner: (first.capture.sets[1] as { deliveryLeaseOwner: string }).deliveryLeaseOwner, deliveryLeaseUntil: new Date(now.getTime() + 300_000) })
+  const lazy = (factory: () => ReturnType<typeof context>) => {
+    let value: ReturnType<typeof context> | undefined
+    return new Proxy({}, { get: (_target, key) => { value ??= factory(); return Reflect.get(value.db, key) } })
+  }
+  let success: ReturnType<typeof context>
+  mocks.databases.push(first.db, lazy(() => context({ schedule: leased() })))
+  if (submission) mocks.databases.push(lazy(() => context({ ...submission, schedule: { ...leased(), ...submission.schedule } })))
+  mocks.databases.push(lazy(() => { success = clocked({ statementResults: [[leased()], [job], [{ id: scheduleId }]] }); return success }))
+  return { first, get success() { return success! } }
 }
 
 describe('immutable scheduled report delivery', () => {
   afterEach(() => vi.useRealTimers())
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); vi.clearAllMocks(); mocks.databases = []; mocks.enabled.mockReturnValue(true); mocks.edition.mockResolvedValue(issued); mocks.send.mockResolvedValue({ providerMessageId: 'email-1' }) })
   it('reuses frozen recipients and body on retry, anchors to persisted enqueue time and audits the edition', async () => {
-    const { first, success } = prepare()
+    const prepared = prepare(); const { first } = prepared
     await expect(deliverScheduledReport(scheduleId, runKey, job)).resolves.toMatchObject({ delivered: true, recipientCount: 1 })
     expect(mocks.edition).toHaveBeenCalledWith(first.db, expect.objectContaining({ anchorAt: job.createdAt, periodSource: expect.objectContaining({ periodDays: 90 }) }))
     expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({ ...frozenDelivery, idempotencyKey: `report-schedule:${scheduleId}:${runKey}` }))
     expect(first.capture.sets[0]).not.toHaveProperty('editorialComment')
-    expect(success.capture.values[0]).toMatchObject({ action: 'report.schedule_delivered', metadata: expect.objectContaining({ editionId: 'edition-1' }) })
+    expect(prepared.success.capture.values[0]).toMatchObject({ action: 'report.schedule_delivered', metadata: expect.objectContaining({ editionId: 'edition-1' }) })
   })
   it.each([[{ client: { active: false } }, 'account_inactive'], [{ schedule: { enabled: false } }, 'disabled'], [{ schedule: { lastRunKey: runKey } }, 'already_delivered']] as const)('skips ineligible context %j', async (input, reason) => {
     mocks.databases.push(context(input).db)
@@ -78,10 +89,34 @@ describe('immutable scheduled report delivery', () => {
     expect(failed.capture.sets[0]).toMatchObject({ deliveryLeaseOwner: null })
   })
   it('preserves publication and records only a safe failure message after an ambiguous transport', async () => {
-    const { success } = prepare(); mocks.send.mockRejectedValue(new Error('SQL secret recipient@example.test'))
+    const prepared = prepare(); mocks.send.mockRejectedValue(new Error('SQL secret recipient@example.test'))
     await expect(deliverScheduledReport(scheduleId, runKey, job)).rejects.toThrow('SQL secret')
-    expect(success.capture.sets[0]).toMatchObject({ lastError: expect.stringContaining('même édition'), deliveryLeaseOwner: null })
-    expect(JSON.stringify(success.capture.sets)).not.toContain('recipient@example.test')
+    expect(prepared.success.capture.sets[0]).toMatchObject({ lastError: expect.stringContaining('même édition'), deliveryLeaseOwner: null })
+    expect(JSON.stringify(prepared.success.capture.sets)).not.toContain('recipient@example.test')
+  })
+  it('rechecks recipients inside the actual transport admission hook', async () => {
+    prepare({}, { schedule: { recipientEmails: ['replacement@example.test'] } })
+    mocks.send.mockImplementation(async (input) => {
+      expect(await input.beforeSubmit()).toBe(false)
+      throw new Error('Admission denied')
+    })
+    await expect(deliverScheduledReport(scheduleId, runKey, job)).rejects.toThrow('Admission denied')
+  })
+  it('allows a new submission only while the frozen recipients are still authorized', async () => {
+    prepare({}, { schedule: { recipientEmails: ['ORIGINAL@example.test', 'added@example.test'] } })
+    mocks.send.mockImplementation(async (input) => {
+      expect(await input.beforeSubmit()).toBe(true)
+      return { providerMessageId: 'email-1' }
+    })
+    await expect(deliverScheduledReport(scheduleId, runKey, job)).resolves.toMatchObject({ delivered: true })
+  })
+  it('refuses an expired locked job before publishing', async () => {
+    const first = context()
+    vi.mocked(first.db.execute).mockImplementationOnce(() => Promise.resolve({ rows: [] }) as never)
+      .mockImplementationOnce(() => Promise.resolve({ rows: [{ active: false }] }) as never)
+    mocks.databases.push(first.db)
+    await expect(deliverScheduledReport(scheduleId, runKey, job)).rejects.toThrow('lease lost')
+    expect(mocks.edition).not.toHaveBeenCalled()
   })
   it('stops before database access when notifications are disabled or identity is absent', async () => {
     mocks.enabled.mockReturnValue(false)
