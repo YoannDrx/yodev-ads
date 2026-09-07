@@ -163,9 +163,7 @@ import {
   reviewOperationalEmailDelivery,
   scheduleStripeReconciliation,
 } from '@/lib/system-operations'
-import { accessTeamsOAuthSession, completeTeamsOAuthSession } from '@/lib/notification-oauth-management'
-import { openOAuthState } from '@/lib/oauth-state'
-import { hasTeamsOAuthConfiguration, resolveTeamsDestination } from '@/lib/teams-oauth'
+import { hasTeamsOAuthConfiguration } from '@/lib/teams-oauth'
 import { hasSlackOAuthConfiguration } from '@/lib/slack-oauth'
 import {
   addGoogleApprovalComment,
@@ -2149,54 +2147,6 @@ export async function disableNotificationChannel(formData: FormData) {
     const channelId = z.string().uuid().parse(formData.get('channelId'))
     await disableWorkspaceNotificationChannel({ workspaceId: workspace.id, actorUserId: session.userId, channelId })
     target = toUrl('/settings', 'notice', 'Canal désactivé.')
-  } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
-  }
-  revalidatePath('/settings')
-  redirect(target)
-}
-
-export async function completeTeamsNotificationConnection(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
-    requireFeature('teamsConnector', 'Le connecteur Microsoft Teams est temporairement désactivé.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-    requireCapability(entitlements, 'notifications.webhook')
-    const input = z.object({
-      teamId: z.string().trim().min(1).max(128),
-      channelId: z.string().trim().min(1).max(256),
-    }).parse(Object.fromEntries(formData))
-    const cookieStore = await cookies()
-    const cookieName = 'yodev_ads_teams_session'
-    const sealed = cookieStore.get(cookieName)?.value
-    cookieStore.set(cookieName, '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/settings/teams',
-      expires: new Date(0),
-    })
-    if (!sealed) throw new Error('La session OAuth Teams a expiré. Relancez la connexion.')
-    const state = openOAuthState(sealed, 'teams')
-    const sessionId = state.payload.sessionId
-    if (state.workspaceId !== workspace.id || state.userId !== session.userId || !sessionId) {
-      throw new Error('La vérification de sécurité OAuth Teams a échoué.')
-    }
-    const { accessToken } = await accessTeamsOAuthSession({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      sessionId,
-    })
-    const destination = await resolveTeamsDestination({ accessToken, ...input })
-    await completeTeamsOAuthSession({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      sessionId,
-      entitlements,
-      ...destination,
-    })
-    target = toUrl('/settings', 'notice', 'Microsoft Teams est connecté au canal sélectionné.')
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))
   }

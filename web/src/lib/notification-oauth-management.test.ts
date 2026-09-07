@@ -15,7 +15,7 @@ vi.mock('@/lib/teams-oauth', async (importOriginal) => ({
   ...await importOriginal<typeof import('@/lib/teams-oauth')>(), refreshTeamsAccessToken: mocks.refresh,
 }))
 import { entitlementContext } from '@/lib/entitlements'
-import { accessTeamsOAuthSession, completeTeamsOAuthSession, createTeamsOAuthSession } from './notification-oauth-management'
+import { accessTeamsOAuthSession, completeTeamsOAuthSession, createTeamsOAuthSession, beginTeamsOAuthSession } from './notification-oauth-management'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 const sessionId = '00000000-0000-4000-8000-000000000002'
@@ -23,7 +23,7 @@ const channelId = '00000000-0000-4000-8000-000000000003'
 const actorUserId = 'user-1', context = { workspaceId, actorUserId }
 const expiry = new Date('2030-08-12T08:15:00.000Z'), clock = { rows: [{ valid: true }] }, expired = { rows: [{ valid: false }] }
 const oldToken = 'refresh-token-with-sufficient-length-old', newToken = 'refresh-token-with-sufficient-length-new'
-const creation = { ...context, refreshToken: oldToken, scopes: ['offline_access'], authorizationExpiresAt: expiry }
+const creation = { ...context, authorizationId: sessionId, refreshToken: oldToken, scopes: ['offline_access'], authorizationExpiresAt: expiry }
 const completion = { ...context, sessionId, teamId: 'team-1', teamName: 'Yodev', channelId: 'channel-1', channelName: 'Ads alerts', entitlements: entitlementContext('active', 'agency') }
 function session(token = oldToken) {
   return { id: sessionId, workspaceId, userId: actorUserId, provider: 'teams', encryptedRefreshToken: `encrypted:${token}`, scopes: ['offline_access'], expiresAt: expiry }
@@ -38,15 +38,15 @@ describe('notification OAuth management', () => {
     mocks.refresh.mockResolvedValue({ accessToken: 'access-token', refreshToken: newToken, scopes: ['offline_access'], expiresIn: 3600 })
   })
   it('stores encrypted refresh credentials and audits the authorized session', async () => {
-    const db = database([clock, [], [], [{ id: sessionId, expiresAt: expiry }], [], clock]); mocks.databases.push(db.db)
+    const db = database([clock, [session('yodev:teams:authorization-pending')], clock, [{ id: sessionId, expiresAt: expiry }], [], clock, clock]); mocks.databases.push(db.db)
     await expect(createTeamsOAuthSession(creation)).resolves.toEqual({ id: sessionId, expiresAt: expiry })
-    expect(db.capture.values[0]).toMatchObject({ workspaceId, userId: actorUserId, provider: 'teams', encryptedRefreshToken: `encrypted:${oldToken}` })
+    expect(db.capture.sets[0]).toMatchObject({ encryptedRefreshToken: `encrypted:${oldToken}` })
     expect(JSON.stringify(db.capture.values)).not.toContain('"refreshToken"')
-    expect(db.capture.values[1]).toMatchObject({ action: 'notification_channel.teams_oauth_authorized' })
+    expect(db.capture.values[0]).toMatchObject({ action: 'notification_channel.teams_oauth_authorized' })
   })
-  it.each(['create', 'access', 'complete'])('rejects a revoked actor before %s or provider calls', async (kind) => {
+  it.each(['create', 'access', 'complete', 'begin'])('rejects a revoked actor before %s or provider calls', async (kind) => {
     const db = database([], { member_role: 'client' }); mocks.databases.push(db.db)
-    const work = kind === 'create' ? createTeamsOAuthSession(creation) : kind === 'access' ? accessTeamsOAuthSession({ ...context, sessionId }) : completeTeamsOAuthSession(completion)
+    const work = kind === 'begin' ? beginTeamsOAuthSession(context) : kind === 'create' ? createTeamsOAuthSession(creation) : kind === 'access' ? accessTeamsOAuthSession({ ...context, sessionId }) : completeTeamsOAuthSession(completion)
     await expect(work).rejects.toThrow('non autorisée'); expect(db.capture.values).toEqual([]); expect(mocks.refresh).not.toHaveBeenCalled()
   })
   it.each([{ state: 'deletion_pending' }, { plan: 'solo' }])('rejects current lifecycle or plan without connector access: %j', async (overrides) => {
@@ -56,6 +56,21 @@ describe('notification OAuth management', () => {
   it('refuses an expired callback before replacing any session', async () => {
     const db = database([expired]); mocks.databases.push(db.db)
     await expect(createTeamsOAuthSession(creation)).rejects.toThrow('expiré'); expect(db.capture.values).toEqual([])
+  })
+  it('starts one encrypted pending authorization', async () => {
+    const db = database([[], [{ id: sessionId, expiresAt: expiry }], clock]); mocks.databases.push(db.db)
+    await expect(beginTeamsOAuthSession(context)).resolves.toMatchObject({ id: sessionId })
+    expect(db.capture.values[0]).toMatchObject({ encryptedRefreshToken: 'encrypted:yodev:teams:authorization-pending' })
+  })
+  it('refuses a callback already consumed without replacing credentials', async () => {
+    const db = database([clock, [session()], clock]); mocks.databases.push(db.db)
+    await expect(createTeamsOAuthSession(creation)).rejects.toThrow('changé'); expect(db.capture.sets).toEqual([])
+  })
+  it('never refreshes or completes an authorization still pending', async () => {
+    mocks.databases.push(database([[session('yodev:teams:authorization-pending')], clock]).db, database([[], [session('yodev:teams:authorization-pending')], clock]).db)
+    await expect(accessTeamsOAuthSession({ ...context, sessionId })).rejects.toThrow('changé')
+    await expect(completeTeamsOAuthSession(completion)).rejects.toThrow('changé')
+    expect(mocks.refresh).not.toHaveBeenCalled()
   })
   it('refreshes access and stores a rotated provider refresh token', async () => {
     const rotated = database([[session()], clock, [], clock]); mocks.databases.push(database([[session()], clock]).db, rotated.db)
