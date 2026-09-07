@@ -3,6 +3,7 @@ import { createInterface } from 'node:readline'
 /** Local server logs must not publish the disposable credentials used by E2E. */
 export function redactBrowserLog(line) {
   return line
+    .replace(/^([ \t]*(?:-[ \t]*)?(?:cookie|set-cookie|authorization):)[^\r\n]*/gim, '$1 [REDACTED]')
     .replace(/(\/api\/auth\/reset-password\/)[^?\s/]+/gi, '$1[REDACTED]')
     .replace(/(\/r\/)[A-Za-z0-9_-]{20,}/g, '$1[REDACTED]')
     .replace(/([?&](?:token|code|email|password|secret|api_key|access_token|refresh_token)=)[^&#\s]+/gi, '$1[REDACTED]')

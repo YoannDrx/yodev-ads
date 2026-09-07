@@ -69,8 +69,10 @@ try {
   await writeFile(path.join(stateDirectory, 'environment.json'), JSON.stringify(Object.fromEntries(Object.entries(env).filter(([key]) => key.startsWith('PLAYWRIGHT_')))), { mode: 0o600 })
   console.log(`Local browser states ready in ${stateDirectory}`)
   const result = await new Promise((resolve) => {
-    const tests = spawn('npx', ['--no-install', 'playwright', 'test', ...process.argv.slice(2), '--workers=1', '--reporter=list'], { env, stdio: 'inherit' })
-    tests.on('exit', (code) => resolve(code ?? 1))
+    const tests = spawn('npx', ['--no-install', 'playwright', 'test', ...process.argv.slice(2), '--workers=1', '--reporter=list'], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+    pipeRedactedBrowserLog(tests.stdout, process.stdout)
+    pipeRedactedBrowserLog(tests.stderr, process.stderr)
+    tests.on('close', (code) => resolve(code ?? 1))
   })
   process.exitCode = result
 } finally {

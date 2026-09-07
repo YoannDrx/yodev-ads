@@ -21,3 +21,11 @@ test('a secret split across output chunks and an unterminated last line stay red
   await closed
   assert.equal(captured.join(''), 'GET /verify?token=[REDACTED]&ok=1 302\nGET /reset-password?token=[REDACTED]\n')
 })
+
+test('Playwright request failures do not print session or authorization headers', () => {
+  const output = redactBrowserLog('Error: ECONNRESET\n    - cookie: yodev_ads.session_token=privateSession; consent=rejected\n    - Authorization: Basic privateHeader\nSet-Cookie: privateResponse; Secure\n    - content-type: application/json\n  1 failed')
+  for (const secret of ['privateSession', 'privateHeader', 'privateResponse']) assert(!output.includes(secret))
+  assert(output.includes('Error: ECONNRESET'))
+  assert(output.includes('content-type: application/json'))
+  assert(output.includes('1 failed'))
+})

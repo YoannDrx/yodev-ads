@@ -1,0 +1,80 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs operating-costs-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 361ms
+✓ Running next.config.ts took 647ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+○ Compiling /sign-in/[[...sign-in]] ...
+ GET /sign-in 200 in 2.6s (next.js: 1946ms, proxy.ts: 20ms, application-code: 590ms)
+ GET / 200 in 776ms (next.js: 146ms, proxy.ts: 13ms, application-code: 617ms)
+ GET /icon?a62dacc6b033a714 200 in 460ms (next.js: 85ms, proxy.ts: 11ms, application-code: 364ms)
+ POST /api/auth/sign-in/email 200 in 1376ms (next.js: 1107ms, proxy.ts: 6ms, application-code: 263ms)
+ POST /api/auth/sign-in/email 200 in 121ms (next.js: 6ms, proxy.ts: 3ms, application-code: 112ms)
+ POST /api/auth/sign-in/email 200 in 473ms (next.js: 6ms, proxy.ts: 5ms, application-code: 462ms)
+ POST /api/auth/sign-in/email 200 in 125ms (next.js: 4ms, proxy.ts: 3ms, application-code: 117ms)
+ POST /api/auth/sign-in/email 200 in 158ms (next.js: 12ms, proxy.ts: 8ms, application-code: 137ms)
+ GET /dashboard 200 in 544ms (next.js: 217ms, proxy.ts: 5ms, application-code: 322ms)
+ GET /settings 200 in 323ms (next.js: 44ms, proxy.ts: 4ms, application-code: 275ms)
+ GET /billing 200 in 197ms (next.js: 16ms, proxy.ts: 1.8ms, application-code: 180ms)
+ GET /support 200 in 180ms (next.js: 22ms, proxy.ts: 2ms, application-code: 156ms)
+ GET /accounts 200 in 150ms (next.js: 15ms, proxy.ts: 2ms, application-code: 132ms)
+ GET /history 200 in 149ms (next.js: 21ms, proxy.ts: 3ms, application-code: 126ms)
+ GET /alerts 200 in 168ms (next.js: 18ms, proxy.ts: 2ms, application-code: 148ms)
+ GET /tasks 200 in 326ms (next.js: 45ms, proxy.ts: 3ms, application-code: 278ms)
+ GET /approvals 200 in 180ms (next.js: 45ms, proxy.ts: 3ms, application-code: 133ms)
+ GET /reports 200 in 228ms (next.js: 29ms, proxy.ts: 1.9ms, application-code: 197ms)
+ GET /audit 200 in 144ms (next.js: 26ms, proxy.ts: 2ms, application-code: 116ms)
+ GET /agents 200 in 222ms (next.js: 23ms, proxy.ts: 2ms, application-code: 196ms)
+ GET / 200 in 83ms (next.js: 3ms, proxy.ts: 3ms, application-code: 76ms)
+ GET /privacy 200 in 63ms (next.js: 16ms, proxy.ts: 2ms, application-code: 45ms)
+ GET /terms 200 in 54ms (next.js: 16ms, proxy.ts: 2ms, application-code: 36ms)
+ GET /subprocessors 200 in 117ms (next.js: 46ms, proxy.ts: 2ms, application-code: 69ms)
+ GET /status 200 in 111ms (next.js: 39ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /sign-in 200 in 38ms (next.js: 5ms, proxy.ts: 2ms, application-code: 31ms)
+ GET /sign-up 200 in 363ms (next.js: 320ms, proxy.ts: 1.9ms, application-code: 41ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-7s1hIu
+
+Running 1 test using 1 worker
+
+(node:80209) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /operations/costs?month=2001-03 200 in 1916ms (next.js: 1518ms, proxy.ts: 3ms, application-code: 395ms)
+ GET /api/auth/get-session 200 in 546ms (next.js: 291ms, proxy.ts: 24ms, application-code: 232ms)
+ GET /api/auth/organization/list 200 in 544ms (next.js: 408ms, proxy.ts: 118ms, application-code: 18ms)
+ GET /operations/costs?month=2001-03 307 in 298ms (next.js: 215ms, proxy.ts: 9ms, application-code: 73ms)
+ GET /sign-in 200 in 155ms (next.js: 113ms, proxy.ts: 3ms, application-code: 40ms)
+  ✘  1 [chromium] › e2e/operating-costs-local.spec.ts:5:55 › operating costs preserve evidence, corrections, pagination and operator access (2.0m)
+
+
+  1) [chromium] › e2e/operating-costs-local.spec.ts:5:55 › operating costs preserve evidence, corrections, pagination and operator access
+
+    Test timeout of 120000ms exceeded.
+
+    Error: browserContext.close: Protocol error (Target.disposeBrowserContext): Failed to find context with id F738C05257E8A1DEBA460248BDA0EA06
+
+      76 |     expect(errors).toEqual([])
+      77 |   } finally {
+    > 78 |     await reader?.close(); await context.close()
+         |                            ^
+      79 |     await db.query("delete from audit_events where action='operations.cost_recorded' and entity_id in (select id::text from operating_cost_entries where source_key like $1)", [`${prefix}-%`])
+      80 |     await db.query('delete from operating_cost_entries where source_key like $1', [`${prefix}-%`])
+      81 |     await db.query('update workspaces set access_state=$1,plan=$2,locale=$3 where id=$4', [original.access_state, original.plan, original.locale, workspaceId])
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/operating-costs-local.spec.ts:78:28
+
+    Error Context: test-results/operating-costs-local-oper-9a3d5-ination-and-operator-access-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/operating-costs-local.spec.ts:5:55 › operating costs preserve evidence, corrections, pagination and operator access
+{"ok":true,"cleaned":"local-browser-fixtures"}

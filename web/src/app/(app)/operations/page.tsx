@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Activity, AlertTriangle, CalendarClock, CheckCircle2, CreditCard, LifeBuoy, MailWarning, RadioTower, Webhook } from 'lucide-react'
 import { addInternalSupportReply, addPlatformIncidentUpdate, cancelOperationalDeadLetterJob, createPlatformIncident, createSubprocessorChangeNotice, requestStripeReconciliation, retryGlobalDeadLetterJob, reviewOperationalEmailDeliveryAction, updateInternalSupportTicket } from '@/app/actions'
@@ -12,12 +13,13 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { getSystemOperationsSnapshot } from '@/lib/system-operations'
 import { minimumSubprocessorNoticeDate } from '@/lib/subprocessor-change-model'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspace } from '@/lib/workspace'
+import { permissionsForRole } from '@/lib/permissions'
 
 export default async function OperationsPage({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string }> }) {
   const query = await searchParams
-  const { workspace } = await requireWorkspacePermission('workspace:admin')
-  if (workspace.accessState !== 'internal') notFound()
+  const { workspace, role } = await requireWorkspace()
+  if (workspace.accessState !== 'internal' || !permissionsForRole(role).has('workspace:admin')) notFound()
   const snapshot = await getSystemOperationsSnapshot()
   const minimumSubprocessorDate = minimumSubprocessorNoticeDate(new Date()).toISOString().slice(0, 10)
   const totalCommercial = snapshot.commercialWorkspaceCount
@@ -26,6 +28,7 @@ export default async function OperationsPage({ searchParams }: { searchParams: P
   return <>
     <PageHeading eyebrow="Exploitation Yodev" title="Operations center" description="Vue système réservée au workspace interne : support multi-tenant, activation, incidents publics et signaux critiques." />
     <FlashMessage notice={query.notice} error={query.error} />
+    <p className="mb-6"><Link href="/operations/costs" className="text-sm underline">Consulter les coûts par offre et les usages observés</Link></p>
     <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <Metric label="Workspaces commerciaux" value={totalCommercial} icon={Activity} />
       <Metric label="Tickets ouverts" value={openTicketCount} icon={LifeBuoy} critical={snapshot.tickets.some(({ ticket }) => ticket.priority === 'urgent' && !['resolved', 'closed'].includes(ticket.status))} />

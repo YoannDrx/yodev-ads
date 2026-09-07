@@ -358,6 +358,29 @@ export const usageSnapshots = pgTable(
   (table) => [uniqueIndex('usage_workspace_month_idx').on(table.workspaceId, table.month)],
 )
 
+// Aggregate operational evidence, without customer identifiers or invoice contents.
+export const operatingCostEntries = pgTable('operating_cost_entries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceKey: varchar('source_key', { length: 100 }).notNull(),
+  month: varchar('month', { length: 7 }).notNull(),
+  category: varchar('category', { length: 24 }).notNull(),
+  currency: varchar('currency', { length: 3 }).notNull(),
+  basis: varchar('basis', { length: 16 }).notNull(),
+  amountMicros: numeric('amount_micros', { precision: 20, scale: 0 }),
+  supportMinutes: numeric('support_minutes', { precision: 12, scale: 2 }),
+  allocationMethod: varchar('allocation_method', { length: 24 }).notNull(),
+  trialWeight: integer('trial_weight').default(0).notNull(),
+  soloWeight: integer('solo_weight').default(0).notNull(),
+  studioWeight: integer('studio_weight').default(0).notNull(),
+  agencyWeight: integer('agency_weight').default(0).notNull(),
+  internalWeight: integer('internal_weight').default(0).notNull(),
+  unallocatedWeight: integer('unallocated_weight').default(10000).notNull(),
+  voided: boolean('voided').default(false).notNull(),
+  version: integer('version').default(1).notNull(),
+  updatedBy: varchar('updated_by', { length: 64 }).notNull(),
+  ...timestamps,
+}, (table) => [uniqueIndex('operating_cost_source_idx').on(table.sourceKey), index('operating_cost_month_idx').on(table.month, table.currency, table.category)])
+
 export const monitoringAgents = pgTable(
   'monitoring_agents',
   {
@@ -1304,6 +1327,7 @@ export const jobAttempts = pgTable(
     attempt: integer('attempt').notNull(),
     state: varchar('state', { length: 24 }).notNull(),
     workerId: varchar('worker_id', { length: 128 }).notNull(),
+    billingPlanAtStart: varchar('billing_plan_at_start', { length: 16 }),
     providerMessageId: varchar('provider_message_id', { length: 128 }),
     errorMessage: text('error_message'),
     startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
@@ -1312,6 +1336,7 @@ export const jobAttempts = pgTable(
   (table) => [
     uniqueIndex('job_attempts_job_attempt_idx').on(table.jobId, table.attempt),
     index('job_attempts_workspace_started_idx').on(table.workspaceId, table.startedAt),
+    index('job_attempts_cost_window_idx').on(table.startedAt, table.billingPlanAtStart),
   ],
 )
 

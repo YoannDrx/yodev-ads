@@ -1,0 +1,1 @@
+Operating costs: exact amounts, idempotent/concurrent corrections, complete paginated aggregates, operator row-lock revocation, SQL denials and immutable attempt attribution verified; no provider call.

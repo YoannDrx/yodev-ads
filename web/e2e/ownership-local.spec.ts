@@ -44,7 +44,8 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
       // Replay the valid old form through the former owner's own session.
       const headers = Object.fromEntries(Object.entries(sent.headers()).filter(([key]) => ['accept', 'content-type', 'next-action', 'next-router-state-tree', 'next-url', 'origin'].includes(key)))
       expect(headers.cookie).toBeUndefined()
-      const replay = await owner.request.fetch(sent.url(), { method: 'POST', headers, data: sent.postDataBuffer()!, maxRedirects: 0 })
+      // Retry only a reset local socket once; HTTP denials and the audit assertions remain authoritative.
+      const replay = await owner.request.fetch(sent.url(), { method: 'POST', headers, data: sent.postDataBuffer()!, maxRedirects: 0, maxRetries: 1 })
       expect(replay.headers()['x-action-redirect']).toContain('error=')
       expect(Number((await db.query("select count(*) from audit_events where workspace_id=$1 and action='workspace.ownership_transferred'", [workspaceId])).rows[0].count)).toBe(baseline + 1)
       await successor.goto('/settings')

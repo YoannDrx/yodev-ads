@@ -1,0 +1,99 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs operating-costs-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 373ms
+✓ Running next.config.ts took 712ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.2s (next.js: 1617ms, proxy.ts: 194ms, application-code: 377ms)
+ GET / 200 in 230ms (next.js: 40ms, proxy.ts: 6ms, application-code: 184ms)
+ POST /api/auth/sign-in/email 200 in 2.4s (next.js: 1725ms, proxy.ts: 16ms, application-code: 698ms)
+ POST /api/auth/sign-in/email 200 in 544ms (next.js: 7ms, proxy.ts: 4ms, application-code: 532ms)
+ GET /icon?a62dacc6b033a714 200 in 475ms (next.js: 156ms, proxy.ts: 20ms, application-code: 299ms)
+ POST /api/auth/sign-in/email 200 in 148ms (next.js: 8ms, proxy.ts: 15ms, application-code: 126ms)
+ POST /api/auth/sign-in/email 200 in 152ms (next.js: 3ms, proxy.ts: 3ms, application-code: 147ms)
+ POST /api/auth/sign-in/email 200 in 99ms (next.js: 3ms, proxy.ts: 5ms, application-code: 91ms)
+ GET /dashboard 200 in 659ms (next.js: 286ms, proxy.ts: 5ms, application-code: 368ms)
+ GET /settings 200 in 281ms (next.js: 52ms, proxy.ts: 3ms, application-code: 226ms)
+ GET /billing 200 in 185ms (next.js: 21ms, proxy.ts: 3ms, application-code: 162ms)
+ GET /support 200 in 203ms (next.js: 25ms, proxy.ts: 1.9ms, application-code: 176ms)
+ GET /accounts 200 in 196ms (next.js: 20ms, proxy.ts: 2ms, application-code: 174ms)
+ GET /history 200 in 255ms (next.js: 42ms, proxy.ts: 3ms, application-code: 209ms)
+ GET /alerts 200 in 275ms (next.js: 78ms, proxy.ts: 4ms, application-code: 193ms)
+ GET /tasks 200 in 202ms (next.js: 28ms, proxy.ts: 3ms, application-code: 171ms)
+ GET /approvals 200 in 160ms (next.js: 35ms, proxy.ts: 3ms, application-code: 122ms)
+ GET /reports 200 in 247ms (next.js: 36ms, proxy.ts: 3ms, application-code: 208ms)
+ GET /audit 200 in 166ms (next.js: 30ms, proxy.ts: 3ms, application-code: 133ms)
+ GET /agents 200 in 214ms (next.js: 32ms, proxy.ts: 2ms, application-code: 180ms)
+ GET / 200 in 73ms (next.js: 3ms, proxy.ts: 2.0ms, application-code: 68ms)
+ GET /privacy 200 in 67ms (next.js: 20ms, proxy.ts: 1.8ms, application-code: 45ms)
+ GET /terms 200 in 57ms (next.js: 21ms, proxy.ts: 1.9ms, application-code: 34ms)
+ GET /subprocessors 200 in 110ms (next.js: 50ms, proxy.ts: 1.9ms, application-code: 58ms)
+ GET /status 200 in 127ms (next.js: 43ms, proxy.ts: 1.8ms, application-code: 82ms)
+ GET /sign-in 200 in 39ms (next.js: 6ms, proxy.ts: 2.0ms, application-code: 31ms)
+ GET /sign-up 200 in 332ms (next.js: 300ms, proxy.ts: 2ms, application-code: 30ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-5JEZuC
+
+Running 1 test using 1 worker
+
+(node:83438) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /operations/costs?month=2001-03 200 in 192ms (next.js: 31ms, proxy.ts: 2ms, application-code: 159ms)
+ GET /api/auth/get-session 200 in 1022ms (next.js: 114ms, proxy.ts: 112ms, application-code: 796ms)
+ GET /api/auth/organization/list 200 in 1059ms (next.js: 542ms, proxy.ts: 109ms, application-code: 407ms)
+ GET /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 295ms (next.js: 3ms, proxy.ts: 5ms, application-code: 287ms)
+ POST /operations/costs?month=2001-03 200 in 710ms (next.js: 283ms, proxy.ts: 56ms, application-code: 371ms)
+  └─ ƒ recordOperatingCost({}) in 43ms src/app/(app)/operations/costs/actions.ts
+ GET /operations/costs?month=2001-03&error=Cette+r%C3%A9f%C3%A9rence+a+%C3%A9t%C3%A9+modifi%C3%A9e.+Rechargez+sa+version+courante. 200 in 102ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 98ms)
+ POST /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 128ms (next.js: 3ms, proxy.ts: 3ms, application-code: 122ms)
+  └─ ƒ recordOperatingCost({}) in 8ms src/app/(app)/operations/costs/actions.ts
+ GET /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 95ms (next.js: 2ms, proxy.ts: 5ms, application-code: 89ms)
+ POST /operations/costs?month=2001-03&error=Cette+r%C3%A9f%C3%A9rence+a+%C3%A9t%C3%A9+modifi%C3%A9e.+Rechargez+sa+version+courante. 200 in 121ms (next.js: 2ms, proxy.ts: 3ms, application-code: 116ms)
+  └─ ƒ recordOperatingCost({}) in 11ms src/app/(app)/operations/costs/actions.ts
+ GET /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 535ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 532ms)
+ GET /api/auth/get-session 200 in 36ms (next.js: 19ms, proxy.ts: 7ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 9ms, proxy.ts: 8ms, application-code: 19ms)
+  ✘  1 [chromium] › e2e/operating-costs-local.spec.ts:5:55 › operating costs preserve evidence, corrections, pagination and operator access (18.7s)
+
+
+  1) [chromium] › e2e/operating-costs-local.spec.ts:5:55 › operating costs preserve evidence, corrections, pagination and operator access
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('details')
+    Expected: 25
+    Received: 26
+    Timeout:  15000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 15000ms
+      - waiting for locator('details')
+        34 × locator resolved to 26 elements
+           - unexpected value "26"
+
+
+      49 |     await page.reload()
+      50 |     await expect(page.locator('[data-cost-cell="USD:storage:unallocated"]')).toContainText('30.000000 USD')
+    > 51 |     await expect(page.locator('details')).toHaveCount(25)
+         |                                           ^
+      52 |     await page.getByRole('link', { name: 'Page suivante', exact: true }).click()
+      53 |     await expect(page.locator('details')).toHaveCount(6)
+      54 |     await expect(page.locator('[data-cost-cell="USD:storage:unallocated"]')).toContainText('30.000000 USD')
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/operating-costs-local.spec.ts:51:43
+
+    Error Context: test-results/operating-costs-local-oper-9a3d5-ination-and-operator-access-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/operating-costs-local.spec.ts:5:55 › operating costs preserve evidence, corrections, pagination and operator access
+{"ok":true,"cleaned":"local-browser-fixtures"}

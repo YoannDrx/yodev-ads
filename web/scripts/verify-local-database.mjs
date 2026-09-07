@@ -28,7 +28,7 @@ const env = {
 for (const key of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'DATABASE_AUTHENTICATED_URL', 'DATABASE_SYSTEM_URL', 'DATABASE_PURGE_URL', 'DATABASE_AUTH_URL']) env[key] = url.href
 const commands = [
   ['drizzle-kit', 'migrate'],
-  ...['seed-rls-verification', 'verify-rls', 'validate-tenant-constraints', 'verify-tenant-invariants', 'verify-database-concurrency', 'verify-prod-ready-concurrency', 'verify-monitoring-checkpoints', 'verify-metric-history', 'verify-analytical-collections', 'verify-analytical-pages', 'verify-account-selection', 'verify-report-editions', 'verify-workspace-collections', 'verify-public-status', 'verify-portfolio', 'verify-portfolio-views', 'verify-activation-evidence', 'verify-membership-boundary', 'verify-membership-admission', 'verify-alert-quality'].map((script) => ['tsx', `scripts/${script}.ts`]),
+  ...['seed-rls-verification', 'verify-rls', 'validate-tenant-constraints', 'verify-tenant-invariants', 'verify-database-concurrency', 'verify-prod-ready-concurrency', 'verify-monitoring-checkpoints', 'verify-metric-history', 'verify-analytical-collections', 'verify-analytical-pages', 'verify-account-selection', 'verify-report-editions', 'verify-workspace-collections', 'verify-public-status', 'verify-portfolio', 'verify-portfolio-views', 'verify-activation-evidence', 'verify-membership-boundary', 'verify-membership-admission', 'verify-alert-quality', 'verify-operating-costs'].map((script) => ['tsx', `scripts/${script}.ts`]),
 ]
 for (const args of commands) {
   console.log(`Running ${args.join(' ')}`)
