@@ -11,6 +11,7 @@ const englishMessages: Record<string, string> = {
   'Identité de marque enregistrée.': 'Brand identity saved.',
   'Sélectionnez un fichier logo.': 'Select a logo file.',
   'Une adresse Better Auth vérifiée est requise.': 'A verified Better Auth email address is required.',
+  'L’espace actif a changé. Rechargez la page avant d’enregistrer.': 'The active workspace changed. Reload this page before saving.',
   'Préférences personnelles de tâches enregistrées.': 'Personal task preferences saved.',
   'Cette adresse est déjà membre ou invitée.': 'This email address is already a member or has a pending invitation.',
   'Le rôle du propriétaire ne peut être modifié que par un transfert de propriété.': 'The owner role can only be changed through an ownership transfer.',

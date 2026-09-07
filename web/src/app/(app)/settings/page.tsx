@@ -19,11 +19,11 @@ import {
   updateApprovalPolicy,
   updateWorkspaceLocale,
   updateSafetyRules,
-  updateMyTaskNotificationPreferences,
   updateWorkspaceMemberRole,
   uploadWorkspaceLogo,
   verifyWorkspaceDomain,
 } from '@/app/actions'
+import { TaskNotificationPreferencesForm } from '@/components/task-notification-preferences-form'
 import { FlashMessage } from '@/components/flash-message'
 import { SecretRevelation } from '@/components/api-key-revelation'
 import { PageHeading } from '@/components/page-heading'
@@ -377,20 +377,11 @@ export default async function SettingsPage({
           <CardHeader>
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center rounded-xl bg-teal-50 text-teal-700"><UserRound className="size-5" /></span>
-              <div><CardTitle>{english ? 'My task notifications' : 'Mes notifications de tâches'}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{english ? 'Your verified Better Auth email is encrypted when saved and is never displayed.' : 'Votre email Better Auth vérifié est chiffré au moment de l’enregistrement et n’est jamais affiché.'}</p></div>
+              <div><CardTitle>{english ? 'My task notifications' : 'Mes notifications de tâches'}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{english ? 'Notifications are sent to your current verified account email while you have access to tasks.' : 'Les notifications sont envoyées à l’adresse vérifiée actuelle de votre compte tant que vous avez accès aux tâches.'}</p></div>
             </div>
           </CardHeader>
           <CardContent>
-            <form action={updateMyTaskNotificationPreferences} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div className="space-y-2"><Label htmlFor="mentionHandle">{english ? 'Mention handle' : 'Identifiant de mention'}</Label><div className="flex items-center"><span className="rounded-l-lg border border-r-0 bg-slate-50 px-3 py-2 text-sm">@</span><Input id="mentionHandle" name="mentionHandle" defaultValue={taskPreferences?.mentionHandle ?? ''} placeholder="yoann" pattern="[a-z0-9][a-z0-9_-]{1,31}" required className="rounded-l-none" /></div></div>
-              <div className="space-y-2"><Label htmlFor="digestCadence">{english ? 'Personal digest' : 'Digest personnel'}</Label><select id="digestCadence" name="digestCadence" defaultValue={taskPreferences?.digestCadence ?? 'none'} className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="none">{english ? 'Disabled' : 'Désactivé'}</option><option value="daily">{english ? 'Every day' : 'Chaque jour'}</option><option value="weekly">{english ? 'Every Monday' : 'Chaque lundi'}</option></select></div>
-              <div className="space-y-2"><Label htmlFor="digestHour">{english ? 'Local time' : 'Heure locale'}</Label><Input id="digestHour" name="digestHour" type="number" min={0} max={23} defaultValue={taskPreferences?.digestHour ?? 8} required /></div>
-              <div className="space-y-2"><Label htmlFor="taskTimezone">{english ? 'Timezone' : 'Fuseau horaire'}</Label><Input id="taskTimezone" name="timezone" defaultValue={taskPreferences?.timezone ?? workspace.timezone} required /></div>
-              <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" name="mentionNotifications" defaultChecked={taskPreferences?.mentionNotifications ?? true} /> {english ? 'Email me when a member mentions me' : 'M’envoyer un email lorsqu’un membre me mentionne'}</label>
-              <Button type="submit" variant="outline" className="md:col-span-2 xl:col-span-2">{english ? 'Save my preferences' : 'Enregistrer mes préférences'}</Button>
-            </form>
-            {taskPreferences?.lastDigestAt && <p className="mt-3 text-xs text-muted-foreground">{english ? 'Last digest processed' : 'Dernier digest traité'} : {taskPreferences.lastDigestAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</p>}
-            {taskPreferences?.lastError && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800">{english ? 'Last error' : 'Dernière erreur'} : {taskPreferences.lastError}</p>}
+            <TaskNotificationPreferencesForm taskPreferences={taskPreferences} timezone={workspace.timezone} workspaceId={workspace.id} locale={locale} />
           </CardContent>
         </Card>}
 

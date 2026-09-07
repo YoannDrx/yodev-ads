@@ -402,10 +402,12 @@ export async function removeWorkspaceLogo() {
 }
 
 export async function updateMyTaskNotificationPreferences(formData: FormData) {
+  const returnTo = formData.get('returnTo') === '/account/notifications' ? '/account/notifications' : '/settings'
   let target: string
   try {
     requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
     const { workspace, session } = await requireWorkspacePermission('workspace:read')
+    if (formData.get('workspaceId') !== workspace.id) throw new Error('L’espace actif a changé. Rechargez la page avant d’enregistrer.')
     const input = z.object({
       mentionHandle: z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9_-]{1,31}$/, 'Identifiant de mention invalide.'),
       mentionNotifications: z.preprocess((value) => value === 'on' || value === 'true', z.boolean()),
@@ -428,11 +430,12 @@ export async function updateMyTaskNotificationPreferences(formData: FormData) {
       digestHour: input.digestHour,
       timezone,
     })
-    target = toUrl('/settings', 'notice', 'Préférences personnelles de tâches enregistrées.')
+    target = toUrl(returnTo, 'notice', 'Préférences personnelles de tâches enregistrées.')
   } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
+    target = toUrl(returnTo, 'error', message(error))
   }
   revalidatePath('/settings')
+  revalidatePath('/account/notifications')
   revalidatePath('/tasks')
   redirect(target)
 }

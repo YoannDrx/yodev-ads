@@ -77,6 +77,19 @@ describe('YoDevMail transactional transport', () => {
     expect(new Set(keys).size).toBe(2)
   })
 
+  it.each([false, true])('refuses revoked admission after claiming without losing prior ambiguity (%s)', async (mayHaveBeenSubmitted) => {
+    mocks.claim.mockResolvedValue({ claimed: true, mayHaveBeenSubmitted, delivery: { id: 'delivery-1' } })
+    const beforeSubmit = vi.fn(async () => false)
+    await expect(sendTransactionalEmail({ from: 'a@example.test', to: 'b@example.test', subject: 'Task', html: '<p>Task</p>', idempotencyKey: 'task:1', category: 'task_mention', beforeSubmit })).rejects.toThrow('no longer authorized')
+    expect(beforeSubmit).toHaveBeenCalledOnce(); expect(fetch).not.toHaveBeenCalled()
+    expect(mocks.failed).toHaveBeenCalledWith('delivery-1', mayHaveBeenSubmitted ? 'ambiguous' : 'failed', 'recipient_no_longer_authorized')
+  })
+
+  it('leaves a retryable claim when the admission check fails technically', async () => {
+    await expect(sendTransactionalEmail({ from: 'a@example.test', to: 'b@example.test', subject: 'Task', html: '<p>Task</p>', idempotencyKey: 'task:1', category: 'task_mention', beforeSubmit: async () => { throw new Error('database unavailable') } })).rejects.toThrow('database unavailable')
+    expect(fetch).not.toHaveBeenCalled(); expect(mocks.failed).toHaveBeenCalledWith('delivery-1', 'pending', 'recipient_check_unavailable')
+  })
+
   it('uses a new audited generation only for an explicit manual retry', async () => {
     vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ data: { id: messageId, status: 'queued' } }), { status: 202 }))
     await runWithTransactionalEmailRetryGeneration({ manualRetryGeneration: 2 }, () => sendTransactionalEmail({

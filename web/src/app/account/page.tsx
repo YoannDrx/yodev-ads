@@ -17,6 +17,7 @@ export default async function AccountPage() {
         <p className="mt-2 break-all text-sm text-slate-500">{session.user.email}</p>
         <p className="mt-2 text-sm">{session.user.emailVerified ? (english ? 'Email verified' : 'Email vérifié') : (english ? 'Email verification required' : 'Vérification de l’email requise')}</p>
         <p className="mt-4 text-sm leading-6 text-slate-600">{english ? 'These settings protect your personal account across all your workspaces.' : 'Ces réglages protègent votre compte personnel dans tous vos espaces.'}</p>
+        {session.activeOrganizationId && <Link href="/account/notifications" className="mt-4 inline-block text-sm font-medium text-[#168977] underline">{english ? 'My task notifications' : 'Mes notifications de tâches'}</Link>}
         <AuthSecurityControls locale={locale} />
         <Link href="/forgot-password" className="mt-6 inline-block text-sm text-[#168977] underline">{english ? 'Reset my password' : 'Réinitialiser mon mot de passe'}</Link>
       </section>

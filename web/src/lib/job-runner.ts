@@ -160,11 +160,11 @@ async function executeJob(job: ClaimedJob) {
     }
     case 'task.mention_deliver': {
       const { commentId, preferenceId } = taskMentionPayload.parse(job.payload)
-      return deliverTaskMention(commentId, preferenceId)
+      return deliverTaskMention(commentId, preferenceId, job)
     }
     case 'task.personal_digest': {
       const { preferenceId, runKey } = taskDigestPayload.parse(job.payload)
-      return deliverPersonalTaskDigest(preferenceId, runKey)
+      return deliverPersonalTaskDigest(preferenceId, runKey, job)
     }
     case 'lifecycle.email': {
       const payload = lifecycleEmailPayload.parse(job.payload)

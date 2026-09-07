@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
 vi.mock('@/lib/crypto', () => ({ decryptSecret: mocks.decryptSecret }))
-vi.mock('@/lib/transactional-email', () => ({ sendTransactionalEmail: mocks.emailSend }))
+vi.mock('@/lib/transactional-email', () => ({ sendTransactionalEmail: mocks.emailSend, TransactionalEmailAdmissionError: class extends Error {} }))
 vi.mock('@/lib/auth-identities', () => ({ verifiedAuthUserEmail: mocks.verifiedAuthUserEmail }))
 
 import { deliverLifecycleEmail } from './lifecycle-emails'
@@ -49,12 +49,13 @@ describe('task notification delivery', () => {
     vi.clearAllMocks()
     mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
     mocks.decryptSecret.mockImplementation((value: string) => value)
+    vi.stubEnv('NOTIFICATIONS_ENABLED', '1')
   })
 
-  afterEach(() => undefined)
+  afterEach(() => vi.unstubAllEnvs())
 
   function mentionDatabase(preferenceValue: unknown = preference, workspaceValue: unknown = workspace) {
-    return databaseDouble({ query: queryMap({
+    return databaseDouble({ statementResults: [preferenceValue ? [{ preference: preferenceValue, workspace: workspaceValue, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' }, memberRole: 'analyst' }] : [], [{ expired: false, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' } }]], query: queryMap({
       memberNotificationPreferences: { first: preferenceValue }, taskComments: { first: comment },
       workspaceTasks: { first: task }, workspaces: { first: workspaceValue },
     }) })
@@ -63,9 +64,9 @@ describe('task notification delivery', () => {
   it('delivers and audits a consented mention', async () => {
     const success = databaseDouble()
     mocks.databases.push(mentionDatabase().db, success.db)
-    await expect(deliverTaskMention(comment.id, preference.id)).resolves.toEqual({ delivered: true, providerMessageId: 'email-1' })
+    await expect(deliverTaskMention(comment.id, preference.id)).resolves.toEqual({ accepted: true, providerMessageId: 'email-1' })
     expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'yoann@example.test', idempotencyKey: `task-mention:${comment.id}:${preference.id}`, workspaceId }))
-    expect(success.capture.values[0]).toMatchObject({ action: 'task.mention_delivered' })
+    expect(success.capture.values[0]).toMatchObject({ action: 'task.mention_accepted' })
   })
 
   it('rejects cross-workspace context and skips revoked consent', async () => {
@@ -84,7 +85,7 @@ describe('task notification delivery', () => {
   })
 
   function digestDatabase(preferenceValue: unknown = preference, tasks: unknown[] = [task]) {
-    return databaseDouble({ query: queryMap({
+    return databaseDouble({ statementResults: [preferenceValue ? [{ preference: preferenceValue, workspace, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' }, memberRole: 'analyst' }] : [], [{ expired: false, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' } }]], query: queryMap({
       memberNotificationPreferences: { first: preferenceValue }, workspaces: { first: workspace }, workspaceTasks: { many: tasks },
     }) })
   }
@@ -92,22 +93,22 @@ describe('task notification delivery', () => {
   it('marks empty digests idempotently and sends non-empty personal digests', async () => {
     const emptyUpdate = databaseDouble()
     mocks.databases.push(digestDatabase(preference, []).db, emptyUpdate.db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-10')).resolves.toEqual({ delivered: false, empty: true })
-    expect(emptyUpdate.capture.sets[0]).toMatchObject({ lastDigestKey: '2026-08-10', lastError: null })
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-10')).resolves.toEqual({ delivered: false, empty: true })
+    expect(emptyUpdate.capture.sets[0]).toMatchObject({ lastDigestKey: 'daily:2026-08-10', lastError: null })
 
     const success = databaseDouble()
     mocks.databases.push(digestDatabase().db, success.db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-11')).resolves.toEqual({ delivered: true, taskCount: 1, providerMessageId: 'email-1' })
-    expect(success.capture.values[0]).toMatchObject({ action: 'task.personal_digest_delivered' })
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-11')).resolves.toEqual({ accepted: true, taskCount: 1, providerMessageId: 'email-1' })
+    expect(success.capture.values[0]).toMatchObject({ action: 'task.personal_digest_accepted' })
   })
 
   it('skips disabled and duplicate digests and rejects absent preferences', async () => {
     mocks.databases.push(digestDatabase(null).db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-10')).rejects.toThrow('introuvable')
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-10')).resolves.toEqual({ skipped: true })
     mocks.databases.push(digestDatabase({ ...preference, digestCadence: 'none' }).db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-10')).resolves.toEqual({ skipped: true })
-    mocks.databases.push(digestDatabase({ ...preference, lastDigestKey: '2026-08-10' }).db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-10')).resolves.toEqual({ skipped: true })
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-10')).resolves.toEqual({ skipped: true })
+    mocks.databases.push(digestDatabase({ ...preference, lastDigestKey: 'daily:2026-08-10' }).db)
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-10')).resolves.toEqual({ skipped: true })
   })
 })
 

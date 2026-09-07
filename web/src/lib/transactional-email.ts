@@ -22,6 +22,12 @@ export type TransactionalEmailInput = {
   category: string
   workspaceId?: string | null
   referenceId?: string
+  /** Revalidate permission after a durable-claim wait, immediately before provider submission. */
+  beforeSubmit?: () => Promise<boolean>
+}
+
+export class TransactionalEmailAdmissionError extends NonRetryableJobError {
+  constructor() { super('Transactional email recipient is no longer authorized') }
 }
 
 const acceptedResponseSchema = z.object({
@@ -138,6 +144,18 @@ async function submitOne(input: TransactionalEmailInput, recipient: string, mult
   }
 
   let response: Response
+  if (input.beforeSubmit) {
+    let allowed: boolean
+    try { allowed = await input.beforeSubmit() }
+    catch (error) {
+      await markTransactionalEmailFailure(claim.delivery.id, claim.mayHaveBeenSubmitted ? 'ambiguous' : 'pending', 'recipient_check_unavailable')
+      throw error
+    }
+    if (!allowed) {
+      await markTransactionalEmailFailure(claim.delivery.id, claim.mayHaveBeenSubmitted ? 'ambiguous' : 'failed', 'recipient_no_longer_authorized')
+      throw new TransactionalEmailAdmissionError()
+    }
+  }
   try {
     response = await fetch(`${apiUrl}/v1/emails`, {
       method: 'POST',
