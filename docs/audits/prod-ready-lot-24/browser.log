@@ -1,0 +1,489 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep auth lifecycle
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 337ms
+✓ Running next.config.ts took 549ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.1s (next.js: 1534ms, proxy.ts: 199ms, application-code: 341ms)
+ POST /api/auth/sign-in/email 200 in 962ms (next.js: 779ms, proxy.ts: 4ms, application-code: 179ms)
+ POST /api/auth/sign-in/email 200 in 88ms (next.js: 4ms, proxy.ts: 3ms, application-code: 81ms)
+ POST /api/auth/sign-in/email 200 in 85ms (next.js: 2ms, proxy.ts: 4ms, application-code: 79ms)
+ POST /api/auth/sign-in/email 200 in 79ms (next.js: 2ms, proxy.ts: 2ms, application-code: 74ms)
+ POST /api/auth/sign-in/email 200 in 90ms (next.js: 12ms, proxy.ts: 2ms, application-code: 76ms)
+ GET /dashboard 200 in 627ms (next.js: 233ms, proxy.ts: 3ms, application-code: 391ms)
+ GET /settings 200 in 232ms (next.js: 31ms, proxy.ts: 2ms, application-code: 200ms)
+ GET /billing 200 in 253ms (next.js: 13ms, proxy.ts: 2.0ms, application-code: 237ms)
+ GET /support 200 in 151ms (next.js: 20ms, proxy.ts: 4ms, application-code: 127ms)
+ GET /accounts 200 in 196ms (next.js: 13ms, proxy.ts: 3ms, application-code: 180ms)
+ GET /history 200 in 280ms (next.js: 29ms, proxy.ts: 2.0ms, application-code: 250ms)
+ GET /sign-in 200 in 64ms (next.js: 11ms, proxy.ts: 7ms, application-code: 45ms)
+ GET /alerts 200 in 238ms (next.js: 39ms, proxy.ts: 24ms, application-code: 175ms)
+ GET /tasks 200 in 219ms (next.js: 31ms, proxy.ts: 7ms, application-code: 182ms)
+ GET /approvals 200 in 273ms (next.js: 24ms, proxy.ts: 1.9ms, application-code: 246ms)
+ GET /icon?a62dacc6b033a714 200 in 143ms (next.js: 30ms, proxy.ts: 13ms, application-code: 100ms)
+ GET /reports 200 in 174ms (next.js: 14ms, proxy.ts: 1.8ms, application-code: 158ms)
+ GET /audit 200 in 122ms (next.js: 14ms, proxy.ts: 2ms, application-code: 106ms)
+ GET /agents 200 in 179ms (next.js: 14ms, proxy.ts: 2.0ms, application-code: 163ms)
+ GET / 200 in 143ms (next.js: 27ms, proxy.ts: 4ms, application-code: 112ms)
+ GET /privacy 200 in 47ms (next.js: 11ms, proxy.ts: 1.8ms, application-code: 35ms)
+ GET /terms 200 in 41ms (next.js: 9ms, proxy.ts: 1.5ms, application-code: 31ms)
+ GET /subprocessors 200 in 85ms (next.js: 27ms, proxy.ts: 1.8ms, application-code: 57ms)
+ GET /status 200 in 91ms (next.js: 25ms, proxy.ts: 1.6ms, application-code: 65ms)
+ GET /sign-in 200 in 35ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 29ms)
+ GET /sign-up 200 in 296ms (next.js: 267ms, proxy.ts: 1.8ms, application-code: 27ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-Hf42sH
+
+Running 2 tests using 1 worker
+
+(node:72623) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /sign-up 200 in 47ms (next.js: 4ms, proxy.ts: 2ms, application-code: 41ms)
+ POST /api/auth/sign-up/email 200 in 92ms (next.js: 4ms, proxy.ts: 3ms, application-code: 85ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 3ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /sign-in 200 in 35ms (next.js: 4ms, proxy.ts: 2ms, application-code: 28ms)
+ POST /api/auth/sign-in/email 403 in 91ms (next.js: 8ms, proxy.ts: 3ms, application-code: 81ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/verify-email?token=[REDACTED]&callbackURL=%2Fdashboard 302 in 11ms (next.js: 2.0ms, proxy.ts: 1.8ms, application-code: 7ms)
+ GET /dashboard 307 in 44ms (next.js: 1.5ms, proxy.ts: 1.5ms, application-code: 41ms)
+ GET /sign-in 200 in 40ms (next.js: 4ms, proxy.ts: 1.7ms, application-code: 34ms)
+ GET /sign-in 200 in 39ms (next.js: 3ms, proxy.ts: 3ms, application-code: 33ms)
+ POST /api/auth/sign-in/email 200 in 84ms (next.js: 3ms, proxy.ts: 3ms, application-code: 78ms)
+ GET /dashboard 307 in 54ms (next.js: 2ms, proxy.ts: 3ms, application-code: 49ms)
+ GET /onboarding 200 in 91ms (next.js: 36ms, proxy.ts: 3ms, application-code: 53ms)
+ GET /settings 200 in 71ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 68ms)
+ POST /onboarding 200 in 97ms (next.js: 1.4ms, proxy.ts: 3ms, application-code: 92ms)
+  └─ ƒ createWorkspace({}) in 12ms src/app/onboarding/actions.ts
+ GET /api/auth/get-session 200 in 24ms (next.js: 5ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 9ms, proxy.ts: 3ms, application-code: 18ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 7ms, proxy.ts: 7ms, application-code: 10ms)
+ GET /sign-in 200 in 41ms (next.js: 11ms, proxy.ts: 2ms, application-code: 28ms)
+ POST /api/auth/sign-in/magic-link 200 in 15ms (next.js: 2ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 14ms (next.js: 2ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /dashboard 200 in 111ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 107ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 5ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /api/auth/get-session 200 in 46ms (next.js: 14ms, proxy.ts: 9ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 47ms (next.js: 14ms, proxy.ts: 12ms, application-code: 20ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 19ms (next.js: 7ms, proxy.ts: 7ms, application-code: 5ms)
+ GET /sign-in?error=INVALID_TOKEN 200 in 36ms (next.js: 3ms, proxy.ts: 1.5ms, application-code: 31ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 3ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /forgot-password 200 in 51ms (next.js: 13ms, proxy.ts: 2ms, application-code: 36ms)
+ POST /api/auth/request-password-reset 200 in 23ms (next.js: 2ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 13ms (next.js: 4ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /reset-password?token=[REDACTED] 200 in 43ms (next.js: 14ms, proxy.ts: 1.7ms, application-code: 28ms)
+ POST /api/auth/reset-password 200 in 85ms (next.js: 2ms, proxy.ts: 3ms, application-code: 80ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 5ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 9ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 6ms)
+ GET /reset-password?error=INVALID_TOKEN 200 in 30ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 26ms)
+ GET /sign-in 200 in 53ms (next.js: 7ms, proxy.ts: 3ms, application-code: 43ms)
+2026-09-07T07:29:42.945Z WARN [Better Auth]: Invalid password
+ POST /api/auth/sign-in/email 401 in 86ms (next.js: 4ms, proxy.ts: 3ms, application-code: 79ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 4ms)
+ GET /sign-in 200 in 38ms (next.js: 4ms, proxy.ts: 1.7ms, application-code: 33ms)
+ POST /api/auth/sign-in/email 200 in 105ms (next.js: 5ms, proxy.ts: 5ms, application-code: 95ms)
+ GET /dashboard 200 in 161ms (next.js: 4ms, proxy.ts: 4ms, application-code: 153ms)
+ GET /sign-in 200 in 64ms (next.js: 5ms, proxy.ts: 3ms, application-code: 56ms)
+ GET /api/auth/get-session 200 in 39ms (next.js: 12ms, proxy.ts: 8ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 43ms (next.js: 14ms, proxy.ts: 8ms, application-code: 21ms)
+ POST /api/auth/sign-in/email 200 in 83ms (next.js: 2.0ms, proxy.ts: 5ms, application-code: 76ms)
+ GET /dashboard 200 in 107ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 103ms)
+ GET /account 200 in 112ms (next.js: 26ms, proxy.ts: 2ms, application-code: 84ms)
+ GET /api/auth/get-session 200 in 61ms (next.js: 11ms, proxy.ts: 28ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 61ms (next.js: 15ms, proxy.ts: 24ms, application-code: 22ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 7ms, proxy.ts: 6ms, application-code: 12ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 36ms (next.js: 9ms, proxy.ts: 7ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 46ms (next.js: 11ms, proxy.ts: 7ms, application-code: 28ms)
+ POST /api/auth/revoke-other-sessions 200 in 19ms (next.js: 4ms, proxy.ts: 5ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 16ms (next.js: 4ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 16ms (next.js: 6ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 6ms)
+ GET /api/auth/passkey/generate-register-options?authenticatorAttachment=platform&name=Passkey%20Ads%20by%20Yodev 200 in 15ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /api/auth/passkey/verify-registration 200 in 14ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 9ms (next.js: 2ms, proxy.ts: 1.5ms, application-code: 5ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 8ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 5ms)
+ POST /api/auth/passkey/delete-passkey 401 in 9ms (next.js: 1.8ms, proxy.ts: 1.4ms, application-code: 5ms)
+ POST /api/auth/sign-out 200 in 7ms (next.js: 1.6ms, proxy.ts: 1.4ms, application-code: 4ms)
+ GET /sign-in 200 in 31ms (next.js: 3ms, proxy.ts: 1.5ms, application-code: 26ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 14ms (next.js: 3ms, proxy.ts: 2ms, application-code: 8ms)
+ POST /api/auth/passkey/verify-authentication 200 in 28ms (next.js: 7ms, proxy.ts: 5ms, application-code: 16ms)
+ GET /dashboard 200 in 110ms (next.js: 3ms, proxy.ts: 2ms, application-code: 104ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 3ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 63ms (next.js: 39ms, proxy.ts: 12ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 64ms (next.js: 43ms, proxy.ts: 12ms, application-code: 9ms)
+ GET /account 200 in 66ms (next.js: 16ms, proxy.ts: 4ms, application-code: 47ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 8ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 9ms, proxy.ts: 5ms, application-code: 13ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 24ms (next.js: 13ms, proxy.ts: 4ms, application-code: 8ms)
+ POST /api/auth/passkey/delete-passkey 200 in 12ms (next.js: 2ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 14ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 9ms)
+ POST /api/auth/sign-out 200 in 13ms (next.js: 6ms, proxy.ts: 1.8ms, application-code: 6ms)
+ GET /sign-in 200 in 32ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 27ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 20ms (next.js: 11ms, proxy.ts: 3ms, application-code: 6ms)
+ POST /api/auth/passkey/verify-authentication 401 in 19ms (next.js: 4ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /api/auth/get-session 200 in 9ms (next.js: 2ms, proxy.ts: 2ms, application-code: 5ms)
+ POST /api/auth/sign-in/magic-link 200 in 14ms (next.js: 3ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 11ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 7ms)
+ GET /dashboard 200 in 111ms (next.js: 2ms, proxy.ts: 1.6ms, application-code: 107ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 10ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /invitation?id=a3130532-c83b-4e36-88e3-4f093b388032 200 in 56ms (next.js: 20ms, proxy.ts: 1.7ms, application-code: 34ms)
+ GET /api/auth/get-session 200 in 9ms (next.js: 1.8ms, proxy.ts: 2.0ms, application-code: 5ms)
+ POST /api/auth/organization/accept-invitation 403 in 17ms (next.js: 2ms, proxy.ts: 3ms, application-code: 11ms)
+ POST /invitation?id=a3130532-c83b-4e36-88e3-4f093b388032 200 in 17ms (next.js: 2ms, proxy.ts: 2ms, application-code: 12ms)
+  └─ ƒ recoverAcceptedInvitation("a3130532-c83b-4e36-88e3-4f093b388032") in 5ms src/app/invitation/actions.ts
+ GET /invitation?id=fafc5c73-6817-4e1c-8b33-43bc3ba28c1b 200 in 33ms (next.js: 2ms, proxy.ts: 3ms, application-code: 28ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 4ms, proxy.ts: 2ms, application-code: 7ms)
+ POST /api/auth/organization/accept-invitation 400 in 22ms (next.js: 2ms, proxy.ts: 3ms, application-code: 16ms)
+ POST /invitation?id=fafc5c73-6817-4e1c-8b33-43bc3ba28c1b 200 in 12ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 8ms)
+  └─ ƒ recoverAcceptedInvitation("fafc5c73-6817-4e1c-8b33-43bc3ba28c1b") in 3ms src/app/invitation/actions.ts
+ GET /invitation?id=644ff1c4-f9e0-4c77-a3d1-eefe918f00fb 200 in 28ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 2.0ms, proxy.ts: 6ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 400 in 15ms (next.js: 2ms, proxy.ts: 4ms, application-code: 8ms)
+ POST /invitation?id=644ff1c4-f9e0-4c77-a3d1-eefe918f00fb 200 in 15ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 11ms)
+  └─ ƒ recoverAcceptedInvitation("644ff1c4-f9e0-4c77-a3d1-eefe918f00fb") in 5ms src/app/invitation/actions.ts
+ GET /invitation?id=a0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 29ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 25ms)
+ GET /api/auth/get-session 200 in 15ms (next.js: 4ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /sign-in?returnTo=%2Finvitation%3Fid%3Da0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 25ms (next.js: 4ms, proxy.ts: 2ms, application-code: 19ms)
+ POST /api/auth/sign-in/magic-link 200 in 24ms (next.js: 3ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Finvitation%3Fid%3Da0fb8b62-6f2d-4b62-9140-1f30d92bc32d&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in%3FreturnTo%3D%252Finvitation%253Fid%253Da0fb8b62-6f2d-4b62-9140-1f30d92bc32d 302 in 13ms (next.js: 2ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /invitation?id=a0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 30ms (next.js: 2ms, proxy.ts: 2ms, application-code: 26ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 5ms)
+2026-09-07T07:29:47.778Z ERROR [Better Auth]: Error Error: Failed query: insert into "auth_members" ("id", "organization_id", "user_id", "role", "created_at") values ($1, $2, $3, $4, $5) returning "id", "organization_id", "user_id", "role", "created_at"
+params: zDuUYMHCLu48IfAVJ8zTd7FJ2YZfdpQL,local-browser-fixture-foreign,3DibrdRTKLhMHowJstxyb8TO2rvdzUTG,analyst,2026-09-07T07:29:47.774Z
+    at ignore-listed frames {
+  query: 'insert into "auth_members" ("id", "organization_id", "user_id", "role", "created_at") values ($1, $2, $3, $4, $5) returning "id", "organization_id", "user_id", "role", "created_at"',
+  params: [
+    'zDuUYMHCLu48IfAVJ8zTd7FJ2YZfdpQL',
+    'local-browser-fixture-foreign',
+    '3DibrdRTKLhMHowJstxyb8TO2rvdzUTG',
+    'analyst',
+    '2026-09-07T07:29:47.774Z'
+  ],
+  [cause]: error: Workspace membership admission unavailable
+      at ignore-listed frames {
+    length: 181,
+    severity: 'ERROR',
+    code: '23514',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: 'PL/pgSQL function enforce_workspace_membership_admission() line 24 at RAISE',
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'pl_exec.c',
+    line: '3911',
+    routine: 'exec_stmt_raise'
+  }
+}
+# SERVER_ERROR:  Error: Failed query: insert into "auth_members" ("id", "organization_id", "user_id", "role", "created_at") values ($1, $2, $3, $4, $5) returning "id", "organization_id", "user_id", "role", "created_at"
+params: zDuUYMHCLu48IfAVJ8zTd7FJ2YZfdpQL,local-browser-fixture-foreign,3DibrdRTKLhMHowJstxyb8TO2rvdzUTG,analyst,2026-09-07T07:29:47.774Z
+    at ignore-listed frames {
+  query: 'insert into "auth_members" ("id", "organization_id", "user_id", "role", "created_at") values ($1, $2, $3, $4, $5) returning "id", "organization_id", "user_id", "role", "created_at"',
+  params: [
+    'zDuUYMHCLu48IfAVJ8zTd7FJ2YZfdpQL',
+    'local-browser-fixture-foreign',
+    '3DibrdRTKLhMHowJstxyb8TO2rvdzUTG',
+    'analyst',
+    '2026-09-07T07:29:47.774Z'
+  ],
+  [cause]: error: Workspace membership admission unavailable
+      at ignore-listed frames {
+    length: 181,
+    severity: 'ERROR',
+    code: '23514',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: 'PL/pgSQL function enforce_workspace_membership_admission() line 24 at RAISE',
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'pl_exec.c',
+    line: '3911',
+    routine: 'exec_stmt_raise'
+  }
+}
+ POST /api/auth/organization/accept-invitation 500 in 134ms (next.js: 2ms, proxy.ts: 3ms, application-code: 129ms)
+ POST /invitation?id=a0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 14ms (next.js: 2ms, proxy.ts: 2ms, application-code: 9ms)
+  └─ ƒ recoverAcceptedInvitation("a0fb8b62-6f2d-4b62-9140-1f30d92bc32d") in 4ms src/app/invitation/actions.ts
+ POST /api/auth/organization/accept-invitation 200 in 16ms (next.js: 3ms, proxy.ts: 2ms, application-code: 10ms)
+ POST /invitation?id=a0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 22ms (next.js: 10ms, proxy.ts: 1.8ms, application-code: 10ms)
+  └─ ƒ recoverAcceptedInvitation("a0fb8b62-6f2d-4b62-9140-1f30d92bc32d") in 5ms src/app/invitation/actions.ts
+ POST /api/auth/organization/set-active 200 in 12ms (next.js: 3ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /api/auth/get-session 200 in 72ms (next.js: 43ms, proxy.ts: 11ms, application-code: 18ms)
+ GET /dashboard 200 in 116ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 112ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 6ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 10ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /invitation?id=a0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 31ms (next.js: 2ms, proxy.ts: 3ms, application-code: 26ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 400 in 11ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 6ms)
+ POST /invitation?id=a0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 13ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 10ms)
+  └─ ƒ recoverAcceptedInvitation("a0fb8b62-6f2d-4b62-9140-1f30d92bc32d") in 5ms src/app/invitation/actions.ts
+ POST /api/auth/organization/set-active 200 in 11ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 73ms (next.js: 38ms, proxy.ts: 17ms, application-code: 17ms)
+ GET /dashboard 200 in 121ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 118ms)
+ GET /invitation?id=a0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 30ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 27ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 400 in 11ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 7ms)
+ POST /invitation?id=a0fb8b62-6f2d-4b62-9140-1f30d92bc32d 200 in 14ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 10ms)
+  └─ ƒ recoverAcceptedInvitation("a0fb8b62-6f2d-4b62-9140-1f30d92bc32d") in 5ms src/app/invitation/actions.ts
+ GET /dashboard 307 in 70ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 66ms)
+ GET /onboarding 307 in 53ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 48ms)
+ GET /dashboard 200 in 120ms (next.js: 2ms, proxy.ts: 3ms, application-code: 114ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 12ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /api/auth/get-session 200 in 46ms (next.js: 23ms, proxy.ts: 12ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 48ms (next.js: 25ms, proxy.ts: 12ms, application-code: 11ms)
+ GET /dashboard 307 in 90ms (next.js: 3ms, proxy.ts: 2ms, application-code: 85ms)
+ GET /onboarding 200 in 61ms (next.js: 3ms, proxy.ts: 5ms, application-code: 53ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 4ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /account 200 in 35ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 32ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 6ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 9ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 25ms (next.js: 11ms, proxy.ts: 3ms, application-code: 11ms)
+ POST /api/auth/sign-out 200 in 12ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 6ms)
+ GET /sign-in 200 in 52ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 46ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 16ms, proxy.ts: 5ms, application-code: 7ms)
+  ✓  1 [chromium] › e2e/auth-lifecycle-local.spec.ts:85:9 › auth lifecycle fr: verification, magic link, reset, sessions and passkey (12.1s)
+ GET /sign-up 200 in 36ms (next.js: 5ms, proxy.ts: 3ms, application-code: 29ms)
+ POST /api/auth/sign-up/email 200 in 85ms (next.js: 3ms, proxy.ts: 3ms, application-code: 80ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 6ms)
+ GET /sign-in 200 in 33ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 28ms)
+ POST /api/auth/sign-in/email 403 in 81ms (next.js: 3ms, proxy.ts: 3ms, application-code: 76ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 2.0ms, proxy.ts: 1.7ms, application-code: 4ms)
+ GET /api/auth/verify-email?token=[REDACTED]&callbackURL=%2Fdashboard 302 in 9ms (next.js: 1.9ms, proxy.ts: 1.7ms, application-code: 6ms)
+ GET /dashboard 307 in 50ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 47ms)
+ GET /sign-in 200 in 32ms (next.js: 4ms, proxy.ts: 2ms, application-code: 26ms)
+ GET /sign-in 200 in 45ms (next.js: 5ms, proxy.ts: 7ms, application-code: 33ms)
+ POST /api/auth/sign-in/email 200 in 80ms (next.js: 3ms, proxy.ts: 3ms, application-code: 75ms)
+ GET /dashboard 307 in 59ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 54ms)
+ GET /onboarding 200 in 42ms (next.js: 1.5ms, proxy.ts: 3ms, application-code: 38ms)
+ GET /settings 200 in 74ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 71ms)
+ POST /onboarding 200 in 96ms (next.js: 1.5ms, proxy.ts: 2.0ms, application-code: 93ms)
+  └─ ƒ createWorkspace({}) in 11ms src/app/onboarding/actions.ts
+ GET /api/auth/get-session 200 in 21ms (next.js: 4ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 7ms, proxy.ts: 3ms, application-code: 26ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 15ms, proxy.ts: 6ms, application-code: 5ms)
+ GET /sign-in 200 in 33ms (next.js: 4ms, proxy.ts: 2ms, application-code: 27ms)
+ POST /api/auth/sign-in/magic-link 200 in 19ms (next.js: 4ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 12ms (next.js: 2ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /dashboard 200 in 106ms (next.js: 1.7ms, proxy.ts: 1.5ms, application-code: 103ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 31ms (next.js: 10ms, proxy.ts: 12ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 8ms, proxy.ts: 9ms, application-code: 16ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 23ms (next.js: 11ms, proxy.ts: 4ms, application-code: 8ms)
+ GET /sign-in?error=INVALID_TOKEN 200 in 33ms (next.js: 4ms, proxy.ts: 1.5ms, application-code: 28ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 3ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /forgot-password 200 in 30ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 25ms)
+ POST /api/auth/request-password-reset 200 in 15ms (next.js: 3ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 17ms (next.js: 9ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /reset-password?token=[REDACTED] 200 in 30ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 26ms)
+ POST /api/auth/reset-password 200 in 78ms (next.js: 2ms, proxy.ts: 3ms, application-code: 73ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 3ms, proxy.ts: 2ms, application-code: 5ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 2.0ms, proxy.ts: 1.4ms, application-code: 4ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 8ms (next.js: 2.0ms, proxy.ts: 1.4ms, application-code: 5ms)
+ GET /reset-password?error=INVALID_TOKEN 200 in 27ms (next.js: 1.6ms, proxy.ts: 1.5ms, application-code: 24ms)
+ GET /sign-in 200 in 35ms (next.js: 7ms, proxy.ts: 3ms, application-code: 25ms)
+2026-09-07T07:29:54.309Z WARN [Better Auth]: Invalid password
+ POST /api/auth/sign-in/email 401 in 130ms (next.js: 11ms, proxy.ts: 6ms, application-code: 113ms)
+ GET /api/auth/get-session 200 in 9ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 5ms)
+ GET /sign-in 200 in 35ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 29ms)
+ POST /api/auth/sign-in/email 200 in 85ms (next.js: 2ms, proxy.ts: 2ms, application-code: 80ms)
+ GET /dashboard 200 in 117ms (next.js: 2ms, proxy.ts: 3ms, application-code: 112ms)
+ GET /sign-in 200 in 47ms (next.js: 4ms, proxy.ts: 2ms, application-code: 42ms)
+ GET /api/auth/get-session 200 in 37ms (next.js: 16ms, proxy.ts: 7ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 38ms (next.js: 18ms, proxy.ts: 8ms, application-code: 12ms)
+ POST /api/auth/sign-in/email 200 in 84ms (next.js: 3ms, proxy.ts: 2ms, application-code: 78ms)
+ GET /dashboard 200 in 108ms (next.js: 2ms, proxy.ts: 3ms, application-code: 103ms)
+ GET /account 200 in 72ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 68ms)
+ GET /api/auth/get-session 200 in 34ms (next.js: 10ms, proxy.ts: 6ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 38ms (next.js: 12ms, proxy.ts: 6ms, application-code: 20ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 7ms, proxy.ts: 6ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 9ms, proxy.ts: 6ms, application-code: 16ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 32ms (next.js: 10ms, proxy.ts: 7ms, application-code: 15ms)
+ POST /api/auth/revoke-other-sessions 200 in 15ms (next.js: 6ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 5ms, proxy.ts: 2ms, application-code: 5ms)
+ GET /api/auth/get-session 200 in 15ms (next.js: 3ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 16ms (next.js: 9ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /api/auth/passkey/generate-register-options?authenticatorAttachment=platform&name=Ads%20by%20Yodev%20passkey 200 in 12ms (next.js: 2ms, proxy.ts: 2ms, application-code: 7ms)
+ POST /api/auth/passkey/verify-registration 200 in 12ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 8ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 10ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 6ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 9ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 5ms)
+ POST /api/auth/passkey/delete-passkey 401 in 8ms (next.js: 1.5ms, proxy.ts: 1.5ms, application-code: 5ms)
+ POST /api/auth/sign-out 200 in 7ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 4ms)
+ GET /sign-in 200 in 31ms (next.js: 3ms, proxy.ts: 1.6ms, application-code: 26ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 12ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 8ms)
+ POST /api/auth/passkey/verify-authentication 200 in 29ms (next.js: 6ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /dashboard 200 in 124ms (next.js: 3ms, proxy.ts: 3ms, application-code: 119ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 4ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 12ms, proxy.ts: 14ms, application-code: 3ms)
+ GET /api/auth/get-session 200 in 38ms (next.js: 7ms, proxy.ts: 20ms, application-code: 10ms)
+ GET /account 200 in 67ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 62ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 6ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 9ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 22ms (next.js: 11ms, proxy.ts: 3ms, application-code: 8ms)
+ POST /api/auth/passkey/delete-passkey 200 in 11ms (next.js: 2ms, proxy.ts: 3ms, application-code: 6ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 15ms (next.js: 4ms, proxy.ts: 2ms, application-code: 9ms)
+ POST /api/auth/sign-out 200 in 35ms (next.js: 6ms, proxy.ts: 2ms, application-code: 27ms)
+ GET /sign-in 200 in 35ms (next.js: 3ms, proxy.ts: 3ms, application-code: 28ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 16ms (next.js: 3ms, proxy.ts: 7ms, application-code: 6ms)
+ POST /api/auth/passkey/verify-authentication 401 in 23ms (next.js: 6ms, proxy.ts: 6ms, application-code: 11ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 5ms)
+ POST /api/auth/sign-in/magic-link 200 in 14ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 12ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 7ms)
+ GET /dashboard 200 in 108ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 104ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 4ms, proxy.ts: 4ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 7ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /invitation?id=bf9e38ba-9d34-4662-b683-2d2e1ac175c9 200 in 28ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 15ms (next.js: 2ms, proxy.ts: 7ms, application-code: 7ms)
+ POST /api/auth/organization/accept-invitation 403 in 13ms (next.js: 2ms, proxy.ts: 3ms, application-code: 7ms)
+ POST /invitation?id=bf9e38ba-9d34-4662-b683-2d2e1ac175c9 200 in 13ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 10ms)
+  └─ ƒ recoverAcceptedInvitation("bf9e38ba-9d34-4662-b683-2d2e1ac175c9") in 5ms src/app/invitation/actions.ts
+ GET /invitation?id=84692601-997f-4493-8988-262f7d8e3602 200 in 26ms (next.js: 1.5ms, proxy.ts: 1.8ms, application-code: 23ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 3ms, proxy.ts: 2ms, application-code: 5ms)
+ POST /api/auth/organization/accept-invitation 400 in 11ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ POST /invitation?id=84692601-997f-4493-8988-262f7d8e3602 200 in 13ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 9ms)
+  └─ ƒ recoverAcceptedInvitation("84692601-997f-4493-8988-262f7d8e3602") in 5ms src/app/invitation/actions.ts
+ GET /invitation?id=850b8be7-10e3-4fe3-9e18-477f5d64f573 200 in 29ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 25ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 5ms)
+ POST /api/auth/organization/accept-invitation 400 in 10ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ POST /invitation?id=850b8be7-10e3-4fe3-9e18-477f5d64f573 200 in 18ms (next.js: 1.5ms, proxy.ts: 1.7ms, application-code: 14ms)
+  └─ ƒ recoverAcceptedInvitation("850b8be7-10e3-4fe3-9e18-477f5d64f573") in 10ms src/app/invitation/actions.ts
+ GET /invitation?id=a9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 28ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 4ms, proxy.ts: 3ms, application-code: 5ms)
+ GET /sign-in?returnTo=%2Finvitation%3Fid%3Da9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 25ms (next.js: 4ms, proxy.ts: 2ms, application-code: 18ms)
+ POST /api/auth/sign-in/magic-link 200 in 13ms (next.js: 3ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Finvitation%3Fid%3Da9b246ae-6db0-4c77-98e8-273d26a2ea8c&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in%3FreturnTo%3D%252Finvitation%253Fid%253Da9b246ae-6db0-4c77-98e8-273d26a2ea8c 302 in 13ms (next.js: 3ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /invitation?id=a9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 28ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+2026-09-07T07:29:58.907Z ERROR [Better Auth]: Error Error: Failed query: insert into "auth_members" ("id", "organization_id", "user_id", "role", "created_at") values ($1, $2, $3, $4, $5) returning "id", "organization_id", "user_id", "role", "created_at"
+params: L1Nvb7G1S2AEw4oQwlDqHkjpbZDTyw1c,local-browser-fixture-foreign,yMfUbV2r0gq0TteuB4Tf62ham75agHMb,analyst,2026-09-07T07:29:58.905Z
+    at ignore-listed frames {
+  query: 'insert into "auth_members" ("id", "organization_id", "user_id", "role", "created_at") values ($1, $2, $3, $4, $5) returning "id", "organization_id", "user_id", "role", "created_at"',
+  params: [
+    'L1Nvb7G1S2AEw4oQwlDqHkjpbZDTyw1c',
+    'local-browser-fixture-foreign',
+    'yMfUbV2r0gq0TteuB4Tf62ham75agHMb',
+    'analyst',
+    '2026-09-07T07:29:58.905Z'
+  ],
+  [cause]: error: Workspace membership admission unavailable
+      at ignore-listed frames {
+    length: 181,
+    severity: 'ERROR',
+    code: '23514',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: 'PL/pgSQL function enforce_workspace_membership_admission() line 24 at RAISE',
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'pl_exec.c',
+    line: '3911',
+    routine: 'exec_stmt_raise'
+  }
+}
+# SERVER_ERROR:  Error: Failed query: insert into "auth_members" ("id", "organization_id", "user_id", "role", "created_at") values ($1, $2, $3, $4, $5) returning "id", "organization_id", "user_id", "role", "created_at"
+params: L1Nvb7G1S2AEw4oQwlDqHkjpbZDTyw1c,local-browser-fixture-foreign,yMfUbV2r0gq0TteuB4Tf62ham75agHMb,analyst,2026-09-07T07:29:58.905Z
+    at ignore-listed frames {
+  query: 'insert into "auth_members" ("id", "organization_id", "user_id", "role", "created_at") values ($1, $2, $3, $4, $5) returning "id", "organization_id", "user_id", "role", "created_at"',
+  params: [
+    'L1Nvb7G1S2AEw4oQwlDqHkjpbZDTyw1c',
+    'local-browser-fixture-foreign',
+    'yMfUbV2r0gq0TteuB4Tf62ham75agHMb',
+    'analyst',
+    '2026-09-07T07:29:58.905Z'
+  ],
+  [cause]: error: Workspace membership admission unavailable
+      at ignore-listed frames {
+    length: 181,
+    severity: 'ERROR',
+    code: '23514',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: 'PL/pgSQL function enforce_workspace_membership_admission() line 24 at RAISE',
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'pl_exec.c',
+    line: '3911',
+    routine: 'exec_stmt_raise'
+  }
+}
+ POST /api/auth/organization/accept-invitation 500 in 22ms (next.js: 2ms, proxy.ts: 2ms, application-code: 17ms)
+ POST /invitation?id=a9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 14ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 10ms)
+  └─ ƒ recoverAcceptedInvitation("a9b246ae-6db0-4c77-98e8-273d26a2ea8c") in 5ms src/app/invitation/actions.ts
+ POST /api/auth/organization/accept-invitation 200 in 14ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 10ms)
+ POST /invitation?id=a9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 13ms (next.js: 1.2ms, proxy.ts: 3ms, application-code: 9ms)
+  └─ ƒ recoverAcceptedInvitation("a9b246ae-6db0-4c77-98e8-273d26a2ea8c") in 4ms src/app/invitation/actions.ts
+ POST /api/auth/organization/set-active 200 in 10ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 70ms (next.js: 44ms, proxy.ts: 11ms, application-code: 15ms)
+ GET /dashboard 200 in 117ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 114ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 4ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 19ms (next.js: 9ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /invitation?id=a9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 31ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 27ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 5ms)
+ POST /api/auth/organization/accept-invitation 400 in 12ms (next.js: 2ms, proxy.ts: 2ms, application-code: 8ms)
+ POST /invitation?id=a9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 13ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 9ms)
+  └─ ƒ recoverAcceptedInvitation("a9b246ae-6db0-4c77-98e8-273d26a2ea8c") in 5ms src/app/invitation/actions.ts
+ POST /api/auth/organization/set-active 200 in 12ms (next.js: 3ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /api/auth/get-session 200 in 87ms (next.js: 55ms, proxy.ts: 11ms, application-code: 21ms)
+ GET /dashboard 200 in 135ms (next.js: 1.8ms, proxy.ts: 1.5ms, application-code: 132ms)
+ GET /invitation?id=a9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 31ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 28ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 3ms, proxy.ts: 3ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 400 in 12ms (next.js: 2ms, proxy.ts: 3ms, application-code: 7ms)
+ POST /invitation?id=a9b246ae-6db0-4c77-98e8-273d26a2ea8c 200 in 14ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 11ms)
+  └─ ƒ recoverAcceptedInvitation("a9b246ae-6db0-4c77-98e8-273d26a2ea8c") in 5ms src/app/invitation/actions.ts
+ GET /dashboard 307 in 64ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 61ms)
+ GET /onboarding 307 in 49ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /dashboard 200 in 109ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 105ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 6ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 53ms (next.js: 29ms, proxy.ts: 12ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 54ms (next.js: 31ms, proxy.ts: 12ms, application-code: 11ms)
+ GET /dashboard 307 in 95ms (next.js: 2ms, proxy.ts: 3ms, application-code: 89ms)
+ GET /onboarding 200 in 56ms (next.js: 3ms, proxy.ts: 5ms, application-code: 48ms)
+ GET /api/auth/get-session 200 in 15ms (next.js: 6ms, proxy.ts: 3ms, application-code: 6ms)
+ GET /account 200 in 46ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 43ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 10ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 21ms (next.js: 9ms, proxy.ts: 6ms, application-code: 6ms)
+ POST /api/auth/sign-out 200 in 9ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 5ms)
+ GET /sign-in 200 in 37ms (next.js: 3ms, proxy.ts: 1.5ms, application-code: 33ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 3ms, proxy.ts: 3ms, application-code: 6ms)
+  ✓  2 [chromium] › e2e/auth-lifecycle-local.spec.ts:85:9 › auth lifecycle en: verification, magic link, reset, sessions and passkey (11.0s)
+
+  2 passed (23.8s)
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

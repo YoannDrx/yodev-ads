@@ -231,6 +231,18 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         const invitationLink = await emailUrl(db, recipient, 'magic_link', locale)
         expect(new URL(invitationLink).searchParams.get('callbackURL')).toBe(`/invitation?id=${invitationIds[3]}`)
         await invitedPage.goto(invitationLink)
+        // Better Auth must restore the invitation after persistence refuses a
+        // workspace whose lifecycle changed since the invitation was sent.
+        const priorAccess = (await db.query('select access_state from workspaces where auth_organization_id=$1', [organizationId])).rows[0].access_state
+        try {
+          await db.query("update workspaces set access_state='grace' where auth_organization_id=$1", [organizationId])
+          await invitedPage.getByRole('button', { name: /^(Accept invitation|Accepter l’invitation)$/ }).click()
+          await expect(invitedPage.getByRole('main').getByRole('alert')).toBeVisible()
+          expect((await db.query('select status from auth_invitations where id=$1', [invitationIds[3]])).rows[0].status).toBe('pending')
+          expect((await db.query('select count(*)::int as count from auth_members where organization_id=$1 and user_id=$2', [organizationId, user.id])).rows[0].count).toBe(0)
+        } finally {
+          await db.query('update workspaces set access_state=$1 where auth_organization_id=$2', [priorAccess, organizationId])
+        }
         let lostResponses = 0
         await invitedPage.route('**/api/auth/organization/accept-invitation', async (route) => {
           const response = await route.fetch()
