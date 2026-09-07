@@ -124,8 +124,13 @@ describe('tenant-aware data repository', () => {
 
     const fallback = { id: 'fallback', name: 'Fallback' }
     mocks.databases.push(queryDatabase({ clients: {} }).db, queryDatabase({ clients: { first: fallback } }).db)
-    await expect(repository.getWorkspaceClient(workspaceId, 'missing')).resolves.toBeUndefined()
+    await expect(repository.getWorkspaceClient(workspaceId, '00000000-0000-4000-8000-000000000099')).resolves.toBeUndefined()
     await expect(repository.getWorkspaceClient(workspaceId)).resolves.toEqual(fallback)
+  })
+
+  it('rejects malformed explicit clients without a query or default-client fallback', async () => {
+    for (const value of ['missing', '', 'not-a-uuid', ['first', 'second'] as unknown as string]) await expect(repository.getWorkspaceClient(workspaceId, value)).resolves.toBeUndefined()
+    expect(mocks.tenant).not.toHaveBeenCalled()
   })
 
   it('deduplicates latest conversion and offline diagnostic snapshots by resource identity', async () => {

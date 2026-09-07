@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { BarChart3, Boxes, Clock3, Crosshair, MapPinned, MonitorSmartphone, PackageSearch, UsersRound, Video } from 'lucide-react'
 import { EmptyState } from '@/components/empty-state'
 import { PageHeading } from '@/components/page-heading'
@@ -46,6 +47,7 @@ export default async function InsightsPage({ searchParams }: InsightsPageProps) 
   const locale = english ? 'en' : 'fr'
   const [connection, clients] = await Promise.all([getWorkspaceConnection(workspace.id), listWorkspaceClients(workspace.id)])
   const client = await getWorkspaceClient(workspace.id, query.client)
+  if (query.client !== undefined && !client) notFound()
   const collection = client ? await getAnalyticalCollections(workspace.id, client.id, ['devices', 'schedules', 'geographies', 'auctions', 'placements', 'assetGroups', 'assets', 'products', 'productDiagnostics', 'audiences', 'adGroupAudiences', 'groupPlacements'], 200) : { snapshots: [], attempts: [] }
   const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
   const canRefresh = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed

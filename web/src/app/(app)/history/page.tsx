@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation'
 import { Activity, CalendarDays, CircleAlert, History, MousePointerClick, ReceiptText, ShieldCheck, Target } from 'lucide-react'
 import { PageHeading } from '@/components/page-heading'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +25,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
     listWorkspaceClients(workspace.id),
     getWorkspaceClient(workspace.id, query.client),
   ])
+  if (query.client !== undefined && !client) notFound()
   const historyDays = ({ trial: 30, solo: 90, studio: 365, agency: 730, internal: 730 } as const)[entitlements.plan]
   const [history, conversions, offlineDiagnostics, timeline] = client
     ? await Promise.all([

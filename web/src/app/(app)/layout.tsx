@@ -1,4 +1,5 @@
 import { BrandStyles } from '@/components/brand-styles'
+import { NavigationLink, SkipToContent } from '@/components/navigation-link'
 import { MobileMenu } from '@/components/mobile-menu'
 import { workspacePermissions } from '@/lib/workspace-decision'
 import Link from 'next/link'
@@ -89,9 +90,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div
       className="workspace-brand min-h-screen bg-[#f3f6f8]"
     >
+      <SkipToContent>{locale === 'en' ? 'Skip to content' : 'Aller au contenu'}</SkipToContent>
       <BrandStyles accentColor={workspace.accentColor} nonce={requestHeaders.get('x-nonce') ?? undefined} scope="workspace" />
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-white/8 bg-[#0d1722] px-4 py-5 text-white lg:flex lg:flex-col">
-        <Link href={homeHref} className="flex items-center gap-3 px-2 font-semibold tracking-tight">
+        <Link href={homeHref} className="flex shrink-0 items-center gap-3 px-2 font-semibold tracking-tight">
           {isControlledBrandLogoUrl(workspace.logoUrl) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={workspace.logoUrl!} alt="" className="size-9 rounded-xl object-cover" />
@@ -102,20 +104,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           )}
           <span className="truncate text-lg">{workspace.brandName}</span>
         </Link>
-        <nav className="mt-9 space-y-1">
+        <nav aria-label={locale === 'en' ? 'Main navigation' : 'Navigation principale'} className="mt-6 min-h-0 flex-1 space-y-1 overflow-y-auto">
           {accessibleNavigation.map(({ href, key, icon: Icon }) => (
-            <Link
+            <NavigationLink
               key={href}
               href={href}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/58 transition hover:bg-white/8 hover:text-white"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/8 hover:text-white aria-[current=page]:bg-white/12 aria-[current=page]:text-white aria-[current=page]:ring-1 aria-[current=page]:ring-inset aria-[current=page]:ring-white/20 focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <Icon className="size-[18px]" />
               {labels[key]}
-            </Link>
+            </NavigationLink>
           ))}
-          {workspace.accessState === 'internal' && rolePermissions.has('workspace:admin') && <Link href="/operations" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-amber-200/80 transition hover:bg-white/8 hover:text-amber-100"><RadioTower className="size-[18px]" />{locale === 'en' ? 'Operations' : 'Opérations'}</Link>}
+          {workspace.accessState === 'internal' && rolePermissions.has('workspace:admin') && <NavigationLink href="/operations" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-amber-200/80 transition hover:bg-white/8 hover:text-amber-100 aria-[current=page]:bg-white/12 aria-[current=page]:text-amber-100"><RadioTower className="size-[18px]" />{locale === 'en' ? 'Operations' : 'Opérations'}</NavigationLink>}
         </nav>
-        <div className="mt-auto rounded-2xl border border-white/8 bg-white/5 p-4">
+        <div className="mt-4 shrink-0 rounded-2xl border border-white/8 bg-white/5 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-[#19A58F]">{locale === 'en' ? 'Your monitor' : 'Votre vigie'}</p>
           <p className="mt-2 text-sm font-medium text-white/80">{workspace.brandTagline}</p>
         </div>
@@ -135,21 +137,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <AccountMenu locale={locale} />
           </div>
         </header>
-        <main className="mx-auto max-w-[1500px] px-4 pb-24 pt-7 sm:px-7 sm:pt-9 lg:pb-10">{children}</main>
+        <main id="main-content" tabIndex={-1} className="mx-auto scroll-mt-20 max-w-[1500px] px-4 pb-24 pt-7 sm:px-7 sm:pt-9 lg:pb-10">{children}</main>
         <nav aria-label={locale === 'en' ? 'Quick navigation' : 'Navigation rapide'} className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t bg-white px-2 py-2 lg:hidden">
           {mobileNavigation.map(({ href, key, icon: Icon }) => (
-            <Link
+            <NavigationLink
               key={href}
               href={href}
-              className="flex min-w-14 flex-col items-center gap-1 py-1 text-[10px] text-muted-foreground"
+              className="flex min-w-14 flex-col items-center gap-1 py-1 text-[10px] text-muted-foreground aria-[current=page]:font-semibold aria-[current=page]:text-slate-950 aria-[current=page]:underline aria-[current=page]:underline-offset-4"
             >
               <Icon className="size-5" />
               <span>{labels[key].split(' ')[0]}</span>
-            </Link>
+            </NavigationLink>
           ))}
           <MobileMenu label={locale === 'en' ? 'Full navigation' : 'Navigation complète'}>
-              {accessibleNavigation.map(({ href, key, icon: Icon }) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined} className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-100"><Icon className="size-5" />{labels[key]}</Link>)}
-              {workspace.accessState === 'internal' && rolePermissions.has('workspace:admin') && <Link href="/operations" className="flex min-h-11 items-center px-3 text-sm">{locale === 'en' ? 'Operations' : 'Opérations'}</Link>}
+              {accessibleNavigation.map(({ href, key, icon: Icon }) => <NavigationLink key={href} href={href} className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-100 aria-[current=page]:bg-slate-100 aria-[current=page]:font-semibold aria-[current=page]:ring-1 aria-[current=page]:ring-slate-300"><Icon className="size-5" />{labels[key]}</NavigationLink>)}
+              {workspace.accessState === 'internal' && rolePermissions.has('workspace:admin') && <NavigationLink href="/operations" className="flex min-h-11 items-center px-3 text-sm aria-[current=page]:bg-slate-100 aria-[current=page]:font-semibold">{locale === 'en' ? 'Operations' : 'Opérations'}</NavigationLink>}
           </MobileMenu>
         </nav>
       </div>

@@ -1,6 +1,7 @@
 import { featureEnabled, googleMutationKindEnabled } from '@/lib/feature-flags'
 import { dashboardHealth, dashboardScoreCampaigns } from '@/lib/dashboard-health'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { Activity, ArrowDownUp, BellRing, Gauge, MousePointerClick, ReceiptText, Target } from 'lucide-react'
 import { requestGoogleAdsChange, updateClientGoal } from '@/app/actions'
 import { FlashMessage } from '@/components/flash-message'
@@ -31,6 +32,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     listWorkspaceClients(workspace.id),
   ])
   const client = await getWorkspaceClient(workspace.id, query.client)
+  if (query.client !== undefined && !client) notFound()
   const [collection, goalContext, accountPerformance, alertSummary] = await Promise.all([
     client ? getAnalyticalCollections(workspace.id, client.id, ['campaigns']) : { snapshots: [], attempts: [] },
     client ? getClientGoalAndPacing(workspace.id, client.id, client.timezone) : undefined,

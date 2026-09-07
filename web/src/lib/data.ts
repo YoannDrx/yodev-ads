@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { and, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, sql, sum } from 'drizzle-orm'
+import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 import {
@@ -184,9 +185,10 @@ export async function activeWorkspaceOrigin(workspaceId: string) {
 }
 
 export async function getWorkspaceClient(workspaceId: string, clientId?: string) {
-  if (clientId) {
+  if (clientId !== undefined) {
+    if (!z.string().uuid().safeParse(clientId).success) return undefined
     const selected = await tenantRead(workspaceId, (db) => db.query.clients.findFirst({
-      where: and(eq(clients.workspaceId, workspaceId), eq(clients.id, clientId), eq(clients.active, true)),
+      where: and(eq(clients.workspaceId, workspaceId), eq(clients.id, clientId), eq(clients.active, true), eq(clients.isManager, false)),
     }))
     return selected
   }

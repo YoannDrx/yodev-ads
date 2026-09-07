@@ -1,6 +1,7 @@
 import { workspaceDecision } from '@/lib/workspace-decision'
 import { googleMutationKindEnabled } from '@/lib/feature-flags'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import {
   BadgeAlert,
   ChartNoAxesCombined,
@@ -50,6 +51,7 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
     listWorkspaceClients(workspace.id),
   ])
   const client = await getWorkspaceClient(workspace.id, query.client)
+  if (query.client !== undefined && !client) notFound()
   const collection = client ? await getAnalyticalCollections(workspace.id, client.id, ['campaigns', 'searchTerms', 'keywords', 'ads', 'tracking']) : { snapshots: [], attempts: [] }
   const campaigns = client ? analyticalSnapshotData(collection.snapshots, 'campaigns', client) : undefined
   const searchTerms = client ? analyticalSnapshotData(collection.snapshots, 'searchTerms', client) : undefined

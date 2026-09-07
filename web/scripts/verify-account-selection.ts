@@ -58,6 +58,8 @@ async function main() {
     assert.deepEqual(ordered.includedAdvertisers.map((account) => account.id), reordered.slice(0, 3))
     assert.equal(await getWorkspaceClient(workspaceId, selectedIds[4]), undefined, 'Explicit inactive ID never falls back to another client')
     assert.equal(await getWorkspaceClient(workspaceId, foreignId), undefined, 'Foreign ID never falls back')
+    assert.equal(await getWorkspaceClient(workspaceId, stored.accounts.find((account) => account.isManager)!.id), undefined, 'Manager is not an advertiser cockpit')
+    assert.equal(await getWorkspaceClient(workspaceId, 'invalid'), undefined, 'Malformed client never reaches the UUID query')
     stored = await getWorkspaceAccountSelection(workspaceId)
     const concurrent = await Promise.allSettled([selectedIds.slice(0, 3), selectedIds.slice(3, 6)].map((clientIds) => saveManagedAccountSelection({ workspaceId, actorUserId: owner, clientIds, version: stored.version })))
     assert.equal(concurrent.filter((result) => result.status === 'fulfilled').length, 1)
