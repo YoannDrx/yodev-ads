@@ -161,7 +161,6 @@ describe('tenant-aware data repository', () => {
     const joined = [{ id: 'joined' }]
     for (const call of [
       () => repository.listMonitoringAgents(workspaceId),
-      () => repository.listAlertIncidents(workspaceId),
       () => repository.listShareLinks(workspaceId),
       () => repository.listPublicClientApprovals(workspaceId, clientId, 'share-1'),
     ]) {
@@ -170,6 +169,11 @@ describe('tenant-aware data repository', () => {
     }
   })
 
+
+  it('returns complete selected-client alert counts', async () => {
+    mocks.databases.push(databaseDouble({ statementResults: [[{ openCount: 521, criticalCount: 301 }]] }).db)
+    await expect(repository.getClientAlertSummary(workspaceId, clientId)).resolves.toEqual({ clientId, openCount: 521, criticalCount: 301 })
+  })
 
   it('loads active report templates and their joined schedules together', async () => {
     const templates = [{ id: 'template-1', name: 'Monthly' }]

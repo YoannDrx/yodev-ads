@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { eq, sql } from 'drizzle-orm'
 import { workspaces, clients, monitoringAgents, workspaceTasks, supportTickets, approvalRequests, alertIncidents } from '../src/db/schema'
 import { withSystemTransaction } from '../src/db/transactions'
+import { getClientAlertSummary } from '../src/lib/data'
 import { listApiAlerts, listApiApprovals, listApiReports } from '../src/lib/api-v1-repository'
 import { listAuditPage, listAlertPage, listTaskPage, listApprovalPage, listSupportPage, listDiscussionPage, type DiscussionKind } from '../src/lib/workspace-collections'
 
@@ -77,6 +78,16 @@ async function main() {
       } while (cursor)
       assert.equal(seen.size, 521, `${kind} API missing records at microsecond boundaries`)
     }
+    // The cockpit must count every selected-client incident even if >200 newer rows belong elsewhere.
+    const [otherClient] = await withSystemTransaction((db) => db.insert(clients).values({ workspaceId, googleCustomerId: '7800000001', name: 'Other client' }).returning())
+    await withSystemTransaction(async (db) => {
+      await db.execute(sql`update alert_incidents set severity='critical', status='reopened' where workspace_id=${workspaceId}`)
+      await db.execute(sql`insert into alert_incidents(workspace_id,client_id,agent_id,fingerprint,title,description,severity,status,detected_at) select ${workspaceId},${otherClient.id},${agent.id},'other-'||n,'Other alert','Fixture','critical','open',now()+interval '1 hour' from generate_series(1,301) n`)
+      await db.execute(sql`insert into alert_incidents(workspace_id,client_id,agent_id,fingerprint,title,description,severity,status) select ${workspaceId},${client.id},${agent.id},'closed-'||status,'Closed alert','Fixture','critical',status from unnest(array['acknowledged','snoozed','resolved']) status`)
+    })
+    assert.deepEqual(await getClientAlertSummary(workspaceId, client.id), { clientId: client.id, openCount: 521, criticalCount: 521 })
+    assert.deepEqual(await getClientAlertSummary(workspaceId, otherClient.id), { clientId: otherClient.id, openCount: 301, criticalCount: 301 })
+    assert.deepEqual(await getClientAlertSummary(foreignId, client.id), { clientId: client.id, openCount: 0, criticalCount: 0 })
     const firstTasks = await listTaskPage(workspaceId)
     assert((await listTaskPage(workspaceId, { cursor: firstTasks.nextCursor!, q: 'Task 1' })).invalidCursor)
     assert((await listSupportPage(workspaceId, 'other-reader', (await listSupportPage(workspaceId, undefined)).nextCursor ? { cursor: (await listSupportPage(workspaceId, undefined)).nextCursor! } : {})).invalidCursor)
@@ -117,7 +128,7 @@ async function main() {
     const supportPreview = (await listSupportPage(workspaceId, undefined, { id: ticket.id })).items.find((item) => item.ticket.id === ticket.id)!
     assert(supportPreview.hasMoreComments); assert.equal(supportPreview.messages.length, 5)
     assert(supportPreview.messages.every((comment) => !comment.body.includes('PRIVATE')))
-    console.log(JSON.stringify({ ok: true, collections: 5, apiCollections: 3, recordsPerCollection: 521, discussions: 4, messagesPerDiscussion: 701, verified: ['microsecond_and_uuid_ordering', 'concurrent_insert_excluded_from_existing_page_walk', 'tenant_filter_and_reader_bound_cursor', 'forged_cursor_denied', 'literal_search', 'latest_five_previews', 'complete_discussion_history', 'internal_support_messages_hidden'], providerCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, collections: 5, apiCollections: 3, recordsPerCollection: 521, discussions: 4, messagesPerDiscussion: 701, verified: ['complete_client_alert_counts_despite_newer_foreign_rows', 'microsecond_and_uuid_ordering', 'concurrent_insert_excluded_from_existing_page_walk', 'tenant_filter_and_reader_bound_cursor', 'forged_cursor_denied', 'literal_search', 'latest_five_previews', 'complete_discussion_history', 'internal_support_messages_hidden'], providerCalls: 0 }))
   } finally { for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id))) }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1 })

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { requireWorkspace } from '@/lib/workspace'
 import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
-import { getPublicPlatformStatus } from '@/lib/public-status'
+import { getPublicPlatformSummary } from '@/lib/public-status'
 import { workspaceAccessAllowsPath } from '@/lib/workspace-access'
 import { AccountMenu } from '@/components/account-menu'
 import { type Permission } from '@/lib/permissions'
@@ -60,7 +60,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   await connection()
   const [{ workspace, role }, status, requestHeaders] = await Promise.all([
     requireWorkspace(),
-    getPublicPlatformStatus().catch(() => null),
+    getPublicPlatformSummary().catch(() => null),
     headers(),
   ])
   const pathname = requestHeaders.get('x-yodev-pathname') ?? '/dashboard'
@@ -74,12 +74,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
   const locale = workspace.locale === 'en' ? 'en' : 'fr'
   const labels = navigationLabels[locale]
-  const statusLabel = status?.summary.overall === 'operational'
-    ? locale === 'en' ? 'All systems operational' : 'Système opérationnel'
-    : status
-      ? locale === 'en'
-        ? `${status.summary.activeIncidentCount} active incident${status.summary.activeIncidentCount === 1 ? '' : 's'}`
-        : `${status.summary.activeIncidentCount} incident${status.summary.activeIncidentCount > 1 ? 's' : ''} actif${status.summary.activeIncidentCount > 1 ? 's' : ''}`
+  const hasDeclaredIncident = status && status.activeIncidentCount > 0
+  const statusLabel = hasDeclaredIncident
+    ? locale === 'en' ? `${status.activeIncidentCount} active incident${status.activeIncidentCount === 1 ? '' : 's'}`
+      : `${status.activeIncidentCount} incident${status.activeIncidentCount > 1 ? 's' : ''} actif${status.activeIncidentCount > 1 ? 's' : ''}`
+    : status ? locale === 'en' ? 'Service health unverified' : 'État du service non vérifié'
       : locale === 'en' ? 'Status unavailable' : 'Statut indisponible'
   const accessibleNavigation = navigation.filter(({ href, permission }) =>
     workspaceAccessAllowsPath(workspace.accessState, href) && rolePermissions.has(permission),
@@ -130,8 +129,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
           <div className="hidden min-w-0 truncate text-sm font-medium text-slate-600 lg:block" title={workspace.name}>{workspace.name}</div>
           <div className="flex shrink-0 items-center gap-4">
-            <Link href="/status" className={`hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium sm:flex ${status?.summary.overall === 'operational' ? 'bg-emerald-50 text-emerald-700' : status ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
-              <span className={`size-1.5 rounded-full ${status?.summary.overall === 'operational' ? 'bg-emerald-500' : status ? 'bg-amber-500' : 'bg-slate-400'}`} /> {statusLabel}
+            <Link href="/status" className={`hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium sm:flex ${hasDeclaredIncident ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+              <span className={`size-1.5 rounded-full ${hasDeclaredIncident ? 'bg-amber-500' : 'bg-slate-400'}`} /> {statusLabel}
             </Link>
             <AccountMenu locale={locale} />
           </div>

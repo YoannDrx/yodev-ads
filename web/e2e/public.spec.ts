@@ -45,10 +45,12 @@ test('the public product and legal surface honor the English locale', async ({ c
 
 test('public status page never claims operational health when status storage is unavailable', async ({ page }) => {
   await page.goto('/status')
-  await expect(page.getByText('État du service')).toBeVisible()
+  await expect(page.getByText('État du service', { exact: true })).toBeVisible()
   const unavailable = page.getByRole('heading', { name: 'Statut temporairement indisponible' })
   await expect(page.locator('h1')).toBeVisible()
+  await expect(page.locator('h1')).not.toHaveText('Opérationnel')
+  await expect(page.getByText(/Sans contrôle récent vérifié/)).toBeVisible()
   if (await unavailable.isVisible()) {
-    await expect(page.getByText(/ne signifie pas que l’application est opérationnelle/i)).toBeVisible()
+    await expect(page.getByText('Le registre des incidents ne peut pas être interrogé.', { exact: true })).toBeVisible()
   }
 })

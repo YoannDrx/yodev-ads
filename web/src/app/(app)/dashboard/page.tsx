@@ -1,5 +1,5 @@
 import { featureEnabled, googleMutationKindEnabled } from '@/lib/feature-flags'
-import { dashboardHealth } from '@/lib/dashboard-health'
+import { dashboardHealth, dashboardScoreCampaigns } from '@/lib/dashboard-health'
 import Link from 'next/link'
 import { Activity, ArrowDownUp, BellRing, Gauge, MousePointerClick, ReceiptText, Target } from 'lucide-react'
 import { requestGoogleAdsChange, updateClientGoal } from '@/app/actions'
@@ -9,7 +9,7 @@ import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { getClientGoalAndPacing, getQualifiedAccountPerformance, getWorkspaceClient, getWorkspaceConnection, listAlertIncidents, listWorkspaceClients } from '@/lib/data'
+import { getClientGoalAndPacing, getQualifiedAccountPerformance, getWorkspaceClient, getWorkspaceConnection, getClientAlertSummary, listWorkspaceClients } from '@/lib/data'
 import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/format'
 import { getAnalyticalCollections } from '@/lib/analytical-collections'
 import { analyticalSnapshotData } from '@/lib/analytical-model'
@@ -26,16 +26,16 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const { workspace, isAdmin, role, entitlements } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
-  const [connection, workspaceClients, alertRows] = await Promise.all([
+  const [connection, workspaceClients] = await Promise.all([
     getWorkspaceConnection(workspace.id),
     listWorkspaceClients(workspace.id),
-    listAlertIncidents(workspace.id),
   ])
   const client = await getWorkspaceClient(workspace.id, query.client)
-  const [collection, goalContext, accountPerformance] = await Promise.all([
+  const [collection, goalContext, accountPerformance, alertSummary] = await Promise.all([
     client ? getAnalyticalCollections(workspace.id, client.id, ['campaigns']) : { snapshots: [], attempts: [] },
     client ? getClientGoalAndPacing(workspace.id, client.id, client.timezone) : undefined,
     client ? getQualifiedAccountPerformance(workspace.id, client.id) : undefined,
+    client ? getClientAlertSummary(workspace.id, client.id) : undefined,
   ])
   const campaignSnapshot = client ? analyticalSnapshotData(collection.snapshots, 'campaigns', client) : undefined
   const campaigns = campaignSnapshot ?? []
@@ -71,9 +71,9 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const totals = accountPerformance?.totals
   const coverageNote = accountPerformance ? `${accountPerformance.coverage.completeDays}/30 ${english ? 'covered days' : 'jours couverts'}` : (english ? 'No collection' : 'Aucune collecte')
   const currency = client?.currencyCode ?? 'EUR'
-  const { score: healthScore, openIncidents: openAlerts } = dashboardHealth({
-    clientId: client?.id, campaigns: campaignSnapshot ?? null,
-    incidents: alertRows.map(({ incident }) => incident),
+  const { score: healthScore, openCount: openAlerts } = dashboardHealth({
+    clientId: client?.id, campaigns: client ? dashboardScoreCampaigns(collection.snapshots, client) : null,
+    alerts: alertSummary,
   })
   const collectedAt = collection.snapshots.find((row) => row.family === 'campaigns')?.collectedAt
   const pacingStatusLabel = {
@@ -162,22 +162,30 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
             />
           </section>
 
+
+
+        </>
+      )}
+      {client && (
           <section className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_.7fr]">
             <Card className="overflow-hidden border-[#dce5e7] bg-[#0d1722] text-white shadow-none">
               <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">{english ? 'Monitoring score' : 'Score de vigilance'}</p>
-                  <p className="mt-3 text-4xl font-semibold tracking-tight">
+                  <p id="dashboard-score-label" className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">{english ? 'Monitoring score' : 'Score de vigilance'}</p>
+                  <p aria-labelledby="dashboard-score-label" data-dashboard-score className="mt-3 text-4xl font-semibold tracking-tight">
                     {healthScore ?? '—'}
                     <span className="text-lg text-white/35"> / 100</span>
                   </p>
                   <p className="mt-2 max-w-md text-sm leading-6 text-white/55">
-                    {english ? 'Client score based on delivery, spend without conversions, and open or reopened incidents. No score without campaigns; acknowledged and snoozed incidents are excluded.' : 'Score du client fondé sur la diffusion, les dépenses sans conversion et les incidents ouverts ou rouverts. Aucun score sans campagne ; les incidents acquittés et reportés sont exclus.'}
+                    {english ? 'Client score based on delivery, spend without conversions, and open or reopened incidents. Requires fresh campaign data with all available query pages received. Acknowledged and snoozed incidents are excluded.' : 'Score du client fondé sur la diffusion, les dépenses sans conversion et les incidents ouverts ou rouverts. Le score exige des campagnes récentes et toutes les pages disponibles de la collecte. Les incidents acquittés et reportés sont exclus.'}
                   </p>
                 </div>
-                <div className="relative grid size-28 shrink-0 place-items-center rounded-full border-[10px] border-white/8">
-                  <Gauge className="size-9 text-[#19A58F]" />
-                  <span className="absolute inset-[-10px] rounded-full border-[10px] border-[#19A58F] border-l-transparent border-b-transparent" />
+                <div aria-hidden="true" className="relative grid size-28 shrink-0 place-items-center">
+                  <svg viewBox="0 0 112 112" className="absolute inset-0 size-full -rotate-90" focusable="false">
+                    <circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="10" className="text-white/10" />
+                    {healthScore !== null && <circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="10" pathLength="100" strokeDasharray={`${healthScore} 100`} className="text-[#19A58F]" />}
+                  </svg>
+                  <Gauge className={`size-9 ${healthScore === null ? 'text-white/35' : 'text-[#19A58F]'}`} />
                 </div>
               </CardContent>
             </Card>
@@ -185,21 +193,19 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">{english ? 'Open incidents' : 'Incidents ouverts'}</p>
-                    <p className="mt-2 text-4xl font-semibold tracking-tight">{openAlerts.length}</p>
+                    <p id="dashboard-alert-label" className="text-sm text-muted-foreground">{english ? 'Open incidents' : 'Incidents ouverts'}</p>
+                    <p aria-labelledby="dashboard-alert-label" data-dashboard-alerts className="mt-2 text-4xl font-semibold tracking-tight">{openAlerts ?? '—'}</p>
                   </div>
                   <span className="grid size-11 place-items-center rounded-2xl bg-amber-50 text-amber-700">
                     <BellRing className="size-5" />
                   </span>
                 </div>
                 <Button asChild variant="outline" className="mt-6 w-full">
-                  <Link href="/alerts">{english ? 'Open alert center' : 'Ouvrir le centre d’alertes'}</Link>
+                  <Link href={`/alerts?client=${client.id}`}>{english ? 'Open alert center' : 'Ouvrir le centre d’alertes'}</Link>
                 </Button>
               </CardContent>
             </Card>
           </section>
-
-        </>
       )}
       {client && (
           <Card className="mt-6 border-[#dce5e7] shadow-none">

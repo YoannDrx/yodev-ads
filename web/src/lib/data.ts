@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, count, desc, eq, gt, gte, isNotNull, isNull, lte, sql, sum } from 'drizzle-orm'
+import { and, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, sql, sum } from 'drizzle-orm'
 import { cookies } from 'next/headers'
 import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 import {
@@ -30,6 +30,7 @@ import {
   workspaceDomains,
   workspaces,
 } from '@/db/schema'
+import type { ClientAlertSummary } from '@/lib/dashboard-health'
 import { hashToken } from '@/lib/tokens'
 import { reportCalendarWindow, shiftCalendarDate } from '@/lib/calendar-window'
 import { metricCoverage } from '@/lib/metric-coverage'
@@ -273,15 +274,17 @@ export async function listMonitoringAgents(workspaceId: string) {
     .orderBy(desc(monitoringAgents.createdAt)))
 }
 
-export async function listAlertIncidents(workspaceId: string) {
-  return tenantRead(workspaceId, (db) => db
-    .select({ incident: alertIncidents, client: clients, agent: monitoringAgents })
-    .from(alertIncidents)
-    .innerJoin(clients, eq(clients.id, alertIncidents.clientId))
-    .innerJoin(monitoringAgents, eq(monitoringAgents.id, alertIncidents.agentId))
-    .where(eq(alertIncidents.workspaceId, workspaceId))
-    .orderBy(desc(alertIncidents.detectedAt))
-    .limit(200))
+export async function getClientAlertSummary(workspaceId: string, clientId: string): Promise<ClientAlertSummary> {
+  return tenantRead(workspaceId, async (db) => {
+    const [summary] = await db.select({
+      openCount: count(),
+      criticalCount: sql<number>`count(*) filter (where ${alertIncidents.severity} = 'critical')`.mapWith(Number),
+    }).from(alertIncidents).where(and(
+      eq(alertIncidents.workspaceId, workspaceId), eq(alertIncidents.clientId, clientId),
+      inArray(alertIncidents.status, ['open', 'reopened']),
+    ))
+    return { clientId, ...summary }
+  })
 }
 
 export async function getMyTaskNotificationPreferences(workspaceId: string, authUserId: string) {
