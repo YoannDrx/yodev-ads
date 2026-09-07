@@ -218,7 +218,7 @@ describe('durable job runner orchestration', () => {
   it('excludes notification jobs when the notification kill switch is off', async () => {
     mocks.featureEnabled.mockImplementation((flag) => flag !== 'notifications')
     await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
-    expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining(['notification.deliver']))
+    expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining(['notification.deliver', 'monitoring.weekly_digest']))
   })
 
   it('excludes every Google read job when its independent kill switch is off', async () => {
@@ -226,7 +226,6 @@ describe('durable job runner orchestration', () => {
     await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
     expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining([
       'monitoring.scan',
-      'monitoring.weekly_digest',
       'google.mutation.reconcile',
       'mutation.observe',
       'metrics.daily_sync',
@@ -235,6 +234,17 @@ describe('durable job runner orchestration', () => {
       'google.change_sync',
       'conversion.actions_sync',
     ]))
+  })
+
+  it('executes stored weekly digests while Google reads are disabled', async () => {
+    mocks.featureEnabled.mockImplementation((flag) => flag !== 'googleReads')
+    const digest = job('monitoring.weekly_digest', { workspaceId })
+    mocks.jobs.push(digest)
+    await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
+    expect(mocks.claimNextJob.mock.calls[0][3]).not.toContain('monitoring.weekly_digest')
+    expect(mocks.weeklyDigest).toHaveBeenCalledWith(workspaceId, digest.createdAt)
+    expect(mocks.listManagedCustomers).not.toHaveBeenCalled()
+    expect(mocks.dailyAccountMetrics).not.toHaveBeenCalled()
   })
 
   it.each(['not_available', 'disabled'])('keeps a notification job retryable when transport is %s', async (status) => {
@@ -415,6 +425,15 @@ describe('durable job runner orchestration', () => {
     }))
     expect(pending.filter((item) => item.type === 'analytics.collect')).toHaveLength(17)
     expect(pending.every((item) => item.deduplicationKey.length > 5)).toBe(true)
+  })
+
+  it('schedules stored Monday digests independently of Google reads', async () => {
+    mocks.featureEnabled.mockImplementation((flag) => flag !== 'googleReads')
+    mocks.databases.push(databaseDouble({ statementResults: [[{ workspaceId, timezone: 'Europe/Paris' }]] }).db)
+    await seedScheduledJobs(new Date('2026-08-10T08:00:00Z'))
+    const [pending] = mocks.enqueueJobs.mock.calls[0] as [Array<{ type: string; deduplicationKey: string }>]
+    expect(new Set(pending.map((item) => item.type))).toEqual(new Set(['retention.run', 'monitoring.weekly_digest']))
+    expect(pending).toContainEqual(expect.objectContaining({ deduplicationKey: `monitoring.weekly_digest:${workspaceId}:2026-08-10` }))
   })
 
   it('seeds only provider-independent work while Google reads and notifications are disabled', async () => {

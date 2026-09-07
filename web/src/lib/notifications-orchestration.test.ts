@@ -392,6 +392,14 @@ describe('notification delivery orchestration', () => {
     expect(mocks.portfolio).toHaveBeenCalledExactlyOnceWith(payload.workspaceId)
   })
 
+  it('skips a direct digest invocation before reading when notifications are disabled', async () => {
+    mocks.featureEnabled.mockReturnValue(false)
+    expect(await dispatchWeeklyDigest(payload.workspaceId)).toEqual({ accepted: 0, failed: 0, skipped: true })
+    expect(mocks.runTransaction).not.toHaveBeenCalled()
+    expect(mocks.portfolio).not.toHaveBeenCalled()
+    expect(mocks.emailSend).not.toHaveBeenCalled()
+  })
+
   it.each([null, { summary: { accounts: 0 } }])('skips unavailable or empty portfolios without delivery', async (portfolio) => {
     mocks.portfolio.mockResolvedValue(portfolio)
     mocks.databases.push(databaseDouble({ query: queryDouble({ workspace: { id: payload.workspaceId, locale: 'en' } }) }).db)

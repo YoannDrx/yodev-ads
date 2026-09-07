@@ -382,6 +382,7 @@ export async function dispatchIncidentNotifications(payload: NotificationPayload
 }
 
 export async function dispatchWeeklyDigest(workspaceId: string, date = new Date()) {
+  if (!featureEnabled('notifications')) return { accepted: 0, failed: 0, skipped: true }
   // The job creation date identifies the scheduled event across retries. Metrics
   // are qualified at the attempt time and carry their actual local periods.
   const snapshotDate = date.toISOString().slice(0, 10)
@@ -402,5 +403,5 @@ export async function dispatchWeeklyDigest(workspaceId: string, date = new Date(
     clientName: locale === 'en' ? `${accountCount} account(s)` : `${accountCount} compte(s)`,
     description: portfolioDigestDescription(portfolio.summary, portfolio.groups, locale),
   })
-  return { ...result, skipped: false }
+  return { ...result, skipped: 'skipped' in result && result.skipped === true }
 }

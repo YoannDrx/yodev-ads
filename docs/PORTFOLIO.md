@@ -25,6 +25,8 @@ La permission `portfolio:read` contrôle la page ; le rôle client n’y accède
 
 Le digest utilise les mêmes totaux qualifiés, leurs périodes et leurs dénominateurs. Un groupe sans données qualifiées est signalé comme indisponible. Il mentionne aussi les alertes critiques, tâches en retard et décisions en attente. La date de création du job identifie l’occurrence sur les reprises, même le lendemain ; la date des données est celle de leurs périodes réelles au moment du traitement. L’outbox existante assure la déduplication par canal. La validation locale ne prouve pas une réception email, Slack ou Teams.
 
+Sa planification et son traitement dépendent des notifications, indépendamment du switch des lectures Google : le contenu est déjà stocké. Les scans Google restent désactivés lorsque ce switch est coupé. La génération directe vérifie également l’état des notifications avant toute lecture et conserve le résultat ignoré d’un transport désactivé.
+
 ## Migration et exploitation
 
 `0053_portfolio_saved_views` ajoute uniquement `portfolio_views`, son index, les contraintes de taille/non-vacuité et ses politiques RLS. Le rôle applicatif exige simultanément l’espace et l’utilisateur propriétaires ; le rôle d’authentification n’a pas de droit sur cette table. Les exports de l’espace incluent les vues ; la suppression de l’espace les supprime par cascade.

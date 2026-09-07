@@ -6,6 +6,7 @@ import { withSystemTransaction } from '../src/db/transactions'
 import { getPortfolioSnapshot, type PortfolioAccount } from '../src/lib/portfolio-data'
 import { getPortfolioWorkload } from '../src/lib/portfolio-workload'
 import { listTaskPage } from '../src/lib/workspace-collections'
+import { dispatchWeeklyDigest } from '../src/lib/notifications'
 
 const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
 assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathname.startsWith('/yodev_test'), 'Disposable local database required')
@@ -81,6 +82,15 @@ async function main() {
     const usd = await getPortfolioSnapshot(workspaceId, { currency: 'USD' })
     assert(usd?.groups.every((group) => group.currency_code === 'USD'))
     assert.equal((await getPortfolioSnapshot(workspaceId, { attention: 'missing_data' }))?.summary.accounts, 5)
+    assert.equal(process.env.GOOGLE_READS_ENABLED, '0')
+    const priorNotifications = process.env.NOTIFICATIONS_ENABLED
+    try {
+      process.env.NOTIFICATIONS_ENABLED = '1'
+      assert.deepEqual(await dispatchWeeklyDigest(workspaceId), { accepted: 0, failed: 0, skipped: false })
+    } finally {
+      if (priorNotifications === undefined) delete process.env.NOTIFICATIONS_ENABLED
+      else process.env.NOTIFICATIONS_ENABLED = priorNotifications
+    }
     await withSystemTransaction((db) => db.execute(sql`update daily_account_metrics set source_version=' ' where client_id=${accounts[9].id}`))
     const unversioned = await getPortfolioSnapshot(workspaceId, { q: accounts[9].name })
     assert.equal(unversioned?.page.items[0].data_state, 'incomplete')
@@ -89,7 +99,7 @@ async function main() {
     assert.equal((await getPortfolioSnapshot(workspaceId))?.summary.accounts, 50)
     await withSystemTransaction((db) => db.update(workspaces).set({ accessState: 'suspended' }).where(eq(workspaces.id, workspaceId)))
     assert.equal(await getPortfolioSnapshot(workspaceId), null)
-    console.log(JSON.stringify({ ok: true, accounts: 50, qualified: 45, verified: ['complete_alert_and_task_workflow_counts', 'assignee_and_action_filters', 'currency_and_timezone_groups', 'exact_large_money', 'zero_distinct_from_missing', 'partial_legacy_currency_stale_future_rejected', 'tenant_and_filter_cursor', 'all_pages', 'literal_search', 'grace_read_suspension_denied'], providerCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, accounts: 50, qualified: 45, verified: ['complete_alert_and_task_workflow_counts', 'assignee_and_action_filters', 'currency_and_timezone_groups', 'exact_large_money', 'zero_distinct_from_missing', 'partial_legacy_currency_stale_future_rejected', 'tenant_and_filter_cursor', 'all_pages', 'literal_search', 'grace_read_suspension_denied', 'stored_digest_with_google_reads_disabled_and_no_delivery_channel'], providerCalls: 0 }))
   } finally { await cleanup() }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1 })

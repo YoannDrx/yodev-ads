@@ -204,27 +204,25 @@ export async function seedScheduledJobs(now = new Date()) {
   }
   const googleReadsEnabled = featureEnabled('googleReads')
   const notificationsEnabled = featureEnabled('notifications')
-  if (googleReadsEnabled) {
-    for (const workspace of monitoredWorkspaces) {
-      const local = localScheduleParts(now, workspace.timezone)
-      if (local.hour >= 6) {
-        pending.push({
-          workspaceId: workspace.workspaceId,
-          type: 'monitoring.scan',
-          payload: { workspaceId: workspace.workspaceId },
-          priority: 50,
-          deduplicationKey: `monitoring.scan:${workspace.workspaceId}:${local.date}`,
-        })
-      }
-      if (notificationsEnabled && local.weekday === 'Mon' && local.hour >= 7) {
-        pending.push({
-          workspaceId: workspace.workspaceId,
-          type: 'monitoring.weekly_digest',
-          payload: { workspaceId: workspace.workspaceId },
-          priority: 80,
-          deduplicationKey: `monitoring.weekly_digest:${workspace.workspaceId}:${local.date}`,
-        })
-      }
+  for (const workspace of monitoredWorkspaces) {
+    const local = localScheduleParts(now, workspace.timezone)
+    if (googleReadsEnabled && local.hour >= 6) {
+      pending.push({
+        workspaceId: workspace.workspaceId,
+        type: 'monitoring.scan',
+        payload: { workspaceId: workspace.workspaceId },
+        priority: 50,
+        deduplicationKey: `monitoring.scan:${workspace.workspaceId}:${local.date}`,
+      })
+    }
+    if (notificationsEnabled && local.weekday === 'Mon' && local.hour >= 7) {
+      pending.push({
+        workspaceId: workspace.workspaceId,
+        type: 'monitoring.weekly_digest',
+        payload: { workspaceId: workspace.workspaceId },
+        priority: 80,
+        deduplicationKey: `monitoring.weekly_digest:${workspace.workspaceId}:${local.date}`,
+      })
     }
   }
   if (notificationsEnabled) {

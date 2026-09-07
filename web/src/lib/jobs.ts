@@ -61,7 +61,6 @@ export const NOTIFICATION_JOB_TYPES: JobType[] = [
 export const GOOGLE_READ_JOB_TYPES: JobType[] = [
   'monitoring.scan',
   'monitoring.scan_chunk',
-  'monitoring.weekly_digest',
   'google.mutation.reconcile',
   'mutation.observe',
   'metrics.daily_sync',

@@ -1,6 +1,6 @@
 # Ads by Yodev — registre de fonctionnalités et état de livraison
 
-Mis à jour le **7 septembre 2026**, après les lots 25–27 sur `codex/prod-ready` ; la recette générale du lot 25 précède la correction de landing vérifiée séparément au lot 27.
+Mis à jour le **7 septembre 2026**, après les lots 25–28 sur `codex/prod-ready` ; la recette générale du lot 25 précède les corrections ciblées de landing et de digest.
 
 **La préparation à la production est en cours.** Le dépôt possède les fonctionnalités et les preuves locales ci-dessous. Le candidat courant n’a pas été déployé ni certifié auprès des prestataires par cette exécution. Les validations d’août ne valent pas validation du code de septembre. L’ancien registre est conservé dans [l’archive datée](./audits/implementation-status-before-2026-09-07-refresh.md).
 
@@ -8,7 +8,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 
 ## Référence de vérification actuelle
 
-- **1 325 tests applicatifs / 182 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 27](./audits/prod-ready-lot-27/README.md).
+- **1 328 tests applicatifs / 182 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 28](./audits/prod-ready-lot-28/README.md).
 - **53 scénarios navigateur réussis sans skip en 2,4 minutes** au [lot 25](./audits/prod-ready-lot-25/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les neuf parcours publics/authentification touchés par le lot 27 passent ensuite en 29,2 s. Les appels fournisseurs sont désactivés.
 - **56 migrations cumulées**, de `0000` à `0055`, et la recette PostgreSQL complète depuis une base vide : [lot 24](./audits/prod-ready-lot-24/README.md). Aucun report automatique de ce numéro vers une base distante.
 - La CI utilise désormais le même runner de protocoles PostgreSQL que le local et conserve son test de charge distinct. Une exécution GitHub sur le SHA final reste requise.
@@ -27,7 +27,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 | Analyse et insights | Collectes stockées par famille, périodes explicites, erreurs et versions conservées ; 17 familles consultables, recherchables et exportables. [Collections](./ANALYTICAL_COLLECTION_PAGES.md). | Qualification homogène de tous les scores/activations ; GAQL réel pour chaque famille. |
 | Pagination Google | REST Search paginé, échéance commune, limites de corps/pages/octets/lignes, échec sans inventaire partiel et couverture enregistrée. [Limites](./GOOGLE_COLLECTION_LIMITS.md). | Partitionnement des familles dépassant les plafonds GAQL ou de stockage ; ce transport ne garantit pas une collecte sans limite. |
 | Vigies | Dix modèles, règles explicables, exécution manuelle/quotidienne, fan-out, checkpoints, reprise sans renvoi des morceaux acquis. [Contrat](./MONITORING_CHECKPOINTS.md). | Calibration des seuils et qualité des alertes sur données réelles ; mesure de charge déployée. |
-| Jobs et notifications durables | Leases, tentatives finales récupérables, quotas sérialisés, deadlines HTTP/DB, équité entre agences, registre de livraison et réconciliation des réponses ambiguës. [Workers](./WORKER_EXECUTION.md), [reprise](./NOTIFICATION_RECOVERY.md). | Réception YoDevMail/Slack/Teams, bounces/plaintes et drills réels ; digest hebdomadaire encore lié au switch des lectures Google. |
+| Jobs et notifications durables | Leases, tentatives finales récupérables, quotas sérialisés, deadlines HTTP/DB, équité entre agences, registre de livraison et réconciliation des réponses ambiguës. Le digest stocké est indépendant des lectures Google. [Workers](./WORKER_EXECUTION.md), [reprise](./NOTIFICATION_RECOVERY.md), [lot 28](./audits/prod-ready-lot-28/README.md). | Réception YoDevMail/Slack/Teams, bounces/plaintes, charge et drills réels. |
 | Rapports | Éditions immuables, 7/30/90 jours et périodes calendrier/personnalisées, historique qualifié, versions/corrections, HTML/PDF/CSV cohérents, branding normalisé. [Éditions](./REPORT_EDITIONS.md), [rendu](./REPORT_RENDERING.md). | Livraison fournisseur, Blob/domaines/certificats et cas de volumes extrêmes. L’ouverture d’un rapport ne relit pas Google en direct. |
 | Partage client | Liens révocables, expiration, host/tenant, accès aux éditions et retours protégés par OTP. | Réception OTP et revue des listes de retours restantes. |
 | Portefeuille agence | Agrégats par monnaie/fuseau, 30 jours qualifiés, charge d’équipe, recherche et vues personnelles persistantes avec concurrence/quota. [Contrat](./PORTFOLIO.md). | Retours de pilotes, volumes et coûts réels ; montants de monnaies différentes jamais additionnés comme un total unique. |
