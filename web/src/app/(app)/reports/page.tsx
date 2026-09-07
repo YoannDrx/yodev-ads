@@ -10,7 +10,7 @@ import {
   rotateScheduledReportToken,
   toggleReportSchedule,
   updateReportTemplate,
-} from '@/app/actions'
+} from '@/app/report-actions'
 import { listWorkspaceReportEditions } from '@/lib/report-editions'
 import { ReportPeriodFields } from '@/components/report-period-fields'
 import { describeReportPeriod, storedReportPeriod } from '@/lib/report-period-selection'
@@ -68,7 +68,7 @@ export default async function ReportsPage({
           <Card className="border-[#dde4e7] shadow-none">
             <CardHeader><CardTitle className="flex items-center gap-2"><Plus className="size-5 text-[#176646]" />{english ? 'Create one-off report' : 'Créer un rapport ponctuel'}</CardTitle></CardHeader>
             <CardContent>
-              <form action={createShareLink} className="space-y-4">
+              <form key={`${workspace.id}:createShareLink`} action={createShareLink} className="space-y-4"><input type="hidden" name="workspaceId" value={workspace.id} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label={english ? 'Internal name' : 'Nom interne'} htmlFor="report-label"><Input id="report-label" name="label" placeholder={english ? 'ACME monthly report' : 'Reporting mensuel ACME'} required /></Field>
                   <Field label={english ? 'Client account' : 'Compte client'} htmlFor="report-client"><select id="report-client" name="clientId" className="h-10 w-full rounded-lg border bg-white px-3 text-sm" required>{advertiserClients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></Field>
@@ -86,7 +86,7 @@ export default async function ReportsPage({
           <Card className="border-[#dde4e7] shadow-none">
             <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="size-5 text-[#176646]" />{english ? 'Create editorial template' : 'Créer un modèle éditorial'}</CardTitle></CardHeader>
             <CardContent>
-              <form action={createReportTemplate} className="space-y-4">
+              <form key={`${workspace.id}:createReportTemplate`} action={createReportTemplate} className="space-y-4"><input type="hidden" name="workspaceId" value={workspace.id} />
                 <div className="grid gap-4 sm:grid-cols-3">
                   <Field label={english ? 'Template name' : 'Nom du modèle'} htmlFor="template-name"><Input id="template-name" name="name" placeholder={english ? 'Monthly review' : 'Bilan mensuel'} required /></Field>
                   <Field label={english ? 'Language' : 'Langue'} htmlFor="template-locale"><select id="template-locale" name="locale" defaultValue={locale} className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="fr">Français</option><option value="en">English</option></select></Field>
@@ -108,7 +108,7 @@ export default async function ReportsPage({
             {automation.templates.map((template) => (
               <Card key={template.id} className="border-[#dde4e7] shadow-none">
                 <CardContent className="p-5">
-                  <form action={updateReportTemplate} className="space-y-3">
+                  <form key={`${workspace.id}:updateReportTemplate`} action={updateReportTemplate} className="space-y-3"><input type="hidden" name="workspaceId" value={workspace.id} />
                     <input type="hidden" name="templateId" value={template.id} />
                     <input type="hidden" name="expectedVersion" value={template.currentVersion} />
                     <div className="flex items-center justify-between gap-3"><strong className="text-sm">Version {template.currentVersion}</strong><span className="text-xs text-muted-foreground">{english ? 'Existing deliveries remain frozen' : 'Les envois existants restent figés'}</span></div>
@@ -121,7 +121,7 @@ export default async function ReportsPage({
                     <Textarea name="actionPlan" defaultValue={template.actionPlan ?? ''} maxLength={5000} aria-label={english ? 'Template action plan' : 'Plan d’action du modèle'} />
                     <div className="flex justify-between gap-2"><Button type="submit" size="sm" variant="outline">{english ? 'Save new version' : 'Enregistrer une version'}</Button></div>
                   </form>
-                  <form action={deactivateReportTemplate} className="mt-2"><input type="hidden" name="templateId" value={template.id} /><Button type="submit" size="sm" variant="ghost"><Trash2 className="mr-2 size-4" />{english ? 'Deactivate' : 'Désactiver'}</Button></form>
+                  <form key={`${workspace.id}:deactivateReportTemplate`} action={deactivateReportTemplate} className="mt-2"><input type="hidden" name="workspaceId" value={workspace.id} /><input type="hidden" name="templateId" value={template.id} /><Button type="submit" size="sm" variant="ghost"><Trash2 className="mr-2 size-4" />{english ? 'Deactivate' : 'Désactiver'}</Button></form>
                 </CardContent>
               </Card>
             ))}
@@ -133,7 +133,7 @@ export default async function ReportsPage({
         <Card className="mt-6 border-[#dce5e7] shadow-none">
           <CardHeader><CardTitle className="flex items-center gap-2"><CalendarClock className="size-5 text-[#176646]" />{english ? 'Schedule delivery' : 'Programmer un envoi'}</CardTitle></CardHeader>
           <CardContent>
-            <form action={createReportSchedule} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <form key={`${workspace.id}:createReportSchedule`} action={createReportSchedule} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><input type="hidden" name="workspaceId" value={workspace.id} />
               <Field label={english ? 'Name' : 'Nom'} htmlFor="schedule-name"><Input id="schedule-name" name="name" placeholder={english ? 'ACME monthly review' : 'Bilan mensuel ACME'} required /></Field>
               <Field label={english ? 'Account' : 'Compte'} htmlFor="schedule-client"><select id="schedule-client" name="clientId" className="h-10 w-full rounded-lg border bg-white px-3 text-sm" required>{advertiserClients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></Field>
               <Field label={english ? 'Template' : 'Modèle'} htmlFor="schedule-template"><select id="schedule-template" name="templateId" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="">{english ? 'Standard 30-day report' : 'Rapport standard 30 jours'}</option>{automation.templates.filter((template) => { try { storedReportPeriod(template); return true } catch { return false } }).map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></Field>
@@ -164,7 +164,7 @@ export default async function ReportsPage({
                   <p className="mt-2 text-xs text-muted-foreground">{schedule.recipientEmails.length} {english ? `recipient${schedule.recipientEmails.length === 1 ? '' : 's'}` : `destinataire${schedule.recipientEmails.length > 1 ? 's' : ''}`}{schedule.lastDeliveredAt ? ` · ${english ? 'last delivery' : 'dernier envoi'} ${schedule.lastDeliveredAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}` : english ? ' · no delivery yet' : ' · aucun envoi'}</p>
                   {schedule.lastError && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800">{schedule.lastError}</p>}
                 </div>
-                {canManage && <div className="flex flex-wrap gap-2"><form action={toggleReportSchedule}><input type="hidden" name="scheduleId" value={schedule.id} /><input type="hidden" name="operation" value={schedule.enabled ? 'disable' : 'enable'} /><Button type="submit" size="sm" variant="outline" disabled={!schedule.enabled && !schedulesEnabled}><Power className="mr-2 size-4" />{schedule.enabled ? english ? 'Suspend and revoke' : 'Suspendre et révoquer' : english ? 'Reactivate' : 'Réactiver'}</Button></form>{schedule.enabled && <form action={rotateScheduledReportToken}><input type="hidden" name="scheduleId" value={schedule.id} /><Button type="submit" size="sm" variant="ghost">{english ? 'Renew link' : 'Renouveler le lien'}</Button></form>}</div>}
+                {canManage && <div className="flex flex-wrap gap-2"><form key={`${workspace.id}:toggleReportSchedule`} action={toggleReportSchedule}><input type="hidden" name="workspaceId" value={workspace.id} /><input type="hidden" name="scheduleId" value={schedule.id} /><input type="hidden" name="operation" value={schedule.enabled ? 'disable' : 'enable'} /><Button type="submit" size="sm" variant="outline" disabled={!schedule.enabled && !schedulesEnabled}><Power className="mr-2 size-4" />{schedule.enabled ? english ? 'Suspend and revoke' : 'Suspendre et révoquer' : english ? 'Reactivate' : 'Réactiver'}</Button></form>{schedule.enabled && <form key={`${workspace.id}:rotateScheduledReportToken`} action={rotateScheduledReportToken}><input type="hidden" name="workspaceId" value={workspace.id} /><input type="hidden" name="scheduleId" value={schedule.id} /><Button type="submit" size="sm" variant="ghost">{english ? 'Renew link' : 'Renouveler le lien'}</Button></form>}</div>}
               </CardContent>
             </Card>
           ))}
@@ -176,7 +176,7 @@ export default async function ReportsPage({
         <h2 className="text-lg font-semibold">{english ? 'Active and historical links' : 'Liens actifs et historiques'}</h2>
         <div className="mt-3 space-y-3">
           {links.map(({ share, client }) => (
-            <Card key={share.id} className="border-[#dde4e7] shadow-none"><CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><StatusBadge status={share.active ? 'active' : 'revoked'} locale={locale} /><span className="font-mono text-[10px] text-muted-foreground">{share.tokenPrefix}••••</span></div><h3 className="mt-3 font-semibold">{share.label}</h3><p className="mt-1 text-xs text-muted-foreground">{client.name} · {share.locale.toUpperCase()} · {periodLabel(share, locale)} · {share.mode === 'fixed' ? (english ? 'Immutable' : 'Figé') : (english ? 'Dynamic' : 'Dynamique')} · {english ? 'created on' : 'créé le'} {share.createdAt.toLocaleDateString(english ? 'en-GB' : 'fr-FR')}{share.expiresAt ? ` · ${english ? 'expires on' : 'expire le'} ${share.expiresAt.toLocaleDateString(english ? 'en-GB' : 'fr-FR')}` : ''}</p></div>{share.active && canManage && <form action={revokeShareLink}><input type="hidden" name="shareId" value={share.id} /><Button type="submit" size="sm" variant="ghost"><Trash2 className="mr-2 size-4" />{english ? 'Revoke' : 'Révoquer'}</Button></form>}</CardContent></Card>
+            <Card key={share.id} className="border-[#dde4e7] shadow-none"><CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><StatusBadge status={share.active ? 'active' : 'revoked'} locale={locale} /><span className="font-mono text-[10px] text-muted-foreground">{share.tokenPrefix}••••</span></div><h3 className="mt-3 font-semibold">{share.label}</h3><p className="mt-1 text-xs text-muted-foreground">{client.name} · {share.locale.toUpperCase()} · {periodLabel(share, locale)} · {share.mode === 'fixed' ? (english ? 'Immutable' : 'Figé') : (english ? 'Dynamic' : 'Dynamique')} · {english ? 'created on' : 'créé le'} {share.createdAt.toLocaleDateString(english ? 'en-GB' : 'fr-FR')}{share.expiresAt ? ` · ${english ? 'expires on' : 'expire le'} ${share.expiresAt.toLocaleDateString(english ? 'en-GB' : 'fr-FR')}` : ''}</p></div>{share.active && canManage && <form key={`${workspace.id}:revokeShareLink`} action={revokeShareLink}><input type="hidden" name="workspaceId" value={workspace.id} /><input type="hidden" name="shareId" value={share.id} /><Button type="submit" size="sm" variant="ghost"><Trash2 className="mr-2 size-4" />{english ? 'Revoke' : 'Révoquer'}</Button></form>}</CardContent></Card>
           ))}
           {links.length === 0 && <div className="rounded-3xl border border-dashed bg-white p-12 text-center text-muted-foreground">{english ? 'No shared report yet.' : 'Aucun rapport partagé pour le moment.'}</div>}
         </div>
@@ -193,7 +193,7 @@ export default async function ReportsPage({
               <p className="mt-1 text-sm">{edition.periodFrom} → {edition.periodThrough} · {edition.timezone}</p>
               <p className="mt-1 text-xs text-muted-foreground">{english ? 'Published' : 'Publié'} : {edition.generatedAt.toLocaleString(english ? 'en-GB' : 'fr-FR', { timeZone: edition.timezone })} · {edition.sourceVersion.slice(0, 12)}{edition.previousEditionId ? (english ? ' · Revision' : ' · Révision') : ''}</p>
             </div>
-            {canRevise && <form action={reviseReportEdition}><input type="hidden" name="shareId" value={edition.shareId} /><input type="hidden" name="previousEditionId" value={edition.id} /><Button type="submit" size="sm" variant="outline">{english ? 'Publish corrected edition' : 'Publier une édition corrigée'}</Button></form>}
+            {canRevise && <form key={`${workspace.id}:reviseReportEdition`} action={reviseReportEdition}><input type="hidden" name="workspaceId" value={workspace.id} /><input type="hidden" name="shareId" value={edition.shareId} /><input type="hidden" name="previousEditionId" value={edition.id} /><Button type="submit" size="sm" variant="outline">{english ? 'Publish corrected edition' : 'Publier une édition corrigée'}</Button></form>}
           </CardContent></Card>
         })}</div>
       </section>

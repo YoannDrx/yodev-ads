@@ -19,6 +19,8 @@ Un bilan figé conserve sa première édition comme destination par défaut. Le 
 
 Les propositions et retours client sont explicitement présentés comme le suivi actuel, en dehors des chiffres figés du bilan. La révélation d’une nouvelle URL réinitialise son composant, même après plusieurs créations sur la même page.
 
+Les formulaires de membre sont liés à l'espace dans lequel ils ont été affichés. Un changement d'espace de la session avant soumission impose un rechargement, même si le membre dispose des droits dans les deux espaces. Le passage au nouvel espace recrée les champs pour ne pas y transférer un brouillon. Les erreurs internes de ces actions ne sont pas exposées dans les URL.
+
 ## Envois programmés
 
 Chaque job est rattaché au workspace, à la planification, à sa clé d’occurrence et à sa tentative détenue en base. La période utilise la date de création persistée du job, sans glisser au jour d’une relance. Les jours 29 à 31 sont ramenés à la fin des mois plus courts.
