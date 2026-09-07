@@ -6,12 +6,15 @@ import { googleAuthorizationUrl } from '@/lib/google-ads'
 import { normalizeCustomerId } from '@/lib/ids'
 import { oauthCallbackUrl, sealOAuthState } from '@/lib/oauth-state'
 import { consumeRateLimit } from '@/lib/rate-limit'
-import { requireAdminWorkspace } from '@/lib/workspace'
+import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireCapability } from '@/lib/entitlements'
+import { getWorkspaceConnection, googleConnectionVersion } from '@/lib/data'
 
 export async function GET(request: Request) {
   try {
     if (!hasGoogleConfiguration()) throw new Error('La configuration OAuth Google n’est pas encore terminée.')
-    const { workspace, session } = await requireAdminWorkspace()
+    const { workspace, session, entitlements } = await requireWorkspacePermission('google:connect')
+    requireCapability(entitlements, 'google.read')
     const limit = await consumeRateLimit({
       workspaceId: workspace.id,
       namespace: 'oauth-google-ads',
@@ -24,6 +27,7 @@ export async function GET(request: Request) {
     const managerCustomerId = normalizeCustomerId(url.searchParams.get('managerCustomerId') ?? '')
     const redirectUri = oauthCallbackUrl('google_ads', url)
     const state = randomBytes(32).toString('base64url')
+    const connectionVersion = googleConnectionVersion(await getWorkspaceConnection(workspace.id))
     const cookieStore = await cookies()
     cookieStore.set(
       'yodev_ads_google_oauth',
@@ -32,7 +36,7 @@ export async function GET(request: Request) {
         state,
         workspaceId: workspace.id,
         userId: session.userId,
-        payload: { managerCustomerId },
+        payload: { managerCustomerId, connectionVersion },
       }),
       { httpOnly: true, secure: url.protocol === 'https:', sameSite: 'lax', path: '/', maxAge: 600 },
     )

@@ -1,0 +1,149 @@
+
+> @yodev/ads@0.1.0 db:verify-local
+> node scripts/verify-local-database.mjs
+
+Running drizzle-kit migrate
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/Users/yoannandrieux/Projets/yodev-ads/web/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] applying migrations...[2K[1G[✓] migrations applied successfully!Running tsx scripts/seed-rls-verification.ts
+{"seededWorkspaces":["10000000-0000-4000-8000-000000000001","20000000-0000-4000-8000-000000000002"]}
+Running tsx scripts/verify-rls.ts
+{"ok":true,"tenantA":"10000000-0000-4000-8000-000000000001","tenantB":"20000000-0000-4000-8000-000000000002","visibleClientRows":1,"rlsTables":49,"runtimeRoles":["yodev_app","yodev_system","yodev_purge","yodev_auth"],"oauthSessionIsolation":true}
+Running tsx scripts/validate-tenant-constraints.ts
+{"validated":37}
+Running tsx scripts/verify-tenant-invariants.ts
+{
+  "ok": true,
+  "invariants": [
+    {
+      "invariant": "report_edition_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "report_edition_share_scope",
+      "violations": 0
+    },
+    {
+      "invariant": "report_edition_content_identity",
+      "violations": 0
+    },
+    {
+      "invariant": "workspace_state",
+      "violations": 0
+    },
+    {
+      "invariant": "duplicate_stripe_subscription",
+      "violations": 0
+    },
+    {
+      "invariant": "approval_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "agent_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "incident_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "share_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "performance_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "support_message_ticket_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "mutation_observation_approval_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "mutation_observation_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "report_template_version_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "legacy_workspace_auth_mapping",
+      "violations": 0
+    },
+    {
+      "invariant": "workspace_owner_membership",
+      "violations": 0
+    },
+    {
+      "invariant": "trial_grant_auth_mapping",
+      "violations": 0
+    },
+    {
+      "invariant": "auth_organization_workspace_uniqueness",
+      "violations": 0
+    }
+  ]
+}
+Running tsx scripts/verify-database-concurrency.ts
+{"ok":true,"verified":["concurrent_quota","approval_claim","job_lease","stripe_idempotence","deletion_cancellation_before_deadline","purge_after_deadline_and_cascade"]}
+Running tsx scripts/verify-prod-ready-concurrency.ts
+{"level":"error","message":"database.connection_ended","code":"unavailable"}
+{"level":"error","message":"database.connection_ended","code":"25P04"}
+{"level":"error","message":"database.connection_ended","code":"unavailable"}
+{"ok":true,"verified":["monitor_quota_concurrent_create_reactivate","current_plan_under_lock","worker_sigkill_final_attempt","concurrent_lease_recovery","stale_worker_finalization_rejected","manual_scan_concurrency","fanout_concurrency_and_client_scope","independent_reminder_due_query","reminder_acceptance_recovery_without_send","stale_reminder_suppressed","deferred_reminder_cancelled_concurrently_before_transport","expired_retryable_attempt_audited_before_reclaim","terminal_recovery_alert_outbox","single_local_transport_across_interruption","late_email_receipt_reconciled_without_resend","transaction_deadline_rolls_back_prior_writes","idle_transaction_timeout_does_not_crash_pool","pooled_timeouts_do_not_leak","fair_claims_across_2000_job_agency_quiet_agency_and_system","concurrent_claim_turns_and_internal_priorities"]}
+Running tsx scripts/verify-monitoring-checkpoints.ts
+{"ok":true,"verified":["atomic_incident_outbox_checkpoint","concurrent_checkpoint_idempotence","resume_after_commit_without_occurrence_increment","separate_vigie_fingerprints","rollback_incidents_and_notifications","distinct_reopen_episodes","older_read_cannot_resurrect_cleared_incident","client_and_agent_scope","configuration_drift_rejected","expired_worker_rejected","legacy_incident_identity_preserved","indexed_latest_observation_lookup"],"providerCalls":0}
+Running tsx scripts/verify-metric-history.ts
+{"ok":true,"verified":["legacy_coverage_not_certified","covered_zero_vs_partial_day","removed_campaign_history_retained","concurrent_chunk_idempotence","late_conversion_reconciliation","older_read_does_not_overwrite","atomic_metric_rollback_and_checkpoint","resume_without_rewriting","expired_attempt_and_foreign_scope_rejected","deactivated_client_rejected","qualified_zero_campaign_observations","partial_days_and_timezone_mismatch_excluded"],"providerCalls":0}
+Running tsx scripts/verify-analytical-collections.ts
+{"ok":true,"verified":["source_coverage_persisted_with_snapshot_and_checkpoint","cold_and_warm_persisted_read","concurrent_snapshot_checkpoint","resume_without_provider","older_read_preserves_newer_value","failed_write_preserves_snapshot_and_checkpoint","tenant_rls_and_read_only_app","expired_worker_rejected","grace_read_without_refresh","suspension_and_deactivation_deny_cached_read","revoked_connection_retains_history_without_new_write","deduplicated_refresh_and_cost_cooldown","client_deletion_cascades_cache"],"providerCalls":0}
+Running tsx scripts/verify-analytical-pages.ts
+{"ok":true,"rows":701,"verified":["complete_ordinal_traversal","literal_search_beyond_preview","snapshot_counts","scoped_authenticated_cursor","refresh_invalidates_old_cursor_and_export","complete_stored_export","singleton_tracking","grace_read","suspension_and_inactive_account_denied"],"providerCalls":0}
+Running tsx scripts/verify-account-selection.ts
+{"ok":true,"verified":["explicit_selection_after_mcc_discovery","nested_managers_free","quota_3_15_50","new_account_unselected","sync_preserves_priority","downgrade_preserves_preferences","upgrade_restores_selection","priority_only_above_quota","concurrent_selection_conflict","foreign_and_manager_rejected","inactive_explicit_client_never_falls_back","empty_inventory_blocks_older_read","access_restoration","billing_row_serialization","new_credentials_require_inventory","history_preserved","grace_read_without_selection_write","final_mutation_admission_checks_active_account_and_current_plan","stored_report_requires_active_account_without_provider_credentials"],"providerCalls":0}
+Running tsx scripts/verify-account-selection-actors.ts
+{"ok":true,"verified":["both_modes_refuse_removed_demoted_inactive_actor","two_membership_row_waits_outside_advisory","two_post_authorization_trial_rollbacks","selection_priority_activation_audit_atomic","stale_plan_version_rejected","authorized_admin_selection_and_priority"],"providerCalls":0}
+Running tsx scripts/verify-google-inventory-actors.ts
+{"ok":true,"verified":["tenant_current_actor","system_current_job_scope_attempt_lease","both_current_lifecycle_trial","connection_replacement_and_revocation_row_waits","membership_and_job_row_waits","trial_and_lease_expiry_after_audit_wait_rollback","stale_inventory_reconciliation_trial_rollback","authorized_tenant_and_system_without_human_membership"],"providerCalls":0}
+Running tsx scripts/verify-secret-revelations.ts
+{"ok":true,"verified":["three_kind_current_actor_matrix","owner_only_api_and_analyst_report","three_membership_waits","six_secret_expiry_waits","three_resource_revocation_waits","two_resource_expiry_rollbacks","final_trial_rollback","API_flag_and_inactive_report","immutable_edition_without_UPDATE_grant_and_expiry_rollback","three_exactly_once_concurrent_revelations"],"providerCalls":0}
+Running tsx scripts/verify-google-connection-actors.ts
+{"ok":true,"verified":["current_actor_and_lifecycle","membership_wait_reauthorization","replacement_and_revocation_wait_version_conflicts","trial_and_oauth_expiry_after_audit_wait_rollback","expired_and_stale_callbacks_denied","authorized_replacement_preserves_selection_invalidates_inventory","first_connection_and_concurrent_replay","concurrent_first_insert_not_overwritten","old_usage_timestamp_cleared"],"providerCalls":0}
+Running tsx scripts/verify-report-editions.ts
+{"ok":true,"verified":["frozen_normalized_logo_and_accent","solo_studio_agency_branding_and_attribution","qualified_7_30_90_day_editions","account_totals_independent_of_campaign_list","archived_campaign_included","exact_decimal_conversions","immutable_reopen_and_csv","correction_creates_revision_of_same_period","fixed_default_stays_initial","concurrent_dynamic_deduplication","scheduled_run_freezes_window_and_encrypted_delivery","application_and_system_cannot_update_report_content","custom_manual_publication_and_revision","previous_calendar_month_api_publication","pdf_bytes_remain_identical","publication_expiry","actual_worker_fences_and_accepted_email_reconciliation","encryption_rewrap_preserves_report_content","tenant_rls_and_composite_scope","incomplete_history_does_not_publish","existing_edition_survives_history_gap","revocation_denies_edition","schedule_deletion_preserves_issued_content"],"providerCalls":0}
+Running tsx scripts/verify-workspace-collections.ts
+{"ok":true,"collections":5,"apiCollections":3,"recordsPerCollection":521,"discussions":4,"messagesPerDiscussion":701,"verified":["complete_client_alert_counts_despite_newer_foreign_rows","microsecond_and_uuid_ordering","concurrent_insert_excluded_from_existing_page_walk","tenant_filter_and_reader_bound_cursor","forged_cursor_denied","literal_search","latest_five_previews","complete_discussion_history","internal_support_messages_hidden"],"providerCalls":0}
+Running tsx scripts/verify-public-status.ts
+{"ok":true,"publicIncidentsTraversed":502,"updatesTraversed":701,"previewUpdates":3,"verified":["unknown_without_observation","old_active_incident_beyond_page_limit","all_active_aggregate","private_incident_hidden","microsecond_cursor","concurrent_insertion_excluded","filter_and_collection_scope","full_update_history"],"providerCalls":0}
+Running tsx scripts/verify-portfolio.ts
+{"ok":true,"accounts":50,"qualified":45,"verified":["complete_alert_and_task_workflow_counts","assignee_and_action_filters","currency_and_timezone_groups","exact_large_money","zero_distinct_from_missing","partial_legacy_currency_stale_future_rejected","tenant_and_filter_cursor","all_pages","literal_search","grace_read_suspension_denied","stored_digest_with_google_reads_disabled_and_no_delivery_channel"],"providerCalls":0}
+Running tsx scripts/verify-portfolio-views.ts
+{"ok":true,"viewsPerUser":20,"verified":["owner_and_tenant_rls","spoofed_owner_insert_denied","optimistic_concurrent_update","stale_delete_denied","concurrent_quota","independent_user_quota","grace_read_no_write","suspension_denied","workspace_deletion_cascade"],"providerCalls":0}
+Running tsx scripts/verify-activation-evidence.ts
+{"ok":true,"verified":["schedule_not_publication","failed_publication_no_milestone","edition_atomic_publication_evidence","reopen_idempotent","legacy_marker_preserved_not_counted","edition_and_selection_backfill_idempotent","tenant_scoped_backfill","future_and_invalid_cohorts_covered_by_unit_tests"],"providerCalls":0}
+Running tsx scripts/verify-membership-boundary.ts
+{"ok":true,"verified":["real_lock_wait_role_reauthorization","current_owner_protected_after_transfer","former_owner_cannot_transfer","expired_invitation_reusable_without_quota_reservation","durable_invitation_job","removed_member_sessions_scoped","valid_remaining_membership_selected","stale_selection_cleared","foreign_and_expired_sessions_refused"],"providerCalls":0}
+Running tsx scripts/verify-membership-admission.ts
+{"ok":true,"verified":["concurrent_membership_quota_serialized_as_auth_role","inactive_workspace_admission_denied","expired_trial_admission_denied_even_with_internal_plan","downgrade_preserves_members_and_role_updates"],"providerCalls":0}
+Running tsx scripts/verify-alert-quality.ts
+{"ok":true,"verified":["single_concurrent_review","observation_and_review_conflicts","no_workflow_mutation","stale_review_excluded_from_current_quality","tenant_and_context_denials","global_auth_tables_remain_private","inactive_and_expired_trial_denied","trial_expiry_during_lock_wait_denied","post_authorization_alert_wait_rolls_back_review_reset_and_noop","membership_row_wait_reauthorization","complete_review_constraint","audited_reset"],"providerCalls":0}
+Running tsx scripts/verify-operating-costs.ts
+Operating costs: exact amounts, idempotent/concurrent corrections, complete paginated aggregates, operator row-lock revocation, SQL denials and immutable attempt attribution verified; no provider call.
+Running tsx scripts/verify-monitoring-actors.ts
+{"ok":true,"verified":["five_mutations_deny_revoked_or_removed_actor","inactive_and_expired_trial_denied","five_real_lock_waits_reauthorize","five_post_authorization_waits_roll_back_expired_trials","no_denied_business_job_comment_audit_write","strategist_retains_all_five_operations"],"providerCalls":0}
+Running tsx scripts/verify-task-actors.ts
+{"ok":true,"verified":["three_mutations_deny_revoked_removed_inactive_actor","three_observed_access_lock_waits","concurrent_task_transition_uses_current_status","three_post_authorization_trial_waits_roll_back_all_writes","analyst_can_comment_but_cannot_manage","strategist_can_create_and_assign","mention_job_atomic_with_comment"],"providerCalls":0}
+Running tsx scripts/verify-settings-actors.ts
+{"ok":true,"verified":["eight_mutations_deny_revoked_removed_inactive_actor","eight_observed_access_waits","downgrade_rechecks_dual_and_branding","eight_post_authorization_trial_waits_roll_back","manager_goal_denied_and_current_currency_audited","current_previous_settings_audited","current_replaced_logo_returned","analyst_retains_personal_views_not_settings"],"providerCalls":0}
+Running tsx scripts/verify-security-actors.ts
+{"ok":true,"verified":["six_revoked_removed_inactive_denials","six_observed_actor_waits","three_observed_downgrade_waits","six_post_authorization_trial_rollbacks","current_client_currency_and_scope","key_hash_and_revelation_atomic","channel_credentials_destroyed","retry_generation_preserved","owner_only_api_admin_other_settings"],"providerCalls":0}
+Running tsx scripts/verify-member-mutations.ts
+{"ok":true,"verified":["removed_inactive_expired_denials","five_actor_row_waits_outside_advisory","removed_transfer_target_denied","six_post_authorization_trial_rollbacks","valid_transfer_self_demotion_self_removal","client_personal_preferences_allowed","invitation_job_atomic"],"providerCalls":0}
+Running tsx scripts/verify-task-recipients.ts
+{"ok":true,"verified":["current_verified_mailbox","both_recipient_denial_matrices","fourteen_revocations_during_delivery_claim_wait","two_ambiguous_attempts_preserved","accepted_keys_not_resubmitted","job_workspace_payload_lease_attempt_fencing","expired_lease_after_claim_no_submission","auth_identity_role_remains_read_only","521_total_50_preview_one_snapshot","microsecond_and_uuid_preview_order","all_521_assigned_tasks_paginated","foreign_closed_unassigned_excluded","localized_timezone_and_coverage","three_task_changes_during_claim_refused"],"simulatedSubmissions":6,"realProviderCalls":0}

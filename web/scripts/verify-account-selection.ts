@@ -7,7 +7,7 @@ import { getWorkspaceAccountSelection, reconcileManagedAccountSelection, saveMan
 import { getPublicShare } from '../src/lib/public-share-repository'
 import { hashToken } from '../src/lib/tokens'
 import { markGoogleMutationSubmitted } from '../src/lib/google-approval-management'
-import { getWorkspaceClient, saveWorkspaceGoogleConnection } from '../src/lib/data'
+import { getWorkspaceClient, getWorkspaceConnection, googleConnectionVersion, saveWorkspaceGoogleConnection } from '../src/lib/data'
 import { googleInventoryConnectionIdentity, persistTenantGoogleAccountInventory, type ManagedGoogleCustomer } from '../src/lib/google-account-sync'
 
 const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
@@ -123,7 +123,7 @@ async function main() {
     await markGoogleMutationSubmitted({ workspaceId, actorUserId: owner, executionId: basicExecution.id, validationRequestId: 'fixture-validation' })
     assert.equal((await withSystemTransaction((db) => db.query.mutationExecutions.findFirst({ where: eq(mutationExecutions.id, basicExecution.id) })))?.state, 'submitted')
     // Only the admission marker was tested; no Google mutation is dispatched.
-    await saveWorkspaceGoogleConnection({ workspaceId, userId: owner, managerCustomerId: connection.managerCustomerId, googleEmail: null, encryptedRefreshToken: 'new-fixture-credential', scopes: [] })
+    await saveWorkspaceGoogleConnection({ workspaceId, userId: owner, managerCustomerId: connection.managerCustomerId, googleEmail: null, encryptedRefreshToken: 'new-fixture-credential', scopes: [], expectedConnectionVersion: googleConnectionVersion(await getWorkspaceConnection(workspaceId)), authorizationExpiresAt: new Date(Date.now() + 60_000) })
     assert.equal((await getWorkspaceAccountSelection(workspaceId)).accounts.filter((account) => account.active).length, 0)
     await assert.rejects(sync(), /connection changed/)
     const history = await withSystemTransaction((db) => db.query.dailyAccountMetrics.findMany({ where: eq(dailyAccountMetrics.workspaceId, workspaceId) }))

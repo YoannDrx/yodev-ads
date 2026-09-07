@@ -36,8 +36,7 @@ import { reportCalendarWindow, shiftCalendarDate } from '@/lib/calendar-window'
 import { metricCoverage } from '@/lib/metric-coverage'
 import { computePacing, pacingCalendar } from '@/lib/pacing'
 import { workspaceHasCapability } from '@/lib/entitlements'
-import { insertActivationMilestone } from '@/lib/activation'
-import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+export { saveWorkspaceGoogleConnection, googleConnectionVersion } from '@/lib/google-connection-management'
 
 export { consumeWorkspaceSecretRevelation } from '@/lib/secret-revelation'
 
@@ -53,59 +52,6 @@ export async function getWorkspaceConnection(workspaceId: string) {
   }))
 }
 
-export function saveWorkspaceGoogleConnection(input: {
-  workspaceId: string
-  userId: string
-  managerCustomerId: string
-  googleEmail: string | null
-  encryptedRefreshToken: string
-  scopes: string[]
-}) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.userId }, async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'google.read')
-    const [connection] = await db
-      .insert(googleAdsConnections)
-      .values({
-        workspaceId: input.workspaceId,
-        managerCustomerId: input.managerCustomerId,
-        googleEmail: input.googleEmail,
-        encryptedRefreshToken: input.encryptedRefreshToken,
-        scopes: input.scopes,
-        connectedBy: input.userId,
-      })
-      .onConflictDoUpdate({
-        target: googleAdsConnections.workspaceId,
-        set: {
-          managerCustomerId: input.managerCustomerId,
-          googleEmail: input.googleEmail,
-          encryptedRefreshToken: input.encryptedRefreshToken,
-          scopes: input.scopes,
-          connectedBy: input.userId,
-          status: 'active',
-          updatedAt: new Date(),
-        },
-      })
-      .returning()
-    // New credentials must establish a fresh inventory before any client resumes.
-    // Keep the agency's selection and all historical rows for reactivation.
-    await db.update(clients).set({ active: false, googleAccessible: false, inventoryObservedAt: null, updatedAt: new Date() }).where(eq(clients.workspaceId, input.workspaceId))
-    await db.insert(auditEvents).values({
-      workspaceId: input.workspaceId,
-      actorUserId: input.userId,
-      action: 'google_ads.connected',
-      entityType: 'google_ads_connection',
-      entityId: connection.id,
-      metadata: { managerCustomerId: input.managerCustomerId, googleEmail: input.googleEmail },
-    })
-    await insertActivationMilestone(db, {
-      workspaceId: input.workspaceId,
-      milestone: 'google_connected',
-      actorUserId: input.userId,
-      sourceEntityId: connection.id,
-    })
-    return connection
-  })
-}
 
 export async function listWorkspaceClients(workspaceId: string) {
   return tenantRead(workspaceId, (db) => db.query.clients.findMany({

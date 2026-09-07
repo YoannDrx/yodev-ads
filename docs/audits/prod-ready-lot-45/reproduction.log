@@ -1,0 +1,11 @@
+AssertionError [ERR_ASSERTION]: Missing expected rejection: analyst
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async denied (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-google-connection-actors.ts:24:73)
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-google-connection-actors.ts:57:158) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: undefined,
+  operator: 'rejects',
+  diff: 'simple'
+}
