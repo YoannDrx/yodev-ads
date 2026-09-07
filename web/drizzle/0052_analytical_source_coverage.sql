@@ -1,0 +1,1 @@
+ALTER TABLE "analytical_collections" ADD COLUMN "coverage" jsonb;

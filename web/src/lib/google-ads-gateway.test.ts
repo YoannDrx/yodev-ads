@@ -21,10 +21,11 @@ vi.mock('@/lib/env', () => ({
   }),
 }))
 
-import { accountNegativeKeywordApprovalState, GoogleAdsError, GoogleAdsGateway, revokeGoogleOAuthToken } from './google-ads'
+import { withWorkDeadline } from './work-deadline'
+import { accountNegativeKeywordApprovalState, GoogleAdsError, GoogleAdsGateway, GOOGLE_RESPONSE_MAX_BYTES, GOOGLE_QUERY_MAX_ROWS, revokeGoogleOAuthToken } from './google-ads'
 
 function googleResponse(results: unknown[], requestId = 'google-request') {
-  return new Response(JSON.stringify([{ results }]), {
+  return new Response(JSON.stringify({ results }), {
     status: 200,
     headers: { 'Content-Type': 'application/json', 'request-id': requestId },
   })
@@ -35,6 +36,110 @@ describe('GoogleAdsGateway v25 contracts', () => {
     vi.restoreAllMocks()
     getAccessTokenMock.mockReset().mockResolvedValue({ token: 'access-token' })
     process.env.GOOGLE_READS_ENABLED = '1'
+  })
+
+  it('follows pages beyond 10,000 rows using exactly the same query and records coverage', async () => {
+    const makeRows = (from: number, count: number) => Array.from({ length: count }, (_, index) => ({ customerClient: { clientCustomer: `customers/${String(1000000000 + from + index)}`, descriptiveName: `Client ${from + index}` } }))
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ results: makeRows(0, 10_000), nextPageToken: 'opaque-google-token', requestId: 'page-one' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ results: makeRows(10_000, 521), requestId: 'page-two' })))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    const rows = await gateway.listManagedCustomers()
+    expect(rows).toHaveLength(10_521)
+    expect(new Set(rows.map((row) => row.customerId)).size).toBe(10_521)
+    const requests = fetchMock.mock.calls.map((call) => JSON.parse(String(call[1]?.body)))
+    expect(requests[1]).toEqual({ query: requests[0].query, pageToken: 'opaque-google-token' })
+    expect(requests[0]).not.toHaveProperty('pageSize')
+    expect(gateway.collectedRequestIds()).toEqual(['page-one', 'page-two'])
+    const coverage = gateway.collectedCoverage()
+    expect(coverage).toMatchObject({ version: 1, queries: [{ state: 'query_complete', rows: 10_521, pages: 2, limit: null, queryHash: expect.stringMatching(/^[a-f0-9]{64}$/), bytes: expect.any(Number) }] })
+    coverage.queries[0].rows = -1
+    expect(gateway.collectedCoverage().queries[0].rows).toBe(10_521)
+  })
+
+  it.each([499, 500])('reports a GAQL cap conservatively with %s rows without removing the cap', async (count) => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(googleResponse(Array.from({ length: count }, () => ({}))))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await gateway.searchTermPerformance('1234567890')
+    expect(String(fetchMock.mock.calls[0][1]?.body)).toContain('LIMIT 500')
+    expect(gateway.collectedCoverage().queries[0]).toMatchObject({ rows: count, limit: 500, state: count === 500 ? 'limit_reached' : 'query_complete' })
+  })
+
+  it.each([{ results: [], nextPageToken: 'token' }, { results: [{}], nextPageToken: 123 }, { results: [{}], nextPageToken: 'x'.repeat(16_385) }])('rejects malformed continuation without returning partial rows: %j', async (body) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify(body)))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.listManagedCustomers()).rejects.toThrow('invalid Google Ads search')
+    expect(gateway.collectedCoverage().queries).toEqual([])
+  })
+
+  it('rejects token cycles and a later failed page instead of publishing the first page', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ results: [{}], nextPageToken: 'same-token' })))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.listManagedCustomers()).rejects.toThrow('invalid Google Ads search pagination')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    fetchMock.mockReset()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ results: [{}], nextPageToken: 'next' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: { message: 'Access revoked' } }), { status: 403, headers: { 'request-id': 'failed-page' } }))
+    await expect(gateway.listManagedCustomers()).rejects.toMatchObject({ status: 403, requestId: 'failed-page' })
+    expect(gateway.collectedCoverage().queries).toEqual([])
+  })
+
+  it('bounds cumulative rows and individual response bytes while preserving request evidence', async () => {
+    let page = 0
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ results: Array.from({ length: 10_000 }, () => ({})), nextPageToken: `page-${++page}` })))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.listManagedCustomers()).rejects.toThrow('volume pris en charge')
+    expect(fetchMock).toHaveBeenCalledTimes(GOOGLE_QUERY_MAX_ROWS / 10_000)
+    fetchMock.mockReset().mockResolvedValueOnce(new Response('private-data', { headers: { 'content-length': String(GOOGLE_RESPONSE_MAX_BYTES + 1), 'request-id': 'oversized-page' } }))
+    await expect(gateway.listManagedCustomers()).rejects.toMatchObject({ status: 502, requestId: 'oversized-page', message: expect.stringContaining('taille prise en charge') })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(gateway.collectedRequestIds()).toContain('oversized-page')
+    expect(gateway.collectedCoverage().queries).toEqual([])
+  })
+
+  it('stops a stalled page at the enclosing worker deadline', async () => {
+    const cancel = vi.fn()
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(new ReadableStream({ cancel }), { headers: { 'request-id': 'stalled' } }))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(withWorkDeadline(Date.now() + 30, () => gateway.listManagedCustomers())).rejects.toMatchObject({ status: 502, requestId: 'stalled', message: expect.stringContaining('interrompue') })
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(gateway.collectedCoverage().queries).toEqual([])
+  })
+
+  it('bounds the number of small pages and rejects an oversized page row count', async () => {
+    let page = 0
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ results: [{}], nextPageToken: `token-${++page}` })))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.listManagedCustomers()).rejects.toThrow('volume pris en charge')
+    expect(fetchMock).toHaveBeenCalledTimes(100)
+    fetchMock.mockReset().mockResolvedValueOnce(googleResponse(Array.from({ length: 10_001 }, () => ({}))))
+    await expect(gateway.listManagedCustomers()).rejects.toThrow('volume pris en charge')
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('bounds cumulative response bytes across individually valid pages', async () => {
+    let page = 0
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(JSON.stringify({ results: [{}], nextPageToken: `token-${++page}`, fieldMask: 'x'.repeat(13 * 1024 * 1024) })))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.listManagedCustomers()).rejects.toThrow('taille prise en charge')
+    expect(fetchMock).toHaveBeenCalledTimes(5)
+    expect(gateway.collectedCoverage().queries).toEqual([])
+  })
+
+  it('never resends a mutation whose response could not be read', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response('unknown outcome', { headers: { 'content-length': String(GOOGLE_RESPONSE_MAX_BYTES + 1), 'request-id': 'ambiguous-mutation' } }))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    await expect(gateway.mutateCampaignStatus('1234567890', '42', 'PAUSED')).rejects.toMatchObject({ status: 502, requestId: 'ambiguous-mutation' })
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(gateway.collectedRequestIds()).toEqual(['ambiguous-mutation'])
+  })
+
+  it('accepts a qualified empty protobuf response with omitted results', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify({ fieldMask: 'customerClient.clientCustomer' })))
+    const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
+    expect(await gateway.listManagedCustomers()).toEqual([])
+    expect(gateway.collectedCoverage().queries[0]).toMatchObject({ rows: 0, state: 'query_complete' })
   })
 
   it('pins rolling analytical queries to the requested dates and rejects invalid date literals', async () => {
@@ -75,16 +180,13 @@ describe('GoogleAdsGateway v25 contracts', () => {
     expect(gateway.collectedRequestIds()).toEqual(['provider-request-1'])
   })
 
-  it('collects request IDs embedded in successful searchStream responses', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify([
-      { results: [], requestId: 'stream-request-1' },
-      { results: [], requestId: 'stream-request-1' },
-    ]), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+  it('collects request IDs embedded in successful paginated search responses', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ results: [], requestId: 'search-request-1' }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
     const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
 
     await gateway.listManagedCustomers()
 
-    expect(gateway.collectedRequestIds()).toEqual(['stream-request-1'])
+    expect(gateway.collectedRequestIds()).toEqual(['search-request-1'])
   })
 
   it('classifies a revoked refresh token with a safe reconnect diagnostic', async () => {
@@ -154,7 +256,7 @@ describe('GoogleAdsGateway v25 contracts', () => {
       searchRankLostImpressionShare: null,
     })
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/v25/customers/1234567890/googleAds:searchStream')
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/v25/customers/1234567890/googleAds:search')
     expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({ 'developer-token': 'developer-token', 'login-customer-id': '9998887777' })
   })
 
@@ -623,10 +725,10 @@ describe('GoogleAdsGateway v25 contracts', () => {
     })
   })
 
-  it('rejects incomplete metric streams instead of silently dropping rows', async () => {
+  it('rejects incomplete metric pages instead of silently dropping rows', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch')
     const gateway = new GoogleAdsGateway({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
-    for (const body of [{}, [{ error: { message: 'partial failure' } }], [{ results: {} }]]) {
+    for (const body of [{}, { error: { message: 'partial failure' } }, { results: {} }, [{ results: [] }]]) {
       fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(body), { status: 200 }))
       await expect(gateway.dailyAccountMetrics('1234567890', '2026-08-01', '2026-08-02')).rejects.toThrow('invalid Google Ads search')
     }

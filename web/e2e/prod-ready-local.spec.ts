@@ -134,6 +134,10 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
       const campaign = { id: '42', name: 'Stored brand campaign', status: 'ENABLED', channelType: 'SEARCH', budgetResourceName: 'customers/8000000005/campaignBudgets/1', budgetMicros: '10000000', costMicros: '123000000', clicks: '200', impressions: '1000', conversions: 12, conversionValueMicros: '500000000', searchBudgetLostImpressionShare: null, searchRankLostImpressionShare: null }
       const datasets = { campaigns: [campaign], searchTerms: [], keywords: [], ads: [], tracking: { status: 'MANAGED_BY_THIS_CUSTOMER', managerCustomer: null, acceptedCustomerDataTerms: true, enhancedConversionsForLeadsEnabled: true }, devices: [{ key: 'MOBILE', label: 'MOBILE', impressions: '1000', clicks: '200', costMicros: '123000000', conversions: 12, conversionValueMicros: '500000000' }] }
       for (const [family, payload] of Object.entries(datasets)) await db.query('insert into analytical_collections(workspace_id,client_id,family,contract_version,period_from,period_through,timezone,currency_code,source_version,observed_at,payload) values($1,$2,$3,1,$4,$5,$6,$7,$8,now(),$9)', [workspaceId, clientId, family, window.from, window.through, 'Europe/Paris', 'EUR', clientId, JSON.stringify(payload)])
+      const receivedCoverage = { version: 1, queries: [{ queryHash: 'a'.repeat(64), rows: 1, pages: 1, bytes: 100, limit: null, state: 'query_complete' }] }
+      const limitedCoverage = { version: 1, queries: [{ queryHash: 'b'.repeat(64), rows: 500, pages: 1, bytes: 50000, limit: 500, state: 'limit_reached' }] }
+      await db.query('update analytical_collections set coverage=$1 where client_id=$2 and family=$3', [JSON.stringify(receivedCoverage), clientId, 'campaigns'])
+      await db.query('update analytical_collections set coverage=$1 where client_id=$2 and family=$3', [JSON.stringify(limitedCoverage), clientId, 'devices'])
       const { page, context } = await pageFor(browser, 'owner', 1440)
       const errors: string[] = []
       page.on('pageerror', (error) => errors.push(error.message))
@@ -156,6 +160,9 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await page.reload()
         await page.getByText(locale === 'en' ? 'Collection details' : 'Détail des collectes', { exact: true }).click()
         await expect(page.getByText(locale === 'en' ? 'Devices · Older data' : 'Appareils · Données anciennes', { exact: true })).toBeVisible()
+        await expect(page.getByText(locale === 'en' ? 'Collection limit reached; results are limited' : 'Plafond de collecte atteint ; résultats limités', { exact: true })).toBeVisible()
+        await expect(page.getByText(locale === 'en' ? 'All available query pages received' : 'Toutes les pages disponibles reçues', { exact: true })).toBeVisible()
+        await expect(page.getByText(locale === 'en' ? 'Collection coverage not verified' : 'Couverture de collecte non vérifiée', { exact: true })).toHaveCount(4)
         await expect(page.getByRole('cell', { name: 'MOBILE', exact: true })).toBeVisible()
         const consent = page.getByRole('button', { name: /Continuer sans mesure|Continue without/ })
         if (await consent.isVisible()) { await consent.click(); await expect(consent).toBeHidden() }

@@ -717,6 +717,7 @@ export const analyticalCollections = pgTable(
     observedAt: timestamp('observed_at', { withTimezone: true }).notNull(),
     collectedAt: timestamp('collected_at', { withTimezone: true }).defaultNow().notNull(),
     payload: jsonb('payload').$type<unknown>().notNull(),
+    coverage: jsonb('coverage').$type<import('../lib/google-collection-coverage').GoogleCollectionCoverage>(),
   },
   (table) => [
     uniqueIndex('analytical_collections_client_family_idx').on(table.clientId, table.family),

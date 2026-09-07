@@ -9,7 +9,7 @@ vi.mock('@/lib/workspace-transaction-guard', () => ({ lockWorkspaceEntitlements:
 vi.mock('@/lib/google-ads', () => ({ GoogleAdsGateway: class {
   constructor(...args: unknown[]) {
     mocks.constructor(...args)
-    return new Proxy(this, { get(target, key) { return key === 'collectedRequestIds' ? () => ['request-1'] : (...args: unknown[]) => mocks.read(key, ...args) } })
+    return new Proxy(this, { get(target, key) { return key === 'collectedRequestIds' ? () => ['request-1'] : key === 'collectedCoverage' ? () => ({ version: 1, queries: [{ queryHash: 'a'.repeat(64), rows: 500, pages: 1, bytes: 1000, limit: 500, state: 'limit_reached' }] }) : (...args: unknown[]) => mocks.read(key, ...args) } })
   }
 } }))
 import { analyticalCollectionJobs, collectAnalyticalFamily, persistAnalyticalCollection } from './analytical-collections'
@@ -38,10 +38,10 @@ describe('analytical collection worker', () => {
     const current = job(family)
     const persistence = db(current, { statements: [[current], [{ id: jobId }], [], [{ id: jobId }]] })
     mocks.dbs.push(db(current).db, persistence.db)
-    await expect(collectAnalyticalFamily(current)).resolves.toMatchObject({ family, stored: true, requestIds: ['request-1'] })
+    await expect(collectAnalyticalFamily(current)).resolves.toMatchObject({ family, stored: true, requestIds: ['request-1'], coverageState: 'limited' })
     expect(mocks.constructor).toHaveBeenCalledWith(connection, { from: '2026-08-08', through: '2026-09-06' })
     expect(mocks.read).toHaveBeenCalledExactlyOnceWith(ANALYTICAL_FAMILIES[family].method, client.googleCustomerId, ...(family === 'assets' ? ['2026-09-07'] : []))
-    expect(persistence.capture.values[0]).toMatchObject({ workspaceId, clientId, family, sourceVersion: jobId, periodThrough: '2026-09-06', payload: [] })
+    expect(persistence.capture.values[0]).toMatchObject({ workspaceId, clientId, family, sourceVersion: jobId, periodThrough: '2026-09-06', payload: [], coverage: { version: 1, queries: [expect.objectContaining({ state: 'limit_reached' })] } })
     expect(persistence.capture.sets[0]).toMatchObject({ payload: { analyticalResult: { family, stored: true } } })
   })
   it('does not open a write transaction after provider failure or an oversized response', async () => {

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { eq } from 'drizzle-orm'
+import type { GoogleCollectionCoverage } from '../src/lib/google-collection-coverage'
 import { analyticalCollections, auditEvents, clients, googleAdsConnections, jobs, workspaces } from '../src/db/schema'
 import { withSystemTransaction, withTenantTransaction } from '../src/db/transactions'
 import { analyticalCollectionJobs, collectAnalyticalFamily, getAnalyticalCollections, persistAnalyticalCollection, requestAnalyticalRefresh } from '../src/lib/analytical-collections'
@@ -27,11 +28,14 @@ async function main() {
     }
     assert.equal((await getAnalyticalCollections(workspaceId, client.id)).snapshots.length, 0)
     const job = await newJob()
-    const input = { job, connectionId: connection.id, observedAt: new Date(now.getTime() - 1_000), payload: [{ id: '42', name: 'Stored fixture campaign' }], requestIds: ['fixture-request'] }
+    const coverage: GoogleCollectionCoverage = { version: 1, queries: [{ queryHash: 'a'.repeat(64), rows: 500, pages: 1, bytes: 1000, limit: 500, state: 'limit_reached' }] }
+    const input = { job, coverage, connectionId: connection.id, observedAt: new Date(now.getTime() - 1_000), payload: [{ id: '42', name: 'Stored fixture campaign' }], requestIds: ['fixture-request'] }
     const concurrent = await Promise.all([persistAnalyticalCollection(input), persistAnalyticalCollection(input)])
     assert.deepEqual(concurrent[0], concurrent[1])
     const loaded = await getAnalyticalCollections(workspaceId, client.id)
     assert.equal(loaded.snapshots.length, 1)
+    assert.deepEqual(loaded.snapshots[0].coverage, coverage)
+    assert.equal((concurrent[0] as { coverageState: string }).coverageState, 'limited')
     assert.deepEqual(analyticalSnapshotData(loaded.snapshots, 'campaigns', client), input.payload)
     assert.equal(analyticalSnapshotState(loaded.snapshots[0], client), 'available')
     assert.equal(loaded.attempts.length, 1)
@@ -41,6 +45,7 @@ async function main() {
     assert.deepEqual(resumed, concurrent[0], 'Persisted checkpoint bypasses all provider calls')
     const older = await persistAnalyticalCollection({ ...input, job: await newJob(), observedAt: new Date(now.getTime() - 60_000), payload: [] })
     assert.equal((older as { stored: boolean }).stored, false)
+    assert.deepEqual((await getAnalyticalCollections(workspaceId, client.id)).snapshots[0].coverage, coverage)
     const oversizeJob = await newJob()
     await assert.rejects(persistAnalyticalCollection({ ...input, job: oversizeJob, observedAt: new Date(), payload: ['X'.repeat(2_100_000)] }))
     assert.equal((await getAnalyticalCollections(workspaceId, client.id)).snapshots[0].sourceVersion, job.id)
@@ -76,7 +81,7 @@ async function main() {
     await assert.rejects(requestAnalyticalRefresh({ workspaceId, clientId: client.id, actorUserId: owner }), /required/)
     await withSystemTransaction((db) => db.delete(clients).where(eq(clients.id, client.id)))
     assert.equal((await withSystemTransaction((db) => db.query.analyticalCollections.findMany({ where: eq(analyticalCollections.clientId, client.id) }))).length, 0)
-    console.log(JSON.stringify({ ok: true, verified: ['cold_and_warm_persisted_read', 'concurrent_snapshot_checkpoint', 'resume_without_provider', 'older_read_preserves_newer_value', 'failed_write_preserves_snapshot_and_checkpoint', 'tenant_rls_and_read_only_app', 'expired_worker_rejected', 'grace_read_without_refresh', 'suspension_and_deactivation_deny_cached_read', 'revoked_connection_retains_history_without_new_write', 'deduplicated_refresh_and_cost_cooldown', 'client_deletion_cascades_cache'], providerCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, verified: ['source_coverage_persisted_with_snapshot_and_checkpoint', 'cold_and_warm_persisted_read', 'concurrent_snapshot_checkpoint', 'resume_without_provider', 'older_read_preserves_newer_value', 'failed_write_preserves_snapshot_and_checkpoint', 'tenant_rls_and_read_only_app', 'expired_worker_rejected', 'grace_read_without_refresh', 'suspension_and_deactivation_deny_cached_read', 'revoked_connection_retains_history_without_new_write', 'deduplicated_refresh_and_cost_cooldown', 'client_deletion_cascades_cache'], providerCalls: 0 }))
   } finally {
     for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id)))
   }

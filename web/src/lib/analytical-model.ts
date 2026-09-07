@@ -27,7 +27,7 @@ export type AnalyticalData<K extends AnalyticalFamily> = Awaited<ReturnType<Goog
 
 export type AnalyticalSnapshot = {
   family: string; contractVersion: number; periodFrom: string; periodThrough: string; timezone: string; currencyCode: string;
-  sourceVersion: string; observedAt: Date; collectedAt: Date; payload: unknown;
+  sourceVersion: string; observedAt: Date; collectedAt: Date; payload: unknown; coverage?: unknown;
 }
 export type AnalyticalAttempt = { family: string; status: string; createdAt: Date; startedAt: Date | null; availableAt: Date; updatedAt: Date }
 

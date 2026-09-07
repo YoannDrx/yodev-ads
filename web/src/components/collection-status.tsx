@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { refreshAnalyticalData } from '@/app/analytical-actions'
 import { Button } from '@/components/ui/button'
 import { ANALYTICAL_FAMILIES, analyticalFamilies, analyticalSnapshotState, type AnalyticalAttempt, type AnalyticalSnapshot } from '@/lib/analytical-model'
+import { googleCoverageLabel, googleCoverageState } from '@/lib/google-collection-coverage'
 
 export function CollectionStatus({ client, snapshots, attempts, locale, canRefresh, canConnect, destination, feedback }: {
   client: { id: string; timezone: string; currencyCode: string }; snapshots: AnalyticalSnapshot[]; attempts: AnalyticalAttempt[];
@@ -37,7 +38,7 @@ export function CollectionStatus({ client, snapshots, attempts, locale, canRefre
         const state = analyticalSnapshotState(row, client)
         const label = state === 'available' ? (english ? 'Up to date' : 'À jour') : state === 'stale' ? (english ? 'Older data' : 'Données anciennes') : (english ? 'Not collected' : 'Non disponible')
         return <li key={family} className="flex flex-wrap justify-between gap-2 py-2"><span className="font-medium">{ANALYTICAL_FAMILIES[family][locale]} · {label}</span><span>
-          {row && state !== 'unavailable' && <>{row.periodFrom} → {row.periodThrough} · {formatDate(row.collectedAt)}</>}
+          {row && state !== 'unavailable' && <>{row.periodFrom} → {row.periodThrough} · {formatDate(row.collectedAt)}<span className={googleCoverageState(row.coverage) === 'limited' ? 'ml-2 font-medium text-amber-800' : 'ml-2'}>{googleCoverageLabel(row.coverage, locale)}</span></>}
           {attempt && <span className="ml-2">{attempt.startedAt ? (english ? 'Last attempt' : 'Dernière tentative') : (english ? 'Requested' : 'Demandée')} : {formatDate(attempt.startedAt ?? attempt.createdAt)}{['queued', 'retrying'].includes(attempt.status) ? ` · ${english ? 'Scheduled after' : 'Planifiée après'} ${formatDate(attempt.availableAt)}` : ['dead_letter', 'failed'].includes(attempt.status) ? ` · ${english ? 'Collection failed; previous data preserved' : 'Collecte échouée ; données précédentes conservées'}` : ''}</span>}
         </span></li>
       })}</ul>

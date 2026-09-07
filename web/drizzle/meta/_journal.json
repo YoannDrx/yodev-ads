@@ -365,6 +365,13 @@
       "when": 1788752204382,
       "tag": "0051_workspace_collection_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1788754234967,
+      "tag": "0052_analytical_source_coverage",
+      "breakpoints": true
     }
   ]
 }

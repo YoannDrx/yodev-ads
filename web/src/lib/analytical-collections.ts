@@ -11,6 +11,7 @@ import { NonRetryableJobError, type ClaimedJob, type EnqueueJobInput } from '@/l
 import { requireFeature } from '@/lib/feature-flags'
 import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
 import { workspaceLifecycleAllowsPermission } from '@/lib/workspace-access'
+import { googleCollectionCoverageSchema, googleCoverageState, type GoogleCollectionCoverage } from '@/lib/google-collection-coverage'
 
 const payloadSchema = z.object({
   workspaceId: z.string().uuid(), clientId: z.string().uuid(), family: z.enum(analyticalFamilies),
@@ -101,11 +102,12 @@ export async function collectAnalyticalFamily(job: ClaimedJob) {
     : await gateway[ANALYTICAL_FAMILIES[input.family].method](context.client.googleCustomerId)
   // Bound one cache entry, and keep its former successful value on failure.
   if (Buffer.byteLength(JSON.stringify(payload), 'utf8') > 1_900_000) throw new NonRetryableJobError('Analytical result exceeds the supported collection size')
-  return persistAnalyticalCollection({ job, connectionId: context.connection.id, observedAt, payload, requestIds: gateway.collectedRequestIds() })
+  return persistAnalyticalCollection({ job, connectionId: context.connection.id, observedAt, payload, requestIds: gateway.collectedRequestIds(), coverage: gateway.collectedCoverage() })
 }
 
-export async function persistAnalyticalCollection(resultInput: { job: ClaimedJob; connectionId: string; observedAt: Date; payload: unknown; requestIds: string[] }) {
+export async function persistAnalyticalCollection(resultInput: { job: ClaimedJob; connectionId: string; observedAt: Date; payload: unknown; requestIds: string[]; coverage?: GoogleCollectionCoverage }) {
   const { job, observedAt, payload } = resultInput
+  const coverage = resultInput.coverage === undefined ? null : googleCollectionCoverageSchema.parse(resultInput.coverage)
   const input = payloadSchema.parse(job.payload)
   if (!job.workspaceId || !job.leaseOwner || input.workspaceId !== job.workspaceId) throw new NonRetryableJobError('Analytical job scope mismatch')
   if (calendarDates({ from: input.from, through: input.through }, 30).length !== 30) throw new NonRetryableJobError('Invalid analytical period')
@@ -120,10 +122,10 @@ export async function persistAnalyticalCollection(resultInput: { job: ClaimedJob
     if (!client || !connection || client.timezone !== input.timezone || client.currencyCode !== input.currencyCode) throw new NonRetryableJobError('Analytical account changed during collection')
     const stored = await db.insert(analyticalCollections).values({ workspaceId: input.workspaceId, clientId: input.clientId, family: input.family,
       contractVersion: input.contractVersion, periodFrom: input.from, periodThrough: input.through, timezone: input.timezone, currencyCode: input.currencyCode,
-      sourceVersion: job.id, observedAt, payload }).onConflictDoUpdate({ target: [analyticalCollections.clientId, analyticalCollections.family],
-      set: { contractVersion: input.contractVersion, periodFrom: input.from, periodThrough: input.through, timezone: input.timezone, currencyCode: input.currencyCode, sourceVersion: job.id, observedAt, collectedAt: new Date(), payload },
+      sourceVersion: job.id, observedAt, payload, coverage }).onConflictDoUpdate({ target: [analyticalCollections.clientId, analyticalCollections.family],
+      set: { contractVersion: input.contractVersion, periodFrom: input.from, periodThrough: input.through, timezone: input.timezone, currencyCode: input.currencyCode, sourceVersion: job.id, observedAt, collectedAt: new Date(), payload, coverage },
       setWhere: sql`${analyticalCollections.observedAt} <= ${observedAt} and ${analyticalCollections.periodThrough} <= ${input.through}` }).returning({ id: analyticalCollections.id })
-    const result = { family: input.family, stored: stored.length > 0, from: input.from, through: input.through, requestIds: resultInput.requestIds }
+    const result = { family: input.family, stored: stored.length > 0, from: input.from, through: input.through, requestIds: resultInput.requestIds, coverageState: googleCoverageState(coverage) }
     await db.insert(auditEvents).values({ workspaceId: input.workspaceId, actorUserId: 'system:analytics', action: 'analytics.collected', entityType: 'client', entityId: input.clientId,
       metadata: { ...result, jobId: job.id, sourceVersion: job.id, observedAt: observedAt.toISOString(), contractVersion: input.contractVersion } })
     const checkpoint = await db.update(jobs).set({ payload: { ...current.payload, analyticalResult: result }, updatedAt: new Date() }).where(leasedJob(job)).returning({ id: jobs.id })
