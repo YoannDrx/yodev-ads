@@ -26,7 +26,7 @@ export function CollectionStatus({ client, snapshots, attempts, locale, canRefre
       </div>
       <div className="flex flex-wrap gap-2">
         {canRefresh && <form action={refreshAnalyticalData}><input type="hidden" name="clientId" value={client.id} /><input type="hidden" name="destination" value={destination} /><Button type="submit" variant="outline" disabled={pending > 0}>{english ? 'Refresh data' : 'Actualiser les données'}</Button></form>}
-        {canConnect && <Button asChild variant="ghost"><Link href="/settings">{english ? 'Connection' : 'Connexion'}</Link></Button>}
+        {canConnect && <Button asChild variant="ghost"><Link prefetch={false} href="/settings">{english ? 'Connection' : 'Connexion'}</Link></Button>}
       </div>
     </div>
     {feedback && notices[feedback] && <p role="status" className="mt-3 text-sm">{notices[feedback]}</p>}
@@ -37,7 +37,7 @@ export function CollectionStatus({ client, snapshots, attempts, locale, canRefre
         const attempt = attempts.find((item) => item.family === family)
         const state = analyticalSnapshotState(row, client)
         const label = state === 'available' ? (english ? 'Up to date' : 'À jour') : state === 'stale' ? (english ? 'Older data' : 'Données anciennes') : (english ? 'Not collected' : 'Non disponible')
-        return <li key={family} className="flex flex-wrap justify-between gap-2 py-2"><span className="font-medium">{ANALYTICAL_FAMILIES[family][locale]} · {label}</span><span>
+        return <li key={family} className="flex flex-wrap justify-between gap-2 py-2"><Link prefetch={false} href={`/insights/${family}?client=${client.id}`} className="font-medium underline">{ANALYTICAL_FAMILIES[family][locale]} · {label}</Link><span>
           {row && state !== 'unavailable' && <>{row.periodFrom} → {row.periodThrough} · {formatDate(row.collectedAt)}<span className={googleCoverageState(row.coverage) === 'limited' ? 'ml-2 font-medium text-amber-800' : 'ml-2'}>{googleCoverageLabel(row.coverage, locale)}</span></>}
           {attempt && <span className="ml-2">{attempt.startedAt ? (english ? 'Last attempt' : 'Dernière tentative') : (english ? 'Requested' : 'Demandée')} : {formatDate(attempt.startedAt ?? attempt.createdAt)}{['queued', 'retrying'].includes(attempt.status) ? ` · ${english ? 'Scheduled after' : 'Planifiée après'} ${formatDate(attempt.availableAt)}` : ['dead_letter', 'failed'].includes(attempt.status) ? ` · ${english ? 'Collection failed; previous data preserved' : 'Collecte échouée ; données précédentes conservées'}` : ''}</span>}
         </span></li>

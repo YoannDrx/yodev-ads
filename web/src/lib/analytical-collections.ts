@@ -28,14 +28,19 @@ export function analyticalCollectionJobs(input: { workspaceId: string; clientId:
   }))
 }
 
-export function getAnalyticalCollections(workspaceId: string, clientId: string, requestedFamilies: AnalyticalFamily[] = analyticalFamilies) {
+export function getAnalyticalCollections(workspaceId: string, clientId: string, requestedFamilies: AnalyticalFamily[] = analyticalFamilies, previewRows?: number) {
+  if (previewRows !== undefined && (!Number.isInteger(previewRows) || previewRows < 1 || previewRows > 200)) throw new Error('Invalid analytical preview size')
   return withTenantTransaction({ workspaceId, userId: 'repository:analytics' }, async (db) => {
     const workspace = await db.query.workspaces.findFirst({ where: eq(workspaces.id, workspaceId) })
     if (!workspace || !workspaceLifecycleAllowsPermission(workspace.accessState, 'portfolio:read')) throw new Error('Stored analysis is unavailable')
     const client = await db.query.clients.findFirst({ where: and(eq(clients.id, clientId), eq(clients.workspaceId, workspaceId), eq(clients.active, true), eq(clients.isManager, false)) })
     if (!client) throw new Error('Stored analysis is unavailable')
+    const payload = previewRows === undefined ? sql`${analyticalCollections.payload}` : sql`case when jsonb_typeof(${analyticalCollections.payload})='array' then
+      (select coalesce(jsonb_agg(p.value order by p.position), '[]'::jsonb) from (select e.value, e.position from jsonb_array_elements(${analyticalCollections.payload}) with ordinality e(value,position) order by e.position limit ${previewRows}) p)
+      else ${analyticalCollections.payload} end`
     const snapshots = await db.select({ ...getTableColumns(analyticalCollections),
-      payload: sql<unknown>`case when ${inArray(analyticalCollections.family, requestedFamilies)} then ${analyticalCollections.payload} else null end`,
+      storedRowCount: sql<number>`case when jsonb_typeof(${analyticalCollections.payload})='array' then jsonb_array_length(${analyticalCollections.payload}) else 1 end`,
+      payload: sql<unknown>`case when ${inArray(analyticalCollections.family, requestedFamilies)} then ${payload} else null end`,
     }).from(analyticalCollections).where(and(eq(analyticalCollections.workspaceId, workspaceId), eq(analyticalCollections.clientId, clientId)))
     const result = await db.execute<{ family: string; status: string; created_at: Date; started_at: Date | null; available_at: Date; updated_at: Date }>(sql`
       select distinct on (payload->>'family') payload->>'family' as family, status, created_at, available_at, updated_at,
