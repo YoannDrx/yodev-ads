@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import {
   bigint,
   boolean,
@@ -328,7 +329,12 @@ export const auditEvents = pgTable(
     metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('audit_workspace_created_idx').on(table.workspaceId, table.createdAt)],
+  (table) => [
+    index('audit_workspace_created_idx').on(table.workspaceId, table.createdAt),
+    index('audit_monitoring_observation_idx')
+      .on(table.workspaceId, table.entityId, sql`(${table.metadata}->>'clientId')`, table.createdAt, table.id)
+      .where(sql`${table.action} = 'monitoring.observation_committed'`),
+  ],
 )
 
 export const usageSnapshots = pgTable(

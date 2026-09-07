@@ -4,252 +4,109 @@ import type { SQL } from 'drizzle-orm'
 import { databaseDouble } from '../../test/fluent-db'
 
 const mocks = vi.hoisted(() => ({
-  databases: [] as unknown[],
-  runTransaction: vi.fn(async (callback: (db: unknown) => unknown) => callback(mocks.databases.shift())),
-  getWorkspaceConnection: vi.fn(),
-  getClientGoalAndPacing: vi.fn(),
-  campaignPerformance: vi.fn(),
-  searchTermPerformance: vi.fn(),
-  keywordPerformance: vi.fn(),
-  responsiveSearchAdPerformance: vi.fn(),
-  conversionTrackingStatus: vi.fn(),
-  dispatchNotifications: vi.fn(),
-  storeSnapshot: vi.fn(),
-  analyzeCampaigns: vi.fn(),
-  analyzeSearchTerms: vi.fn(),
-  analyzeKeywords: vi.fn(),
-  analyzeAds: vi.fn(),
-  analyzeTracking: vi.fn(),
-  analyzePacing: vi.fn(),
+  db: undefined as unknown, transaction: vi.fn(async (fn: (db: unknown) => unknown) => fn(mocks.db)),
+  connection: vi.fn(), pacing: vi.fn(), campaign: vi.fn(), terms: vi.fn(), keywords: vi.fn(), ads: vi.fn(), tracking: vi.fn(),
+  snapshot: vi.fn(), progress: vi.fn(), persist: vi.fn(),
+  analyzeCampaign: vi.fn(), analyzeTerms: vi.fn(), analyzeKeywords: vi.fn(), analyzeAds: vi.fn(), analyzeTracking: vi.fn(), analyzePacing: vi.fn(),
 }))
-
-vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.runTransaction }))
-vi.mock('@/lib/data', () => ({
-  getWorkspaceConnection: mocks.getWorkspaceConnection,
-  getClientGoalAndPacing: mocks.getClientGoalAndPacing,
-}))
-vi.mock('@/lib/google-ads', () => ({
-  GoogleAdsGateway: class {
-    campaignPerformance = mocks.campaignPerformance
-    searchTermPerformance = mocks.searchTermPerformance
-    keywordPerformance = mocks.keywordPerformance
-    responsiveSearchAdPerformance = mocks.responsiveSearchAdPerformance
-    conversionTrackingStatus = mocks.conversionTrackingStatus
-  },
-}))
-vi.mock('@/lib/notifications', () => ({ dispatchIncidentNotifications: mocks.dispatchNotifications }))
-vi.mock('@/lib/performance-history', () => ({ storePerformanceSnapshot: mocks.storeSnapshot }))
-vi.mock('@/lib/monitoring', () => ({
-  analyzeCampaigns: mocks.analyzeCampaigns,
-  analyzeSearchTermsForMonitoring: mocks.analyzeSearchTerms,
-  analyzeKeywordsForMonitoring: mocks.analyzeKeywords,
-  analyzeAdsForMonitoring: mocks.analyzeAds,
-  analyzeTrackingForMonitoring: mocks.analyzeTracking,
-  analyzePacingForMonitoring: mocks.analyzePacing,
-}))
-
+vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
+vi.mock('@/lib/data', () => ({ getWorkspaceConnection: mocks.connection, getClientGoalAndPacing: mocks.pacing }))
+vi.mock('@/lib/google-ads', () => ({ GoogleAdsGateway: class {
+  campaignPerformance = mocks.campaign; searchTermPerformance = mocks.terms; keywordPerformance = mocks.keywords
+  responsiveSearchAdPerformance = mocks.ads; conversionTrackingStatus = mocks.tracking
+} }))
+vi.mock('@/lib/performance-history', () => ({ storePerformanceSnapshot: mocks.snapshot }))
+vi.mock('@/lib/monitoring-observations', () => ({ readMonitoringProgress: mocks.progress, persistMonitoringObservation: mocks.persist }))
+vi.mock('@/lib/monitoring', () => ({ analyzeCampaigns: mocks.analyzeCampaign, analyzeSearchTermsForMonitoring: mocks.analyzeTerms,
+  analyzeKeywordsForMonitoring: mocks.analyzeKeywords, analyzeAdsForMonitoring: mocks.analyzeAds,
+  analyzeTrackingForMonitoring: mocks.analyzeTracking, analyzePacingForMonitoring: mocks.analyzePacing }))
 import { runWorkspaceMonitoring } from './run-monitoring'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
-const client = {
-  id: '00000000-0000-4000-8000-000000000002', workspaceId, name: 'ACME', googleCustomerId: '1234567890',
-  currencyCode: 'EUR', timezone: 'Europe/Paris', active: true, isManager: false,
+const client = { id: '00000000-0000-4000-8000-000000000002', workspaceId, name: 'ACME', googleCustomerId: '1234567890', currencyCode: 'EUR', timezone: 'Europe/Paris', active: true, isManager: false }
+const agentId = '00000000-0000-4000-8000-000000000003'
+const otherAgentId = '00000000-0000-4000-8000-000000000004'
+const scope = { clientId: client.id, agentIds: [agentId], claim: { jobId: '00000000-0000-4000-8000-000000000005', attempt: 1, workerId: 'worker' } }
+const finding = { fingerprint: 'finding', severity: 'critical', title: 'Alerte', description: 'Description', value: 42 }
+function setup(kinds = ['no_delivery'], accounts = [client]) {
+  const agents = kinds.map((kind, index) => ({ id: index === 0 ? agentId : otherAgentId, workspaceId, clientId: null, kind, threshold: '10', enabled: true }))
+  const query = { monitoringAgents: { findMany: vi.fn(async () => agents) }, clients: { findMany: vi.fn(async () => accounts) } }
+  mocks.db = databaseDouble({ query }).db
+  return { agents, query }
 }
 
-function agent(kind: string, overrides: Record<string, unknown> = {}) {
-  return {
-    id: `00000000-0000-4000-8000-${String(agent.sequence++).padStart(12, '0')}`,
-    workspaceId, clientId: client.id, kind, name: kind, threshold: '10', enabled: true,
-    reminderIntervalHours: null, ...overrides,
-  }
-}
-agent.sequence = 10
-
-const finding = {
-  fingerprint: 'finding:1', severity: 'critical' as const, title: 'Dépense anormale',
-  description: 'Une description', value: 42, campaignId: '1', campaignName: 'Brand',
-}
-
-function queryDouble(input: { agents?: unknown[]; clients?: unknown[]; existing?: unknown; unresolved?: unknown[] } = {}) {
-  return {
-    monitoringAgents: { findMany: vi.fn(async () => input.agents ?? []) },
-    clients: { findMany: vi.fn(async () => input.clients ?? []) },
-    alertIncidents: {
-      findFirst: vi.fn(async () => input.existing),
-      findMany: vi.fn(async () => input.unresolved ?? []),
-    },
-  }
-}
-
-function initialDatabase(agents: unknown[], clients: unknown[] = [client]) {
-  return databaseDouble({ query: queryDouble({ agents, clients }) })
-}
-
-function findingDatabase(existing?: unknown) {
-  return databaseDouble({
-    statementResults: [[{ id: '00000000-0000-4000-8000-000000000099' }]],
-    query: queryDouble({ existing }),
-  })
-}
-
-function resolutionDatabase(unresolved: unknown[] = []) {
-  return databaseDouble({ query: queryDouble({ unresolved }) })
-}
-
-describe('workspace monitoring orchestration', () => {
+describe('checkpointed workspace monitoring', () => {
   beforeEach(() => {
-    mocks.databases = []
     vi.clearAllMocks()
-    agent.sequence = 10
-    mocks.getWorkspaceConnection.mockResolvedValue({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
-    mocks.dispatchNotifications.mockResolvedValue({ accepted: 1, failed: 0 })
-    mocks.campaignPerformance.mockResolvedValue([])
-    mocks.searchTermPerformance.mockResolvedValue([])
-    mocks.keywordPerformance.mockResolvedValue([])
-    mocks.responsiveSearchAdPerformance.mockResolvedValue([])
-    mocks.conversionTrackingStatus.mockResolvedValue({})
-    mocks.getClientGoalAndPacing.mockResolvedValue({ goal: null, pacing: null, observedDays: 0, calendar: null })
-    mocks.storeSnapshot.mockResolvedValue(undefined)
-    for (const analyzer of [mocks.analyzeCampaigns, mocks.analyzeSearchTerms, mocks.analyzeKeywords, mocks.analyzeAds, mocks.analyzeTracking, mocks.analyzePacing]) {
-      analyzer.mockReturnValue([])
-    }
+    mocks.progress.mockResolvedValue({})
+    mocks.persist.mockResolvedValue({ detected: 1, resolved: 0, queued: 1 })
+    mocks.connection.mockResolvedValue({})
+    for (const read of [mocks.campaign, mocks.terms, mocks.keywords, mocks.ads]) read.mockResolvedValue([])
+    mocks.tracking.mockResolvedValue({})
+    mocks.pacing.mockResolvedValue({ goal: null, pacing: null, observedDays: 0, calendar: null })
+    mocks.snapshot.mockResolvedValue(undefined)
+    for (const analyze of [mocks.analyzeCampaign, mocks.analyzeTerms, mocks.analyzeKeywords, mocks.analyzeAds, mocks.analyzeTracking, mocks.analyzePacing]) analyze.mockReturnValue([finding])
+    setup()
   })
 
-  it('fails before touching tenant data when Google is disconnected', async () => {
-    mocks.getWorkspaceConnection.mockResolvedValue(null)
-    await expect(runWorkspaceMonitoring(workspaceId)).rejects.toThrow('Connexion Google Ads absente')
-    expect(mocks.runTransaction).not.toHaveBeenCalled()
+  it('returns a committed checkpoint without another Google read, even after disconnection', async () => {
+    mocks.progress.mockResolvedValue({ [agentId]: { detected: 2, resolved: 1, queued: 3 } })
+    mocks.connection.mockResolvedValue(null)
+    await expect(runWorkspaceMonitoring(workspaceId, scope)).resolves.toEqual({ agents: 1, clients: 1, detected: 2, resolved: 1, notifications: { queued: 3 } })
+    expect(mocks.connection).not.toHaveBeenCalled()
+    expect(mocks.persist).not.toHaveBeenCalled()
   })
-
-  it('handles a workspace with no enabled vigies without Google reads', async () => {
-    mocks.databases.push(initialDatabase([]).db)
-    await expect(runWorkspaceMonitoring(workspaceId)).resolves.toEqual({
-      agents: 0, clients: 0, detected: 0, resolved: 0, notifications: { accepted: 0, failed: 0 },
-    })
-    expect(mocks.campaignPerformance).not.toHaveBeenCalled()
+  it('fails before reading Google if the lease is lost or the connection is missing', async () => {
+    mocks.progress.mockRejectedValueOnce(new Error('lease lost'))
+    await expect(runWorkspaceMonitoring(workspaceId, scope)).rejects.toThrow('lease lost')
+    expect(mocks.connection).not.toHaveBeenCalled()
+    mocks.connection.mockResolvedValue(null)
+    await expect(runWorkspaceMonitoring(workspaceId, scope)).rejects.toThrow('Connexion Google Ads absente')
+    expect(mocks.persist).not.toHaveBeenCalled()
   })
-
-  it('opens, notifies and persists a new campaign incident', async () => {
-    const campaignAgent = agent('no_delivery')
-    mocks.analyzeCampaigns.mockReturnValue([finding])
-    const initial = initialDatabase([campaignAgent])
-    const upsert = findingDatabase()
-    const resolution = resolutionDatabase()
-    mocks.databases.push(initial.db, upsert.db, resolution.db)
-    await expect(runWorkspaceMonitoring(workspaceId)).resolves.toEqual({
-      agents: 1, clients: 1, detected: 1, resolved: 0, notifications: { accepted: 1, failed: 0 },
-    })
-    expect(mocks.campaignPerformance).toHaveBeenCalledWith(client.googleCustomerId)
-    expect(mocks.storeSnapshot).toHaveBeenCalledWith(expect.objectContaining({ workspaceId, clientId: client.id }))
-    expect(mocks.dispatchNotifications).toHaveBeenCalledWith(expect.objectContaining({
-      workspaceId, severity: 'critical', eventKey: expect.stringContaining(':opened:'),
-    }))
-  })
-
-  it('reopens a resolved incident and retains acknowledged incidents without duplicate notifications', async () => {
-    const campaignAgent = agent('budget_pressure')
-    mocks.analyzeCampaigns.mockReturnValue([finding])
-    const resolved = { status: 'resolved', severity: 'warning', createdAt: new Date('2026-08-01'), lastNotifiedAt: null }
-    mocks.databases.push(initialDatabase([campaignAgent]).db, findingDatabase(resolved).db, resolutionDatabase().db)
-    await runWorkspaceMonitoring(workspaceId)
-    expect(mocks.dispatchNotifications).toHaveBeenLastCalledWith(expect.objectContaining({ eventKey: expect.stringContaining(':reopened:') }))
-
-    vi.clearAllMocks()
-    mocks.getWorkspaceConnection.mockResolvedValue({ encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' })
-    mocks.campaignPerformance.mockResolvedValue([])
-    mocks.analyzeCampaigns.mockReturnValue([finding])
-    const acknowledged = { status: 'acknowledged', severity: 'critical', createdAt: new Date('2026-08-01'), lastNotifiedAt: new Date() }
-    mocks.databases.push(initialDatabase([campaignAgent]).db, findingDatabase(acknowledged).db, resolutionDatabase().db)
-    await runWorkspaceMonitoring(workspaceId)
-    expect(mocks.dispatchNotifications).not.toHaveBeenCalled()
-  })
-
-  it('leaves the reminder cadence to its independent scheduler and never counts a failed send as notified', async () => {
-    const selected = agent('no_delivery', { reminderIntervalHours: 4 })
-    mocks.analyzeCampaigns.mockReturnValue([finding])
-    mocks.databases.push(initialDatabase([selected]).db, findingDatabase({ status: 'open', severity: 'critical', createdAt: new Date('2020-01-01'), lastNotifiedAt: null }).db, resolutionDatabase().db)
-    await runWorkspaceMonitoring(workspaceId)
-    expect(mocks.dispatchNotifications).not.toHaveBeenCalled()
-    mocks.dispatchNotifications.mockResolvedValue({ accepted: 0, failed: 1 })
-    mocks.databases.push(initialDatabase([selected]).db, findingDatabase().db, resolutionDatabase().db)
-    await expect(runWorkspaceMonitoring(workspaceId)).resolves.toMatchObject({ notifications: { accepted: 0, failed: 1 } })
-    expect(mocks.databases).toHaveLength(0)
-  })
-
   it.each([
-    ['wasted_search_terms', 'searchTermPerformance', 'analyzeSearchTerms'],
-    ['low_quality_keywords', 'keywordPerformance', 'analyzeKeywords'],
-    ['weak_responsive_ads', 'responsiveSearchAdPerformance', 'analyzeAds'],
-  ] as const)('routes %s through its dedicated Google dataset and analyzer', async (kind, gatewayMethod, analyzer) => {
-    const selectedAgent = agent(kind)
-    mocks.databases.push(initialDatabase([selectedAgent]).db, resolutionDatabase().db)
-    await runWorkspaceMonitoring(workspaceId)
-    expect(mocks[gatewayMethod]).toHaveBeenCalledWith(client.googleCustomerId)
-    expect(mocks[analyzer]).toHaveBeenCalledOnce()
+    ['no_delivery', 'campaign', 'analyzeCampaign'], ['wasted_search_terms', 'terms', 'analyzeTerms'],
+    ['low_quality_keywords', 'keywords', 'analyzeKeywords'], ['weak_responsive_ads', 'ads', 'analyzeAds'],
+    ['tracking_gap', 'tracking', 'analyzeTracking'], ['pacing_variance', 'pacing', 'analyzePacing'], ['forecast_overrun', 'pacing', 'analyzePacing'],
+  ] as const)('reads and commits the %s family in its exact scope', async (kind, read, analyze) => {
+    const { agents } = setup([kind])
+    await expect(runWorkspaceMonitoring(workspaceId, scope)).resolves.toEqual({ agents: 1, clients: 1, detected: 1, resolved: 0, notifications: { queued: 1 } })
+    expect(mocks[read]).toHaveBeenCalledOnce()
+    expect(mocks[analyze]).toHaveBeenCalledOnce()
+    expect(mocks.persist).toHaveBeenCalledWith({ workspaceId, claim: scope.claim, agent: agents[0], clientId: client.id, findings: [finding], observedAt: expect.any(Date) })
   })
-
-  it('uses goals and local calendar inputs for pacing and forecast vigies', async () => {
-    const goalContext = {
-      goal: { monthlyBudgetMicros: '90000000' }, pacing: { status: 'over' }, observedDays: 12,
-      calendar: { year: 2026, month: 8 },
-    }
-    mocks.getClientGoalAndPacing.mockResolvedValue(goalContext)
-    const agents = [agent('pacing_variance'), agent('forecast_overrun')]
-    mocks.databases.push(initialDatabase(agents).db, resolutionDatabase().db, resolutionDatabase().db)
-    await runWorkspaceMonitoring(workspaceId)
-    expect(mocks.getClientGoalAndPacing).toHaveBeenCalledTimes(1)
-    expect(mocks.analyzePacing).toHaveBeenCalledTimes(2)
-    expect(mocks.analyzePacing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-      goal: { monthlyBudgetMicros: 90000000 }, observedDays: 12, year: 2026, month: 8,
-    }))
+  it.each(['no_delivery', 'wasted_search_terms', 'low_quality_keywords', 'weak_responsive_ads', 'tracking_gap', 'pacing_variance'])('shares %s reads across pending vigies', async (kind) => {
+    setup([kind, kind])
+    await runWorkspaceMonitoring(workspaceId, { ...scope, agentIds: [agentId, otherAgentId] })
+    for (const read of [mocks.campaign, mocks.terms, mocks.keywords, mocks.ads, mocks.tracking, mocks.pacing]) expect(read.mock.calls.length).toBeLessThanOrEqual(1)
+    expect(mocks.persist).toHaveBeenCalledTimes(2)
   })
-
-  it('combines campaign and conversion data for tracking-gap vigies', async () => {
-    const trackingAgent = agent('tracking_gap')
-    const campaigns = [{ id: '1' }]
-    const tracking = { conversionsTracked: false }
-    mocks.campaignPerformance.mockResolvedValue(campaigns)
-    mocks.conversionTrackingStatus.mockResolvedValue(tracking)
-    mocks.databases.push(initialDatabase([trackingAgent]).db, resolutionDatabase().db)
-    await runWorkspaceMonitoring(workspaceId)
-    expect(mocks.analyzeTracking).toHaveBeenCalledWith(trackingAgent, campaigns, tracking)
+  it('filters committed vigies out of the database query and retains their totals', async () => {
+    const { query } = setup(['no_delivery'])
+    mocks.progress.mockResolvedValue({ [otherAgentId]: { detected: 4, resolved: 2, queued: 1 } })
+    const result = await runWorkspaceMonitoring(workspaceId, { ...scope, agentIds: [agentId, otherAgentId] })
+    expect(result).toMatchObject({ agents: 2, detected: 5, resolved: 2, notifications: { queued: 2 } })
+    const where = (query.monitoringAgents.findMany.mock.calls[0] as unknown as [{ where: SQL }])[0].where
+    const compiled = new PgDialect().sqlToQuery(where)
+    expect(compiled.params).toContain(agentId)
+    expect(compiled.params).not.toContain(otherAgentId)
+    const clientWhere = (query.clients.findMany.mock.calls[0] as unknown as [{ where: SQL }])[0].where
+    expect(new PgDialect().sqlToQuery(clientWhere).params).toContain(client.id)
   })
-
-  it('resolves incidents that disappeared and keeps active fingerprints open', async () => {
-    const campaignAgent = agent('no_delivery')
-    const stale = { id: 'stale', fingerprint: 'stale:fingerprint', status: 'open' }
-    mocks.databases.push(initialDatabase([campaignAgent]).db, resolutionDatabase([stale]).db)
-    const result = await runWorkspaceMonitoring(workspaceId)
-    expect(result.resolved).toBe(1)
+  it('does not resolve incidents when Google or the durable commit fails', async () => {
+    mocks.campaign.mockRejectedValueOnce(new Error('Google incomplete'))
+    await expect(runWorkspaceMonitoring(workspaceId, scope)).rejects.toThrow('Google incomplete')
+    expect(mocks.persist).not.toHaveBeenCalled()
+    mocks.persist.mockRejectedValueOnce(new Error('rollback'))
+    await expect(runWorkspaceMonitoring(workspaceId, scope)).rejects.toThrow('rollback')
   })
-
-  it('limits the resolution query to the client actually scanned by a chunk', async () => {
-    const selected = agent('no_delivery', { clientId: null })
-    const resolutionQueries = queryDouble()
-    mocks.databases.push(initialDatabase([selected]).db, databaseDouble({ query: resolutionQueries }).db)
-    await runWorkspaceMonitoring(workspaceId, undefined, { clientId: client.id, agentIds: [selected.id] })
-    const options = resolutionQueries.alertIncidents.findMany.mock.calls[0] as unknown as [{ where: SQL }]
-    const query = new PgDialect().sqlToQuery(options[0].where)
-    expect(query.sql).toContain('"alert_incidents"."client_id" =')
-    expect(query.params).toContain(client.id)
-  })
-
-  it('does not resolve any historical incident for an inactive or removed target', async () => {
-    mocks.databases.push(initialDatabase([agent('no_delivery', { clientId: null })], []).db)
-    await expect(runWorkspaceMonitoring(workspaceId, undefined, { clientId: client.id, agentIds: ['agent'] })).resolves.toMatchObject({ clients: 0, resolved: 0 })
-    expect(mocks.runTransaction).toHaveBeenCalledTimes(1)
-    expect(mocks.campaignPerformance).not.toHaveBeenCalled()
-  })
-
-  it('isolates agent scope and excludes manager or inactive clients from targets', async () => {
-    const selected = agent('no_delivery')
-    const other = agent('no_delivery')
-    const manager = { ...client, id: 'manager', isManager: true }
-    const inactive = { ...client, id: 'inactive', active: false }
-    mocks.databases.push(initialDatabase([selected], [client, manager, inactive]).db, resolutionDatabase().db)
-    const result = await runWorkspaceMonitoring(workspaceId, selected.id)
-    expect(result.clients).toBe(1)
-    expect(result.agents).toBe(1)
-    expect(other.id).not.toBe(selected.id)
+  it('does not observe inactive, removed or unrelated accounts', async () => {
+    setup(['no_delivery'], [])
+    await expect(runWorkspaceMonitoring(workspaceId, scope)).resolves.toMatchObject({ clients: 0, detected: 0 })
+    const { agents } = setup()
+    agents[0].clientId = 'different' as unknown as null
+    await runWorkspaceMonitoring(workspaceId, scope)
+    expect(mocks.campaign).not.toHaveBeenCalled()
+    expect(mocks.persist).not.toHaveBeenCalled()
   })
 })

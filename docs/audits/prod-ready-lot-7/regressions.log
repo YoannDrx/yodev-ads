@@ -1,0 +1,13 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/lib/monitoring-observations.test.ts src/lib/run-monitoring.test.ts src/lib/monitoring-scan-jobs.test.ts src/lib/notifications-orchestration.test.ts src/lib/job-runner-orchestration.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  5 passed (5)
+      Tests  97 passed (97)
+   Start at  02:08:48
+   Duration  2.38s (transform 1.81s, setup 0ms, import 8.08s, tests 327ms, environment 1ms)
+

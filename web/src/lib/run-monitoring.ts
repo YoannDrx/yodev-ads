@@ -1,12 +1,11 @@
 import 'server-only'
 
-import { and, eq, inArray, sql } from 'drizzle-orm'
-import { alertIncidents, clients, monitoringAgents } from '@/db/schema'
+import { and, eq, inArray } from 'drizzle-orm'
+import { clients, monitoringAgents } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { getClientGoalAndPacing, getWorkspaceConnection } from '@/lib/data'
 import { GoogleAdsGateway } from '@/lib/google-ads'
-import { dispatchIncidentNotifications } from '@/lib/notifications'
-import { alertNotificationEvent, alertNotificationEventKey } from '@/lib/alert-notification-events'
+import { persistMonitoringObservation, readMonitoringProgress, type MonitoringClaim } from '@/lib/monitoring-observations'
 import { storePerformanceSnapshot } from '@/lib/performance-history'
 import { remainingWorkMs } from '@/lib/work-deadline'
 import {
@@ -18,21 +17,30 @@ import {
   analyzeTrackingForMonitoring,
 } from '@/lib/monitoring'
 
-export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: string, scope?: { clientId: string; agentIds: string[] }) {
+export async function runWorkspaceMonitoring(workspaceId: string, scope: { clientId: string; agentIds: string[]; claim: MonitoringClaim }) {
+  const progress = await readMonitoringProgress(workspaceId, scope.claim)
+  const pendingAgentIds = scope.agentIds.filter((id) => !progress[id])
+  const completedResult = () => {
+    const results = scope.agentIds.map((id) => progress[id]).filter(Boolean)
+    return { agents: results.length, clients: results.some((result) => !result.skipped) ? 1 : 0,
+      detected: results.reduce((sum, result) => sum + result.detected, 0), resolved: results.reduce((sum, result) => sum + result.resolved, 0),
+      notifications: { queued: results.reduce((sum, result) => sum + result.queued, 0) } }
+  }
+  if (pendingAgentIds.length === 0) return completedResult()
   const connection = await getWorkspaceConnection(workspaceId)
   if (!connection) throw new Error('Connexion Google Ads absente.')
 
   const { agents, workspaceClients } = await withSystemTransaction(async (db) => ({
     agents: await db.query.monitoringAgents.findMany({
       where: and(eq(monitoringAgents.workspaceId, workspaceId), eq(monitoringAgents.enabled, true),
-        onlyAgentId ? eq(monitoringAgents.id, onlyAgentId) : undefined,
-        scope ? inArray(monitoringAgents.id, scope.agentIds) : undefined),
+        inArray(monitoringAgents.id, pendingAgentIds)),
     }),
     workspaceClients: await db.query.clients.findMany({
       where: and(eq(clients.workspaceId, workspaceId), eq(clients.active, true), eq(clients.isManager, false),
-        scope ? eq(clients.id, scope.clientId) : undefined),
+        eq(clients.id, scope.clientId)),
     }),
   }))
+  const observedAt = new Date()
   const gateway = new GoogleAdsGateway(connection)
   const campaignCache = new Map<string, Awaited<ReturnType<typeof gateway.campaignPerformance>>>()
   const searchTermCache = new Map<string, Awaited<ReturnType<typeof gateway.searchTermPerformance>>>()
@@ -40,7 +48,6 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
   const adCache = new Map<string, Awaited<ReturnType<typeof gateway.responsiveSearchAdPerformance>>>()
   const trackingCache = new Map<string, Awaited<ReturnType<typeof gateway.conversionTrackingStatus>>>()
   const pacingCache = new Map<string, Awaited<ReturnType<typeof getClientGoalAndPacing>>>()
-  const processedClients = new Set<string>()
 
   async function campaignsFor(client: (typeof workspaceClients)[number]) {
     let campaigns = campaignCache.get(client.id)
@@ -56,10 +63,6 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
     }
     return campaigns
   }
-  let detected = 0
-  let resolved = 0
-  let accepted = 0
-  let notificationFailures = 0
 
   for (const agent of agents) {
     remainingWorkMs(1_000)
@@ -67,10 +70,8 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
       ? workspaceClients.filter((client) => client.id === agent.clientId)
       : workspaceClients
     if (targets.length === 0) continue
-    const activeFingerprints = new Set<string>()
     for (const client of targets) {
       remainingWorkMs(1_000)
-      processedClients.add(client.id)
       let findings
       if (agent.kind === 'pacing_variance' || agent.kind === 'forecast_overrun') {
         let goalContext = pacingCache.get(client.id)
@@ -118,113 +119,11 @@ export async function runWorkspaceMonitoring(workspaceId: string, onlyAgentId?: 
         const campaigns = await campaignsFor(client)
         findings = analyzeCampaigns(agent, campaigns)
       }
-      for (const finding of findings) {
-        remainingWorkMs(1_000)
-        const notificationNow = new Date()
-        const fingerprint = `${finding.fingerprint}:${client.id}`
-        activeFingerprints.add(fingerprint)
-        const { existingIncident, incident } = await withSystemTransaction(async (db) => {
-          const existingIncident = await db.query.alertIncidents.findFirst({
-            where: and(eq(alertIncidents.workspaceId, workspaceId), eq(alertIncidents.fingerprint, fingerprint)),
-          })
-          const reopened = existingIncident?.status === 'resolved'
-          const existingStatus = existingIncident?.status
-          const snoozeExpired = existingIncident?.status === 'snoozed' && Boolean(existingIncident.snoozedUntil && existingIncident.snoozedUntil <= new Date())
-          const nextStatus = reopened
-            ? 'reopened'
-            : existingStatus === 'acknowledged' || (existingStatus === 'snoozed' && !snoozeExpired)
-              ? existingStatus
-              : 'open'
-          const [incident] = await db
-            .insert(alertIncidents)
-            .values({
-              workspaceId,
-              agentId: agent.id,
-              clientId: client.id,
-              ...finding,
-              fingerprint,
-              value: String(finding.value),
-            })
-            .onConflictDoUpdate({
-              target: [alertIncidents.workspaceId, alertIncidents.fingerprint],
-              set: {
-                title: finding.title,
-                description: finding.description,
-                severity: finding.severity,
-                value: String(finding.value),
-                status: nextStatus,
-                resolvedAt: null,
-                detectedAt: new Date(),
-                occurrenceCount: sql`${alertIncidents.occurrenceCount} + 1`,
-                updatedAt: new Date(),
-              },
-            })
-            .returning({ id: alertIncidents.id })
-          return { existingIncident, incident }
-        })
-        const notificationEvent = alertNotificationEvent({
-          existing: existingIncident,
-          nextSeverity: finding.severity,
-          // Reminders have their own scheduler, independent of Google scans.
-          reminderIntervalHours: null,
-          now: notificationNow,
-        })
-        if (notificationEvent) {
-          const notificationResult = await dispatchIncidentNotifications({
-            workspaceId,
-            incidentId: incident.id,
-            eventKey: alertNotificationEventKey({
-              fingerprint,
-              incidentId: incident.id,
-              event: notificationEvent,
-              reminderIntervalHours: agent.reminderIntervalHours,
-              now: notificationNow,
-            }),
-            severity: finding.severity,
-            title: finding.title,
-            description: finding.description,
-            clientName: client.name,
-          })
-          accepted += notificationResult.accepted
-          notificationFailures += notificationResult.failed
-        }
-        detected += 1
-      }
-    }
-
-    resolved += await withSystemTransaction(async (db) => {
-      const existing = await db.query.alertIncidents.findMany({
-        where: and(
-          eq(alertIncidents.workspaceId, workspaceId),
-          eq(alertIncidents.agentId, agent.id),
-          // A chunk can only resolve incidents for the client it actually read.
-          scope ? eq(alertIncidents.clientId, scope.clientId) : undefined,
-          inArray(alertIncidents.status, ['open', 'reopened', 'acknowledged', 'snoozed']),
-        ),
+      progress[agent.id] = await persistMonitoringObservation({
+        workspaceId, claim: scope.claim, agent, clientId: client.id, findings, observedAt,
       })
-      let resolvedForAgent = 0
-      for (const incident of existing) {
-        remainingWorkMs(1_000)
-        if (activeFingerprints.has(incident.fingerprint)) continue
-        await db
-          .update(alertIncidents)
-          .set({ status: 'resolved', resolvedAt: new Date(), updatedAt: new Date() })
-          .where(and(eq(alertIncidents.id, incident.id), eq(alertIncidents.workspaceId, workspaceId)))
-        resolvedForAgent += 1
-      }
-      await db
-        .update(monitoringAgents)
-        .set({ lastRunAt: new Date(), updatedAt: new Date() })
-        .where(and(eq(monitoringAgents.id, agent.id), eq(monitoringAgents.workspaceId, workspaceId)))
-      return resolvedForAgent
-    })
+    }
   }
 
-  return {
-    agents: agents.length,
-    clients: processedClients.size,
-    detected,
-    resolved,
-    notifications: { accepted, failed: notificationFailures },
-  }
+  return completedResult()
 }

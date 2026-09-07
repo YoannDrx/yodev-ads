@@ -2,7 +2,7 @@ import 'server-only'
 
 import { and, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 import { alertIncidents, clients, jobs, monitoringAgents, notificationChannels, notificationDeliveries, performanceSnapshots, workspaces } from '@/db/schema'
-import { withSystemTransaction } from '@/db/transactions'
+import { withSystemTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { decryptSecret, encryptSecret } from '@/lib/crypto'
 import { featureEnabled } from '@/lib/feature-flags'
 import { jobRetryDelay, NonRetryableJobError } from '@/lib/jobs'
@@ -201,6 +201,17 @@ export async function retryNotificationDelivery(deliveryId: string) {
     const payload = claimed.payload as NotificationPayload
     let cancellationReason: string | null = channel && severityRank[payload.severity] < severityRank[channel.minimumSeverity as keyof typeof severityRank]
       ? 'Notification no longer meets channel severity preference' : null
+    if (channel && claimed.eventKey.startsWith('monitoring:')) {
+      const [context] = await db.select({ incident: alertIncidents, agent: monitoringAgents, client: clients })
+        .from(alertIncidents)
+        .innerJoin(monitoringAgents, and(eq(monitoringAgents.id, alertIncidents.agentId), eq(monitoringAgents.workspaceId, alertIncidents.workspaceId)))
+        .innerJoin(clients, and(eq(clients.id, alertIncidents.clientId), eq(clients.workspaceId, alertIncidents.workspaceId)))
+        .where(and(claimed.incidentId ? eq(alertIncidents.id, claimed.incidentId) : sql`false`, eq(alertIncidents.workspaceId, claimed.workspaceId))).limit(1)
+      if (!context || !context.agent.enabled || !context.client.active || context.client.isManager ||
+        !['open', 'reopened'].includes(context.incident.status) || context.incident.severity !== payload.severity) {
+        cancellationReason = 'Monitoring incident is no longer actionable'
+      }
+    }
     if (channel && (payload.reminderDueAt !== undefined || claimed.eventKey.startsWith('alert-reminder:'))) {
       const [context] = await db.select({ incident: alertIncidents, agent: monitoringAgents, client: clients })
         .from(alertIncidents)
@@ -308,6 +319,38 @@ export async function retryNotificationDelivery(deliveryId: string) {
   }
 }
 
+async function insertNotificationDelivery(db: DatabaseTransaction, payload: NotificationPayload, channelId: string, delayMs: number) {
+  const [created] = await db.insert(notificationDeliveries).values({
+    workspaceId: payload.workspaceId, channelId, incidentId: payload.incidentId,
+    eventKey: payload.eventKey, payload: { ...payload, deliveryKey: notificationDeliveryKey(payload.eventKey, channelId) }, status: 'queued',
+  }).onConflictDoNothing().returning({ id: notificationDeliveries.id })
+  if (!created) return null
+  // The durable fallback exists before the immediate attempt can start.
+  await db.insert(jobs).values({
+    workspaceId: payload.workspaceId, type: 'notification.deliver', payload: { deliveryId: created.id },
+    availableAt: new Date(Date.now() + delayMs), priority: payload.severity === 'critical' ? 20 : 70,
+    deduplicationKey: `notification.deliver:${created.id}`, maximumAttempts: MAXIMUM_NOTIFICATION_DELIVERY_ATTEMPTS,
+  }).onConflictDoNothing({ target: jobs.deduplicationKey })
+  return created
+}
+
+/** Persist all eligible channels and their outbox jobs in the caller's transaction.
+ * No provider call occurs here; workers independently honor the delivery switch. */
+export async function queueIncidentNotifications(db: DatabaseTransaction, payload: NotificationPayload) {
+  const workspace = await db.query.workspaces.findFirst({
+    where: eq(workspaces.id, payload.workspaceId), columns: { accessState: true, plan: true },
+  })
+  const candidates = await db.query.notificationChannels.findMany({
+    where: and(eq(notificationChannels.workspaceId, payload.workspaceId), eq(notificationChannels.enabled, true)),
+  })
+  let queued = 0
+  for (const channel of channelsAllowedByWorkspace(workspace, candidates)) {
+    if (severityRank[payload.severity] < severityRank[channel.minimumSeverity as keyof typeof severityRank]) continue
+    if (await insertNotificationDelivery(db, payload, channel.id, 0)) queued += 1
+  }
+  return queued
+}
+
 export async function dispatchIncidentNotifications(payload: NotificationPayload) {
   if (!featureEnabled('notifications')) return { accepted: 0, failed: 0, skipped: true }
   const channels = await withSystemTransaction(async (db) => {
@@ -324,20 +367,7 @@ export async function dispatchIncidentNotifications(payload: NotificationPayload
   let failed = 0
   for (const channel of channels) {
     if (severityRank[payload.severity] < severityRank[channel.minimumSeverity as keyof typeof severityRank]) continue
-    const claim = await withSystemTransaction(async (db) => {
-      const [created] = await db.insert(notificationDeliveries).values({
-        workspaceId: payload.workspaceId, channelId: channel.id, incidentId: payload.incidentId,
-        eventKey: payload.eventKey, payload: { ...payload, deliveryKey: notificationDeliveryKey(payload.eventKey, channel.id) }, status: 'queued',
-      }).onConflictDoNothing().returning({ id: notificationDeliveries.id })
-      if (!created) return null
-      // The durable fallback exists before the immediate attempt can start.
-      await db.insert(jobs).values({
-        workspaceId: payload.workspaceId, type: 'notification.deliver', payload: { deliveryId: created.id },
-        availableAt: new Date(Date.now() + jobRetryDelay(1)), priority: payload.severity === 'critical' ? 20 : 70,
-        deduplicationKey: `notification.deliver:${created.id}`, maximumAttempts: MAXIMUM_NOTIFICATION_DELIVERY_ATTEMPTS,
-      }).onConflictDoNothing({ target: jobs.deduplicationKey })
-      return created
-    })
+    const claim = await withSystemTransaction((db) => insertNotificationDelivery(db, payload, channel.id, jobRetryDelay(1)))
     if (!claim) continue
     const result = await retryNotificationDelivery(claim.id)
     if (result === 'accepted' || result === 'delivered') {

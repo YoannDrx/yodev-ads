@@ -323,6 +323,13 @@
       "when": 1788738491337,
       "tag": "0045_job_workspace_fairness",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1788739558238,
+      "tag": "0046_monitoring_observation_lookup",
+      "breakpoints": true
     }
   ]
 }

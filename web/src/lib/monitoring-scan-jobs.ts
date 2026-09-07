@@ -6,6 +6,7 @@ import { auditEvents, clients, monitoringAgents, workspaces } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { enqueueJobs, type EnqueueJobInput } from '@/lib/jobs'
 import { monitoringScanPlan } from '@/lib/monitoring-scan-plan'
+import type { MonitoringClaim } from '@/lib/monitoring-observations'
 import { remainingWorkMs } from '@/lib/work-deadline'
 import { runWorkspaceMonitoring } from '@/lib/run-monitoring'
 
@@ -40,12 +41,12 @@ export async function fanOutMonitoringScan(input: { workspaceId: string; parentJ
   return { chunks: chunks.length, created, skipped: false }
 }
 
-export async function executeMonitoringChunk(input: { workspaceId: string; parentJobId: string; clientId: string; agentIds: string[] }) {
+export async function executeMonitoringChunk(input: { workspaceId: string; parentJobId: string; clientId: string; agentIds: string[] }, claim: MonitoringClaim) {
   const workspace = await withSystemTransaction((db) => db.query.workspaces.findFirst({
     where: eq(workspaces.id, input.workspaceId), columns: { accessState: true },
   }))
   if (!workspace || !['internal', 'trial', 'active'].includes(workspace.accessState)) return { skipped: true }
-  const result = await runWorkspaceMonitoring(input.workspaceId, undefined, { clientId: input.clientId, agentIds: input.agentIds })
+  const result = await runWorkspaceMonitoring(input.workspaceId, { clientId: input.clientId, agentIds: input.agentIds, claim })
   await withSystemTransaction((db) => db.insert(auditEvents).values({
     workspaceId: input.workspaceId, actorUserId: 'system:monitoring', action: 'monitoring.chunk_completed',
     entityType: 'client', entityId: input.clientId,

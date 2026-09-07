@@ -1,0 +1,1 @@
+CREATE INDEX "audit_monitoring_observation_idx" ON "audit_events" USING btree ("workspace_id","entity_id",("metadata"->>'clientId'),"created_at","id") WHERE "audit_events"."action" = 'monitoring.observation_committed';

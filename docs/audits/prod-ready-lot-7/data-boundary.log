@@ -1,0 +1,5 @@
+
+> @yodev/ads@0.1.0 verify:data-boundary
+> tsx scripts/verify-app-data-boundary.ts
+
+App data boundary verified (77 files, allowlist: none).

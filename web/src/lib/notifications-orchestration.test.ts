@@ -36,6 +36,7 @@ vi.mock('@/lib/transactional-email', () => ({ sendTransactionalEmail: mocks.emai
 
 import {
   channelsAllowedByWorkspace,
+  queueIncidentNotifications,
   dispatchIncidentNotifications,
   dispatchWeeklyDigest,
   retryNotificationDelivery,
@@ -105,6 +106,19 @@ describe('notification delivery orchestration', () => {
     vi.unstubAllGlobals()
   })
 
+  it('persists every channel outbox without provider calls, including while delivery is switched off', async () => {
+    mocks.featureEnabled.mockReturnValue(false)
+    const db = databaseDouble({ statementResults: [[{ id: 'delivery-one' }], [], [{ id: 'delivery-two' }], []], query: queryDouble({ channels: [channel(), channel({ id: 'second-channel' })] }) })
+    expect(await queueIncidentNotifications(db.db as unknown as Parameters<typeof queueIncidentNotifications>[0], payload)).toBe(2)
+    expect(db.capture.values[1]).toMatchObject({ type: 'notification.deliver', payload: { deliveryId: 'delivery-one' }, availableAt: expect.any(Date) })
+    expect(db.capture.values[3]).toMatchObject({ type: 'notification.deliver', payload: { deliveryId: 'delivery-two' } })
+    const first = db.capture.values[0] as { payload: { deliveryKey: string } }
+    const second = db.capture.values[2] as { payload: { deliveryKey: string } }
+    expect(first.payload.deliveryKey).not.toBe(second.payload.deliveryKey)
+    expect(mocks.emailSend).not.toHaveBeenCalled()
+    expect(mocks.postSafeWebhook).not.toHaveBeenCalled()
+  })
+
   it('honors the notification kill switch at retry time before claiming', async () => {
     mocks.featureEnabled.mockReturnValue(false)
     await expect(retryNotificationDelivery(delivery().id)).resolves.toBe('disabled')
@@ -140,6 +154,19 @@ describe('notification delivery orchestration', () => {
     expect(claimDb.capture.sets.at(-1)).toMatchObject({ status: 'cancelled', errorMessage: 'Reminder occurrence is no longer current' })
     expect(mocks.emailSend).not.toHaveBeenCalled()
     expect(mocks.postSafeWebhook).not.toHaveBeenCalled()
+  })
+
+  it.each(['resolved', 'acknowledged', 'snoozed', 'disabled_agent', 'inactive_client', 'changed_severity', 'missing'])('cancels a deferred monitoring event after %s', async (state) => {
+    const eventKey = 'monitoring:job:incident:opened'
+    const context = {
+      incident: { status: ['resolved', 'acknowledged', 'snoozed'].includes(state) ? state : 'open', severity: state === 'changed_severity' ? 'warning' : 'critical' },
+      agent: { enabled: state !== 'disabled_agent' }, client: { active: state !== 'inactive_client', isManager: false },
+    }
+    const claimDb = databaseDouble({ statementResults: [[delivery({ eventKey, payload: { ...payload, eventKey } })], state === 'missing' ? [] : [context]], query: queryDouble({ channel: channel() }) })
+    mocks.databases.push(claimDb.db)
+    expect(await retryNotificationDelivery(delivery().id)).toBe('cancelled')
+    expect(claimDb.capture.sets.at(-1)).toMatchObject({ status: 'cancelled', errorMessage: 'Monitoring incident is no longer actionable' })
+    expect(mocks.emailSend).not.toHaveBeenCalled()
   })
 
   it('still delivers a second channel of the same accepted reminder occurrence', async () => {

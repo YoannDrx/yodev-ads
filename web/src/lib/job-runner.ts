@@ -139,7 +139,9 @@ async function executeJob(job: ClaimedJob) {
       return fanOutMonitoringScan({ ...monitoringScanPayload.parse(job.payload), parentJobId: job.id })
     }
     case 'monitoring.scan_chunk': {
-      return executeMonitoringChunk(monitoringChunkPayload.parse(job.payload))
+      const payload = monitoringChunkPayload.parse(job.payload)
+      if (payload.workspaceId !== job.workspaceId || !job.leaseOwner) throw new NonRetryableJobError('Monitoring job workspace mismatch')
+      return executeMonitoringChunk(payload, { jobId: job.id, attempt: job.attemptCount, workerId: job.leaseOwner })
     }
     case 'monitoring.reminder': {
       return deliverAlertReminder(reminderPayload.parse(job.payload))

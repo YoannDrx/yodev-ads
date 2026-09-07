@@ -12,6 +12,7 @@ import { executeMonitoringChunk, fanOutMonitoringScan } from './monitoring-scan-
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 const parentJobId = '00000000-0000-4000-8000-000000000002'
+const claim = { jobId: parentJobId, attempt: 1, workerId: 'worker' }
 function context(state = 'active', count = 1) {
   return databaseDouble({ query: {
     workspaces: { findFirst: async () => ({ accessState: state }) },
@@ -44,15 +45,15 @@ describe('monitoring coordinator and worker', () => {
   it.each(['grace', 'suspended', 'deletion_pending'])('does not collect or enqueue after the workspace enters %s', async (state) => {
     mocks.dbs.push(context(state), context(state))
     await expect(fanOutMonitoringScan({ workspaceId, parentJobId })).resolves.toMatchObject({ skipped: true })
-    await expect(executeMonitoringChunk({ workspaceId, parentJobId, clientId: 'client', agentIds: ['agent'] })).resolves.toEqual({ skipped: true })
+    await expect(executeMonitoringChunk({ workspaceId, parentJobId, clientId: 'client', agentIds: ['agent'] }, claim)).resolves.toEqual({ skipped: true })
     expect(mocks.enqueue).not.toHaveBeenCalled()
     expect(mocks.run).not.toHaveBeenCalled()
   })
   it('passes the exact client and vigie scope and audits the partial completion', async () => {
     const audit = databaseDouble()
     mocks.dbs.push(context(), audit.db)
-    await executeMonitoringChunk({ workspaceId, parentJobId, clientId: 'client', agentIds: ['agent'] })
-    expect(mocks.run).toHaveBeenCalledWith(workspaceId, undefined, { clientId: 'client', agentIds: ['agent'] })
+    await executeMonitoringChunk({ workspaceId, parentJobId, clientId: 'client', agentIds: ['agent'] }, claim)
+    expect(mocks.run).toHaveBeenCalledWith(workspaceId, { clientId: 'client', agentIds: ['agent'], claim })
     expect(audit.capture.values[0]).toMatchObject({ action: 'monitoring.chunk_completed', entityId: 'client', metadata: { parentJobId, detected: 2 } })
   })
 })
