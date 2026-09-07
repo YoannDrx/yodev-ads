@@ -13,21 +13,47 @@ import {
   memberNotificationPreferences,
   workspaces,
 } from '@/db/schema'
-import { withSystemTransaction, withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
+import { withSystemTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { encryptSecret } from '@/lib/crypto'
-import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
+import { entitlementContext, isPlan, isWorkspaceAccessState, requireCapability, requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { authRoleToWorkspaceRole, requirePermission, type WorkspaceRole } from '@/lib/permissions'
-import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { lockWorkspaceAccessBoundary } from '@/lib/workspace-transaction-guard'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 
-async function lockMemberManagement(db: DatabaseTransaction, input: { workspaceId: string; organizationId: string; actorUserId: string }, ownerOnly = false) {
-  const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'collaboration')
-  const workspace = await db.query.workspaces.findFirst({ where: eq(workspaces.id, input.workspaceId), columns: { ownerUserId: true, authOrganizationId: true } })
+type MemberManagementActor = { workspaceId: string; organizationId: string; actorUserId: string }
+
+async function assertMemberManagementTrial(db: DatabaseTransaction, workspaceId: string) {
+  // Evaluate time after all row locks have been acquired, and again after the business writes.
+  const [trial] = await db.select({ expired: sql<boolean>`${workspaces.trialEndsAt} is not null and ${workspaces.trialEndsAt} <= clock_timestamp()` })
+    .from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1)
+  if (!trial || trial.expired) throw new Error('L’essai de cet espace a expiré.')
+}
+
+async function lockMemberManagement(db: DatabaseTransaction, input: MemberManagementActor, ownerOnly = false) {
+  await lockWorkspaceAccessBoundary(db, input.workspaceId)
+  const [workspace] = await db.select({ ownerUserId: workspaces.ownerUserId, authOrganizationId: workspaces.authOrganizationId, accessState: workspaces.accessState, plan: workspaces.plan })
+    .from(workspaces).where(eq(workspaces.id, input.workspaceId)).limit(1).for('share')
   if (!workspace || workspace.authOrganizationId !== input.organizationId) throw new Error('Organisation du workspace indisponible.')
-  const actor = await db.query.authMembers.findFirst({ where: and(eq(authMembers.organizationId, input.organizationId), eq(authMembers.userId, input.actorUserId)) })
+  if (!isWorkspaceAccessState(workspace.accessState) || !isPlan(workspace.plan)) throw new Error('L’espace est indisponible.')
+  const [actor] = await db.select({ role: authMembers.role }).from(authMembers)
+    .where(and(eq(authMembers.organizationId, input.organizationId), eq(authMembers.userId, input.actorUserId))).limit(1).for('share')
   if (!actor) throw new Error('Adhésion au workspace requise.')
+  if (workspace.accessState === 'trial') await assertMemberManagementTrial(db, input.workspaceId)
+  const entitlements = entitlementContext(workspace.accessState, workspace.plan)
+  requireCapability(entitlements, 'collaboration')
   requirePermission(authRoleToWorkspaceRole(actor.role, workspace.ownerUserId === input.actorUserId), 'members:manage')
   if (ownerOnly && workspace.ownerUserId !== input.actorUserId) throw new Error('Seul le propriétaire peut transférer la propriété.')
   return { entitlements, ownerUserId: workspace.ownerUserId }
+}
+
+function withMemberManagementTransaction<T>(input: MemberManagementActor, operation: (db: DatabaseTransaction, access: Awaited<ReturnType<typeof lockMemberManagement>>) => Promise<T>, ownerOnly = false) {
+  return withSystemTransaction(async (db) => {
+    const access = await lockMemberManagement(db, input, ownerOnly)
+    const result = await operation(db, access)
+    // Successful self-demotion/removal or ownership transfer is intentional; only recheck elapsed trial time.
+    if (access.entitlements.state === 'trial') await assertMemberManagementTrial(db, input.workspaceId)
+    return result
+  })
 }
 
 export type ManageableWorkspaceRole = Exclude<WorkspaceRole, 'owner'>
@@ -93,8 +119,7 @@ export function saveMemberTaskNotificationPreferences(input: {
   digestHour: number
   timezone: string
 }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.userId }, async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.userId, permission: 'workspace:read', capability: 'monitoring' }, async (db) => {
     const [preference] = await db.insert(memberNotificationPreferences).values({
       workspaceId: input.workspaceId,
       authUserId: input.userId,
@@ -146,8 +171,7 @@ export async function inviteWorkspaceMemberWithQuota(input: {
   role: ManageableWorkspaceRole
   entitlements: EntitlementContext
 }) {
-  const invitation = await withSystemTransaction(async (db) => {
-    const { entitlements } = await lockMemberManagement(db, input)
+  const invitation = await withMemberManagementTransaction(input, async (db, { entitlements }) => {
     await db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`members:${input.workspaceId}`}, 0))`)
     const memberCount = await db.select({ count: sql<number>`count(*)::int` }).from(authMembers)
       .where(eq(authMembers.organizationId, input.organizationId))
@@ -209,8 +233,7 @@ export function updateWorkspaceMemberRoleWithAudit(input: {
   targetUserId: string
   role: ManageableWorkspaceRole
 }) {
-  return withSystemTransaction(async (db) => {
-    const { ownerUserId } = await lockMemberManagement(db, input)
+  return withMemberManagementTransaction(input, async (db, { ownerUserId }) => {
     if (input.targetUserId === ownerUserId) throw new Error('Le propriétaire actuel est protégé ; utilisez le transfert de propriété.')
     const [membership] = await db.update(authMembers).set({ role: input.role })
       .where(and(eq(authMembers.organizationId, input.organizationId), eq(authMembers.userId, input.targetUserId)))
@@ -234,8 +257,7 @@ export function removeWorkspaceMemberWithAudit(input: {
   actorUserId: string
   targetUserId: string
 }) {
-  return withSystemTransaction(async (db) => {
-    const { ownerUserId } = await lockMemberManagement(db, input)
+  return withMemberManagementTransaction(input, async (db, { ownerUserId }) => {
     if (input.targetUserId === ownerUserId) throw new Error('Le propriétaire actuel est protégé ; utilisez le transfert de propriété.')
     const [membership] = await db.delete(authMembers)
       .where(and(eq(authMembers.organizationId, input.organizationId), eq(authMembers.userId, input.targetUserId)))
@@ -261,8 +283,7 @@ export function revokeWorkspaceInvitationWithAudit(input: {
   actorUserId: string
   invitationId: string
 }) {
-  return withSystemTransaction(async (db) => {
-    await lockMemberManagement(db, input)
+  return withMemberManagementTransaction(input, async (db) => {
     const [invitation] = await db.update(authInvitations).set({ status: 'canceled' })
       .where(and(
         eq(authInvitations.organizationId, input.organizationId),
@@ -288,13 +309,12 @@ export function transferWorkspaceOwnershipWithAudit(input: {
   actorUserId: string
   newOwnerUserId: string
 }) {
-  return withSystemTransaction(async (db) => {
-    await lockMemberManagement(db, input, true)
+  return withMemberManagementTransaction(input, async (db) => {
     if (input.newOwnerUserId === input.actorUserId) throw new Error('Ce membre est déjà propriétaire.')
-    const newOwner = await db.query.authMembers.findFirst({ where: and(
+    const [newOwner] = await db.select({ id: authMembers.id }).from(authMembers).where(and(
       eq(authMembers.organizationId, input.organizationId),
       eq(authMembers.userId, input.newOwnerUserId),
-    ) })
+    )).limit(1).for('update')
     if (!newOwner) throw new Error('Le nouveau propriétaire doit déjà être membre actif.')
     await db.update(authMembers).set({ role: 'admin' }).where(and(
       eq(authMembers.organizationId, input.organizationId),
@@ -315,5 +335,5 @@ export function transferWorkspaceOwnershipWithAudit(input: {
       metadata: { previousOwnerUserId: input.actorUserId, newOwnerUserId: input.newOwnerUserId },
     })
     return updated
-  })
+  }, true)
 }

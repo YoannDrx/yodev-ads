@@ -28,4 +28,6 @@ La règle de sécurité valide sa portée depuis le forfait courant. Un compte c
 
 ## Périmètre de vérification
 
-Les lots 37 et 38 relient les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Ils ne terminent pas la revue des autres mutations : sélection des comptes, gestion des membres, sessions OAuth, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.
+Le [lot 39](./audits/prod-ready-lot-39/README.md) protège également les cinq mutations de membres dans leur transaction système : workspace et adhésion de l’acteur verrouillés, cible de transfert verrouillée, contrôle final du temps d’essai sans invalider un transfert ou retrait volontaire autorisé. La sauvegarde des préférences personnelles utilise le garde tenant de l’acteur courant. Les jobs de notification ne tirent pas leur autorisation de la seule présence d’une préférence ; la revue du destinataire actuel reste un chantier distinct identifié dans ce lot.
+
+Les lots 37–39 relient les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Ils ne terminent pas la revue des autres mutations : sélection des comptes, sessions OAuth, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.
