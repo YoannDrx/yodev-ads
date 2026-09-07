@@ -5,7 +5,7 @@ import { alertComments, alertIncidents, auditEvents, jobs, monitoringAgents } fr
 import { withTenantTransaction } from '@/db/transactions'
 import { insertActivationMilestone } from '@/lib/activation'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
-import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 import { requireFeature } from '@/lib/feature-flags'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
@@ -13,8 +13,7 @@ type ActorContext = { workspaceId: string; actorUserId: string }
 export async function requestWorkspaceMonitoringScan(input: ActorContext & { agentId?: string; now?: Date }) {
   requireFeature('googleReads', 'Les lectures Google Ads sont temporairement désactivées.')
   requireFeature('scheduler', 'Les analyses en arrière-plan sont temporairement indisponibles.')
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+  return withWorkspaceActorTransaction({ ...input, permission: 'monitoring:run', capability: 'monitoring' }, async (db) => {
     if (input.agentId) {
       const agent = await db.query.monitoringAgents.findFirst({
         where: and(eq(monitoringAgents.workspaceId, input.workspaceId), eq(monitoringAgents.id, input.agentId), eq(monitoringAgents.enabled, true)),
@@ -59,8 +58,7 @@ export function createWorkspaceMonitoringAgent(input: ActorContext & {
   reminderIntervalHours: number | null
   entitlements: EntitlementContext
 }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
-    const entitlements = await lockWorkspaceEntitlements(transaction, input.workspaceId, 'monitoring')
+  return withWorkspaceActorTransaction({ ...input, permission: 'monitoring:run', capability: 'monitoring' }, async (transaction, { entitlements }) => {
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:monitors`}))`)
     const [usage] = await transaction
       .select({ count: count() })
@@ -104,10 +102,9 @@ export async function setWorkspaceMonitoringAgentEnabled(input: ActorContext & {
   enabled: boolean
   now?: Date
 }) {
-  return withTenantTransaction(
-    { workspaceId: input.workspaceId, userId: input.actorUserId },
-    async (db) => {
-      const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+  return withWorkspaceActorTransaction(
+    { ...input, permission: 'monitoring:run', capability: 'monitoring' },
+    async (db, { entitlements }) => {
       await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:monitors`}))`)
       const existing = await db.query.monitoringAgents.findFirst({
         where: and(eq(monitoringAgents.id, input.agentId), eq(monitoringAgents.workspaceId, input.workspaceId)),
@@ -153,7 +150,7 @@ export function recordWorkspaceMonitoringScan(input: ActorContext & {
 }
 
 export function acknowledgeWorkspaceAlert(input: ActorContext & { incidentId: string; now?: Date }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'alerts:manage' }, async (db) => {
     const now = input.now ?? new Date()
     const [incident] = await db
       .update(alertIncidents)
@@ -194,7 +191,7 @@ export function updateWorkspaceAlertWorkflow(input: ActorContext & {
             ? { assignedTo: input.actorUserId, ...(dueAt ? { dueAt } : {}) }
             : { assignedTo: null, dueAt: null }
 
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'alerts:manage' }, async (transaction) => {
     const [incident] = await transaction
       .update(alertIncidents)
       .set({ ...changes, updatedAt: now })

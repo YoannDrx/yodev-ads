@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
+import { Client } from 'pg'
 import { encryptSecret } from '../src/lib/crypto'
 import { recoverNotificationDeliveries } from '../src/lib/notification-delivery-recovery'
 import { notificationDeliveryKey } from '../src/lib/notification-delivery-model'
@@ -21,7 +22,7 @@ import { alertReminderEventKey } from '../src/lib/alert-reminder-plan'
 const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
 assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathname.startsWith('/yodev_test'), 'Disposable local database required')
 const workspaceId = '70000000-0000-4000-8000-000000000001'
-const actorUserId = 'prod-ready-fixture-owner'
+const actorUserId = randomUUID(), actorOrganization = randomUUID()
 let recoveryAlertKey: string | undefined
 const notificationAlertKeys: string[] = []
 
@@ -32,9 +33,14 @@ async function main() {
     setInterval(() => {}, 1_000)
     return
   }
-  await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, workspaceId)))
-  await withSystemTransaction((db) => db.insert(workspaces).values({ id: workspaceId, ownerUserId: actorUserId, name: 'Prod ready fixture', slug: 'prod-ready-fixture', plan: 'solo', accessState: 'active' }))
+  const identityDb = new Client({ connectionString: url.href })
+  await identityDb.connect()
   try {
+    await identityDb.query('insert into auth_users(id,name,email,email_verified) values($1,$1,$2,true)', [actorUserId, `worker-${actorUserId}@example.test`])
+    await identityDb.query('insert into auth_organizations(id,name,slug) values($1::text,$1::text,$1::text)', [actorOrganization])
+    await identityDb.query("insert into auth_members(id,organization_id,user_id,role) values($1,$2,$3,'owner')", [randomUUID(), actorOrganization, actorUserId])
+    await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, workspaceId)))
+    await withSystemTransaction((db) => db.insert(workspaces).values({ id: workspaceId, ownerUserId: actorUserId, authOwnerUserId: actorUserId, authOrganizationId: actorOrganization, name: 'Prod ready fixture', slug: 'prod-ready-fixture', plan: 'solo', accessState: 'active' }))
     // A large agency's high-priority backlog cannot starve another agency or
     // workspace-independent operations, including with simultaneous workers.
     const quietWorkspaceId = '70000000-0000-4000-8000-000000000002'
@@ -267,6 +273,9 @@ async function main() {
     if (recoveryAlertKey) await withSystemTransaction((db) => db.delete(jobs).where(eq(jobs.deduplicationKey, recoveryAlertKey!)))
     await withSystemTransaction((db) => db.delete(transactionalEmailDeliveries).where(eq(transactionalEmailDeliveries.workspaceId, workspaceId)))
     await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, workspaceId)))
+    await identityDb.query('delete from auth_organizations where id=$1', [actorOrganization])
+    await identityDb.query('delete from auth_users where id=$1', [actorUserId])
+    await identityDb.end()
   }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1 })

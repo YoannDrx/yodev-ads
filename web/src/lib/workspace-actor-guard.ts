@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { sql } from 'drizzle-orm'
-import type { DatabaseTransaction } from '@/db/transactions'
+import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { entitlementContext, isPlan, isWorkspaceAccessState, type Capability } from '@/lib/entitlements'
 import { authRoleToWorkspaceRole, type Permission } from '@/lib/permissions'
 import { workspaceDecision } from '@/lib/workspace-decision'
@@ -20,4 +20,14 @@ export async function lockWorkspaceActor(db: DatabaseTransaction, input: {
   const role = authRoleToWorkspaceRole(current.member_role, current.is_owner)
   if (!workspaceDecision({ role, state, entitlements, permission: input.permission, capability: input.capability }).allowed) throw new Error('Action non autorisée pour cet espace.')
   return { role, entitlements }
+}
+
+/** Recheck a time-limited trial after all business-row waits and writes; failure rolls back the entire operation. */
+export function withWorkspaceActorTransaction<T>(input: Parameters<typeof lockWorkspaceActor>[1], operation: (db: DatabaseTransaction, access: Awaited<ReturnType<typeof lockWorkspaceActor>>) => Promise<T>) {
+  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+    const access = await lockWorkspaceActor(db, input)
+    const result = await operation(db, access)
+    if (access.entitlements.state === 'trial') await lockWorkspaceActor(db, input)
+    return result
+  })
 }

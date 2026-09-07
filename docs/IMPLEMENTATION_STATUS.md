@@ -1,6 +1,6 @@
 # Ads by Yodev — registre de fonctionnalités et état de livraison
 
-Mis à jour le **7 septembre 2026**, après le lot 33 sur `codex/prod-ready`, avec une recette générale de 60 parcours.
+Mis à jour le **7 septembre 2026**, après le lot 34 sur `codex/prod-ready`. Dernière recette générale : 60 parcours au lot 33 ; quatre parcours ciblés au lot 34.
 
 **La préparation à la production est en cours.** Le dépôt possède les fonctionnalités et les preuves locales ci-dessous. Le candidat courant n’a pas été déployé ni certifié auprès des prestataires par cette exécution. Les validations d’août ne valent pas validation du code de septembre. L’ancien registre est conservé dans [l’archive datée](./audits/implementation-status-before-2026-09-07-refresh.md).
 
@@ -8,8 +8,9 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 
 ## Référence de vérification actuelle
 
-- **1 391 tests applicatifs / 190 fichiers**, huit tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 33](./audits/prod-ready-lot-33/README.md).
+- **1 398 tests applicatifs / 190 fichiers**, huit tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 34](./audits/prod-ready-lot-34/README.md).
 - **60 scénarios navigateur réussis sans skip en 4,3 minutes** au [lot 33](./audits/prod-ready-lot-33/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Le registre des coûts, les alertes qualifiées, les transferts et les exports analytiques font partie de cette exécution. Les intégrations fournisseur restent désactivées ou sans credentials, et aucun worker fournisseur n’est lancé.
+- **Quatre parcours ciblés** de vigies/workflow et qualité des alertes passent au [lot 34](./audits/prod-ready-lot-34/README.md), avec révocation entre affichage et soumission ; les cinq mutations correspondantes sont aussi éprouvées sous concurrence PostgreSQL et expiration d’essai après autorisation.
 - **60 migrations cumulées**, de `0000` à `0059`, et la recette PostgreSQL complète depuis une base vide : [lot 33](./audits/prod-ready-lot-33/README.md). Aucun report automatique de ce numéro vers une base distante.
 - La CI utilise désormais le même runner de protocoles PostgreSQL que le local et conserve son test de charge distinct. Une exécution GitHub sur le SHA final reste requise.
 - Les preuves Python, secrets et fournisseurs antérieures gardent leur date et leur commit ; elles devront faire partie du contrôle du candidat final.
@@ -27,7 +28,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 | Cockpit et score | Compteurs du client exact, fraîcheur et couverture explicites, absence de score non qualifié, distinction entre zéro observé et absence de données. [Contrat](./COCKPIT_AND_PUBLIC_STATUS.md). | Validation avec les comptes réels du candidat. |
 | Analyse et insights | Collectes stockées par famille, périodes explicites, erreurs et versions conservées ; 17 familles consultables, recherchables et exportables. [Collections](./ANALYTICAL_COLLECTION_PAGES.md). | Score et première analyse qualifiés par cinq sources au [lot 29](./audits/prod-ready-lot-29/README.md) ; GAQL réel restant à certifier pour chaque famille. |
 | Pagination Google | REST Search paginé, échéance commune, limites de corps/pages/octets/lignes, échec sans inventaire partiel et couverture enregistrée. [Limites](./GOOGLE_COLLECTION_LIMITS.md). | Partitionnement des familles dépassant les plafonds GAQL ou de stockage ; ce transport ne garantit pas une collecte sans limite. |
-| Vigies | Dix modèles, règles explicables, exécution manuelle/quotidienne, fan-out, checkpoints, reprise sans renvoi des morceaux acquis. [Contrat](./MONITORING_CHECKPOINTS.md). | Calibration des seuils et qualité des alertes sur données réelles ; mesure de charge déployée. |
+| Vigies | Dix modèles, règles explicables, exécution manuelle/quotidienne, fan-out, checkpoints, reprise sans renvoi des morceaux acquis. Création/activation/scan réautorisés dans la transaction, avec annulation si l’essai expire pendant l’attente ([lot 34](./audits/prod-ready-lot-34/README.md)). [Contrat](./MONITORING_CHECKPOINTS.md). | Calibration des seuils et qualité des alertes sur données réelles ; mesure de charge déployée. |
 | Jobs et notifications durables | Leases, tentatives finales récupérables, quotas sérialisés, deadlines HTTP/DB, équité entre agences, registre de livraison et réconciliation des réponses ambiguës. Le digest stocké est indépendant des lectures Google. [Workers](./WORKER_EXECUTION.md), [reprise](./NOTIFICATION_RECOVERY.md), [lot 28](./audits/prod-ready-lot-28/README.md). | Réception YoDevMail/Slack/Teams, bounces/plaintes, charge et drills réels. |
 | Rapports | Éditions immuables, 7/30/90 jours et périodes calendrier/personnalisées, historique qualifié, versions/corrections, HTML/PDF/CSV cohérents, branding normalisé. [Éditions](./REPORT_EDITIONS.md), [rendu](./REPORT_RENDERING.md). | Livraison fournisseur, Blob/domaines/certificats et cas de volumes extrêmes. L’ouverture d’un rapport ne relit pas Google en direct. |
 | Partage client | Liens révocables, expiration, host/tenant, accès aux éditions et retours protégés par OTP. | Réception OTP et revue des listes de retours restantes. |

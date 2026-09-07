@@ -1,0 +1,174 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs monitoring-actors-local.spec.ts alert-quality-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 264ms
+✓ Running next.config.ts took 397ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET / 200 in 2.4s (next.js: 1581ms, proxy.ts: 228ms, application-code: 547ms)
+ GET /sign-in 200 in 2.3s (next.js: 2.0s, proxy.ts: 218ms, application-code: 121ms)
+ GET /icon?a62dacc6b033a714 200 in 274ms (next.js: 60ms, proxy.ts: 9ms, application-code: 205ms)
+ POST /api/auth/sign-in/email 200 in 1090ms (next.js: 901ms, proxy.ts: 3ms, application-code: 186ms)
+ POST /api/auth/sign-in/email 200 in 88ms (next.js: 4ms, proxy.ts: 3ms, application-code: 82ms)
+ POST /api/auth/sign-in/email 200 in 99ms (next.js: 2ms, proxy.ts: 3ms, application-code: 94ms)
+ POST /api/auth/sign-in/email 200 in 83ms (next.js: 3ms, proxy.ts: 2ms, application-code: 78ms)
+ POST /api/auth/sign-in/email 200 in 81ms (next.js: 2ms, proxy.ts: 3ms, application-code: 76ms)
+ GET /dashboard 200 in 613ms (next.js: 283ms, proxy.ts: 3ms, application-code: 327ms)
+ GET /settings 200 in 245ms (next.js: 32ms, proxy.ts: 3ms, application-code: 210ms)
+ GET /billing 200 in 164ms (next.js: 13ms, proxy.ts: 2ms, application-code: 149ms)
+ GET /support 200 in 142ms (next.js: 14ms, proxy.ts: 2ms, application-code: 126ms)
+ GET /accounts 200 in 122ms (next.js: 12ms, proxy.ts: 1.9ms, application-code: 108ms)
+ GET /history 200 in 125ms (next.js: 14ms, proxy.ts: 2ms, application-code: 109ms)
+ GET /alerts 200 in 175ms (next.js: 21ms, proxy.ts: 3ms, application-code: 151ms)
+ GET /tasks 200 in 165ms (next.js: 21ms, proxy.ts: 2ms, application-code: 142ms)
+ GET /approvals 200 in 137ms (next.js: 23ms, proxy.ts: 2ms, application-code: 111ms)
+ GET /reports 200 in 200ms (next.js: 21ms, proxy.ts: 2ms, application-code: 177ms)
+ GET /audit 200 in 140ms (next.js: 22ms, proxy.ts: 2ms, application-code: 117ms)
+ GET /agents 200 in 186ms (next.js: 18ms, proxy.ts: 2ms, application-code: 165ms)
+ GET / 200 in 78ms (next.js: 2ms, proxy.ts: 2ms, application-code: 73ms)
+ GET /privacy 200 in 62ms (next.js: 13ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /terms 200 in 54ms (next.js: 12ms, proxy.ts: 2ms, application-code: 39ms)
+ GET /subprocessors 200 in 101ms (next.js: 39ms, proxy.ts: 3ms, application-code: 59ms)
+ GET /status 200 in 106ms (next.js: 32ms, proxy.ts: 1.9ms, application-code: 72ms)
+ GET /sign-in 200 in 39ms (next.js: 6ms, proxy.ts: 1.9ms, application-code: 32ms)
+ GET /sign-up 200 in 341ms (next.js: 305ms, proxy.ts: 2ms, application-code: 34ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-zJo3zO
+
+Running 4 tests using 1 worker
+
+(node:17373) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /alerts?id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 182ms (next.js: 3ms, proxy.ts: 6ms, application-code: 173ms)
+ GET /api/auth/get-session 200 in 57ms (next.js: 14ms, proxy.ts: 4ms, application-code: 39ms)
+ GET /api/auth/organization/list 200 in 64ms (next.js: 28ms, proxy.ts: 4ms, application-code: 32ms)
+ GET /alerts?notice=Avis+sur+la+qualit%C3%A9+de+l%E2%80%99alerte+enregistr%C3%A9.&id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 162ms (next.js: 14ms, proxy.ts: 4ms, application-code: 143ms)
+ POST /alerts?id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 299ms (next.js: 8ms, proxy.ts: 18ms, application-code: 272ms)
+  └─ ƒ reviewWorkspaceAlertQuality({}) in 74ms src/app/actions.ts
+ GET /alerts?error=Cette+observation+ou+cet+avis+a+chang%C3%A9.+Actualisez+la+page+avant+de+l%E2%80%99%C3%A9valuer+%C3%A0+nouveau.&id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 93ms (next.js: 2ms, proxy.ts: 3ms, application-code: 88ms)
+ POST /alerts?notice=Avis%20sur%20la%20qualit%C3%A9%20de%20l%E2%80%99alerte%20enregistr%C3%A9.&id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 117ms (next.js: 4ms, proxy.ts: 3ms, application-code: 109ms)
+  └─ ƒ reviewWorkspaceAlertQuality({}) in 7ms src/app/actions.ts
+ GET /alerts?notice=Avis+sur+la+qualit%C3%A9+de+l%E2%80%99alerte+enregistr%C3%A9.&id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 103ms (next.js: 5ms, proxy.ts: 3ms, application-code: 94ms)
+ POST /alerts?error=Cette%20observation%20ou%20cet%20avis%20a%20chang%C3%A9.%20Actualisez%20la%20page%20avant%20de%20l%E2%80%99%C3%A9valuer%20%C3%A0%20nouveau.&id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 126ms (next.js: 2ms, proxy.ts: 3ms, application-code: 121ms)
+  └─ ƒ reviewWorkspaceAlertQuality({}) in 10ms src/app/actions.ts
+ GET /alerts?q=QUALITY_f2522c78-15aa-4efb-b95c-83ef55067774 200 in 473ms (next.js: 3ms, proxy.ts: 3ms, application-code: 468ms)
+ GET /api/auth/get-session 200 in 105ms (next.js: 30ms, proxy.ts: 6ms, application-code: 69ms)
+ GET /api/auth/organization/list 200 in 147ms (next.js: 37ms, proxy.ts: 5ms, application-code: 104ms)
+ GET /alerts?id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 224ms (next.js: 4ms, proxy.ts: 10ms, application-code: 211ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 4ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 8ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /alerts?notice=Avis+sur+la+qualit%C3%A9+de+l%E2%80%99alerte+enregistr%C3%A9.&id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 77ms (next.js: 2ms, proxy.ts: 3ms, application-code: 71ms)
+ POST /alerts?id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 102ms (next.js: 4ms, proxy.ts: 4ms, application-code: 94ms)
+  └─ ƒ reviewWorkspaceAlertQuality({}) in 10ms src/app/actions.ts
+ GET /alerts?id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 123ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 119ms)
+ GET /api/auth/get-session 200 in 112ms (next.js: 26ms, proxy.ts: 25ms, application-code: 61ms)
+ GET /api/auth/organization/list 200 in 152ms (next.js: 35ms, proxy.ts: 24ms, application-code: 92ms)
+ GET /alerts?notice=Avis%20sur%20la%20qualit%C3%A9%20de%20l%E2%80%99alerte%20enregistr%C3%A9.&id=8c20db21-5c79-4a7e-ad31-93ec7de6f4a2 200 in 205ms (next.js: 3ms, proxy.ts: 3ms, application-code: 199ms)
+  ✓  1 [chromium] › e2e/alert-quality-local.spec.ts:6:7 › alert quality fr reviews a specific observation without changing workflow (3.8s)
+ GET /alerts?id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 159ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 154ms)
+ GET /api/auth/get-session 200 in 52ms (next.js: 8ms, proxy.ts: 12ms, application-code: 32ms)
+ GET /api/auth/organization/list 200 in 57ms (next.js: 16ms, proxy.ts: 11ms, application-code: 30ms)
+ GET /alerts?notice=Alert+quality+review+saved.&id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 80ms (next.js: 3ms, proxy.ts: 2ms, application-code: 75ms)
+ POST /alerts?id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 103ms (next.js: 2ms, proxy.ts: 4ms, application-code: 96ms)
+  └─ ƒ reviewWorkspaceAlertQuality({}) in 10ms src/app/actions.ts
+ GET /alerts?error=This+observation+or+review+has+changed.+Refresh+the+page+before+reviewing+it+again.&id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 97ms (next.js: 2ms, proxy.ts: 2ms, application-code: 92ms)
+ POST /alerts?notice=Alert%20quality%20review%20saved.&id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 118ms (next.js: 3ms, proxy.ts: 3ms, application-code: 112ms)
+  └─ ƒ reviewWorkspaceAlertQuality({}) in 8ms src/app/actions.ts
+ GET /alerts?notice=Alert+quality+review+saved.&id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 109ms (next.js: 2ms, proxy.ts: 3ms, application-code: 103ms)
+ POST /alerts?error=This%20observation%20or%20review%20has%20changed.%20Refresh%20the%20page%20before%20reviewing%20it%20again.&id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 142ms (next.js: 4ms, proxy.ts: 6ms, application-code: 132ms)
+  └─ ƒ reviewWorkspaceAlertQuality({}) in 13ms src/app/actions.ts
+ GET /alerts?q=QUALITY_655fba56-dee0-4f9a-8e28-70dcb62678e3 200 in 618ms (next.js: 2ms, proxy.ts: 3ms, application-code: 613ms)
+ GET /api/auth/get-session 200 in 127ms (next.js: 88ms, proxy.ts: 5ms, application-code: 34ms)
+ GET /api/auth/organization/list 200 in 194ms (next.js: 93ms, proxy.ts: 6ms, application-code: 95ms)
+ GET /alerts?id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 282ms (next.js: 6ms, proxy.ts: 5ms, application-code: 271ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 4ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 7ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /alerts?notice=Alert+quality+review+saved.&id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 224ms (next.js: 2ms, proxy.ts: 4ms, application-code: 217ms)
+ POST /alerts?id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 263ms (next.js: 3ms, proxy.ts: 4ms, application-code: 256ms)
+  └─ ƒ reviewWorkspaceAlertQuality({}) in 9ms src/app/actions.ts
+ GET /alerts?id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 141ms (next.js: 3ms, proxy.ts: 2ms, application-code: 136ms)
+ GET /api/auth/get-session 200 in 126ms (next.js: 32ms, proxy.ts: 28ms, application-code: 66ms)
+ GET /api/auth/organization/list 200 in 167ms (next.js: 54ms, proxy.ts: 30ms, application-code: 84ms)
+ GET /alerts?notice=Alert%20quality%20review%20saved.&id=31ed8f2b-7a73-40bf-bbb6-0036ac14a7a8 200 in 203ms (next.js: 2ms, proxy.ts: 2ms, application-code: 199ms)
+  ✓  2 [chromium] › e2e/alert-quality-local.spec.ts:6:7 › alert quality en reviews a specific observation without changing workflow (3.9s)
+ GET /agents 200 in 206ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 201ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 5ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 8ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /agents?notice=Vigie+activ%C3%A9e.+Elle+sera+ex%C3%A9cut%C3%A9e+chaque+jour. 200 in 91ms (next.js: 2ms, proxy.ts: 3ms, application-code: 86ms)
+ POST /agents 200 in 118ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 113ms)
+  └─ ƒ createMonitoringAgent({}) in 10ms src/app/actions.ts
+ GET /agents?notice=Vigie+mise+en+pause. 200 in 85ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 82ms)
+ POST /agents?notice=Vigie%20activ%C3%A9e.%20Elle%20sera%20ex%C3%A9cut%C3%A9e%20chaque%20jour. 200 in 118ms (next.js: 2ms, proxy.ts: 3ms, application-code: 113ms)
+  └─ ƒ toggleMonitoringAgent({}) in 9ms src/app/actions.ts
+ GET /agents?notice=Vigie+activ%C3%A9e. 200 in 166ms (next.js: 2ms, proxy.ts: 2ms, application-code: 162ms)
+ POST /agents?notice=Vigie%20mise%20en%20pause. 200 in 244ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 238ms)
+  └─ ƒ toggleMonitoringAgent({}) in 10ms src/app/actions.ts
+ GET /alerts?notice=Analyse+planifi%C3%A9e.+Les+signalements+seront+actualis%C3%A9s+apr%C3%A8s+son+traitement. 200 in 100ms (next.js: 3ms, proxy.ts: 4ms, application-code: 93ms)
+ POST /agents?notice=Vigie%20activ%C3%A9e. 200 in 145ms (next.js: 5ms, proxy.ts: 6ms, application-code: 135ms)
+  └─ ƒ runMonitoringScan({}) in 27ms src/app/actions.ts
+ GET /alerts?id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 140ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 135ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 6ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 10ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /alerts?notice=Workflow+de+l%E2%80%99alerte+mis+%C3%A0+jour.&id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 66ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 62ms)
+ POST /alerts?id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 87ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 83ms)
+  └─ ƒ updateAlertWorkflow({}) in 11ms src/app/actions.ts
+ GET /alerts?notice=Workflow+de+l%E2%80%99alerte+mis+%C3%A0+jour.&id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 72ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 69ms)
+ POST /alerts?notice=Workflow%20de%20l%E2%80%99alerte%20mis%20%C3%A0%20jour.&id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 93ms (next.js: 2ms, proxy.ts: 2ms, application-code: 88ms)
+  └─ ƒ updateAlertWorkflow({}) in 11ms src/app/actions.ts
+ GET /alerts?notice=Workflow+de+l%E2%80%99alerte+mis+%C3%A0+jour.&id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 84ms (next.js: 5ms, proxy.ts: 2ms, application-code: 76ms)
+ POST /alerts?notice=Workflow%20de%20l%E2%80%99alerte%20mis%20%C3%A0%20jour.&id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 108ms (next.js: 3ms, proxy.ts: 3ms, application-code: 102ms)
+  └─ ƒ updateAlertWorkflow({}) in 9ms src/app/actions.ts
+ GET /alerts?error=Permission+required%3A+alerts%3Amanage&id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 71ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 67ms)
+ POST /alerts?notice=Workflow%20de%20l%E2%80%99alerte%20mis%20%C3%A0%20jour.&id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 93ms (next.js: 3ms, proxy.ts: 4ms, application-code: 85ms)
+  └─ ƒ updateAlertWorkflow({}) in 6ms src/app/actions.ts
+ GET /alerts?error=Permission%20required%3A%20alerts%3Amanage&id=61b21817-4381-4e40-88a3-8b46e529ca3f 200 in 125ms (next.js: 2ms, proxy.ts: 2ms, application-code: 121ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+  ✓  3 [chromium] › e2e/monitoring-actors-local.spec.ts:6:7 › monitoring actor fr preserves authorized controls and rejects a revoked form (2.8s)
+ GET /agents 200 in 159ms (next.js: 1.8ms, proxy.ts: 8ms, application-code: 148ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 12ms, proxy.ts: 5ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 14ms, proxy.ts: 8ms, application-code: 12ms)
+ GET /agents?notice=Vigie+activ%C3%A9e.+Elle+sera+ex%C3%A9cut%C3%A9e+chaque+jour. 200 in 90ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 85ms)
+ POST /agents 200 in 116ms (next.js: 5ms, proxy.ts: 5ms, application-code: 106ms)
+  └─ ƒ createMonitoringAgent({}) in 10ms src/app/actions.ts
+ GET /agents?notice=Vigie+mise+en+pause. 200 in 74ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 70ms)
+ POST /agents?notice=Vigie%20activ%C3%A9e.%20Elle%20sera%20ex%C3%A9cut%C3%A9e%20chaque%20jour. 200 in 92ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 87ms)
+  └─ ƒ toggleMonitoringAgent({}) in 9ms src/app/actions.ts
+ GET /agents?notice=Vigie+activ%C3%A9e. 200 in 86ms (next.js: 2ms, proxy.ts: 2ms, application-code: 81ms)
+ POST /agents?notice=Vigie%20mise%20en%20pause. 200 in 130ms (next.js: 18ms, proxy.ts: 5ms, application-code: 107ms)
+  └─ ƒ toggleMonitoringAgent({}) in 12ms src/app/actions.ts
+ GET /alerts?notice=Analyse+planifi%C3%A9e.+Les+signalements+seront+actualis%C3%A9s+apr%C3%A8s+son+traitement. 200 in 64ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 61ms)
+ POST /agents?notice=Vigie%20activ%C3%A9e. 200 in 83ms (next.js: 2ms, proxy.ts: 3ms, application-code: 78ms)
+  └─ ƒ runMonitoringScan({}) in 9ms src/app/actions.ts
+ GET /alerts?id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 124ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 120ms)
+ GET /api/auth/get-session 200 in 34ms (next.js: 14ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 35ms (next.js: 18ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /alerts?notice=Workflow+de+l%E2%80%99alerte+mis+%C3%A0+jour.&id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 66ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 62ms)
+ POST /alerts?id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 85ms (next.js: 2ms, proxy.ts: 3ms, application-code: 79ms)
+  └─ ƒ updateAlertWorkflow({}) in 8ms src/app/actions.ts
+ GET /alerts?notice=Workflow+de+l%E2%80%99alerte+mis+%C3%A0+jour.&id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 65ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 62ms)
+ POST /alerts?notice=Workflow%20de%20l%E2%80%99alerte%20mis%20%C3%A0%20jour.&id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 85ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 80ms)
+  └─ ƒ updateAlertWorkflow({}) in 9ms src/app/actions.ts
+ GET /alerts?notice=Workflow+de+l%E2%80%99alerte+mis+%C3%A0+jour.&id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 64ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 60ms)
+ POST /alerts?notice=Workflow%20de%20l%E2%80%99alerte%20mis%20%C3%A0%20jour.&id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 81ms (next.js: 2ms, proxy.ts: 2ms, application-code: 77ms)
+  └─ ƒ updateAlertWorkflow({}) in 8ms src/app/actions.ts
+ GET /alerts?error=Permission+required%3A+alerts%3Amanage&id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 67ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 64ms)
+ POST /alerts?notice=Workflow%20de%20l%E2%80%99alerte%20mis%20%C3%A0%20jour.&id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 86ms (next.js: 2ms, proxy.ts: 3ms, application-code: 80ms)
+  └─ ƒ updateAlertWorkflow({}) in 6ms src/app/actions.ts
+ GET /alerts?error=Permission%20required%3A%20alerts%3Amanage&id=1755781d-da1c-4b6a-9de8-565e2c0e93dc 200 in 135ms (next.js: 2ms, proxy.ts: 3ms, application-code: 130ms)
+ GET /api/auth/get-session 200 in 67ms (next.js: 37ms, proxy.ts: 4ms, application-code: 26ms)
+ GET /api/auth/organization/list 200 in 70ms (next.js: 38ms, proxy.ts: 13ms, application-code: 18ms)
+  ✓  4 [chromium] › e2e/monitoring-actors-local.spec.ts:6:7 › monitoring actor en preserves authorized controls and rejects a revoked form (2.9s)
+
+  4 passed (14.2s)
+{"ok":true,"cleaned":"local-browser-fixtures"}

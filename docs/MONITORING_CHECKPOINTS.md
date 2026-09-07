@@ -25,3 +25,9 @@ Les jobs en file gardent leurs types et identifiants. Aucun backfill de progress
 La recette `verify-monitoring-checkpoints.ts`, intégrée à `npm run db:verify-local`, utilise uniquement une base PostgreSQL de fixture sur loopback. Elle vérifie deux commits concurrents, la reprise après commit avec une nouvelle tentative, le refus d'un worker expiré, l'annulation d'un lot après contrainte SQL, deux vigies de même type, plusieurs réouvertures, l'arrivée tardive d'une ancienne lecture, la séparation des comptes et la conservation d'une ancienne identité. La destination email est volontairement indéchiffrable et aucun envoi n'est exécuté.
 
 Le résultat d'un scan compte les notifications **mises en file**. L'acceptation et la livraison relèvent du [registre des transports](./NOTIFICATION_RECOVERY.md) ; elles ne sont pas déduites du succès du scan. Les exercices déployés avec Google et les canaux réels restent nécessaires avant certification de la fonctionnalité.
+
+## Actions humaines
+
+La création et l’activation des vigies, le lancement manuel, l’acquittement et le workflow des alertes passent par `withWorkspaceActorTransaction`. Le service relit l’adhésion et le rôle courants sous verrou, vérifie le lifecycle et la capacité requise, puis applique l’opération et son audit dans la même transaction. Le quota de vigies utilise l’offre relue. Un essai est contrôlé de nouveau après les attentes et écritures métier ; son expiration annule aussi les jobs, commentaires et jalons produits par cette opération.
+
+Le [lot 34](./audits/prod-ready-lot-34/README.md) vérifie ces cinq opérations avec des attentes PostgreSQL observées, y compris après le contrôle initial, et des formulaires FR/EN sur Better Auth local. Cette garantie concerne ces opérations identifiées ; elle ne remplace ni le protocole des workers ci-dessus, ni la revue des autres mutations.

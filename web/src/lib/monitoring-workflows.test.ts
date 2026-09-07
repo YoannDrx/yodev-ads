@@ -24,8 +24,7 @@ import {
 } from './monitoring-workflows'
 
 function databaseDouble(input: Parameters<typeof baseDatabaseDouble>[0] = {}) {
-  return baseDatabaseDouble({ ...input, statementResults: [[], ...(input.statementResults ?? [])], query: {
-    workspaces: { findFirst: async () => ({ accessState: 'active', plan: 'solo' }) },
+  return baseDatabaseDouble({ ...input, statementResults: [{ rows: [{ state: 'active', plan: 'solo', member_role: 'strategist', is_owner: false, trial_expired: false }] }, ...(input.statementResults ?? [])], query: {
     monitoringAgents: { findFirst: async () => ({ id: agentId, enabled: true }) },
     ...input.query,
   } })
@@ -169,7 +168,7 @@ describe('monitoring action workflows', () => {
   })
 
   it('acknowledges a tenant-owned alert with one audit event', async () => {
-    const database = baseDatabaseDouble({ statementResults: [[{ id: incidentId }]] })
+    const database = databaseDouble({ statementResults: [[{ id: incidentId }]] })
     mocks.databases.push(database.db)
     await acknowledgeWorkspaceAlert({ workspaceId, actorUserId, incidentId, now })
     expect(database.capture.sets[0]).toMatchObject({ status: 'acknowledged', acknowledgedAt: now, updatedAt: now })
@@ -177,7 +176,7 @@ describe('monitoring action workflows', () => {
   })
 
   it('rejects an alert absent from the tenant', async () => {
-    mocks.databases.push(baseDatabaseDouble({ statementResults: [[]] }).db)
+    mocks.databases.push(databaseDouble({ statementResults: [[]] }).db)
     await expect(acknowledgeWorkspaceAlert({ workspaceId, actorUserId, incidentId, now }))
       .rejects.toThrow('Alerte introuvable')
   })
@@ -195,7 +194,7 @@ describe('monitoring action workflows', () => {
     { operation: 'assign_self', expected: { assignedTo: actorUserId } },
     { operation: 'unassign', expected: { assignedTo: null, dueAt: null } },
   ])('applies the $operation alert transition', async ({ operation, dueDate, expected }) => {
-    const database = baseDatabaseDouble({ statementResults: [[{ id: incidentId }]] })
+    const database = databaseDouble({ statementResults: [[{ id: incidentId }]] })
     mocks.databases.push(database.db)
     await updateWorkspaceAlertWorkflow({ workspaceId, actorUserId, incidentId, operation, dueDate, now })
     expect(database.capture.sets[0]).toMatchObject({ ...expected, updatedAt: now })
@@ -203,7 +202,7 @@ describe('monitoring action workflows', () => {
   })
 
   it('persists an optional comment and due-date audit metadata', async () => {
-    const database = baseDatabaseDouble({ statementResults: [[{ id: incidentId }]] })
+    const database = databaseDouble({ statementResults: [[{ id: incidentId }]] })
     mocks.databases.push(database.db)
     await updateWorkspaceAlertWorkflow({
       workspaceId,
@@ -221,7 +220,7 @@ describe('monitoring action workflows', () => {
   })
 
   it('rejects an alert workflow update when the scoped update returns no incident', async () => {
-    mocks.databases.push(baseDatabaseDouble({ statementResults: [[]] }).db)
+    mocks.databases.push(databaseDouble({ statementResults: [[]] }).db)
     await expect(updateWorkspaceAlertWorkflow({
       workspaceId,
       actorUserId,
@@ -230,4 +229,19 @@ describe('monitoring action workflows', () => {
       now,
     })).rejects.toThrow('Alerte introuvable')
   })
+  it.each(['create', 'toggle', 'scan', 'acknowledge', 'workflow'] as const)('refuses %s after the transaction observes a revoked role', async (operation) => {
+    vi.stubEnv('GOOGLE_READS_ENABLED', '1'); vi.stubEnv('SCHEDULER_ENABLED', '1')
+    const database = baseDatabaseDouble({ statementResults: [{ rows: [{ state: 'active', plan: 'agency', member_role: 'analyst', is_owner: false, trial_expired: false }] }] })
+    mocks.databases.push(database.db)
+    const operations = {
+      create: () => createWorkspaceMonitoringAgent({ workspaceId, actorUserId, clientId: null, kind: 'no_delivery', name: 'Test', description: 'Test', threshold: 0, reminderIntervalHours: null, entitlements: entitlementContext('internal', 'internal') }),
+      toggle: () => setWorkspaceMonitoringAgentEnabled({ workspaceId, actorUserId, agentId, enabled: true }),
+      scan: () => requestWorkspaceMonitoringScan({ workspaceId, actorUserId }),
+      acknowledge: () => acknowledgeWorkspaceAlert({ workspaceId, actorUserId, incidentId }),
+      workflow: () => updateWorkspaceAlertWorkflow({ workspaceId, actorUserId, incidentId, operation: 'resolve', comment: 'Must not persist' }),
+    }
+    await expect(operations[operation]()).rejects.toThrow('non autorisée')
+    expect(database.capture.values).toEqual([]); expect(database.capture.sets).toEqual([])
+  })
+
 })

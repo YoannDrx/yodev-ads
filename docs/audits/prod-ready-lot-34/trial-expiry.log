@@ -1,0 +1,1 @@
+{"ok":true,"verified":["five_mutations_deny_revoked_or_removed_actor","inactive_and_expired_trial_denied","five_real_lock_waits_reauthorize","five_post_authorization_waits_roll_back_expired_trials","no_denied_business_job_comment_audit_write","strategist_retains_all_five_operations"],"providerCalls":0}
