@@ -18,7 +18,7 @@ import { withTenantTransaction } from '@/db/transactions'
 import { decryptSecret, encryptSecret } from '@/lib/crypto'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { hashOtp, hashToken } from '@/lib/tokens'
-import { lockWorkspaceAccessBoundary, lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
 
@@ -38,8 +38,7 @@ export function createWorkspacePublicReport(input: ActorContext & {
 }) {
   const periodConfig = storedReportPeriod(input)
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
-    const entitlements = await lockWorkspaceEntitlements(transaction, input.workspaceId, 'monitoring')
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (transaction, { entitlements }) => {
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:reports`}))`)
     const [usage] = await transaction.select({ count: count() }).from(shareLinks).where(and(
       eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.active, true),
@@ -95,8 +94,10 @@ export function createWorkspacePublicReport(input: ActorContext & {
 
 export function reviseWorkspacePublicReport(input: ActorContext & { shareId: string; previousEditionId: string; fallbackOrigin: string; now?: Date }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db, { entitlements }) => {
+    // Keep the same schedule-before-share ordering as the delivery worker.
+    await db.execute(sql`select id from report_schedules where workspace_id=${input.workspaceId}::uuid and share_id=${input.shareId}::uuid for update`)
+    await db.execute(sql`select id from share_links where workspace_id=${input.workspaceId}::uuid and id=${input.shareId}::uuid for update`)
     const share = await db.query.shareLinks.findFirst({ where: and(eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.id, input.shareId), eq(shareLinks.active, true)) })
     const schedule = await db.query.reportSchedules.findFirst({ where: and(eq(reportSchedules.workspaceId, input.workspaceId), eq(reportSchedules.shareId, input.shareId)) })
     const encryptedToken = share?.encryptedReportToken ?? schedule?.encryptedReportToken
@@ -116,12 +117,15 @@ export function reviseWorkspacePublicReport(input: ActorContext & { shareId: str
 
 export function revokeWorkspacePublicReport(input: ActorContext & { shareId: string; now?: Date }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    await lockWorkspaceAccessBoundary(db, input.workspaceId)
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db) => {
+    await db.execute(sql`select id from report_schedules where workspace_id=${input.workspaceId}::uuid and share_id=${input.shareId}::uuid for update`)
     const schedule = await db.query.reportSchedules.findFirst({
       where: and(eq(reportSchedules.workspaceId, input.workspaceId), eq(reportSchedules.shareId, input.shareId)),
     })
-    if (schedule?.deliveryLeaseUntil && schedule.deliveryLeaseUntil > now) throw new Error('Un envoi est en cours. Réessayez dans quelques minutes.')
+    if (schedule?.deliveryLeaseUntil) {
+      const { rows: [lease] } = await db.execute<{ active: boolean }>(sql`select ${schedule.deliveryLeaseUntil.toISOString()}::timestamptz > clock_timestamp() as active`)
+      if (!lease || lease.active) throw new Error('Un envoi est en cours. Réessayez dans quelques minutes.')
+    }
     const [share] = await db.update(shareLinks).set({ active: false, expiresAt: now, updatedAt: now }).where(and(
       eq(shareLinks.id, input.shareId), eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.active, true),
     )).returning({ id: shareLinks.id })

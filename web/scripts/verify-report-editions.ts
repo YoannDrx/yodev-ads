@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import sharp from 'sharp'
+import { Client } from 'pg'
 import { randomUUID } from 'node:crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import { clients, dailyAccountMetrics, jobs, reportEditions, reportSchedules, shareLinks, workspaces } from '../src/db/schema'
@@ -21,9 +22,16 @@ assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathnam
 const workspaceId = '77000000-0000-4000-8000-000000000001', foreignId = '77000000-0000-4000-8000-000000000002'
 const owner = 'report-edition-fixture', now = new Date()
 globalThis.fetch = async () => { throw new Error('Provider calls are forbidden in this fixture') }
+const authFixture = new Client({ connectionString: url.href })
 async function main() {
+  await authFixture.connect()
   for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id)))
-  await withSystemTransaction((db) => db.insert(workspaces).values([workspaceId, foreignId].map((id) => ({ id, ownerUserId: owner, name: 'Report fixture', brandName: 'Original agency', slug: `report-edition-${id}`, plan: 'agency', accessState: 'active' }))))
+  await authFixture.query('delete from auth_organizations where id=$1', [workspaceId])
+  await authFixture.query('delete from auth_users where id=$1', [owner])
+  await authFixture.query('insert into auth_users(id,name,email,email_verified) values($1,$1,$2,true)', [owner, 'report-edition-fixture@example.test'])
+  await authFixture.query('insert into auth_organizations(id,name,slug) values($1::text,$1::text,$1::text)', [workspaceId])
+  await authFixture.query("insert into auth_members(id,organization_id,user_id,role) values($1,$1,$2,'owner')", [workspaceId, owner])
+  await withSystemTransaction((db) => db.insert(workspaces).values([workspaceId, foreignId].map((id) => ({ id, authOrganizationId: id === workspaceId ? workspaceId : null, ownerUserId: owner, name: 'Report fixture', brandName: 'Original agency', slug: `report-edition-${id}`, plan: 'agency', accessState: 'active' }))))
   try {
     const [client] = await withSystemTransaction((db) => db.insert(clients).values({ workspaceId, googleCustomerId: '7700000000', name: 'Report client', timezone: 'Europe/Paris', currencyCode: 'EUR' }).returning())
     const today = accountCalendarDate(now, client.timezone)
@@ -182,6 +190,7 @@ async function main() {
     console.log(JSON.stringify({ ok: true, verified: ['frozen_normalized_logo_and_accent', 'solo_studio_agency_branding_and_attribution', 'qualified_7_30_90_day_editions', 'account_totals_independent_of_campaign_list', 'archived_campaign_included', 'exact_decimal_conversions', 'immutable_reopen_and_csv', 'correction_creates_revision_of_same_period', 'fixed_default_stays_initial', 'concurrent_dynamic_deduplication', 'scheduled_run_freezes_window_and_encrypted_delivery', 'application_and_system_cannot_update_report_content', 'custom_manual_publication_and_revision', 'previous_calendar_month_api_publication', 'pdf_bytes_remain_identical', 'publication_expiry', 'actual_worker_fences_and_accepted_email_reconciliation', 'encryption_rewrap_preserves_report_content', 'tenant_rls_and_composite_scope', 'incomplete_history_does_not_publish', 'existing_edition_survives_history_gap', 'revocation_denies_edition', 'schedule_deletion_preserves_issued_content'], providerCalls: 0 }))
   } finally {
     for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id)))
+    await authFixture.query('delete from auth_organizations where id=$1', [workspaceId]); await authFixture.query('delete from auth_users where id=$1', [owner]); await authFixture.end()
   }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1 })
