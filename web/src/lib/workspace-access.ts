@@ -1,4 +1,4 @@
-const graceReadPaths = ['/portfolio', '/dashboard', '/analysis', '/insights', '/accounts', '/history', '/alerts', '/tasks', '/approvals', '/reports', '/audit', '/support', '/billing'] as const
+const graceReadPaths = ['/getting-started', '/portfolio', '/dashboard', '/analysis', '/insights', '/accounts', '/history', '/alerts', '/tasks', '/approvals', '/reports', '/audit', '/support', '/billing'] as const
 
 function pathMatches(pathname: string, allowed: string) {
   return pathname === allowed || pathname.startsWith(`${allowed}/`)

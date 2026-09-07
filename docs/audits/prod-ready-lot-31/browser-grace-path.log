@@ -1,0 +1,153 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep guided setup
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 325ms
+✓ Running next.config.ts took 358ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1350ms (next.js: 1020ms, proxy.ts: 174ms, application-code: 157ms)
+ GET / 200 in 1347ms (next.js: 742ms, proxy.ts: 169ms, application-code: 436ms)
+ GET /icon?a62dacc6b033a714 200 in 228ms (next.js: 41ms, proxy.ts: 3ms, application-code: 184ms)
+ POST /api/auth/sign-in/email 200 in 940ms (next.js: 785ms, proxy.ts: 4ms, application-code: 151ms)
+ POST /api/auth/sign-in/email 200 in 83ms (next.js: 3ms, proxy.ts: 2ms, application-code: 77ms)
+ POST /api/auth/sign-in/email 200 in 80ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 75ms)
+ POST /api/auth/sign-in/email 200 in 83ms (next.js: 8ms, proxy.ts: 2ms, application-code: 72ms)
+ POST /api/auth/sign-in/email 200 in 75ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 71ms)
+ GET /dashboard 200 in 471ms (next.js: 176ms, proxy.ts: 2ms, application-code: 292ms)
+ GET /settings 200 in 228ms (next.js: 30ms, proxy.ts: 2ms, application-code: 196ms)
+ GET /billing 200 in 164ms (next.js: 13ms, proxy.ts: 2ms, application-code: 148ms)
+ GET /support 200 in 136ms (next.js: 15ms, proxy.ts: 1.9ms, application-code: 120ms)
+ GET /accounts 200 in 122ms (next.js: 12ms, proxy.ts: 1.8ms, application-code: 108ms)
+ GET /history 200 in 130ms (next.js: 14ms, proxy.ts: 1.9ms, application-code: 114ms)
+ GET /alerts 200 in 135ms (next.js: 15ms, proxy.ts: 1.8ms, application-code: 118ms)
+ GET /tasks 200 in 153ms (next.js: 20ms, proxy.ts: 1.9ms, application-code: 131ms)
+ GET /approvals 200 in 132ms (next.js: 23ms, proxy.ts: 2ms, application-code: 107ms)
+ GET /reports 200 in 188ms (next.js: 24ms, proxy.ts: 1.7ms, application-code: 162ms)
+ GET /audit 200 in 119ms (next.js: 20ms, proxy.ts: 1.8ms, application-code: 97ms)
+ GET /agents 200 in 174ms (next.js: 18ms, proxy.ts: 1.7ms, application-code: 154ms)
+ GET / 200 in 73ms (next.js: 1.4ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /privacy 200 in 53ms (next.js: 13ms, proxy.ts: 1.9ms, application-code: 38ms)
+ GET /terms 200 in 47ms (next.js: 12ms, proxy.ts: 1.9ms, application-code: 34ms)
+ GET /subprocessors 200 in 98ms (next.js: 39ms, proxy.ts: 1.9ms, application-code: 58ms)
+ GET /status 200 in 101ms (next.js: 31ms, proxy.ts: 1.9ms, application-code: 68ms)
+ GET /sign-in 200 in 33ms (next.js: 5ms, proxy.ts: 1.7ms, application-code: 27ms)
+ GET /sign-up 200 in 319ms (next.js: 288ms, proxy.ts: 2ms, application-code: 29ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-FmCJ5C
+
+Running 2 tests using 1 worker
+
+(node:28967) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ POST /api/auth/organization/set-active 200 in 22ms (next.js: 5ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /getting-started 200 in 215ms (next.js: 19ms, proxy.ts: 1.9ms, application-code: 194ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 6ms, proxy.ts: 3ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 63ms (next.js: 11ms, proxy.ts: 3ms, application-code: 49ms)
+ GET /getting-started 200 in 154ms (next.js: 3ms, proxy.ts: 7ms, application-code: 144ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 4ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 8ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /getting-started 200 in 145ms (next.js: 1.0ms, proxy.ts: 5ms, application-code: 139ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 5ms, proxy.ts: 2ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 10ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /getting-started 200 in 151ms (next.js: 2ms, proxy.ts: 7ms, application-code: 142ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 4ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 7ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /getting-started 200 in 128ms (next.js: 1.5ms, proxy.ts: 1.7ms, application-code: 124ms)
+ GET /api/auth/get-session 200 in 31ms (next.js: 17ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 20ms, proxy.ts: 5ms, application-code: 9ms)
+ GET /getting-started 307 in 104ms (next.js: 1.5ms, proxy.ts: 1.9ms, application-code: 101ms)
+ GET /support?notice=Votre%20acc%C3%A8s%20actuel%20est%20limit%C3%A9%20%C3%A0%20la%20facturation%20et%20aux%20donn%C3%A9es%20stock%C3%A9es. 200 in 116ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 111ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 13ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 14ms, proxy.ts: 7ms, application-code: 10ms)
+ GET / 200 in 85ms (next.js: 7ms, proxy.ts: 4ms, application-code: 74ms)
+  ✘  1 [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup fr requires selected accounts and qualified milestones (17.9s)
+(node:29144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ POST /api/auth/organization/set-active 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /getting-started 200 in 161ms (next.js: 6ms, proxy.ts: 2.0ms, application-code: 153ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 7ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 53ms (next.js: 11ms, proxy.ts: 3ms, application-code: 39ms)
+ GET /getting-started 200 in 175ms (next.js: 8ms, proxy.ts: 5ms, application-code: 163ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 10ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 13ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /getting-started 200 in 212ms (next.js: 3ms, proxy.ts: 6ms, application-code: 203ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 4ms, proxy.ts: 3ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 10ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /getting-started 200 in 162ms (next.js: 2ms, proxy.ts: 4ms, application-code: 156ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 5ms, proxy.ts: 2ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 16ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /getting-started 200 in 136ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 132ms)
+ GET /api/auth/get-session 200 in 34ms (next.js: 6ms, proxy.ts: 5ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 35ms (next.js: 14ms, proxy.ts: 6ms, application-code: 15ms)
+ GET /getting-started 307 in 120ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 116ms)
+ GET /support?notice=Your%20current%20access%20is%20limited%20to%20billing%20and%20stored%20data. 200 in 129ms (next.js: 7ms, proxy.ts: 2ms, application-code: 121ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 10ms, proxy.ts: 3ms, application-code: 9ms)
+  ✘  2 [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup en requires selected accounts and qualified milestones (17.6s)
+
+
+  1) [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup fr requires selected accounts and qualified milestones
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('[data-setup-step="report"]')
+    Expected: "true"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 15000ms
+      - waiting for locator('[data-setup-step="report"]')
+
+
+      58 |       await db.query("update workspaces set access_state='grace' where id=$1", [workspaceId])
+      59 |       await page.reload()
+    > 60 |       await expect(step('report')).toHaveAttribute('data-complete', 'true')
+         |                                    ^
+      61 |       await expect(step('report').getByRole('link')).toHaveCount(0)
+      62 |       expect(errors).toEqual([])
+      63 |     } finally {
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/getting-started-local.spec.ts:60:36
+
+    Error Context: test-results/getting-started-local-guid-7d041-ts-and-qualified-milestones-chromium/error-context.md
+
+  2) [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup en requires selected accounts and qualified milestones
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('[data-setup-step="report"]')
+    Expected: "true"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 15000ms
+      - waiting for locator('[data-setup-step="report"]')
+
+
+      58 |       await db.query("update workspaces set access_state='grace' where id=$1", [workspaceId])
+      59 |       await page.reload()
+    > 60 |       await expect(step('report')).toHaveAttribute('data-complete', 'true')
+         |                                    ^
+      61 |       await expect(step('report').getByRole('link')).toHaveCount(0)
+      62 |       expect(errors).toEqual([])
+      63 |     } finally {
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/getting-started-local.spec.ts:60:36
+
+    Error Context: test-results/getting-started-local-guid-06540-ts-and-qualified-milestones-chromium/error-context.md
+
+  2 failed
+    [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup fr requires selected accounts and qualified milestones
+    [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup en requires selected accounts and qualified milestones
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

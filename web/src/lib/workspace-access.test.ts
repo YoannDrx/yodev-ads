@@ -10,7 +10,7 @@ describe('workspace lifecycle access boundary', () => {
   })
 
   it('limits grace to stored views and billing without Google calls', () => {
-    for (const path of ['/dashboard', '/analysis', '/insights', '/accounts', '/history', '/alerts/critical', '/tasks', '/approvals', '/reports', '/audit', '/support', '/billing']) {
+    for (const path of ['/getting-started', '/dashboard', '/analysis', '/insights', '/accounts', '/history', '/alerts/critical', '/tasks', '/approvals', '/reports', '/audit', '/support', '/billing']) {
       expect(workspaceAccessAllowsPath('grace', path)).toBe(true)
     }
     for (const path of ['/settings', '/agents']) {
