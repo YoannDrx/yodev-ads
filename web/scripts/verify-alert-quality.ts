@@ -71,6 +71,29 @@ async function main() {
     const expiryResult = (await crossingExpiry)[0]
     assert.equal(expiryResult.status, 'rejected', 'A trial expiring during the lock wait must refuse the mutation')
     assert.equal((await current()).qualityVersion, 2)
+    // The alert row can block after actor authorization, including an idempotent review.
+    for (const label of ['useful', 'unreviewed', 'false_positive']) {
+      await db.query("update workspaces set access_state='trial',plan='studio',trial_ends_at=clock_timestamp()+interval '1 second' where id=$1", [workspaceId])
+      const before = await current()
+      const auditCount = (await db.query('select count(*) from audit_events where workspace_id=$1', [workspaceId])).rows[0].count
+      await blocker.query('begin')
+      await blocker.query('select id from alert_incidents where id=$1 for update', [incidentId])
+      const result = Promise.allSettled([reviewAlertQuality({ ...input, label, expectedVersion: 2, expectedOccurrence: 2 })])
+      try {
+        const deadline = Date.now() + 5_000
+        let waiting = false
+        while (Date.now() < deadline) {
+          waiting = (await db.query("select 1 from pg_stat_activity where datname=current_database() and wait_event_type='Lock' and query like '%quality_label%' and query like '%for update%'" )).rowCount! > 0
+          if (waiting) break
+          await setTimeout(20)
+        }
+        assert(waiting, 'Review must wait for the alert row after actor authorization')
+        while (!(await db.query('select trial_ends_at<=clock_timestamp() as expired from workspaces where id=$1', [workspaceId])).rows[0].expired) await setTimeout(20)
+      } finally { await blocker.query('commit') }
+      assert.equal((await result)[0].status, 'rejected', `Trial expiry after actor authorization must reject ${label}`)
+      assert.deepEqual(await current(), before)
+      assert.equal((await db.query('select count(*) from audit_events where workspace_id=$1', [workspaceId])).rows[0].count, auditCount)
+    }
     for (const state of ['grace', 'suspended', 'deletion_pending', 'deleted']) {
       await db.query('update workspaces set access_state=$1 where id=$2', [state, workspaceId])
       await assert.rejects(() => reviewAlertQuality({ ...input, expectedVersion: 2, expectedOccurrence: 2 }), /non autorisée/)
@@ -101,7 +124,7 @@ async function main() {
     await reviewAlertQuality({ ...input, label: 'unreviewed', expectedVersion: 2, expectedOccurrence: 2 })
     assert.equal((await current()).qualityVersion, 3); assert.equal((await current()).qualityLabel, null)
     assert.equal((await listAlertPage(workspaceId)).summary.unreviewed, 1)
-    console.log(JSON.stringify({ ok: true, verified: ['single_concurrent_review', 'observation_and_review_conflicts', 'no_workflow_mutation', 'stale_review_excluded_from_current_quality', 'tenant_and_context_denials', 'global_auth_tables_remain_private', 'inactive_and_expired_trial_denied', 'trial_expiry_during_lock_wait_denied', 'membership_row_wait_reauthorization', 'complete_review_constraint', 'audited_reset'], providerCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, verified: ['single_concurrent_review', 'observation_and_review_conflicts', 'no_workflow_mutation', 'stale_review_excluded_from_current_quality', 'tenant_and_context_denials', 'global_auth_tables_remain_private', 'inactive_and_expired_trial_denied', 'trial_expiry_during_lock_wait_denied', 'post_authorization_alert_wait_rolls_back_review_reset_and_noop', 'membership_row_wait_reauthorization', 'complete_review_constraint', 'audited_reset'], providerCalls: 0 }))
   } finally {
     await blocker.query('rollback')
     await db.query('delete from workspaces where id=any($1::uuid[])', [[workspaceId, foreignId]])

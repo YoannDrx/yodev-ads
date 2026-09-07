@@ -1,6 +1,6 @@
 # Ads by Yodev — registre de fonctionnalités et état de livraison
 
-Mis à jour le **7 septembre 2026**, après le lot 34 sur `codex/prod-ready`. Dernière recette générale : 60 parcours au lot 33 ; quatre parcours ciblés au lot 34.
+Mis à jour le **7 septembre 2026**, après le lot 35 sur `codex/prod-ready`. Dernière recette générale : 60 parcours au lot 33 ; quatre parcours ciblés au lot 35.
 
 **La préparation à la production est en cours.** Le dépôt possède les fonctionnalités et les preuves locales ci-dessous. Le candidat courant n’a pas été déployé ni certifié auprès des prestataires par cette exécution. Les validations d’août ne valent pas validation du code de septembre. L’ancien registre est conservé dans [l’archive datée](./audits/implementation-status-before-2026-09-07-refresh.md).
 
@@ -11,6 +11,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 - **1 398 tests applicatifs / 190 fichiers**, huit tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 34](./audits/prod-ready-lot-34/README.md).
 - **60 scénarios navigateur réussis sans skip en 4,3 minutes** au [lot 33](./audits/prod-ready-lot-33/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Le registre des coûts, les alertes qualifiées, les transferts et les exports analytiques font partie de cette exécution. Les intégrations fournisseur restent désactivées ou sans credentials, et aucun worker fournisseur n’est lancé.
 - **Quatre parcours ciblés** de vigies/workflow et qualité des alertes passent au [lot 34](./audits/prod-ready-lot-34/README.md), avec révocation entre affichage et soumission ; les cinq mutations correspondantes sont aussi éprouvées sous concurrence PostgreSQL et expiration d’essai après autorisation.
+- Le [lot 35](./audits/prod-ready-lot-35/README.md) étend le contrôle final d’essai aux avis de qualité : 30 tests ciblés, protocole PostgreSQL et quatre parcours navigateur FR/EN passent. Les refus de permission sont désormais expliqués dans la langue de l’interface.
 - **60 migrations cumulées**, de `0000` à `0059`, et la recette PostgreSQL complète depuis une base vide : [lot 33](./audits/prod-ready-lot-33/README.md). Aucun report automatique de ce numéro vers une base distante.
 - La CI utilise désormais le même runner de protocoles PostgreSQL que le local et conserve son test de charge distinct. Une exécution GitHub sur le SHA final reste requise.
 - Les preuves Python, secrets et fournisseurs antérieures gardent leur date et leur commit ; elles devront faire partie du contrôle du candidat final.

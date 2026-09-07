@@ -22,6 +22,8 @@ La fonction PostgreSQL `lock_workspace_actor` n’expose que le rôle et les dro
 
 Le verrou d’accès commun est acquis, puis les lignes workspace et adhésion sont verrouillées en lecture jusqu’au commit. Le rôle, le propriétaire, l’offre et le lifecycle sont relus avant la mutation. L’expiration d’essai est évaluée après l’acquisition des verrous avec l’heure réelle ; l’heure de début de transaction ne suffit pas lorsqu’une demande attend.
 
+Le service passe par `withWorkspaceActorTransaction` : après les attentes sur la ligne d’alerte et les écritures, un essai est contrôlé de nouveau. Une expiration annule l’avis et son audit, et refuse également le réenregistrement identique. Le [lot 35](./audits/prod-ready-lot-35/README.md) reproduit puis vérifie ces trois cas sur PostgreSQL.
+
 Ce garde est utilisé ici pour les avis de qualité. Il ne signifie pas que toutes les autres mutations existantes ont déjà été migrées vers ce contrôle.
 
 ## Mesure affichée

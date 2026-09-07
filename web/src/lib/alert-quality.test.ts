@@ -1,8 +1,10 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { databaseDouble } from '../../test/fluent-db'
 const mocks = vi.hoisted(() => ({ db: undefined as unknown, guard: vi.fn() }))
-vi.mock('@/db/transactions', () => ({ withTenantTransaction: async (_: unknown, run: (db: unknown) => unknown) => run(mocks.db) }))
-vi.mock('@/lib/workspace-actor-guard', () => ({ lockWorkspaceActor: mocks.guard }))
+vi.mock('@/lib/workspace-actor-guard', () => ({ withWorkspaceActorTransaction: async (input: unknown, run: (db: unknown) => unknown) => {
+  await mocks.guard(mocks.db, input)
+  return run(mocks.db)
+} }))
 import { reviewAlertQuality } from './alert-quality'
 import { alertQualityLabel, alertQualityState } from './alert-quality-model'
 

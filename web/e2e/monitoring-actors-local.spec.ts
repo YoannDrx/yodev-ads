@@ -45,6 +45,9 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1' && process.env.PLAYWRIGHT_ANALY
       await db.query("update auth_members set role='analyst' where id=$1",[member.id])
       await workflow.getByRole('button').click()
       await expect(page).toHaveURL(/error=/)
+      await expect(page.getByText(locale === 'fr'
+        ? 'Vos droits actuels ne permettent pas cette action. Rechargez la page ou contactez un administrateur.'
+        : 'Your current permissions do not allow this action. Reload the page or contact an administrator.', { exact: true })).toBeVisible()
       expect((await db.query('select status from alert_incidents where id=$1',[incidentId])).rows[0].status).toBe('reopened')
       await expect(workflow).toHaveCount(0)
       await db.query("update auth_members set role='strategist' where id=$1",[member.id]);await page.reload()
