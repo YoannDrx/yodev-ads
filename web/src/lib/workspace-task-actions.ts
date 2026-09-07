@@ -11,7 +11,7 @@ import {
   taskComments,
   workspaceTasks,
 } from '@/db/schema'
-import { withTenantTransaction } from '@/db/transactions'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 import { normalizedMentionHandles } from '@/lib/task-notification-model'
 import { extractMentions, taskDeadline, transitionTask, type TaskOperation } from '@/lib/task-workflow'
 
@@ -36,7 +36,7 @@ export function createTenantWorkspaceTask(input: ActorContext & {
 }) {
   const now = input.now ?? new Date()
   const deadline = taskDeadline({ now, timezone: input.timezone, dueDate: input.dueDate, slaHours: input.slaHours })
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'tasks:manage' }, async (db) => {
     let clientId = input.clientId ?? null
     let title = input.title
     let description = input.description ?? ''
@@ -105,10 +105,10 @@ export function updateTenantWorkspaceTask(input: ActorContext & {
   dueDate?: string
   now?: Date
 }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    const task = await db.query.workspaceTasks.findFirst({
-      where: and(eq(workspaceTasks.id, input.taskId), eq(workspaceTasks.workspaceId, input.workspaceId)),
-    })
+  return withWorkspaceActorTransaction({ ...input, permission: 'tasks:manage' }, async (db) => {
+    const [task] = await db.select().from(workspaceTasks)
+      .where(and(eq(workspaceTasks.id, input.taskId), eq(workspaceTasks.workspaceId, input.workspaceId)))
+      .limit(1).for('update')
     if (!task) throw new Error('Tâche introuvable.')
     const now = input.now ?? new Date()
     let changes: Record<string, unknown>
@@ -145,7 +145,7 @@ export function addTenantWorkspaceTaskComment(input: ActorContext & {
   body: string
   notificationsEnabled: boolean
 }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'tasks:comment' }, async (db) => {
     const task = await db.query.workspaceTasks.findFirst({
       where: and(eq(workspaceTasks.id, input.taskId), eq(workspaceTasks.workspaceId, input.workspaceId)),
       columns: { id: true },

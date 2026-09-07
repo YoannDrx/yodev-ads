@@ -33,3 +33,7 @@ La fixture `verify-workspace-collections.ts` est incluse dans la suite de base l
 Les [preuves du lot 13](./audits/prod-ready-lot-13/README.md) concernent ces cinq collections. T14 reste ouvert pour les vues analytiques/insights, les listes de rapports et chronologies restantes, les plafonds GAQL et les exports de résultats volumineux. Le résumé d’alertes utilisé par l’ancien cockpit sera remplacé dans le travail de portefeuille ; il ne constitue pas encore un comptage exhaustif de toutes les alertes du workspace.
 
 La pagination de l’API privée est désormais vérifiée séparément : [contrat et preuves](./API_PAGINATION.md).
+
+## Écritures de tâches
+
+La création, la modification et les commentaires relisent l’acteur dans leur transaction, avec des permissions distinctes de gestion et de discussion. Les lignes d’identité/espace restent verrouillées et les essais sont contrôlés de nouveau après les attentes métier. Le commentaire, son audit et ses jobs de mention sont atomiques. Une modification verrouille la tâche avant de valider sa transition afin de ne pas écraser une complétion concurrente. Le [lot 36](./audits/prod-ready-lot-36/README.md) documente les reproductions PostgreSQL et les parcours FR/EN ; la livraison effective des notifications reste une preuve fournisseur distincte.

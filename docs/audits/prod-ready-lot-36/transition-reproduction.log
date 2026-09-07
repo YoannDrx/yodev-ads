@@ -1,0 +1,15 @@
+AssertionError [ERR_ASSERTION]: A completed task cannot be started from its stale todo status
++ actual - expected
+
++ 'fulfilled'
+- 'rejected'
+
+    at main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-task-actors.ts:71:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'fulfilled',
+  expected: 'rejected',
+  operator: 'strictEqual',
+  diff: 'simple'
+}

@@ -27,6 +27,8 @@ const actorUserId = 'user-1'
 const now = new Date('2026-08-12T08:00:00.000Z')
 
 function createDatabase(input: {
+  lockTask?: boolean
+  role?: string
   statementResults?: unknown[]
   incident?: unknown
   approval?: unknown
@@ -35,7 +37,8 @@ function createDatabase(input: {
   preferences?: unknown[]
 } = {}) {
   return databaseDouble({
-    statementResults: input.statementResults,
+    statementResults: [{ rows: [{ state: 'active', plan: 'agency', member_role: input.role ?? 'strategist', is_owner: false, trial_expired: false }] },
+      ...(input.lockTask ? [input.task ? [input.task] : []] : []), ...(input.statementResults ?? [])],
     query: {
       alertIncidents: { findFirst: vi.fn(async () => input.incident) },
       approvalRequests: { findFirst: vi.fn(async () => input.approval) },
@@ -51,6 +54,19 @@ describe('workspace task action repository', () => {
     mocks.databases = []
     mocks.contexts = []
     vi.clearAllMocks()
+  })
+
+  it.each(['create', 'update', 'comment'])('refuses %s after the actor loses task rights', async (operation) => {
+    const database = createDatabase({ role: 'client' })
+    mocks.databases.push(database.db)
+    const run = operation === 'create'
+      ? () => createTenantWorkspaceTask({ workspaceId, actorUserId, timezone: 'Europe/Paris', sourceType: 'manual', title: 'Task', priority: 'normal', assignSelf: false })
+      : operation === 'update'
+        ? () => updateTenantWorkspaceTask({ workspaceId, actorUserId, taskId, timezone: 'Europe/Paris', operation: 'start' })
+        : () => addTenantWorkspaceTaskComment({ workspaceId, actorUserId, taskId, body: 'Denied', notificationsEnabled: true })
+    await expect(run()).rejects.toThrow('non autorisée')
+    expect(database.capture.values).toEqual([])
+    expect(database.capture.sets).toEqual([])
   })
 
   it('creates and audits a manually assigned task with an SLA', async () => {
@@ -177,7 +193,7 @@ describe('workspace task action repository', () => {
     { operation: 'update_due', dueDate: '2026-08-20', expected: { slaMinutes: null } },
   ])('applies and audits $operation', async ({ operation, expected, dueDate }) => {
     const status = operation === 'cancel' ? 'todo' : operation === 'complete' ? 'in_progress' : 'todo'
-    const database = createDatabase({ task: { id: taskId, status } })
+    const database = createDatabase({ lockTask: true, task: { id: taskId, status } })
     mocks.databases.push(database.db)
     await updateTenantWorkspaceTask({ workspaceId, actorUserId, taskId, operation, timezone: 'Europe/Paris', dueDate, now })
     expect(database.capture.sets[0]).toMatchObject({ ...expected, updatedAt: now })
@@ -186,8 +202,8 @@ describe('workspace task action repository', () => {
 
   it('rejects absent tasks and a due-date update without a date', async () => {
     mocks.databases.push(
-      createDatabase().db,
-      createDatabase({ task: { id: taskId, status: 'todo' } }).db,
+      createDatabase({ lockTask: true }).db,
+      createDatabase({ lockTask: true, task: { id: taskId, status: 'todo' } }).db,
     )
     await expect(updateTenantWorkspaceTask({
       workspaceId, actorUserId, taskId, operation: 'start', timezone: 'Europe/Paris', now,

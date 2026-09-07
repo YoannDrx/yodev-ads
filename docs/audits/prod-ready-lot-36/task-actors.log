@@ -1,0 +1,1 @@
+{"ok":true,"verified":["three_mutations_deny_revoked_removed_inactive_actor","three_observed_access_lock_waits","concurrent_task_transition_uses_current_status","three_post_authorization_trial_waits_roll_back_all_writes","analyst_can_comment_but_cannot_manage","strategist_can_create_and_assign","mention_job_atomic_with_comment"],"providerCalls":0}
