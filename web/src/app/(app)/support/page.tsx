@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { listWorkspaceSupportTickets } from '@/lib/data'
+import { listSupportPage, COLLECTION_STATUSES } from '@/lib/workspace-collections'
+import { CollectionControls, DiscussionLink } from '@/components/collection-controls'
+import type { CollectionQuery } from '@/lib/collection-pagination'
 import { workspacePermissions } from '@/lib/workspace-decision'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
@@ -20,13 +22,14 @@ const categoryLabels: Record<string, { fr: string; en: string }> = {
   data_privacy: { fr: 'Données et confidentialité', en: 'Data and privacy' },
 }
 
-export default async function SupportPage({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string }> }) {
+export default async function SupportPage({ searchParams }: { searchParams: Promise<CollectionQuery & { notice?: string; error?: string }> }) {
   const query = await searchParams
   const { workspace, role, session } = await requireWorkspacePermission('support:read')
-  const tickets = await listWorkspaceSupportTickets(workspace.id, role === 'client' ? session.userId : undefined)
+  const collection = await listSupportPage(workspace.id, role === 'client' ? session.userId : undefined, query)
+  const tickets = collection.items
   const canContact = workspacePermissions(role, workspace.accessState).has('support:contact')
   const english = workspace.locale === 'en'
-  const openCount = tickets.filter(({ ticket }) => !['resolved', 'closed'].includes(ticket.status)).length
+  const openCount = collection.open
 
   return (
     <>
@@ -40,7 +43,7 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
       <FlashMessage notice={query.notice} error={query.error} locale={english ? 'en' : 'fr'} />
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <Summary label={english ? 'Open requests' : 'Demandes ouvertes'} value={openCount} icon={LifeBuoy} />
-        <Summary label={english ? 'Total history' : 'Historique total'} value={tickets.length} icon={MessageSquareText} />
+        <Summary label={english ? 'Matching requests' : 'Demandes correspondantes'} value={collection.total} icon={MessageSquareText} />
         <Card className="shadow-none"><CardContent className="flex items-center gap-3 p-5"><ShieldCheck className="size-5 text-emerald-600" /><p className="text-sm text-muted-foreground">{english ? 'Messages are visible only to your workspace and Yodev support.' : 'Les messages ne sont visibles que par votre workspace et le support Yodev.'}</p></CardContent></Card>
       </section>
 
@@ -59,13 +62,14 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
         </form></CardContent>
       </Card>}
 
+      <CollectionControls path="/support" query={query} page={collection} locale={english ? 'en' : 'fr'} statuses={COLLECTION_STATUSES.support} />
       <div className="space-y-4">
-        {tickets.map(({ ticket, messages }) => <Card key={ticket.id} className="[content-visibility:auto] border-[#dce5e7] shadow-none"><CardContent className="p-5">
+        {tickets.map(({ ticket, messages, hasMoreComments }) => <Card key={ticket.id} className="[content-visibility:auto] border-[#dce5e7] shadow-none"><CardContent className="p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap gap-2"><StatusBadge status={ticket.status} locale={english ? 'en' : 'fr'} /><Badge variant="outline">{categoryLabels[ticket.category]?.[english ? 'en' : 'fr'] ?? ticket.category}</Badge>{ticket.priority !== 'normal' && <Badge variant={ticket.priority === 'urgent' ? 'destructive' : 'secondary'}>{ticket.priority}</Badge>}</div><h2 className="mt-3 font-semibold">{ticket.subject}</h2><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Clock3 className="size-3" />{ticket.lastMessageAt.toLocaleString(english ? 'en-GB' : 'fr-FR', { timeZone: workspace.timezone })}</p></div><span className="text-xs text-muted-foreground">#{ticket.id.slice(0, 8)}</span></div>
-          <div className="mt-5 space-y-3 border-t pt-4">{messages.map((supportMessage) => <div key={supportMessage.id} className={`rounded-2xl px-4 py-3 ${supportMessage.authorKind === 'support' ? 'bg-emerald-50' : 'bg-slate-50'}`}><p className="whitespace-pre-wrap text-sm leading-6">{supportMessage.body}</p><p className="mt-2 text-[11px] text-muted-foreground">{supportMessage.authorKind === 'support' ? 'Yodev Support' : supportMessage.authorUserId === session.userId ? (english ? 'You' : 'Vous') : (english ? 'Workspace member' : 'Membre du workspace')} · {supportMessage.createdAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</p></div>)}</div>
+          <DiscussionLink kind="support" id={ticket.id} more={hasMoreComments} locale={english ? 'en' : 'fr'} /><div className="mt-5 space-y-3 border-t pt-4">{messages.map((supportMessage) => <div key={supportMessage.id} className={`rounded-2xl px-4 py-3 ${supportMessage.authorKind === 'support' ? 'bg-emerald-50' : 'bg-slate-50'}`}><p className="whitespace-pre-wrap text-sm leading-6">{supportMessage.body}</p><p className="mt-2 text-[11px] text-muted-foreground">{supportMessage.authorKind === 'support' ? 'Yodev Support' : supportMessage.authorUserId === session.userId ? (english ? 'You' : 'Vous') : (english ? 'Workspace member' : 'Membre du workspace')} · {supportMessage.createdAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</p></div>)}</div>
           {canContact && ticket.status !== 'closed' && <form action={addSupportMessage} className="mt-4 flex flex-col gap-2 sm:flex-row"><input type="hidden" name="ticketId" value={ticket.id} /><Textarea name="body" maxLength={8000} required placeholder={english ? 'Add context or reply to support' : 'Ajouter du contexte ou répondre au support'} className="min-h-20 flex-1" /><Button type="submit" variant="outline">{english ? 'Reply' : 'Répondre'}</Button></form>}
         </CardContent></Card>)}
-        {!tickets.length && <div className="rounded-3xl border border-dashed bg-white p-14 text-center"><LifeBuoy className="mx-auto size-8 text-emerald-600" /><h2 className="mt-4 font-semibold">{english ? 'No support request' : 'Aucune demande de support'}</h2><p className="mt-2 text-sm text-muted-foreground">{english ? 'Your future conversations will remain available here.' : 'Vos futures conversations resteront accessibles ici.'}</p></div>}
+        {!collection.invalidCursor && !tickets.length && <div className="rounded-3xl border border-dashed bg-white p-14 text-center"><LifeBuoy className="mx-auto size-8 text-emerald-600" /><h2 className="mt-4 font-semibold">{english ? 'No support request' : 'Aucune demande de support'}</h2><p className="mt-2 text-sm text-muted-foreground">{english ? 'Your future conversations will remain available here.' : 'Vos futures conversations resteront accessibles ici.'}</p></div>}
       </div>
     </>
   )

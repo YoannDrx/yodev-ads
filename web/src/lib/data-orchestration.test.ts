@@ -73,7 +73,6 @@ describe('tenant-aware data repository', () => {
       () => repository.listWorkspaceDeadLetters(workspaceId),
       () => repository.listWorkspaceDomains(workspaceId),
       () => repository.listDailyAccountHistory(workspaceId, clientId, 30),
-      () => repository.listAuditEvents(workspaceId),
       () => repository.getMyTaskNotificationPreferences(workspaceId, 'user-1'),
       () => repository.listTaskMentionDirectory(workspaceId),
       () => repository.listApiKeys(workspaceId),
@@ -157,22 +156,6 @@ describe('tenant-aware data repository', () => {
     await expect(repository.listClientTimeline(workspaceId, clientId)).resolves.toEqual({ changes, internal })
   })
 
-  it('enriches approvals with comments, client feedback and mutation observations', async () => {
-    const request = { id: 'approval-1' }
-    const rows = [{ request, client: { id: clientId } }]
-    const comments = [{ id: 'comment-1', approvalId: request.id }, { id: 'comment-2', approvalId: request.id }]
-    const feedback = [{ id: 'feedback-1', approvalId: request.id }]
-    const observations = [{ id: 'observation-1', approvalId: request.id }]
-    mocks.databases.push(databaseDouble({
-      statementResults: [rows],
-      query: queryMap({
-        approvalComments: { many: comments }, clientApprovalFeedback: { many: feedback }, mutationObservations: { many: observations },
-      }),
-    }).db)
-    await expect(repository.listApprovals(workspaceId)).resolves.toEqual([{
-      ...rows[0], comments, clientFeedback: feedback[0], observation: observations[0],
-    }])
-  })
 
   it('returns joined monitoring, alert, share and public-approval views', async () => {
     const joined = [{ id: 'joined' }]
@@ -187,23 +170,6 @@ describe('tenant-aware data repository', () => {
     }
   })
 
-  it('groups task comments and public support messages under their parent records', async () => {
-    const taskRows = [{ task: { id: 'task-1' }, client: null }, { task: { id: 'task-2' }, client: null }]
-    const taskComments = [{ id: 'comment-1', taskId: 'task-1' }]
-    mocks.databases.push(databaseDouble({
-      statementResults: [taskRows], query: queryMap({ taskComments: { many: taskComments } }),
-    }).db)
-    await expect(repository.listWorkspaceTasks(workspaceId)).resolves.toEqual([
-      { ...taskRows[0], comments: taskComments }, { ...taskRows[1], comments: [] },
-    ])
-
-    const tickets = [{ id: 'ticket-1' }, { id: 'ticket-2' }]
-    const messages = [{ id: 'message-1', ticketId: 'ticket-1', internal: false }]
-    mocks.databases.push(queryDatabase({ supportTickets: { many: tickets }, supportMessages: { many: messages } }).db)
-    await expect(repository.listWorkspaceSupportTickets(workspaceId)).resolves.toEqual([
-      { ticket: tickets[0], messages }, { ticket: tickets[1], messages: [] },
-    ])
-  })
 
   it('loads active report templates and their joined schedules together', async () => {
     const templates = [{ id: 'template-1', name: 'Monthly' }]

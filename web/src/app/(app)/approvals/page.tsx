@@ -9,7 +9,9 @@ import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import { listApprovals } from '@/lib/data'
+import { listApprovalPage, COLLECTION_STATUSES } from '@/lib/workspace-collections'
+import { CollectionControls, DiscussionLink } from '@/components/collection-controls'
+import type { CollectionQuery } from '@/lib/collection-pagination'
 import { formatCustomerId } from '@/lib/ids'
 import { workspacePermissions } from '@/lib/workspace-decision'
 import { requireWorkspacePermission } from '@/lib/workspace'
@@ -17,7 +19,7 @@ import { requireWorkspacePermission } from '@/lib/workspace'
 export default async function ApprovalsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ notice?: string; error?: string }>
+  searchParams: Promise<CollectionQuery & { notice?: string; error?: string }>
 }) {
   const query = await searchParams
   const { workspace, role } = await requireWorkspacePermission('portfolio:read')
@@ -27,7 +29,8 @@ export default async function ApprovalsPage({
   const isAdmin = permissions.has('google:approve')
   const canManageTasks = permissions.has('tasks:manage')
   const canPropose = permissions.has('google:propose') && featureEnabled('googleReads') && googleMutationKindEnabled('atomic_change_batch')
-  const approvals = await listApprovals(workspace.id)
+  const collection = await listApprovalPage(workspace.id, query)
+  const approvals = collection.items
   const pending = approvals.filter(({ request }) => request.status === 'pending')
   const batchKinds = new Set(['campaign_status', 'campaign_budget', 'keyword_status', 'ad_status'])
   const batchGroups = new Map<string, typeof approvals>()
@@ -44,9 +47,10 @@ export default async function ApprovalsPage({
         description={english ? 'An exact trail from intent and discussion through Google Ads validation and final execution.' : 'Une trace exacte entre l’intention, les échanges, la validation Google Ads et l’exécution finale.'}
       />
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
+      <CollectionControls path="/approvals" query={query} page={collection} locale={locale} statuses={COLLECTION_STATUSES.approvals} />
       <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
         <ShieldCheck className="size-4 text-emerald-600" />
-        <span>{pending.length} {english ? `pending request${pending.length === 1 ? '' : 's'}` : `demande${pending.length > 1 ? 's' : ''} en attente`}</span>
+        <span>{pending.length} {english ? `pending request${pending.length === 1 ? '' : 's'} on this page` : `demande${pending.length > 1 ? 's' : ''} en attente sur cette page`}</span>
       </div>
       {[...batchGroups.values()].filter((group) => group.length >= 2).map((group) => (
         <Card key={`batch-${group[0].client.id}`} className="mb-5 border-indigo-200 bg-indigo-50/50 shadow-sm">
@@ -68,7 +72,7 @@ export default async function ApprovalsPage({
         </Card>
       ))}
       <div className="space-y-4">
-        {approvals.map(({ request, client, comments, clientFeedback, observation }) => (
+        {approvals.map(({ request, client, comments, hasMoreComments, clientFeedback, observation }) => (
           <Card key={request.id} className="border-[#e8e5ef] shadow-sm">
             <CardContent className="p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -166,6 +170,7 @@ export default async function ApprovalsPage({
               </div>
               <div className="mt-5 border-t pt-4">
                 <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"><MessageCircle className="size-4" />{english ? 'Discussion' : 'Discussion'} · {comments.length}</p>
+                <DiscussionLink kind="approvals" id={request.id} more={hasMoreComments} locale={locale} />
                 {comments.length > 0 && <div className="mt-3 space-y-2">{comments.map((comment) => <div key={comment.id} className="rounded-xl bg-[#f7f9fa] px-4 py-3"><p className="text-sm leading-6">{comment.body}</p><p className="mt-1 text-[10px] text-muted-foreground">{comment.authorUserId} · {comment.createdAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</p></div>)}</div>}
                 {permissions.has('workspace:read') && <form action={addApprovalComment} className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <input type="hidden" name="approvalId" value={request.id} />
@@ -176,7 +181,7 @@ export default async function ApprovalsPage({
             </CardContent>
           </Card>
         ))}
-        {approvals.length === 0 && <div className="rounded-3xl border border-dashed bg-white p-14 text-center text-muted-foreground">{english ? 'No request. Changes prepared from the cockpit will appear here.' : 'Aucune demande. Les changements préparés depuis le cockpit apparaîtront ici.'}</div>}
+        {!collection.invalidCursor && approvals.length === 0 && <div className="rounded-3xl border border-dashed bg-white p-14 text-center text-muted-foreground">{english ? 'No request. Changes prepared from the cockpit will appear here.' : 'Aucune demande. Les changements préparés depuis le cockpit apparaîtront ici.'}</div>}
       </div>
     </>
   )

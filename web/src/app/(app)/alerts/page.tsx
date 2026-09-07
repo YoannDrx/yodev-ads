@@ -6,14 +6,16 @@ import { PageHeading } from '@/components/page-heading'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { listAlertIncidents } from '@/lib/data'
+import { listAlertPage, COLLECTION_STATUSES } from '@/lib/workspace-collections'
+import { CollectionControls, DiscussionLink } from '@/components/collection-controls'
+import type { CollectionQuery } from '@/lib/collection-pagination'
 import { workspacePermissions } from '@/lib/workspace-decision'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
 export default async function AlertsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ notice?: string; error?: string }>
+  searchParams: Promise<CollectionQuery & { notice?: string; error?: string }>
 }) {
   const query = await searchParams
   const { workspace, role } = await requireWorkspacePermission('portfolio:read')
@@ -22,8 +24,8 @@ export default async function AlertsPage({
   const canManageAlerts = workspacePermissions(role, workspace.accessState).has('alerts:manage')
   const canRun = workspacePermissions(role, workspace.accessState).has('monitoring:run') && featureEnabled('googleReads') && featureEnabled('scheduler')
   const canManageTasks = workspacePermissions(role, workspace.accessState).has('tasks:manage')
-  const incidents = await listAlertIncidents(workspace.id)
-  const open = incidents.filter(({ incident }) => incident.status === 'open')
+  const collection = await listAlertPage(workspace.id, query)
+  const incidents = collection.items
   return (
     <>
       <PageHeading
@@ -41,25 +43,26 @@ export default async function AlertsPage({
       />
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
       <section className="mb-7 grid gap-4 sm:grid-cols-3">
-        <Summary label={english ? 'Open' : 'À traiter'} value={open.length} icon={Siren} tone="critical" />
+        <Summary label={english ? 'Open' : 'À traiter'} value={collection.summary.open} icon={Siren} tone="critical" />
         <Summary
           label={english ? 'Critical' : 'Critiques'}
-          value={open.filter(({ incident }) => incident.severity === 'critical').length}
+          value={collection.summary.critical}
           icon={AlertTriangle}
           tone="warning"
         />
         <Summary
           label={english ? 'Resolved' : 'Résolues'}
-          value={incidents.filter(({ incident }) => incident.status !== 'open').length}
+          value={collection.summary.resolved}
           icon={CheckCircle2}
           tone="positive"
         />
       </section>
+      <CollectionControls path="/alerts" query={query} page={collection} locale={locale} statuses={COLLECTION_STATUSES.alerts} />
       <div className="space-y-3">
         {incidents.map(({ incident, client, agent }) => (
           <Card
             key={incident.id}
-            className={`border-l-4 shadow-none ${incident.status === 'open' ? (incident.severity === 'critical' ? 'border-l-red-500' : 'border-l-amber-400') : 'border-l-emerald-400 opacity-70'}`}
+            className={`border-l-4 shadow-none ${['open', 'reopened'].includes(incident.status) ? (incident.severity === 'critical' ? 'border-l-red-500' : 'border-l-amber-400') : 'border-l-emerald-400 opacity-70'}`}
           >
             <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
@@ -81,6 +84,7 @@ export default async function AlertsPage({
                   </div>
                 )}
               </div>
+              <DiscussionLink kind="alerts" id={incident.id} locale={locale} />
               {canManageAlerts && incident.status !== 'resolved' && (
                 <form action={updateAlertWorkflow} className="grid min-w-64 gap-2">
                   <input type="hidden" name="incidentId" value={incident.id} />
@@ -95,10 +99,10 @@ export default async function AlertsPage({
             </CardContent>
           </Card>
         ))}
-        {incidents.length === 0 && (
+        {!collection.invalidCursor && incidents.length === 0 && (
           <div className="rounded-3xl border border-dashed bg-white p-14 text-center">
             <CheckCircle2 className="mx-auto size-8 text-emerald-500" />
-            <h2 className="mt-4 font-semibold">{english ? 'No anomaly detected' : 'Aucune anomalie détectée'}</h2>
+            <h2 className="mt-4 font-semibold">{english ? 'No matching alert' : 'Aucune alerte correspondante'}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               {english ? 'Enable a monitor, then run an analysis to begin monitoring.' : 'Activez une vigie, puis lancez une analyse pour commencer la surveillance.'}
             </p>

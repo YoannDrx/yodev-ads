@@ -315,6 +315,7 @@ export const approvalRequests = pgTable(
   },
   (table) => [
     uniqueIndex('approvals_idempotency_idx').on(table.idempotencyKey),
+    index('approvals_page_idx').on(table.workspaceId, table.createdAt, table.id),
     index('approvals_workspace_status_idx').on(table.workspaceId, table.status),
   ],
 )
@@ -334,6 +335,7 @@ export const auditEvents = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
+    index('audit_page_idx').on(table.workspaceId, table.createdAt, table.id),
     index('audit_workspace_created_idx').on(table.workspaceId, table.createdAt),
     index('audit_monitoring_observation_idx')
       .on(table.workspaceId, table.entityId, sql`(${table.metadata}->>'clientId')`, table.createdAt, table.id)
@@ -415,6 +417,7 @@ export const alertIncidents = pgTable(
   },
   (table) => [
     uniqueIndex('alert_incidents_fingerprint_idx').on(table.workspaceId, table.fingerprint),
+    index('alert_incidents_page_idx').on(table.workspaceId, table.createdAt, table.id),
     index('alert_incidents_workspace_status_idx').on(table.workspaceId, table.status),
   ],
 )
@@ -429,7 +432,7 @@ export const alertComments = pgTable(
     body: text('body').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('alert_comments_incident_idx').on(table.workspaceId, table.incidentId, table.createdAt)],
+  (table) => [index('alert_comments_incident_idx').on(table.workspaceId, table.incidentId, table.createdAt), index('alert_comments_page_idx').on(table.workspaceId, table.incidentId, table.createdAt, table.id)],
 )
 
 export const workspaceTasks = pgTable(
@@ -455,6 +458,7 @@ export const workspaceTasks = pgTable(
   },
   (table) => [
     index('workspace_tasks_queue_idx').on(table.workspaceId, table.status, table.dueAt),
+    index('workspace_tasks_page_idx').on(table.workspaceId, table.createdAt, table.id),
     index('workspace_tasks_assignee_idx').on(table.workspaceId, table.assignedTo, table.status),
     uniqueIndex('workspace_tasks_source_idx').on(table.workspaceId, table.sourceType, table.sourceEntityId),
   ],
@@ -471,7 +475,7 @@ export const taskComments = pgTable(
     mentions: text('mentions').array().default([]).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('task_comments_task_idx').on(table.workspaceId, table.taskId, table.createdAt)],
+  (table) => [index('task_comments_task_idx').on(table.workspaceId, table.taskId, table.createdAt), index('task_comments_page_idx').on(table.workspaceId, table.taskId, table.createdAt, table.id)],
 )
 
 export const memberNotificationPreferences = pgTable(
@@ -533,6 +537,8 @@ export const supportTickets = pgTable(
     ...timestamps,
   },
   (table) => [
+    index('support_tickets_page_idx').on(table.workspaceId, table.createdAt, table.id),
+    index('support_tickets_reader_page_idx').on(table.workspaceId, table.requestedBy, table.createdAt, table.id),
     index('support_tickets_workspace_status_idx').on(table.workspaceId, table.status, table.lastMessageAt),
     index('support_tickets_status_priority_idx').on(table.status, table.priority, table.lastMessageAt),
   ],
@@ -550,7 +556,7 @@ export const supportMessages = pgTable(
     internal: boolean('internal').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('support_messages_ticket_idx').on(table.workspaceId, table.ticketId, table.createdAt)],
+  (table) => [index('support_messages_ticket_idx').on(table.workspaceId, table.ticketId, table.createdAt), index('support_messages_page_idx').on(table.workspaceId, table.ticketId, table.createdAt, table.id)],
 )
 
 export const platformIncidents = pgTable(
@@ -829,7 +835,7 @@ export const approvalComments = pgTable(
     body: text('body').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('approval_comments_approval_idx').on(table.workspaceId, table.approvalId, table.createdAt)],
+  (table) => [index('approval_comments_approval_idx').on(table.workspaceId, table.approvalId, table.createdAt), index('approval_comments_page_idx').on(table.workspaceId, table.approvalId, table.createdAt, table.id)],
 )
 
 export const clientApprovalFeedback = pgTable(

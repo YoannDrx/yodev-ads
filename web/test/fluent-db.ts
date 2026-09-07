@@ -36,6 +36,7 @@ export function databaseDouble(input: {
   return {
     db: {
       select: nextStatement,
+      selectDistinctOn: nextStatement,
       insert: nextStatement,
       update: nextStatement,
       delete: nextStatement,

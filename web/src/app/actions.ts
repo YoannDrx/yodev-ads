@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { preserveCollectionRecord } from '@/lib/collection-navigation'
 import { preserveReportEdition } from '@/lib/report-navigation'
 import { reportPeriodFromForm, storedReportPeriod } from '@/lib/report-period-selection'
 import { del, put } from '@vercel/blob'
@@ -1264,7 +1265,7 @@ export async function approveGoogleAdsChange(formData: FormData) {
       : toUrl('/approvals', 'error', message(error))
   }
   revalidatePath('/dashboard', 'layout')
-  redirect(target)
+  redirect(preserveCollectionRecord(target, formData.get('approvalId')))
 }
 
 export async function rejectGoogleAdsChange(formData: FormData) {
@@ -1278,7 +1279,9 @@ export async function rejectGoogleAdsChange(formData: FormData) {
     target = toUrl('/approvals', 'error', message(error))
   }
   revalidatePath('/approvals')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('approvalId'))
+  if (discussionId.success) revalidatePath(`/discussions/approvals/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('approvalId')))
 }
 
 export async function addApprovalComment(formData: FormData) {
@@ -1293,7 +1296,9 @@ export async function addApprovalComment(formData: FormData) {
     target = toUrl('/approvals', 'error', message(error))
   }
   revalidatePath('/approvals')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('approvalId'))
+  if (discussionId.success) revalidatePath(`/discussions/approvals/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('approvalId')))
 }
 
 export async function disconnectGoogleAds() {
@@ -1443,7 +1448,9 @@ export async function updateAlertWorkflow(formData: FormData) {
     target = toUrl('/alerts', 'error', message(error))
   }
   revalidatePath('/alerts')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('incidentId'))
+  if (discussionId.success) revalidatePath(`/discussions/alerts/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('incidentId')))
 }
 
 const optionalTaskUuid = z.preprocess((value) => value === '' || value === null ? undefined : value, z.string().uuid().optional())
@@ -1520,7 +1527,9 @@ export async function updateWorkspaceTask(formData: FormData) {
     target = toUrl('/tasks', 'error', message(error))
   }
   revalidatePath('/tasks')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('taskId'))
+  if (discussionId.success) revalidatePath(`/discussions/tasks/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('taskId')))
 }
 
 export async function addWorkspaceTaskComment(formData: FormData) {
@@ -1541,7 +1550,9 @@ export async function addWorkspaceTaskComment(formData: FormData) {
     target = toUrl('/tasks', 'error', message(error))
   }
   revalidatePath('/tasks')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('taskId'))
+  if (discussionId.success) revalidatePath(`/discussions/tasks/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('taskId')))
 }
 
 export async function createShareLink(formData: FormData) {
@@ -2730,8 +2741,10 @@ export async function addSupportMessage(formData: FormData) {
     target = toUrl('/support', 'error', message(error))
   }
   revalidatePath('/support')
+  const discussionId = z.string().uuid().safeParse(formData.get('ticketId'))
+  if (discussionId.success) revalidatePath(`/discussions/support/${discussionId.data}`)
   revalidatePath('/operations')
-  redirect(target)
+  redirect(preserveCollectionRecord(target, formData.get('ticketId')))
 }
 
 async function requireInternalOperations() {

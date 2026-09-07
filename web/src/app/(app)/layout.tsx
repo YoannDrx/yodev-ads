@@ -123,13 +123,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-black/6 bg-white/90 px-4 backdrop-blur sm:px-7">
-          <Link href={homeHref} className="flex items-center gap-2 font-semibold lg:hidden">
-            <Radar className="size-5 text-[var(--brand-accent)]" />
-            {workspace.brandName}
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-black/6 bg-white/90 px-4 backdrop-blur sm:px-7">
+          <Link href={homeHref} className="flex min-w-0 items-center gap-2 font-semibold lg:hidden">
+            <Radar className="size-5 shrink-0 text-[var(--brand-accent)]" />
+            <span className="truncate" title={workspace.brandName}>{workspace.brandName}</span>
           </Link>
-          <div className="hidden text-sm font-medium text-slate-600 lg:block">{workspace.name}</div>
-          <div className="flex items-center gap-4">
+          <div className="hidden min-w-0 truncate text-sm font-medium text-slate-600 lg:block" title={workspace.name}>{workspace.name}</div>
+          <div className="flex shrink-0 items-center gap-4">
             <Link href="/status" className={`hidden items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium sm:flex ${status?.summary.overall === 'operational' ? 'bg-emerald-50 text-emerald-700' : status ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
               <span className={`size-1.5 rounded-full ${status?.summary.overall === 'operational' ? 'bg-emerald-500' : status ? 'bg-amber-500' : 'bg-slate-400'}`} /> {statusLabel}
             </Link>

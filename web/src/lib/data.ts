@@ -6,7 +6,6 @@ import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactio
 import {
   alertIncidents,
   apiKeys,
-  approvalComments,
   approvalRequests,
   auditEvents,
   clients,
@@ -19,7 +18,6 @@ import {
   googleChangeEvents,
   jobs,
   monitoringAgents,
-  mutationObservations,
   memberNotificationPreferences,
   notificationChannels,
   offlineConversionDiagnostics,
@@ -29,17 +27,12 @@ import {
   safetyPolicies,
   secretRevelations,
   shareLinks,
-  supportMessages,
-  supportTickets,
-  taskComments,
-  workspaceTasks,
   workspaceDomains,
   workspaces,
 } from '@/db/schema'
 import { hashToken } from '@/lib/tokens'
 import { reportCalendarWindow, shiftCalendarDate } from '@/lib/calendar-window'
 import { metricCoverage } from '@/lib/metric-coverage'
-import { qualifiedMutationObservation } from '@/lib/mutation-observation'
 import { computePacing, pacingCalendar } from '@/lib/pacing'
 import { workspaceHasCapability } from '@/lib/entitlements'
 import { insertActivationMilestone } from '@/lib/activation'
@@ -271,50 +264,6 @@ export async function listClientTimeline(workspaceId: string, clientId: string) 
   })
 }
 
-export async function listApprovals(workspaceId: string) {
-  return tenantRead(workspaceId, async (db) => {
-  const rows = await db
-      .select({ request: approvalRequests, client: clients })
-      .from(approvalRequests)
-      .innerJoin(clients, and(eq(clients.id, approvalRequests.clientId), eq(clients.workspaceId, workspaceId)))
-      .where(eq(approvalRequests.workspaceId, workspaceId))
-      .orderBy(desc(approvalRequests.createdAt))
-      .limit(100)
-  const comments = await db.query.approvalComments.findMany({
-      where: eq(approvalComments.workspaceId, workspaceId),
-      orderBy: [approvalComments.createdAt],
-    })
-  const clientFeedback = await db.query.clientApprovalFeedback.findMany({
-      where: eq(clientApprovalFeedback.workspaceId, workspaceId),
-      orderBy: [desc(clientApprovalFeedback.createdAt)],
-    })
-  const observations = await db.query.mutationObservations.findMany({
-      where: eq(mutationObservations.workspaceId, workspaceId),
-      orderBy: [desc(mutationObservations.createdAt)],
-    })
-  const commentsByApproval = new Map<string, typeof comments>()
-  for (const comment of comments) {
-    commentsByApproval.set(comment.approvalId, [...(commentsByApproval.get(comment.approvalId) ?? []), comment])
-  }
-  const feedbackByApproval = new Map(clientFeedback.map((feedback) => [feedback.approvalId, feedback]))
-  const observationByApproval = new Map(observations.map((observation) => [observation.approvalId, qualifiedMutationObservation(observation)]))
-  return rows.map((row) => ({
-    ...row,
-    comments: commentsByApproval.get(row.request.id) ?? [],
-    clientFeedback: feedbackByApproval.get(row.request.id),
-    observation: observationByApproval.get(row.request.id),
-  }))
-  })
-}
-
-export async function listAuditEvents(workspaceId: string) {
-  return tenantRead(workspaceId, (db) => db.query.auditEvents.findMany({
-    where: eq(auditEvents.workspaceId, workspaceId),
-    orderBy: [desc(auditEvents.createdAt)],
-    limit: 150,
-  }))
-}
-
 export async function listMonitoringAgents(workspaceId: string) {
   return tenantRead(workspaceId, (db) => db
     .select({ agent: monitoringAgents, client: clients })
@@ -333,48 +282,6 @@ export async function listAlertIncidents(workspaceId: string) {
     .where(eq(alertIncidents.workspaceId, workspaceId))
     .orderBy(desc(alertIncidents.detectedAt))
     .limit(200))
-}
-
-export async function listWorkspaceTasks(workspaceId: string) {
-  return tenantRead(workspaceId, async (db) => {
-    const rows = await db.select({ task: workspaceTasks, client: clients })
-        .from(workspaceTasks)
-        .leftJoin(clients, and(eq(clients.id, workspaceTasks.clientId), eq(clients.workspaceId, workspaceId)))
-        .where(eq(workspaceTasks.workspaceId, workspaceId))
-        .orderBy(workspaceTasks.status, workspaceTasks.dueAt, desc(workspaceTasks.createdAt))
-        .limit(300)
-    const comments = await db.query.taskComments.findMany({
-      where: eq(taskComments.workspaceId, workspaceId),
-      orderBy: [taskComments.createdAt],
-      limit: 2000,
-    })
-    const byTask = new Map<string, typeof comments>()
-    for (const comment of comments) byTask.set(comment.taskId, [...(byTask.get(comment.taskId) ?? []), comment])
-    return rows.map((row) => ({ ...row, comments: byTask.get(row.task.id) ?? [] }))
-  })
-}
-
-export async function listWorkspaceSupportTickets(workspaceId: string, requestedBy?: string) {
-  return tenantRead(workspaceId, async (db) => {
-    const tickets = await db.query.supportTickets.findMany({
-      where: and(
-        eq(supportTickets.workspaceId, workspaceId),
-        requestedBy ? eq(supportTickets.requestedBy, requestedBy) : undefined,
-      ),
-      orderBy: [desc(supportTickets.lastMessageAt)],
-      limit: 100,
-    })
-    const messages = await db.query.supportMessages.findMany({
-      where: and(eq(supportMessages.workspaceId, workspaceId), eq(supportMessages.internal, false)),
-      orderBy: [supportMessages.createdAt],
-      limit: 3000,
-    })
-    const byTicket = new Map<string, typeof messages>()
-    for (const supportMessage of messages) {
-      byTicket.set(supportMessage.ticketId, [...(byTicket.get(supportMessage.ticketId) ?? []), supportMessage])
-    }
-    return tickets.map((ticket) => ({ ticket, messages: byTicket.get(ticket.id) ?? [] }))
-  })
 }
 
 export async function getMyTaskNotificationPreferences(workspaceId: string, authUserId: string) {

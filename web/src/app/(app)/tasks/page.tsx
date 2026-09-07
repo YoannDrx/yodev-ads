@@ -1,3 +1,6 @@
+import { listTaskPage, COLLECTION_STATUSES } from '@/lib/workspace-collections'
+import { CollectionControls, DiscussionLink } from '@/components/collection-controls'
+import type { CollectionQuery } from '@/lib/collection-pagination'
 import { AlertTriangle, CalendarClock, CheckCircle2, CircleDot, MessageCircle, UserRound, Workflow } from 'lucide-react'
 import Link from 'next/link'
 import { addWorkspaceTaskComment, createWorkspaceTask, updateWorkspaceTask } from '@/app/actions'
@@ -9,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { listTaskMentionDirectory, listWorkspaceClients, listWorkspaceTasks } from '@/lib/data'
+import { listTaskMentionDirectory, listWorkspaceClients } from '@/lib/data'
 import { workspacePermissions } from '@/lib/workspace-decision'
 import { taskTiming } from '@/lib/task-workflow'
 import { requireWorkspacePermission } from '@/lib/workspace'
@@ -23,32 +26,29 @@ const priorityLabels: Record<'fr' | 'en', Record<string, string>> = {
   en: { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' },
 }
 
-export default async function TasksPage({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string; status?: string }> }) {
+export default async function TasksPage({ searchParams }: { searchParams: Promise<CollectionQuery & { notice?: string; error?: string }> }) {
   const query = await searchParams
   const { workspace, role, session } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
-  const [rows, clients, mentionDirectory] = await Promise.all([
-    listWorkspaceTasks(workspace.id),
+  const criteria = { ...query, status: query.status ?? (query.id ? '' : 'open') }
+  const [collection, clients, mentionDirectory] = await Promise.all([
+    listTaskPage(workspace.id, criteria),
     listWorkspaceClients(workspace.id),
     listTaskMentionDirectory(workspace.id),
   ])
   const permissions = workspacePermissions(role, workspace.accessState)
   const canManage = permissions.has('tasks:manage')
   const canComment = permissions.has('tasks:comment')
-  const allowedStatus = ['open', 'todo', 'in_progress', 'blocked', 'done', 'cancelled'].includes(query.status ?? '') ? query.status : 'open'
-  const tasks = allowedStatus === 'open'
-    ? rows.filter(({ task }) => !['done', 'cancelled'].includes(task.status))
-    : rows.filter(({ task }) => task.status === allowedStatus)
-  const overdue = rows.filter(({ task }) => taskTiming(task.status, task.dueAt) === 'overdue').length
-  const dueSoon = rows.filter(({ task }) => taskTiming(task.status, task.dueAt) === 'due_soon').length
+  const tasks = collection.items
+  const overdue = collection.summary.overdue, dueSoon = collection.summary.dueSoon
 
   return (
     <>
       <PageHeading eyebrow={english ? 'Agency workflow' : 'Workflow agence'} title={english ? 'Tasks and SLA' : 'Tâches et SLA'} description={english ? 'Turn alerts, approvals and manual actions into assigned, scheduled and auditable commitments.' : 'Transformez alertes, approbations et actions manuelles en engagements assignés, échéancés et auditables.'} />
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
-        <Summary label={english ? 'Open' : 'Ouvertes'} value={rows.filter(({ task }) => !['done', 'cancelled'].includes(task.status)).length} icon={CircleDot} />
+        <Summary label={english ? 'Open' : 'Ouvertes'} value={collection.summary.open} icon={CircleDot} />
         <Summary label={english ? 'Due within 24h' : 'À moins de 24 h'} value={dueSoon} icon={CalendarClock} />
         <Summary label={english ? 'Overdue' : 'En retard'} value={overdue} icon={AlertTriangle} critical={overdue > 0} />
       </section>
@@ -69,9 +69,9 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           </form></CardContent>
         </Card>
       )}
-      <form className="mb-5 flex flex-wrap gap-2">{['open', 'todo', 'in_progress', 'blocked', 'done', 'cancelled'].map((status) => <Button key={status} name="status" value={status} type="submit" size="sm" variant={allowedStatus === status ? 'default' : 'outline'}>{status === 'open' ? english ? 'Open' : 'Ouvertes' : statusLabels[locale][status]}</Button>)}</form>
+      <CollectionControls path="/tasks" query={criteria} page={collection} locale={locale} statuses={COLLECTION_STATUSES.tasks} />
       <div className="space-y-4">
-        {tasks.map(({ task, client, comments }) => {
+        {tasks.map(({ task, client, comments, hasMoreComments }) => {
           const timing = taskTiming(task.status, task.dueAt)
           const sourceHref = task.sourceType === 'alert' ? '/alerts' : task.sourceType === 'approval' ? '/approvals' : task.sourceType === 'report' ? '/reports' : null
           return <Card key={task.id} className={`[content-visibility:auto] shadow-none ${timing === 'overdue' ? 'border-red-300' : timing === 'due_soon' ? 'border-amber-300' : 'border-[#dce5e7]'}`}><CardContent className="p-5">
@@ -79,7 +79,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
               <div className="min-w-0 flex-1"><div className="flex flex-wrap gap-2"><StatusBadge status={task.status} locale={locale} /><Badge variant={task.priority === 'urgent' ? 'destructive' : 'outline'}>{priorityLabels[locale][task.priority] ?? task.priority}</Badge>{timing === 'overdue' && <Badge variant="destructive">{english ? 'SLA breached' : 'SLA dépassé'}</Badge>}{timing === 'due_soon' && <Badge className="bg-amber-100 text-amber-900">{english ? 'Due soon' : 'Échéance proche'}</Badge>}</div><h2 className="mt-3 font-semibold">{task.title}</h2>{task.description && <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{task.description}</p>}<p className="mt-3 text-xs text-muted-foreground">{client?.name ?? (english ? 'No account' : 'Sans compte')} · {sourceHref ? <Link href={sourceHref} className="underline underline-offset-2">source {task.sourceType}</Link> : `source ${task.sourceType}`}{task.dueAt ? ` · ${english ? 'due' : 'échéance'} ${task.dueAt.toLocaleString(english ? 'en-GB' : 'fr-FR', { timeZone: workspace.timezone })}` : ''}{task.slaMinutes ? ` · ${english ? 'initial SLA' : 'SLA initial'} ${Math.round(task.slaMinutes / 60)} h` : ''}</p><div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">{task.assignedTo && <span className="inline-flex items-center gap-1"><UserRound className="size-3" />{task.assignedTo === session.userId ? english ? 'Assigned to me' : 'Assignée à moi' : english ? 'Assigned to a member' : 'Assignée à un membre'}</span>}<span>{statusLabels[locale][task.status] ?? task.status}</span></div></div>
               {canManage && <div className="grid min-w-64 gap-2"><form action={updateWorkspaceTask} className="grid gap-2"><input type="hidden" name="taskId" value={task.id} /><select name="operation" aria-label={english ? 'Transition' : 'Transition'} className="h-9 rounded-lg border bg-white px-3 text-xs">{task.status === 'todo' && <option value="start">{english ? 'Start' : 'Démarrer'}</option>}{task.status === 'blocked' && <option value="start">{english ? 'Resume' : 'Reprendre'}</option>}{['todo', 'in_progress'].includes(task.status) && <option value="block">{english ? 'Block' : 'Bloquer'}</option>}{['todo', 'in_progress', 'blocked'].includes(task.status) && <option value="complete">{english ? 'Complete' : 'Terminer'}</option>}{['done', 'cancelled'].includes(task.status) && <option value="reopen">{english ? 'Reopen' : 'Rouvrir'}</option>}{!['done', 'cancelled'].includes(task.status) && <option value="cancel">{english ? 'Cancel' : 'Annuler'}</option>}<option value={task.assignedTo === session.userId ? 'unassign' : 'assign_self'}>{task.assignedTo === session.userId ? english ? 'Remove my assignment' : 'Retirer mon assignation' : english ? 'Assign to me' : 'Me l’assigner'}</option></select><Button type="submit" size="sm" variant="outline">{english ? 'Apply' : 'Appliquer'}</Button></form><form action={updateWorkspaceTask} className="flex gap-2"><input type="hidden" name="taskId" value={task.id} /><input type="hidden" name="operation" value="update_due" /><Input name="dueDate" type="date" defaultValue={task.dueAt?.toLocaleDateString('en-CA', { timeZone: workspace.timezone })} required className="h-9" /><Button type="submit" size="sm" variant="outline">{english ? 'Due date' : 'Échéance'}</Button></form>{task.dueAt && <form action={updateWorkspaceTask}><input type="hidden" name="taskId" value={task.id} /><input type="hidden" name="operation" value="clear_due" /><Button type="submit" size="sm" variant="ghost" className="w-full">{english ? 'Remove due date' : 'Retirer l’échéance'}</Button></form>}</div>}
             </div>
-            <div className="mt-5 border-t pt-4"><div className="space-y-2">{comments.map((comment) => <div key={comment.id} className="rounded-xl bg-slate-50 px-3 py-2 text-sm"><p className="whitespace-pre-wrap">{comment.body}</p><p className="mt-1 text-[10px] text-muted-foreground">{comment.authorUserId === session.userId ? english ? 'Me' : 'Moi' : english ? 'Member' : 'Membre'} · {comment.createdAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}{comment.mentions.length ? ` · mentions ${comment.mentions.join(', ')}` : ''}</p></div>)}</div>{canComment && <form action={addWorkspaceTaskComment} className="mt-3 flex gap-2"><input type="hidden" name="taskId" value={task.id} /><Input name="body" aria-label={english ? 'Task comment' : 'Commentaire de tâche'} placeholder={english ? 'Comment; mention someone with @handle' : 'Commenter, mention possible avec @identifiant'} maxLength={4000} required /><Button type="submit" variant="outline" aria-label={english ? 'Add comment' : 'Ajouter le commentaire'}><MessageCircle className="size-4" /></Button></form>}</div>
+            <div className="mt-5 border-t pt-4"><DiscussionLink kind="tasks" id={task.id} more={hasMoreComments} locale={locale} /><div className="space-y-2">{comments.map((comment) => <div key={comment.id} className="rounded-xl bg-slate-50 px-3 py-2 text-sm"><p className="whitespace-pre-wrap">{comment.body}</p><p className="mt-1 text-[10px] text-muted-foreground">{comment.authorUserId === session.userId ? english ? 'Me' : 'Moi' : english ? 'Member' : 'Membre'} · {comment.createdAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}{comment.mentions.length ? ` · mentions ${comment.mentions.join(', ')}` : ''}</p></div>)}</div>{canComment && <form action={addWorkspaceTaskComment} className="mt-3 flex gap-2"><input type="hidden" name="taskId" value={task.id} /><Input name="body" aria-label={english ? 'Task comment' : 'Commentaire de tâche'} placeholder={english ? 'Comment; mention someone with @handle' : 'Commenter, mention possible avec @identifiant'} maxLength={4000} required /><Button type="submit" variant="outline" aria-label={english ? 'Add comment' : 'Ajouter le commentaire'}><MessageCircle className="size-4" /></Button></form>}</div>
           </CardContent></Card>
         })}
         {!tasks.length && <div className="rounded-3xl border border-dashed bg-white p-14 text-center"><CheckCircle2 className="mx-auto size-8 text-emerald-500" /><h2 className="mt-4 font-semibold">{english ? 'No task in this view' : 'Aucune tâche dans cette vue'}</h2><p className="mt-2 text-sm text-muted-foreground">{english ? 'Create a manual task or turn an alert into a tracked action.' : 'Créez une tâche manuelle ou transformez une alerte en action suivie.'}</p></div>}
