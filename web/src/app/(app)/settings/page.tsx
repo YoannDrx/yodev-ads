@@ -7,11 +7,9 @@ import {
   disconnectGoogleAds,
   revokeAgencyApiKey,
   retryDeadLetterJob,
-  createWorkspaceDomain,
   inviteWorkspaceMember,
   removeWorkspaceMember,
   removeWorkspaceLogo,
-  revokeWorkspaceDomain,
   revokeWorkspaceInvitation,
   syncGoogleAdsAccounts,
   transferWorkspaceOwnership,
@@ -21,8 +19,11 @@ import {
   updateSafetyRules,
   updateWorkspaceMemberRole,
   uploadWorkspaceLogo,
-  verifyWorkspaceDomain,
 } from '@/app/actions'
+import { createWorkspaceDomain, revokeWorkspaceDomain, verifyWorkspaceDomain } from '@/app/domain-actions'
+import { domainActionError } from '@/lib/domain-action-errors'
+import { domainStatusLabel } from '@/lib/domain-status-label'
+import { localizeFlashMessage } from '@/lib/flash-copy'
 import { TaskNotificationPreferencesForm } from '@/components/task-notification-preferences-form'
 import { FlashMessage } from '@/components/flash-message'
 import { SecretRevelation } from '@/components/api-key-revelation'
@@ -52,7 +53,8 @@ export default async function SettingsPage({
   const { workspace, isAdmin, entitlements, session, role } = await requireWorkspacePagePermission('workspace:admin', '/settings')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
-  const canUseCustomDomain = entitlements.capabilities.has('custom_domain') && featureEnabled('customDomains')
+  const customDomainsEnabled = featureEnabled('customDomains')
+  const canUseCustomDomain = entitlements.capabilities.has('custom_domain') && customDomainsEnabled
   const canUseBranding = entitlements.capabilities.has('reports.white_label')
   const canCollaborate = entitlements.capabilities.has('collaboration')
   const canUsePrivateApi = privateApiWorkspaceAllowed(workspace.id, workspace.accessState)
@@ -66,7 +68,7 @@ export default async function SettingsPage({
     listWorkspaceSafetyPolicies(workspace.id),
     listWorkspaceClients(workspace.id),
     isAdmin ? listWorkspaceDeadLetters(workspace.id) : Promise.resolve([]),
-    canUseCustomDomain ? listWorkspaceDomains(workspace.id) : Promise.resolve([]),
+    listWorkspaceDomains(workspace.id),
     getMyTaskNotificationPreferences(workspace.id, session.userId),
     isAdmin && workspace.authOrganizationId ? workspaceMemberRoster(workspace.authOrganizationId, workspace.ownerUserId).catch(() => null) : Promise.resolve(null),
   ])
@@ -400,17 +402,21 @@ export default async function SettingsPage({
           </CardContent>
         </Card>
 
-        {canUseCustomDomain && (
-          <Card className="border-[#e8e5ef] shadow-sm xl:col-span-2">
+        {(canUseCustomDomain || domains.length > 0) && (
+          <Card role="region" aria-labelledby="custom-domain-title" className="border-[#e8e5ef] shadow-sm xl:col-span-2">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-700"><Globe2 className="size-5" /></span>
-                <div><h2 className="font-semibold">{english ? 'Agency custom domain' : 'Domaine personnalisé Agency'}</h2><p className="mt-1 text-sm text-muted-foreground">{english ? 'One domain at a time. It is used only after Yodev TXT proof, Vercel validation, DNS configuration and a successful HTTPS test.' : 'Un seul domaine à la fois. Il n’est utilisé qu’après preuve TXT Yodev, validation Vercel, configuration DNS et test HTTPS réussi.'}</p></div>
+                <div><h2 id="custom-domain-title" className="font-semibold">{english ? 'Custom domain' : 'Domaine personnalisé'}</h2><p className="mt-1 text-sm text-muted-foreground">{english ? 'One domain at a time. It is used only after Yodev TXT proof, Vercel validation, DNS configuration and a successful HTTPS test.' : 'Un seul domaine à la fois. Il n’est utilisé qu’après preuve TXT Yodev, validation Vercel, configuration DNS et test HTTPS réussi.'}</p></div>
               </div>
-              {query.reveal === 'domain-dns' && <SecretRevelation key={`${workspace.id}:${query.revealId}`} workspaceId={workspace.id} revelationId={query.revealId} locale={locale} kind="domain_dns" title={english ? 'DNS challenge · one-time reveal' : 'Challenge DNS · révélation unique'} buttonLabel={english ? 'Reveal TXT record' : 'Révéler l’enregistrement TXT'} />}
-              {domains.length === 0 && isAdmin && (
-                <form action={createWorkspaceDomain} className="mt-5 flex max-w-xl gap-2">
-                  <Input name="hostname" placeholder={english ? 'reports.your-agency.com' : 'rapports.votre-agence.fr'} required />
+              {!customDomainsEnabled && <p className="mt-4 text-sm text-amber-800">{english ? 'Custom domain operations are temporarily unavailable.' : 'Les opérations sur les domaines personnalisés sont temporairement indisponibles.'}</p>}
+              {customDomainsEnabled && !canUseCustomDomain && <p className="mt-4 text-sm text-amber-800">{english ? 'Your current plan does not include custom domains. You can still remove the existing domain.' : 'Votre forfait actuel ne comprend pas les domaines personnalisés. Vous pouvez toujours retirer le domaine existant.'}</p>}
+              {canUseCustomDomain && query.reveal === 'domain-dns' && <SecretRevelation key={`${workspace.id}:${query.revealId}`} workspaceId={workspace.id} revelationId={query.revealId} locale={locale} kind="domain_dns" title={english ? 'DNS challenge · one-time reveal' : 'Challenge DNS · révélation unique'} buttonLabel={english ? 'Reveal TXT record' : 'Révéler l’enregistrement TXT'} />}
+              {canUseCustomDomain && domains.length === 0 && isAdmin && (
+                <form key={`${workspace.id}:create-domain`} action={createWorkspaceDomain} className="mt-5 flex max-w-xl flex-col gap-2 sm:flex-row">
+                  <input type="hidden" name="workspaceId" value={workspace.id} />
+                  <Label className="sr-only" htmlFor="custom-domain-hostname">{english ? 'Domain hostname' : 'Nom du domaine'}</Label>
+                  <Input id="custom-domain-hostname" name="hostname" className="min-w-0" autoComplete="off" maxLength={253} placeholder={english ? 'reports.your-agency.com' : 'rapports.votre-agence.fr'} required />
                   <Button type="submit"><Plus className="mr-2 size-4" />{english ? 'Configure' : 'Configurer'}</Button>
                 </form>
               )}
@@ -418,11 +424,11 @@ export default async function SettingsPage({
                 {domains.map((domain) => (
                   <div key={domain.id} className="rounded-xl bg-[#f7f9fa] p-4">
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                      <div><p className="font-medium">{domain.hostname}</p><p className="mt-1 text-xs text-muted-foreground">Yodev : {domain.verificationStatus} · Vercel : {domain.vercelStatus}</p></div>
-                      {isAdmin && <div className="flex gap-2"><form action={verifyWorkspaceDomain}><input type="hidden" name="domainId" value={domain.id} /><Button size="sm" variant="outline"><RefreshCw className="mr-2 size-4" />{english ? 'Verify' : 'Vérifier'}</Button></form><form action={revokeWorkspaceDomain}><input type="hidden" name="domainId" value={domain.id} /><Button size="sm" variant="ghost"><Trash2 className="mr-2 size-4" />{english ? 'Revoke' : 'Révoquer'}</Button></form></div>}
+                      <div><p className="break-all font-medium">{domain.hostname}</p><p className="mt-1 text-xs text-muted-foreground">Yodev : {domainStatusLabel(domain.verificationStatus, locale)} · Vercel : {domainStatusLabel(domain.vercelStatus, locale)}</p></div>
+                      {isAdmin && <div className="flex flex-wrap gap-2">{canUseCustomDomain && <form key={`${workspace.id}:${domain.id}:verify`} action={verifyWorkspaceDomain}><input type="hidden" name="workspaceId" value={workspace.id} /><input type="hidden" name="domainId" value={domain.id} /><Button size="sm" variant="outline"><RefreshCw className="mr-2 size-4" />{english ? 'Verify' : 'Vérifier'}</Button></form>}<form key={`${workspace.id}:${domain.id}:revoke`} action={revokeWorkspaceDomain}><input type="hidden" name="workspaceId" value={workspace.id} /><input type="hidden" name="domainId" value={domain.id} /><Button size="sm" variant="ghost" disabled={!customDomainsEnabled}><Trash2 className="mr-2 size-4" />{english ? 'Revoke' : 'Révoquer'}</Button></form></div>}
                     </div>
                     {domain.vercelConfiguration && <details className="mt-3 text-xs"><summary className="cursor-pointer text-muted-foreground">{english ? 'DNS configuration returned by Vercel' : 'Configuration DNS retournée par Vercel'}</summary><pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-white p-3">{JSON.stringify(domain.vercelConfiguration, null, 2)}</pre></details>}
-                    {domain.lastError && <p className="mt-3 text-xs text-red-700">{domain.lastError}</p>}
+                    {domain.lastError && <p className="mt-3 text-xs text-red-700">{localizeFlashMessage(domainActionError(new Error(domain.lastError)), locale)}</p>}
                   </div>
                 ))}
               </div>

@@ -29,7 +29,7 @@ describe('custom domain validation', () => {
   })
 
   it('rejects URLs, wildcard, IP, internal and platform hostnames', () => {
-    for (const value of ['https://example.com', '*.example.com', '127.0.0.1', 'service.local', 'ads.yodev.fr', 'tenant.vercel.app']) {
+    for (const value of ['https://example.com', '*.example.com', '127.0.0.1', 'service.local', 'ads.yodev.fr', 'tenant.vercel.app', 'user@example.com', '@example.com', 'reports.example.com?', 'reports.example.com#', 'reports.example.com?x=1', 'reports.example.com\\path', '-reports.example.com', 'reports-.example.com', 'reports..example.com', 'reports_bad.example.com', `${'a'.repeat(64)}.example.com`]) {
       expect(() => normalizeCustomHostname(value)).toThrow()
     }
   })

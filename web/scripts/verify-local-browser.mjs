@@ -19,6 +19,7 @@ const env = { ...process.env, NODE_OPTIONS: '', NODE_ENV: 'development', DATABAS
   SENTRY_DSN: '', NEXT_PUBLIC_SENTRY_DSN: '', SENTRY_AUTH_TOKEN: '',
   STRIPE_SECRET_KEY: '', YODEV_MAIL_API_KEY: '', GOOGLE_ADS_DEVELOPER_TOKEN: '',
   GOOGLE_OAUTH_CLIENT_ID: '', GOOGLE_OAUTH_CLIENT_SECRET: '',
+  VERCEL_API_TOKEN: '', VERCEL_PROJECT_ID: '', VERCEL_TEAM_ID: '', BLOB_READ_WRITE_TOKEN: '',
   MAINTENANCE_MODE: '0', FORCE_READ_ONLY: '1',
 }
 for (const name of ['GOOGLE_READS', 'GOOGLE_MUTATIONS', 'SCHEDULER', 'NOTIFICATIONS', 'PUBLIC_API', 'PUBLIC_BETA', 'STRIPE_CHECKOUT', 'CUSTOM_DOMAINS', 'BLOB_UPLOADS', 'SLACK_CONNECTOR', 'TEAMS_CONNECTOR']) env[`${name}_ENABLED`] = '0'
@@ -34,6 +35,11 @@ if (process.env.YODEV_TEST_SECURITY_CONTROLS === '1') {
   env.NOTIFICATIONS_ENABLED = '1'
   env.PRIVATE_API_WORKSPACE_IDS = '80000000-0000-4000-8000-000000000001'
   env.PLAYWRIGHT_SECURITY_CONTROLS = '1'
+}
+// Local domain forms may persist and fail closed at the unconfigured provider boundary.
+if (process.env.YODEV_TEST_DOMAIN_CONTROLS === '1') {
+  env.CUSTOM_DOMAINS_ENABLED = '1'
+  env.PLAYWRIGHT_DOMAIN_CONTROLS = '1'
 }
 for (const name of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'DATABASE_AUTHENTICATED_URL', 'DATABASE_SYSTEM_URL', 'DATABASE_PURGE_URL', 'DATABASE_AUTH_URL']) env[name] = database.href
 const seed = spawnSync('npx', ['--no-install', 'tsx', 'scripts/seed-local-browser-fixtures.ts'], { env: { ...env, NODE_OPTIONS: '--conditions=react-server' }, stdio: 'inherit' })

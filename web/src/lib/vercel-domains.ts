@@ -47,7 +47,10 @@ function vercelConfiguration() {
 export function normalizeCustomHostname(value: string) {
   const raw = value.trim().toLocaleLowerCase('en-US').replace(/\.$/, '')
   if (!raw || raw.includes('/') || raw.includes(':') || raw.startsWith('*.')) throw new Error('Saisissez un nom d’hôte sans protocole, chemin, port ni wildcard.')
-  const hostname = new URL(`https://${raw}`).hostname
+  let parsed: URL
+  try { parsed = new URL(`https://${raw}`) } catch { throw new Error('Nom de domaine invalide.') }
+  const hostname = parsed.hostname
+  if (parsed.username || parsed.password || parsed.search || parsed.hash || parsed.pathname !== '/' || /[@?#]/.test(raw) || raw.includes('\\') || !hostname.split('.').every((label) => label.length <= 63 && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label))) throw new Error('Nom de domaine invalide.')
   if (hostname.length > 253 || !hostname.includes('.') || isIP(hostname)) throw new Error('Nom de domaine invalide.')
   if (hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.local') || hostname.endsWith('.internal')) throw new Error('Ce domaine local ou interne ne peut pas être utilisé.')
   const applicationHost = new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr').hostname

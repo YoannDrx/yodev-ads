@@ -56,13 +56,9 @@ import {
 import { PLATFORM_COMPONENTS, PLATFORM_IMPACTS, PLATFORM_INCIDENT_STATUSES } from '@/lib/platform-status'
 import {
   createApiToken,
-  createDomainVerificationToken,
   createOtp,
   createReportFeedbackSessionToken,
 } from '@/lib/tokens'
-import {
-  normalizeCustomHostname,
-} from '@/lib/vercel-domains'
 import { requireWorkspacePermission } from '@/lib/workspace'
 import { expectedWorkspaceDeletionConfirmation } from '@/lib/workspace-deletion'
 import {
@@ -111,11 +107,6 @@ import {
   submitPublicReportFeedback,
   verifyPublicReportOtp,
 } from '@/lib/public-report-workflows'
-import {
-  createWorkspaceCustomDomain,
-  revokeWorkspaceCustomDomain,
-  verifyWorkspaceCustomDomain,
-} from '@/lib/workspace-domain-management'
 import {
   claimWorkspaceDeletionCancellation,
   createWorkspaceExportRequest,
@@ -1561,65 +1552,6 @@ export async function addWorkspaceTaskComment(formData: FormData) {
   const discussionId = z.string().uuid().safeParse(formData.get('taskId'))
   if (discussionId.success) revalidatePath(`/discussions/tasks/${discussionId.data}`)
   redirect(preserveCollectionRecord(target, formData.get('taskId')))
-}
-
-export async function createWorkspaceDomain(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('customDomains', 'Les domaines personnalisés sont temporairement désactivés.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-    requireCapability(entitlements, 'custom_domain')
-    const hostname = normalizeCustomHostname(z.string().trim().min(4).max(253).parse(formData.get('hostname')))
-    const token = createDomainVerificationToken()
-    const revelation = await createWorkspaceCustomDomain({ workspaceId: workspace.id, actorUserId: session.userId, hostname, token })
-    const cookieStore = await cookies()
-    cookieStore.set('yodev_secret_revelation', revelation.id, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 10 * 60,
-      path: '/api/secret-revelation',
-    })
-    target = `/settings?notice=${encodeURIComponent('Domaine enregistré. Publiez le TXT révélé avant de vérifier.')}&reveal=domain-dns&revealId=${revelation.id}`
-  } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
-  }
-  revalidatePath('/settings')
-  redirect(target)
-}
-
-export async function verifyWorkspaceDomain(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('customDomains', 'Les domaines personnalisés sont temporairement désactivés.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-    requireCapability(entitlements, 'custom_domain')
-    const domainId = z.string().uuid().parse(formData.get('domainId'))
-    const result = await verifyWorkspaceCustomDomain({ workspaceId: workspace.id, actorUserId: session.userId, domainId })
-    target = result.active
-      ? toUrl('/settings', 'notice', 'Domaine vérifié, routé et actif pour les nouveaux liens de rapport.')
-      : toUrl('/settings', 'notice', 'Propriété confirmée. Configurez les enregistrements indiqués puis relancez la vérification.')
-  } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
-  }
-  revalidatePath('/settings')
-  redirect(target)
-}
-
-export async function revokeWorkspaceDomain(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('customDomains', 'Les domaines personnalisés sont temporairement désactivés.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-    requireCapability(entitlements, 'custom_domain')
-    const domainId = z.string().uuid().parse(formData.get('domainId'))
-    await revokeWorkspaceCustomDomain({ workspaceId: workspace.id, actorUserId: session.userId, domainId })
-    target = toUrl('/settings', 'notice', 'Domaine retiré de Vercel et révoqué. Le domaine Yodev reste disponible.')
-  } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
-  }
-  revalidatePath('/settings')
-  redirect(target)
 }
 
 export async function requestReportFeedbackOtp(formData: FormData) {
