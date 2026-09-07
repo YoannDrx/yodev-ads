@@ -35,7 +35,8 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
       let initialUrl = '', initialCsv = '', initialPdf: Buffer | undefined, initialEdition = ''
       try {
         await page.goto('/reports')
-        await expect(page.getByRole('button', { name: /Create schedule|Créer la planification/ })).toHaveCount(0)
+        const schedulingEnabled = process.env.PLAYWRIGHT_ANALYTICS_CONTROLS === '1' && process.env.PLAYWRIGHT_SECURITY_CONTROLS === '1'
+        await expect(page.getByRole('button', { name: /Create schedule|Créer la planification/ })).toHaveCount(schedulingEnabled ? 1 : 0)
         const consent = page.getByRole('button', { name: /Continuer sans mesure|Continue without/ })
         if (await consent.isVisible()) { await consent.click(); await expect(consent).toBeHidden() }
         for (const period of periods) {

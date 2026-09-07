@@ -5,8 +5,10 @@ const mocks = vi.hoisted(() => ({
   db: undefined as unknown, tenant: vi.fn(), system: vi.fn(), lock: vi.fn(), reconcile: vi.fn(),
 }))
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.tenant, withSystemTransaction: mocks.system }))
+vi.mock('@/lib/workspace-actor-guard', () => ({ withWorkspaceActorTransaction: mocks.tenant }))
 vi.mock('@/lib/account-selection', () => ({ lockAccountManagement: mocks.lock, reconcileManagedAccountSelection: mocks.reconcile }))
 import { googleInventoryConnectionIdentity, persistSystemGoogleAccountInventory, persistTenantGoogleAccountInventory, type ManagedGoogleCustomer } from './google-account-sync'
+import type { ClaimedJob } from './jobs'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 const connection = { id: 'connection-1', managerCustomerId: '1000000000', encryptedRefreshToken: 'fixture-only', scopes: ['ads'] }
@@ -15,8 +17,13 @@ const customers: ManagedGoogleCustomer[] = [
   { customerId: '200-000-0000', name: 'A', currencyCode: 'EUR', timezone: 'Europe/Paris', isManager: false },
 ]
 const input = { workspaceId, actorUserId: 'user-1', connectionId: connection.id, connectionIdentity: googleInventoryConnectionIdentity(connection), observedAt: new Date('2026-08-01'), managedCustomers: customers, action: 'google_ads.accounts_synced' as const, recordActivation: true }
-function database(latest?: unknown, current: unknown = connection) {
-  const result = databaseDouble({ query: { googleAdsConnections: { findFirst: vi.fn(async () => current) }, auditEvents: { findFirst: vi.fn(async () => latest) } } })
+const job: ClaimedJob = { id: 'job-1', workspaceId, type: 'google.accounts_sync', payload: { workspaceId }, status: 'running', leaseOwner: 'worker-1', attemptCount: 1,
+  createdAt: new Date(), updatedAt: new Date(), availableAt: new Date(), leaseExpiresAt: new Date(Date.now() + 60_000),
+  priority: 100, maximumAttempts: 5, deduplicationKey: null, lastError: null, completedAt: null, deadLetteredAt: null }
+function database(latest?: unknown, current: unknown = connection, selections: unknown[] = [[current]]) {
+  const result = databaseDouble({ query: { auditEvents: { findFirst: vi.fn(async () => latest) } } })
+  const select = databaseDouble({ statementResults: selections }).db.select
+  result.db.select = select
   mocks.db = result.db
   return result
 }
@@ -43,14 +50,14 @@ describe('Google account inventory repository', () => {
     expect(db.capture.values).toContainEqual(expect.objectContaining({ milestone: 'accounts_synced' }))
   })
   it('records even an empty complete inventory so an older response cannot restore missing accounts', async () => {
-    const db = database()
-    await persistSystemGoogleAccountInventory({ ...input, managedCustomers: [], recordActivation: false })
+    const db = database(undefined, connection, [[job], [{ valid: true }], [connection], [job], [{ valid: true }]])
+    await persistSystemGoogleAccountInventory({ ...input, managedCustomers: [], recordActivation: false }, job)
     expect(db.capture.values).toEqual([expect.objectContaining({ action: input.action, metadata: expect.objectContaining({ accessibleCount: 0, observedAt: input.observedAt.toISOString() }) })])
     expect(db.capture.sets[0]).toMatchObject({ googleAccessible: false })
   })
   it('skips an older or duplicate response before replacing inventory', async () => {
-    const db = database({ metadata: { observedAt: input.observedAt.toISOString() } })
-    expect((await persistSystemGoogleAccountInventory(input)).skipped).toBe(true)
+    const db = database({ metadata: { observedAt: input.observedAt.toISOString() } }, connection, [[job], [{ valid: true }], [connection], [job], [{ valid: true }]])
+    expect((await persistSystemGoogleAccountInventory(input, job)).skipped).toBe(true)
     expect(db.capture.values).toEqual([])
     expect(db.capture.sets).toEqual([])
   })
@@ -70,6 +77,28 @@ describe('Google account inventory repository', () => {
   it('rejects invalid observation dates and customer identifiers', async () => {
     database()
     await expect(persistTenantGoogleAccountInventory({ ...input, observedAt: new Date('invalid') })).rejects.toThrow('observation')
+    database()
     await expect(persistTenantGoogleAccountInventory({ ...input, managedCustomers: [{ ...customers[0], customerId: '1' }] })).rejects.toThrow('10 digits')
+  })
+  it.each([
+    { ...job, workspaceId: 'foreign' }, { ...job, payload: {} }, { ...job, type: 'stripe.reconcile' }, { ...job, leaseOwner: null },
+  ])('rejects a claimed job from a different execution context', async (claim) => {
+    const db = database()
+    await expect(persistSystemGoogleAccountInventory(input, claim)).rejects.toThrow('scope mismatch')
+    expect(db.capture.sets).toEqual([])
+  })
+  it.each([
+    null, { ...job, payload: {} }, { ...job, type: 'stripe.reconcile' }, { ...job, status: 'retrying' },
+    { ...job, leaseOwner: 'new-worker' }, { ...job, attemptCount: 2 },
+  ])('rejects a stored job that no longer belongs to this attempt', async (stored) => {
+    const db = database(undefined, connection, [[stored]])
+    await expect(persistSystemGoogleAccountInventory(input, job)).rejects.toThrow(/scope mismatch|lease lost/)
+    expect(db.capture.sets).toEqual([])
+  })
+  it.each([false, true])('refuses lease expiry before or after persistence (after=%s)', async (after) => {
+    const db = database(undefined, connection, [[job], [{ valid: after }], [connection], [job], [{ valid: false }]])
+    await expect(persistSystemGoogleAccountInventory(input, job)).rejects.toThrow('lease expired')
+    if (!after) expect(db.capture.sets).toEqual([])
+    // Atomic rollback itself is verified against PostgreSQL, not this DB double.
   })
 })

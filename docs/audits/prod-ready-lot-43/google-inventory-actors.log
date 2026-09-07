@@ -1,0 +1,1 @@
+{"ok":true,"verified":["tenant_current_actor","system_current_job_scope_attempt_lease","both_current_lifecycle_trial","connection_replacement_and_revocation_row_waits","membership_and_job_row_waits","trial_and_lease_expiry_after_audit_wait_rollback","stale_inventory_reconciliation_trial_rollback","authorized_tenant_and_system_without_human_membership"],"providerCalls":0}

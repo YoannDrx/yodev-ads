@@ -308,7 +308,8 @@ describe('durable job runner orchestration', () => {
   })
 
   it('refreshes the complete Google account inventory after a billing plan change', async () => {
-    mocks.jobs.push(job('google.accounts_sync', { workspaceId }))
+    const inventoryJob = job('google.accounts_sync', { workspaceId })
+    mocks.jobs.push(inventoryJob)
     const contextDb = databaseDouble({ statementResults: [
       [{ plan: 'solo', accessState: 'active' }],
       [connection],
@@ -329,7 +330,7 @@ describe('durable job runner orchestration', () => {
       workspaceId, connectionId: connection.id, managedCustomers: expect.any(Array),
       observedAt: expect.any(Date), connectionIdentity: expect.stringMatching(/^[a-f0-9]{64}$/),
       action: 'google_ads.accounts_synced_after_plan_change',
-    }))
+    }), inventoryJob)
   })
 
   it('dead-letters metric sync when its tenant context no longer exists', async () => {

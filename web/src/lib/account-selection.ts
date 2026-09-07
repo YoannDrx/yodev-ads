@@ -15,7 +15,9 @@ export async function lockAccountManagement(db: DatabaseTransaction, workspaceId
   // Billing updates hold this row too. Read the current quota only after the lock.
   const [workspace] = await db.select({ plan: workspaces.plan, accessState: workspaces.accessState }).from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1).for('update')
   if (!workspace || !isPlan(workspace.plan) || !isWorkspaceAccessState(workspace.accessState)) throw new Error('Account management unavailable')
-  const entitlements = entitlementContext(workspace.accessState, workspace.plan)
+  // Do not evaluate wall time in the locking statement: it can precede a wait.
+  const [clock] = await db.select({ expired: sql<boolean>`${workspaces.trialEndsAt} is not null and ${workspaces.trialEndsAt} <= clock_timestamp()` }).from(workspaces).where(eq(workspaces.id, workspaceId))
+  const entitlements = entitlementContext(workspace.accessState === 'trial' && clock?.expired ? 'suspended' : workspace.accessState, workspace.plan)
   requireCapability(entitlements, 'google.read')
   return { workspace, entitlements }
 }

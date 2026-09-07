@@ -1,12 +1,14 @@
 import 'server-only'
 
 import { createHash } from 'node:crypto'
-import { and, desc, eq, inArray } from 'drizzle-orm'
-import { auditEvents, clients, googleAdsConnections } from '@/db/schema'
-import { type DatabaseTransaction, withSystemTransaction, withTenantTransaction } from '@/db/transactions'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { auditEvents, clients, googleAdsConnections, jobs } from '@/db/schema'
+import { type DatabaseTransaction, withSystemTransaction } from '@/db/transactions'
 import { insertActivationMilestone } from '@/lib/activation'
 import { lockAccountManagement, reconcileManagedAccountSelection } from '@/lib/account-selection'
 import { normalizeCustomerId } from '@/lib/ids'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
+import { NonRetryableJobError, type ClaimedJob } from '@/lib/jobs'
 
 export type ManagedGoogleCustomer = {
   customerId: string
@@ -32,19 +34,37 @@ export function googleInventoryConnectionIdentity(connection: Pick<typeof google
 }
 
 export function persistTenantGoogleAccountInventory(input: InventoryInput) {
-  return withTenantTransaction(
-    { workspaceId: input.workspaceId, userId: input.actorUserId },
+  return withWorkspaceActorTransaction(
+    { workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'google:connect', capability: 'google.read' },
     (db) => persistGoogleAccountInventory(db, input),
   )
 }
 
-export function persistSystemGoogleAccountInventory(input: InventoryInput) {
-  return withSystemTransaction((db) => persistGoogleAccountInventory(db, input))
+export function persistSystemGoogleAccountInventory(input: InventoryInput, job: ClaimedJob) {
+  return withSystemTransaction(async (db) => {
+    const result = await persistGoogleAccountInventory(db, input, job)
+    // The old-observation path can also change active flags. Recheck after every
+    // business-row wait, including that path, before committing any writes.
+    await lockAccountManagement(db, input.workspaceId)
+    await lockInventoryJob(db, input.workspaceId, job)
+    return result
+  })
 }
 
-async function persistGoogleAccountInventory(db: DatabaseTransaction, input: InventoryInput) {
+async function lockInventoryJob(db: DatabaseTransaction, workspaceId: string, job: ClaimedJob) {
+  if (job.type !== 'google.accounts_sync' || job.workspaceId !== workspaceId || job.payload.workspaceId !== workspaceId || !job.leaseOwner) throw new NonRetryableJobError('Google inventory job scope mismatch')
+  const [current] = await db.select().from(jobs).where(and(eq(jobs.id, job.id), eq(jobs.workspaceId, workspaceId))).limit(1).for('update')
+  if (!current || current.type !== job.type || current.payload.workspaceId !== workspaceId) throw new NonRetryableJobError('Google inventory stored job scope mismatch')
+  if (current.status !== 'running' || current.leaseOwner !== job.leaseOwner || current.attemptCount !== job.attemptCount) throw new Error('Google inventory job lease lost')
+  // A separate statement observes wall time after the row-lock wait.
+  const [lease] = await db.select({ valid: sql<boolean>`${jobs.leaseExpiresAt} > clock_timestamp()` }).from(jobs).where(eq(jobs.id, job.id))
+  if (!lease?.valid) throw new Error('Google inventory job lease expired')
+}
+
+async function persistGoogleAccountInventory(db: DatabaseTransaction, input: InventoryInput, job?: ClaimedJob) {
   const { workspace, entitlements } = await lockAccountManagement(db, input.workspaceId)
-  const connection = await db.query.googleAdsConnections.findFirst({ where: and(eq(googleAdsConnections.id, input.connectionId), eq(googleAdsConnections.workspaceId, input.workspaceId), eq(googleAdsConnections.status, 'active')) })
+  if (job) await lockInventoryJob(db, input.workspaceId, job)
+  const [connection] = await db.select().from(googleAdsConnections).where(and(eq(googleAdsConnections.id, input.connectionId), eq(googleAdsConnections.workspaceId, input.workspaceId), eq(googleAdsConnections.status, 'active'))).limit(1).for('update')
   if (!connection || googleInventoryConnectionIdentity(connection) !== input.connectionIdentity) throw new Error('Google connection changed during inventory collection')
   if (!Number.isFinite(input.observedAt.getTime()) || input.observedAt.getTime() > Date.now() + 60_000) throw new Error('Invalid inventory observation date')
   const latest = await db.query.auditEvents.findFirst({

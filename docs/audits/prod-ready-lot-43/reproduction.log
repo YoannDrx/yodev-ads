@@ -1,0 +1,11 @@
+AssertionError [ERR_ASSERTION]: Missing expected rejection: analyst: inventory must refuse
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async denied (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-google-inventory-actors.ts:36:36)
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-google-inventory-actors.ts:68:108) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: undefined,
+  operator: 'rejects',
+  diff: 'simple'
+}

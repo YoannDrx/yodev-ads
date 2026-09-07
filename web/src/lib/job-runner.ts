@@ -276,7 +276,7 @@ async function executeJob(job: ClaimedJob) {
         connectionIdentity: googleInventoryConnectionIdentity(context.connection),
         action: 'google_ads.accounts_synced_after_plan_change',
         recordActivation: false,
-      })
+      }, job)
       return { accessibleCount: managedCustomers.length, activeCount: included.length, excludedCount: excluded.length, limit }
     }
     case 'google.read_drill': {

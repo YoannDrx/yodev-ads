@@ -1,0 +1,8 @@
+
+> @yodev/ads@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @yodev/ads@0.1.0 lint
+> eslint
+

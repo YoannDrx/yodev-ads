@@ -8,7 +8,7 @@ import { getPublicShare } from '../src/lib/public-share-repository'
 import { hashToken } from '../src/lib/tokens'
 import { markGoogleMutationSubmitted } from '../src/lib/google-approval-management'
 import { getWorkspaceClient, saveWorkspaceGoogleConnection } from '../src/lib/data'
-import { googleInventoryConnectionIdentity, persistSystemGoogleAccountInventory, type ManagedGoogleCustomer } from '../src/lib/google-account-sync'
+import { googleInventoryConnectionIdentity, persistTenantGoogleAccountInventory, type ManagedGoogleCustomer } from '../src/lib/google-account-sync'
 
 const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
 assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathname.startsWith('/yodev_test'), 'Disposable local database required')
@@ -31,7 +31,7 @@ async function main() {
     const [connection] = await withSystemTransaction((db) => db.insert(googleAdsConnections).values({ workspaceId, managerCustomerId: inventory[0].customerId, encryptedRefreshToken: 'fixture-only', connectedBy: owner }).returning())
     let clock = Date.now() - 60_000
     const base = { workspaceId, actorUserId: owner, connectionId: connection.id, connectionIdentity: googleInventoryConnectionIdentity(connection), action: 'google_ads.accounts_synced' as const, recordActivation: false }
-    const sync = (customers = inventory) => persistSystemGoogleAccountInventory({ ...base, managedCustomers: customers, observedAt: new Date(clock += 100) })
+    const sync = (customers = inventory) => persistTenantGoogleAccountInventory({ ...base, managedCustomers: customers, observedAt: new Date(clock += 100) })
     await sync()
     let stored = await getWorkspaceAccountSelection(workspaceId)
     assert.equal(stored.accounts.length, 57)
@@ -78,7 +78,7 @@ async function main() {
     const oldObservedAt = new Date(clock - 1)
     await sync([])
     assert.equal((await getWorkspaceAccountSelection(workspaceId)).accounts.filter((account) => account.active).length, 0)
-    assert.equal((await persistSystemGoogleAccountInventory({ ...base, managedCustomers: inventory, observedAt: oldObservedAt })).skipped, true)
+    assert.equal((await persistTenantGoogleAccountInventory({ ...base, managedCustomers: inventory, observedAt: oldObservedAt })).skipped, true)
     assert.equal((await getWorkspaceAccountSelection(workspaceId)).accounts.filter((account) => account.active).length, 0)
     await sync()
     assert.equal((await getWorkspaceAccountSelection(workspaceId)).accounts.filter((account) => account.active && !account.isManager).length, 3)
