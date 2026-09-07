@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { preserveReportEdition } from '@/lib/report-navigation'
 import { reportPeriodFromForm, storedReportPeriod } from '@/lib/report-period-selection'
 import { del, put } from '@vercel/blob'
 import {
@@ -1551,7 +1552,7 @@ export async function createShareLink(formData: FormData) {
     const label = z.string().trim().min(2).max(160).parse(formData.get('label'))
     const editorialComment = z.string().trim().max(5000).optional().parse(formData.get('editorialComment') || undefined)
     const actionPlan = z.string().trim().max(5000).optional().parse(formData.get('actionPlan') || undefined)
-    const locale = z.enum(['fr', 'en']).default('fr').parse(formData.get('locale') || 'fr')
+    const locale = z.enum(['fr', 'en']).default('fr').parse(formData.get('locale') || (workspace.locale === 'en' ? 'en' : 'fr'))
     const periodConfig = reportPeriodFromForm(Object.fromEntries(formData))
     const periodDays = ['7', '30', '90'].includes(periodConfig.period) ? Number(periodConfig.period) : 30
     const mode = z.enum(['dynamic', 'fixed']).parse(formData.get('mode') ?? 'fixed')
@@ -1581,7 +1582,7 @@ export async function createShareLink(formData: FormData) {
       maxAge: 5 * 60,
       path: '/api/secret-revelation',
     })
-    target = `/reports?notice=${encodeURIComponent('Rapport créé. Révélez son URL dans les cinq prochaines minutes.')}&reveal=report-url&revealId=${revelation.id}`
+    target = `/reports?notice=${encodeURIComponent(workspace.locale === 'en' ? 'Report created. Reveal its URL within the next five minutes.' : 'Rapport créé. Révélez son URL dans les cinq prochaines minutes.')}&reveal=report-url&revealId=${revelation.id}`
   } catch (error) {
     target = toUrl('/reports', 'error', message(error))
   }
@@ -1880,7 +1881,7 @@ export async function requestReportFeedbackOtp(formData: FormData) {
     const errorMessage = message(error)
     target += `?error=${encodeURIComponent(english && errorMessage === 'Ce rapport n’accepte pas de retours.' ? 'This report does not accept feedback.' : errorMessage)}`
   }
-  redirect(target)
+  redirect(preserveReportEdition(target, formData.get('edition')))
 }
 
 export async function verifyReportFeedbackOtp(formData: FormData) {
@@ -1918,7 +1919,7 @@ export async function verifyReportFeedbackOtp(formData: FormData) {
     const errorMessage = message(error)
     target += `?error=${encodeURIComponent(english && errorMessage === 'Rapport introuvable.' ? 'Report not found.' : errorMessage)}&otp=1`
   }
-  redirect(target)
+  redirect(preserveReportEdition(target, formData.get('edition')))
 }
 
 export async function submitClientApprovalFeedback(formData: FormData) {
@@ -1960,7 +1961,7 @@ export async function submitClientApprovalFeedback(formData: FormData) {
     target += `?error=${encodeURIComponent(english && errorMessage === 'Ce rapport n’accepte pas de retours.' ? 'This report does not accept feedback.' : errorMessage)}`
   }
   revalidatePath(`/r/${token}`)
-  redirect(target)
+  redirect(preserveReportEdition(target, formData.get('edition')))
 }
 
 export async function createAgencyApiKey(formData: FormData) {

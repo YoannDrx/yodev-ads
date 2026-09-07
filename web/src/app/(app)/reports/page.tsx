@@ -72,7 +72,7 @@ export default async function ReportsPage({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label={english ? 'Internal name' : 'Nom interne'} htmlFor="report-label"><Input id="report-label" name="label" placeholder={english ? 'ACME monthly report' : 'Reporting mensuel ACME'} required /></Field>
                   <Field label={english ? 'Client account' : 'Compte client'} htmlFor="report-client"><select id="report-client" name="clientId" className="h-10 w-full rounded-lg border bg-white px-3 text-sm" required>{advertiserClients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></Field>
-                  <Field label={english ? 'Language' : 'Langue'} htmlFor="report-locale"><select id="report-locale" name="locale" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="fr">Français</option><option value="en">English</option></select></Field>
+                  <Field label={english ? 'Language' : 'Langue'} htmlFor="report-locale"><select id="report-locale" name="locale" defaultValue={locale} className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="fr">Français</option><option value="en">English</option></select></Field>
                   <ReportPeriodFields id="report-period" locale={locale} />
                 </div>
                 <Field label={english ? 'Report type' : 'Type de rapport'} htmlFor="report-mode"><select id="report-mode" name="mode" defaultValue="fixed" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="fixed">{english ? 'Immutable dated report' : 'Bilan daté et figé'}</option><option value="dynamic">{english ? 'Dynamic link to current stored data' : 'Lien dynamique vers les données enregistrées actuelles'}</option></select></Field>
@@ -89,7 +89,7 @@ export default async function ReportsPage({
               <form action={createReportTemplate} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <Field label={english ? 'Template name' : 'Nom du modèle'} htmlFor="template-name"><Input id="template-name" name="name" placeholder={english ? 'Monthly review' : 'Bilan mensuel'} required /></Field>
-                  <Field label={english ? 'Language' : 'Langue'} htmlFor="template-locale"><select id="template-locale" name="locale" className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="fr">Français</option><option value="en">English</option></select></Field>
+                  <Field label={english ? 'Language' : 'Langue'} htmlFor="template-locale"><select id="template-locale" name="locale" defaultValue={locale} className="h-10 w-full rounded-lg border bg-white px-3 text-sm"><option value="fr">Français</option><option value="en">English</option></select></Field>
                   <ReportPeriodFields id="template-period" locale={locale} />
                 </div>
                 <Field label={english ? 'Reusable comment' : 'Commentaire réutilisable'} htmlFor="template-comment"><Textarea id="template-comment" name="editorialComment" maxLength={5000} placeholder={english ? 'Editorial context shared by each delivery…' : 'Contexte éditorial commun à chaque envoi…'} /></Field>

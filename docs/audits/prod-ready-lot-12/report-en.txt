@@ -1,0 +1,521 @@
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Spend Conversions
+€9,007,199,254,740,993.01 12.35
+Clicks CTR
+10,000 10 %
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_000 · Été, Ελληνικά, Кириллица, Removed -€12.35 9,007,199 1.25
+[U+6771][U+4EAC] [U+1F680] ,254,740,
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW 993
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100000
+CAMPAIGN_001 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100001
+CAMPAIGN_002 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100002
+CAMPAIGN_003 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100003
+CAMPAIGN_004 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100004
+CAMPAIGN_005 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100005
+2026-08-01 - 2026-08-31 · Europe/Paris 1 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_006 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100006
+CAMPAIGN_007 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100007
+CAMPAIGN_008 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100008
+CAMPAIGN_009 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100009
+CAMPAIGN_010 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100010
+CAMPAIGN_011 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100011
+CAMPAIGN_012 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100012
+CAMPAIGN_013 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100013
+CAMPAIGN_014 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100014
+2026-08-01 - 2026-08-31 · Europe/Paris 2 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_015 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100015
+CAMPAIGN_016 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100016
+CAMPAIGN_017 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100017
+CAMPAIGN_018 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100018
+CAMPAIGN_019 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100019
+CAMPAIGN_020 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100020
+CAMPAIGN_021 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100021
+CAMPAIGN_022 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100022
+CAMPAIGN_023 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100023
+2026-08-01 - 2026-08-31 · Europe/Paris 3 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_024 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100024
+CAMPAIGN_025 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100025
+CAMPAIGN_026 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100026
+CAMPAIGN_027 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100027
+CAMPAIGN_028 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100028
+CAMPAIGN_029 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100029
+CAMPAIGN_030 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100030
+CAMPAIGN_031 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100031
+CAMPAIGN_032 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+2026-08-01 - 2026-08-31 · Europe/Paris 4 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100032
+CAMPAIGN_033 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100033
+CAMPAIGN_034 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100034
+CAMPAIGN_035 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100035
+CAMPAIGN_036 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100036
+CAMPAIGN_037 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100037
+CAMPAIGN_038 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100038
+CAMPAIGN_039 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100039
+CAMPAIGN_040 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100040
+2026-08-01 - 2026-08-31 · Europe/Paris 5 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_041 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100041
+CAMPAIGN_042 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100042
+CAMPAIGN_043 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100043
+CAMPAIGN_044 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100044
+CAMPAIGN_045 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100045
+CAMPAIGN_046 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100046
+CAMPAIGN_047 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100047
+CAMPAIGN_048 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100048
+CAMPAIGN_049 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100049
+2026-08-01 - 2026-08-31 · Europe/Paris 6 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_050 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100050
+CAMPAIGN_051 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100051
+CAMPAIGN_052 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100052
+CAMPAIGN_053 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100053
+CAMPAIGN_054 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100054
+CAMPAIGN_055 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100055
+CAMPAIGN_056 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100056
+CAMPAIGN_057 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100057
+CAMPAIGN_058 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100058
+2026-08-01 - 2026-08-31 · Europe/Paris 7 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_059 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100059
+CAMPAIGN_060 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100060
+CAMPAIGN_061 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100061
+CAMPAIGN_062 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100062
+CAMPAIGN_063 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100063
+CAMPAIGN_064 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100064
+CAMPAIGN_065 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100065
+CAMPAIGN_066 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100066
+CAMPAIGN_067 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100067
+2026-08-01 - 2026-08-31 · Europe/Paris 8 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_068 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100068
+CAMPAIGN_069 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100069
+CAMPAIGN_070 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100070
+CAMPAIGN_071 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100071
+CAMPAIGN_072 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680]
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWW
+SEARCH · 100072
+CAMPAIGN_073 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100073
+CAMPAIGN_074 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100074
+CAMPAIGN_075 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100075
+CAMPAIGN_076 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100076
+2026-08-01 - 2026-08-31 · Europe/Paris 9 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+Campaign details
+Campaign Status Cost Clicks Conv.
+CAMPAIGN_077 · Été, Ελληνικά, Кириллица, Active €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100077
+CAMPAIGN_078 · Été, Ελληνικά, Кириллица, Removed €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100078
+CAMPAIGN_079 · Été, Ελληνικά, Кириллица, Paused €25.00 50 1.25
+[U+6771][U+4EAC] [U+1F680] Acquisition & fidélisation
+SEARCH · 100079
+Account totals are authoritative. Campaign detail may cover a different scope.
+Editorial review
+COMMENT_0000 évaluation COMMENT_0001 évaluation COMMENT_0002 évaluation COMMENT_0003 évaluation
+COMMENT_0004 évaluation COMMENT_0005 évaluation COMMENT_0006 évaluation COMMENT_0007 évaluation
+COMMENT_0008 évaluation COMMENT_0009 évaluation COMMENT_0010 évaluation COMMENT_0011 évaluation
+COMMENT_0012 évaluation COMMENT_0013 évaluation COMMENT_0014 évaluation COMMENT_0015 évaluation
+COMMENT_0016 évaluation COMMENT_0017 évaluation COMMENT_0018 évaluation COMMENT_0019 évaluation
+COMMENT_0020 évaluation COMMENT_0021 évaluation COMMENT_0022 évaluation COMMENT_0023 évaluation
+COMMENT_0024 évaluation COMMENT_0025 évaluation COMMENT_0026 évaluation COMMENT_0027 évaluation
+COMMENT_0028 évaluation COMMENT_0029 évaluation COMMENT_0030 évaluation COMMENT_0031 évaluation
+COMMENT_0032 évaluation COMMENT_0033 évaluation COMMENT_0034 évaluation COMMENT_0035 évaluation
+COMMENT_0036 évaluation COMMENT_0037 évaluation COMMENT_0038 évaluation COMMENT_0039 évaluation
+COMMENT_0040 évaluation COMMENT_0041 évaluation COMMENT_0042 évaluation COMMENT_0043 évaluation
+COMMENT_0044 évaluation COMMENT_0045 évaluation COMMENT_0046 évaluation COMMENT_0047 évaluation
+COMMENT_0048 évaluation COMMENT_0049 évaluation COMMENT_0050 évaluation COMMENT_0051 évaluation
+COMMENT_0052 évaluation COMMENT_0053 évaluation COMMENT_0054 évaluation COMMENT_0055 évaluation
+COMMENT_0056 évaluation COMMENT_0057 évaluation COMMENT_0058 évaluation COMMENT_0059 évaluation
+COMMENT_0060 évaluation COMMENT_0061 évaluation COMMENT_0062 évaluation COMMENT_0063 évaluation
+COMMENT_0064 évaluation COMMENT_0065 évaluation COMMENT_0066 évaluation COMMENT_0067 évaluation
+COMMENT_0068 évaluation COMMENT_0069 évaluation COMMENT_0070 évaluation COMMENT_0071 évaluation
+COMMENT_0072 évaluation COMMENT_0073 évaluation COMMENT_0074 évaluation COMMENT_0075 évaluation
+COMMENT_0076 évaluation COMMENT_0077 évaluation COMMENT_0078 évaluation COMMENT_0079 évaluation
+COMMENT_0080 évaluation COMMENT_0081 évaluation COMMENT_0082 évaluation COMMENT_0083 évaluation
+2026-08-01 - 2026-08-31 · Europe/Paris 10 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+COMMENT_0084 évaluation COMMENT_0085 évaluation COMMENT_0086 évaluation COMMENT_0087 évaluation
+COMMENT_0088 évaluation COMMENT_0089 évaluation COMMENT_0090 évaluation COMMENT_0091 évaluation
+COMMENT_0092 évaluation COMMENT_0093 évaluation COMMENT_0094 évaluation COMMENT_0095 évaluation
+COMMENT_0096 évaluation COMMENT_0097 évaluation COMMENT_0098 évaluation COMMENT_0099 évaluation
+COMMENT_0100 évaluation COMMENT_0101 évaluation COMMENT_0102 évaluation COMMENT_0103 évaluation
+COMMENT_0104 évaluation COMMENT_0105 évaluation COMMENT_0106 évaluation COMMENT_0107 évaluation
+COMMENT_0108 évaluation COMMENT_0109 évaluation COMMENT_0110 évaluation COMMENT_0111 évaluation
+COMMENT_0112 évaluation COMMENT_0113 évaluation COMMENT_0114 évaluation COMMENT_0115 évaluation
+COMMENT_0116 évaluation COMMENT_0117 évaluation COMMENT_0118 évaluation COMMENT_0119 évaluation
+COMMENT_0120 évaluation COMMENT_0121 évaluation COMMENT_0122 évaluation COMMENT_0123 évaluation
+COMMENT_0124 évaluation COMMENT_0125 évaluation COMMENT_0126 évaluation COMMENT_0127 évaluation
+COMMENT_0128 évaluation COMMENT_0129 évaluation COMMENT_0130 évaluation COMMENT_0131 évaluation
+COMMENT_0132 évaluation COMMENT_0133 évaluation COMMENT_0134 évaluation COMMENT_0135 évaluation
+COMMENT_0136 évaluation COMMENT_0137 évaluation COMMENT_0138 évaluation COMMENT_0139 évaluation
+COMMENT_0140 évaluation COMMENT_0141 évaluation COMMENT_0142 évaluation COMMENT_0143 évaluation
+COMMENT_0144 évaluation COMMENT_0145 évaluation COMMENT_0146 évaluation COMMENT_0147 évaluation
+COMMENT_0148 évaluation COMMENT_0149 évaluation COMMENT_0150 évaluation COMMENT_0151 évaluation
+COMMENT_0152 évaluation COMMENT_0153 évaluation COMMENT_0154 évaluation COMMENT_0155 évaluation
+COMMENT_0156 évaluation COMMENT_0157 évaluation COMMENT_0158 évaluation COMMENT_0159 évaluation
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé
+éééééééééééééééééééééééééééééééé
+COMMENT_END_5000
+Action plan
+ACTION_0000 amélioration ACTION_0001 amélioration ACTION_0002 amélioration ACTION_0003 amélioration
+ACTION_0004 amélioration ACTION_0005 amélioration ACTION_0006 amélioration ACTION_0007 amélioration
+ACTION_0008 amélioration ACTION_0009 amélioration ACTION_0010 amélioration ACTION_0011 amélioration
+ACTION_0012 amélioration ACTION_0013 amélioration ACTION_0014 amélioration ACTION_0015 amélioration
+2026-08-01 - 2026-08-31 · Europe/Paris 11 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+ACTION_0016 amélioration ACTION_0017 amélioration ACTION_0018 amélioration ACTION_0019 amélioration
+ACTION_0020 amélioration ACTION_0021 amélioration ACTION_0022 amélioration ACTION_0023 amélioration
+ACTION_0024 amélioration ACTION_0025 amélioration ACTION_0026 amélioration ACTION_0027 amélioration
+ACTION_0028 amélioration ACTION_0029 amélioration ACTION_0030 amélioration ACTION_0031 amélioration
+ACTION_0032 amélioration ACTION_0033 amélioration ACTION_0034 amélioration ACTION_0035 amélioration
+ACTION_0036 amélioration ACTION_0037 amélioration ACTION_0038 amélioration ACTION_0039 amélioration
+ACTION_0040 amélioration ACTION_0041 amélioration ACTION_0042 amélioration ACTION_0043 amélioration
+ACTION_0044 amélioration ACTION_0045 amélioration ACTION_0046 amélioration ACTION_0047 amélioration
+ACTION_0048 amélioration ACTION_0049 amélioration ACTION_0050 amélioration ACTION_0051 amélioration
+ACTION_0052 amélioration ACTION_0053 amélioration ACTION_0054 amélioration ACTION_0055 amélioration
+ACTION_0056 amélioration ACTION_0057 amélioration ACTION_0058 amélioration ACTION_0059 amélioration
+ACTION_0060 amélioration ACTION_0061 amélioration ACTION_0062 amélioration ACTION_0063 amélioration
+ACTION_0064 amélioration ACTION_0065 amélioration ACTION_0066 amélioration ACTION_0067 amélioration
+ACTION_0068 amélioration ACTION_0069 amélioration ACTION_0070 amélioration ACTION_0071 amélioration
+ACTION_0072 amélioration ACTION_0073 amélioration ACTION_0074 amélioration ACTION_0075 amélioration
+ACTION_0076 amélioration ACTION_0077 amélioration ACTION_0078 amélioration ACTION_0079 amélioration
+ACTION_0080 amélioration ACTION_0081 amélioration ACTION_0082 amélioration ACTION_0083 amélioration
+ACTION_0084 amélioration ACTION_0085 amélioration ACTION_0086 amélioration ACTION_0087 amélioration
+ACTION_0088 amélioration ACTION_0089 amélioration ACTION_0090 amélioration ACTION_0091 amélioration
+ACTION_0092 amélioration ACTION_0093 amélioration ACTION_0094 amélioration ACTION_0095 amélioration
+ACTION_0096 amélioration ACTION_0097 amélioration ACTION_0098 amélioration ACTION_0099 amélioration
+ACTION_0100 amélioration ACTION_0101 amélioration ACTION_0102 amélioration ACTION_0103 amélioration
+ACTION_0104 amélioration ACTION_0105 amélioration ACTION_0106 amélioration ACTION_0107 amélioration
+ACTION_0108 amélioration ACTION_0109 amélioration ACTION_0110 amélioration ACTION_0111 amélioration
+ACTION_0112 amélioration ACTION_0113 amélioration ACTION_0114 amélioration ACTION_0115 amélioration
+ACTION_0116 amélioration ACTION_0117 amélioration ACTION_0118 amélioration ACTION_0119 amélioration
+ACTION_0120 amélioration ACTION_0121 amélioration ACTION_0122 amélioration ACTION_0123 amélioration
+ACTION_0124 amélioration ACTION_0125 amélioration ACTION_0126 amélioration ACTION_0127 amélioration
+ACTION_0128 amélioration ACTION_0129 amélioration ACTION_0130 amélioration ACTION_0131 amélioration
+ACTION_0132 amélioration ACTION_0133 amélioration ACTION_0134 amélioration ACTION_0135 amélioration
+ACTION_0136 amélioration ACTION_0137 amélioration ACTION_0138 amélioration ACTION_0139 amélioration
+ACTION_0140 amélioration ACTION_0141 amélioration ACTION_0142 amélioration ACTION_0143 amélioration
+ACTION_0144 amélioration ACTION_0145 amélioration ACTION_0146 amélioration ACTION_0147 amélioration
+ACTION_0148 amélioration ACTION_0149 amélioration ACTION_0150 amélioration ACTION_0151 amélioration
+ACTION_0152 amélioration ACTION_0153 amélioration ACTION_0154 amélioration ACTION_0155 amélioration
+ACTION_0156 amélioration ACTION_0157 amélioration ACTION_0158 amélioration ACTION_0159 amélioration
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+2026-08-01 - 2026-08-31 · Europe/Paris 12 / 13
+Version dddddddddddd
+Élan & Co · Ανάλυση
+Bilan européen - été 2026
+Google Ads performance report
+Published : 07/09/2026, 04:00:00
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxx
+ACTION_END_5000
+Character rendering
+Characters outside the embedded font are shown as [U+XXXX]. The original text remains available in the HTML and CSV report.
+2026-08-01 - 2026-08-31 · Europe/Paris 13 / 13
+Version dddddddddddd

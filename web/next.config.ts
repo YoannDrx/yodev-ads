@@ -3,6 +3,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: { '/*': ['./src/assets/fonts/*.ttf'] },
   async headers() {
     return [
       {

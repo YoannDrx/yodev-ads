@@ -1,3 +1,4 @@
+import type { ReportBranding } from '@/lib/report-branding'
 import type { CampaignPerformance } from '@/lib/google-ads'
 import { calendarDates, type CalendarWindow } from '@/lib/calendar-window'
 import { reportPeriodSchema } from '@/lib/report-period'
@@ -10,6 +11,7 @@ export type ClientReportModel = {
   sourceVersion: string | null
   locale: 'fr' | 'en'
   brandName: string
+  branding?: ReportBranding
   poweredByYodev: boolean
   clientName: string
   currencyCode: string
@@ -48,6 +50,7 @@ export function buildClientReportModel(input: {
   accountTotals?: { costMicros: string; impressions: string; clicks: string; conversions: number; conversionValueMicros: string }
   locale?: string
   brandName: string
+  branding?: ReportBranding
   poweredByYodev?: boolean
   clientName: string
   currencyCode: string
@@ -76,6 +79,7 @@ export function buildClientReportModel(input: {
     locale: input.locale === 'en' ? 'en' : 'fr',
     brandName: input.brandName,
     poweredByYodev: Boolean(input.poweredByYodev),
+    ...(input.branding ? { branding: input.branding } : {}),
     clientName: input.clientName,
     currencyCode: input.currencyCode,
     editorialComment: input.editorialComment?.trim() || null,
@@ -110,6 +114,9 @@ export function clientReportCsv(model: ClientReportModel) {
     ['timezone', model.window?.timezone ?? null],
     ['source_version', model.sourceVersion],
     ['client', model.clientName],
+    ['brand_name', model.brandName],
+    ['brand_accent', model.branding?.accentColor ?? null],
+    ['brand_logo_sha256', model.branding?.logo?.sha256 ?? null],
     ['currency', model.currencyCode],
     ['editorial_comment', model.editorialComment],
     ['action_plan', model.actionPlan],

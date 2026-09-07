@@ -1,0 +1,13 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run --run src/lib/client-report-pdf.test.ts src/lib/report-branding.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+   Start at  05:13:02
+   Duration  1.49s (transform 65ms, setup 0ms, import 380ms, tests 1.21s, environment 0ms)
+

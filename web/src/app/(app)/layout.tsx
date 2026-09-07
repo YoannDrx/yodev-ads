@@ -1,3 +1,4 @@
+import { BrandStyles } from '@/components/brand-styles'
 import { MobileMenu } from '@/components/mobile-menu'
 import { workspacePermissions } from '@/lib/workspace-decision'
 import Link from 'next/link'
@@ -87,9 +88,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const mobileNavigation = accessibleNavigation.slice(0, 4)
   return (
     <div
-      className="min-h-screen bg-[#f3f6f8]"
-      style={{ '--brand-accent': workspace.accentColor } as React.CSSProperties}
+      className="workspace-brand min-h-screen bg-[#f3f6f8]"
     >
+      <BrandStyles accentColor={workspace.accentColor} nonce={requestHeaders.get('x-nonce') ?? undefined} scope="workspace" />
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-white/8 bg-[#0d1722] px-4 py-5 text-white lg:flex lg:flex-col">
         <Link href={homeHref} className="flex items-center gap-3 px-2 font-semibold tracking-tight">
           {isControlledBrandLogoUrl(workspace.logoUrl) ? (

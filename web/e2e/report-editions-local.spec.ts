@@ -16,10 +16,14 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
     for (const locale of ['fr', 'en'] as const) test(`creates every period and preserves HTML PDF CSV through revision in ${locale}`, async ({ browser }) => {
       await db.query('update workspaces set access_state=$1,plan=$2,locale=$3 where id=$4', ['internal', 'internal', locale, workspaceId])
       await db.query('insert into clients(id,workspace_id,google_customer_id,name,currency_code,timezone) values($1,$2,$3,$4,$5,$6)', [clientId, workspaceId, '8000000070', 'Edition fixture', 'EUR', 'Europe/Paris'])
+      await db.query('update workspaces set brand_name=$1,accent_color=$2 where id=$3', ['Élan Ανάλυση · ' + 'W'.repeat(80), locale === 'fr' ? '#fff050' : '#092a3b', workspaceId])
+      const commentary = 'Évaluation 東京 🚀 ' + 'é'.repeat(4966) + ' COMMENT_END', actionPlan = 'ACTION_START ' + 'x'.repeat(4976) + ' ACTION_END'
       const today = accountCalendarDate(new Date(), 'Europe/Paris')
       await db.query(`insert into daily_account_metrics(workspace_id,client_id,metric_date,currency_code,timezone,coverage_status,source_version,cost_micros)
         select $1,$2,to_char(day,'YYYY-MM-DD'),'EUR','Europe/Paris','complete','browser-edition-v1',2000000
         from generate_series($3::date,$4::date,interval '1 day') day`, [workspaceId, clientId, shiftCalendarDate(today, -100), shiftCalendarDate(today, -1)])
+      await db.query('update daily_account_metrics set cost_micros=$1 where client_id=$2 and metric_date=$3', ['9007199254740993010000', clientId, shiftCalendarDate(today, -1)])
+      await db.query(`insert into approval_requests(workspace_id,client_id,requested_by,kind,title,payload,expires_at) values($1,$2,'fixture','campaign.pause','Client feedback fixture','{}',now()+interval '1 day')`, [workspaceId, clientId])
       const readerIp = locale === 'fr' ? '198.51.100.70' : '198.51.100.71'
       const ipKeys = ['public-report-ip', 'public-report-pdf-ip'].map((namespace) => createHmac('sha256', process.env.RATE_LIMIT_HASH_KEY!).update(`${namespace}:${readerIp}`).digest('hex'))
       await db.query('delete from rate_limit_buckets where key_hash=any($1::text[])', [ipKeys])
@@ -38,7 +42,9 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
           const name = `Browser ${locale} ${period}`
           await page.locator('#report-label').fill(name)
           await page.locator('#report-client').selectOption(clientId)
-          await page.locator('#report-locale').selectOption(locale)
+          await expect(page.locator('#report-locale')).toHaveValue(locale)
+          await page.locator('#report-comment').fill(period === '7' ? commentary : '')
+          await page.locator('#report-plan').fill(period === '7' ? actionPlan : '')
           await page.locator('#report-period').selectOption(period)
           const custom = { from: shiftCalendarDate(today, -12), through: shiftCalendarDate(today, -3) }
           if (period === 'custom') { await page.locator('#report-period-from').fill(custom.from); await page.locator('#report-period-through').fill(custom.through) }
@@ -51,6 +57,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
           const editionId = new URL(reportUrl).searchParams.get('edition')!
           await publicPage.goto(reportUrl)
           const window = reportCalendarWindow({ period, custom: period === 'custom' ? custom : undefined, now: new Date(), timezone: 'Europe/Paris' })
+          await expect(publicPage.locator('header')).toHaveCSS('background-color', locale === 'fr' ? 'rgb(255, 240, 80)' : 'rgb(9, 42, 59)')
           await expect(publicPage.getByText(`${window.from} → ${window.through} · Europe/Paris`, { exact: true })).toBeVisible()
           const csvHref = await publicPage.getByRole('link', { name: /CSV/ }).getAttribute('href')
           const pdfHref = await publicPage.getByRole('link', { name: /PDF/ }).getAttribute('href')
@@ -60,7 +67,22 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
           expect(await csv.text()).toContain(window.from); expect(await csv.text()).toContain(window.through)
           expect((await pdf.body()).subarray(0, 4).toString()).toBe('%PDF')
           expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-          if (period === '7') { initialUrl = reportUrl; initialCsv = await csv.text(); initialPdf = await pdf.body(); initialEdition = editionId }
+          if (period === '7') {
+            await expect(publicPage.getByText(commentary, { exact: true })).toBeVisible()
+            await expect(publicPage.getByText(actionPlan, { exact: true })).toBeVisible()
+            await publicPage.screenshot({ path: test.info().outputPath(`report-long-${locale}.png`), fullPage: true })
+            // With transport disabled, even the failure path must keep the edition being read.
+            await publicPage.getByRole('textbox', { name: /Your email|Votre email/ }).fill('report-fixture@example.test')
+            await publicPage.getByRole('button', { name: /Receive a code|Recevoir un code/ }).click()
+            await expect(publicPage).toHaveURL(new RegExp(`edition=${editionId}`))
+            await expect(publicPage).toHaveURL(/error=/)
+            await publicPage.goto(`${reportUrl}&otp=1`)
+            await publicPage.getByRole('textbox', { name: /Six-digit code|Code à six chiffres/ }).fill('000000')
+            await publicPage.getByRole('button', { name: /^(Verify|Vérifier)$/ }).click()
+            await expect(publicPage).toHaveURL(new RegExp(`edition=${editionId}`))
+            await expect(publicPage).toHaveURL(/error=.*otp=1/)
+            await expect(publicPage.locator('header')).toHaveCSS('background-color', locale === 'fr' ? 'rgb(255, 240, 80)' : 'rgb(9, 42, 59)')
+            initialUrl = reportUrl; initialCsv = await csv.text(); initialPdf = await pdf.body(); initialEdition = editionId }
         }
         await db.query('update daily_account_metrics set cost_micros=9000000,source_version=$1 where client_id=$2 and metric_date=$3', ['browser-correction-v2', clientId, shiftCalendarDate(today, -1)])
         await publicPage.goto(initialUrl)
@@ -84,6 +106,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await page.locator('#report-client').selectOption(clientId); await page.locator('#report-period').selectOption('7')
         await page.getByRole('button', { name: locale === 'en' ? 'Generate link' : 'Générer le lien', exact: true }).click()
         await expect(page).toHaveURL(/error=/)
+        if (locale === 'en') await expect(page.getByText('Complete data for this period is unavailable. Refresh the account history before publishing this report.')).toBeVisible()
         expect((await db.query('select count(*) from share_links where workspace_id=$1 and label=$2', [workspaceId, `Incomplete ${locale}`])).rows[0].count).toBe('0')
         await publicPage.goto(initialUrl); await expect(publicPage.getByRole('link', { name: /CSV/ })).toBeVisible()
         await db.query('update rate_limit_buckets set count=20 where key_hash=$1', [ipKeys[1]])

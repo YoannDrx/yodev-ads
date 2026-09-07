@@ -1,4 +1,8 @@
 import { getPublicReportEdition } from '@/lib/report-editions'
+import Image from 'next/image'
+import { BrandStyles } from '@/components/brand-styles'
+import { reportAccent } from '@/lib/report-branding'
+import { reportMoney, reportInteger, reportDecimal, reportCampaignStatus } from '@/lib/report-format'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
@@ -9,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { getPublicShare, getVerifiedReportRecipient, listPublicClientApprovals } from '@/lib/data'
-import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/format'
+import { formatPercent } from '@/lib/format'
 import { consumePublicReportRateLimits, requestIp } from '@/lib/rate-limit'
 
 export const metadata: Metadata = { title: 'Rapport client', robots: { index: false, follow: false } }
@@ -46,6 +50,8 @@ export default async function PublicReportPage({
   const english = report.locale === 'en'
   const campaigns = report.campaigns
   const brandName = report.brandName
+  const accent = reportAccent(report.branding?.accentColor)
+  const logo = report.branding?.logo
   const poweredByYodev = report.poweredByYodev
   const [proposals, verifiedRecipient] = await Promise.all([
     result.share.allowFeedback ? listPublicClientApprovals(result.share.workspaceId, result.client.id, result.share.id) : Promise.resolve([]),
@@ -54,16 +60,17 @@ export default async function PublicReportPage({
 
   return (
     <main className="min-h-screen bg-[#f3f6f8] text-[#121b24]">
-      <header className="border-b border-black/5 bg-[#0d1722] text-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-          <div className="flex items-center gap-3">
-            <YodevAdsMark />
-            <div>
-              <p className="font-semibold">{brandName}</p>
-              <p className="text-xs text-white/55">{english ? 'Secure report' : 'Rapport sécurisé'}</p>
+      <BrandStyles accentColor={accent} nonce={requestHeaders.get('x-nonce') ?? undefined} scope="report" />
+      <header className="public-report-brand border-b border-black/5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-5 sm:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            {logo ? <Image src={`data:image/png;base64,${logo.base64}`} alt={brandName} width={48} height={48} unoptimized className="size-12 shrink-0 rounded-lg bg-white object-contain p-1" /> : brandName === 'Ads by Yodev' ? <YodevAdsMark /> : <span className="grid size-12 shrink-0 place-items-center rounded-lg border border-current text-xl font-bold" aria-hidden="true">{brandName.slice(0, 1)}</span>}
+            <div className="min-w-0">
+              <p className="font-semibold break-words">{brandName}</p>
+              <p className="text-xs">{english ? 'Secure report' : 'Rapport sécurisé'}</p>
             </div>
           </div>
-          <span className="flex items-center gap-2 rounded-full bg-white/8 px-3 py-1.5 text-xs text-white/70">
+          <span className="flex shrink-0 items-center gap-2 rounded-full bg-white/8 px-3 py-1.5 text-xs">
             <Eye className="size-3.5" /> {english ? 'Read only' : 'Lecture seule'}
           </span>
         </div>
@@ -71,9 +78,9 @@ export default async function PublicReportPage({
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         <FlashMessage notice={query.notice} error={query.error} locale={english ? 'en' : 'fr'} />
         <div className="flex flex-col gap-4 border-b border-black/8 pb-8 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">Performance · {report.periodDays} {english ? 'days' : 'jours'}</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-[-.045em]">{report.clientName}</h1>
+            <h1 className="mt-3 text-4xl font-semibold tracking-[-.045em] break-words">{report.clientName}</h1>
             <p className="mt-2 text-sm text-[#63717d]">{report.window?.from} → {report.window?.through} · {report.window?.timezone}</p>
             <p className="mt-2 text-xs text-[#63717d]">{!query.edition && result.share.mode === 'dynamic' ? (english ? 'Dynamic link · current stored data' : 'Lien dynamique · données enregistrées actuelles') : (english ? 'Immutable edition' : 'Édition figée')} · {english ? 'Edition' : 'Édition'} {issued.edition.editionNumber} · {report.generatedAt.toLocaleString(english ? 'en-GB' : 'fr-FR', { timeZone: report.window?.timezone })}</p>
             <p className="mt-1 text-xs text-[#63717d]">{english ? 'Data version' : 'Version des données'} : {report.sourceVersion?.slice(0, 12)}</p>
@@ -93,21 +100,21 @@ export default async function PublicReportPage({
         <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <ReportMetric
             label={english ? 'Spend' : 'Investissement'}
-            value={formatMoneyFromMicros(report.totals.costMicros, report.currencyCode)}
+            value={reportMoney(report.totals.costMicros, report.currencyCode, report.locale)}
             icon={ReceiptText}
           />
-          <ReportMetric label="Conversions" value={formatInteger(report.totals.conversions)} icon={Target} />
-          <ReportMetric label={english ? 'Clicks' : 'Clics'} value={formatInteger(report.totals.clicks)} icon={MousePointerClick} />
+          <ReportMetric label="Conversions" value={reportDecimal(report.totals.conversions, report.locale)} icon={Target} />
+          <ReportMetric label={english ? 'Clicks' : 'Clics'} value={reportInteger(report.totals.clicks, report.locale)} icon={MousePointerClick} />
           <ReportMetric
             label="CTR"
-            value={report.totals.ctr === null ? '—' : formatPercent(report.totals.ctr)}
+            value={report.totals.ctr === null ? '—' : formatPercent(report.totals.ctr, english ? 'en-GB' : 'fr-FR')}
             icon={Activity}
           />
         </section>
         {(report.editorialComment || report.actionPlan) && (
           <section className="mt-6 grid gap-4 md:grid-cols-2">
-            {report.editorialComment && <Card className="border-black/8 shadow-none"><CardContent className="p-6"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">{english ? 'Period commentary' : 'Commentaire de la période'}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#374650]">{report.editorialComment}</p></CardContent></Card>}
-            {report.actionPlan && <Card className="border-black/8 shadow-none"><CardContent className="p-6"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">{english ? 'Action plan' : 'Plan d’action'}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#374650]">{report.actionPlan}</p></CardContent></Card>}
+            {report.editorialComment && <Card className="min-w-0 border-black/8 shadow-none"><CardContent className="p-6"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">{english ? 'Period commentary' : 'Commentaire de la période'}</p><p className="mt-3 break-words whitespace-pre-wrap text-sm leading-7 text-[#374650]">{report.editorialComment}</p></CardContent></Card>}
+            {report.actionPlan && <Card className="min-w-0 border-black/8 shadow-none"><CardContent className="p-6"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2f6b56]">{english ? 'Action plan' : 'Plan d’action'}</p><p className="mt-3 break-words whitespace-pre-wrap text-sm leading-7 text-[#374650]">{report.actionPlan}</p></CardContent></Card>}
           </section>
         )}
         {proposals.length > 0 && (
@@ -119,12 +126,14 @@ export default async function PublicReportPage({
                 <p className="mt-1 text-xs text-[#63717d]">{english ? 'Reading remains available with this link. An email code is required only to submit a decision.' : 'La lecture reste libre avec ce lien. Un code email est exigé uniquement pour transmettre une décision.'}</p>
                 <form action={requestReportFeedbackOtp} className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <input type="hidden" name="token" value={token} />
+                  <input type="hidden" name="edition" value={issued.edition.id} />
                   <input type="email" name="email" aria-label={english ? 'Your email' : 'Votre email'} placeholder={english ? 'you@company.com' : 'vous@entreprise.fr'} required maxLength={254} className="h-10 flex-1 rounded-lg border bg-white px-3 text-sm" />
                   <Button type="submit" variant="outline">{english ? 'Receive a code' : 'Recevoir un code'}</Button>
                 </form>
                 {query.otp === '1' && (
                   <form action={verifyReportFeedbackOtp} className="mt-3 flex flex-col gap-2 sm:flex-row">
                     <input type="hidden" name="token" value={token} />
+                  <input type="hidden" name="edition" value={issued.edition.id} />
                     <input name="otp" aria-label={english ? 'Six-digit code' : 'Code à six chiffres'} inputMode="numeric" pattern="[0-9]{6}" maxLength={6} placeholder="000000" required className="h-10 flex-1 rounded-lg border bg-white px-3 font-mono text-sm tracking-[.2em]" />
                     <Button type="submit">{english ? 'Verify' : 'Vérifier'}</Button>
                   </form>
@@ -140,6 +149,7 @@ export default async function PublicReportPage({
                   ) : verifiedRecipient ? (
                     <form action={submitClientApprovalFeedback} className="mt-4 grid gap-3 sm:grid-cols-2">
                       <input type="hidden" name="token" value={token} />
+                  <input type="hidden" name="edition" value={issued.edition.id} />
                       <input type="hidden" name="approvalId" value={request.id} />
                       <input name="authorName" aria-label={english ? 'Your name' : 'Votre nom'} placeholder={english ? 'Your name' : 'Votre nom'} required minLength={2} maxLength={120} className="h-10 rounded-lg border px-3 text-sm" />
                       <select name="decision" aria-label={english ? 'Decision' : 'Décision'} className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="approved">{english ? 'I approve' : 'J’approuve'}</option><option value="changes_requested">{english ? 'I request changes' : 'Je demande des modifications'}</option></select>
@@ -172,14 +182,14 @@ export default async function PublicReportPage({
                     <tr key={campaign.id}>
                       <td className="px-5 py-4 font-medium">{campaign.name}</td>
                       <td className="px-4 py-4 text-xs text-[#63717d]">
-                        {campaign.status === 'ENABLED' ? 'Active' : campaign.status === 'PAUSED' ? (english ? 'Paused' : 'En pause') : campaign.status === 'REMOVED' ? (english ? 'Removed' : 'Supprimée') : campaign.status}
+                        {reportCampaignStatus(campaign.status, report.locale)}
                       </td>
                       <td className="px-4 py-4 text-right">
-                        {formatMoneyFromMicros(campaign.costMicros, report.currencyCode)}
+                        {reportMoney(campaign.costMicros, report.currencyCode, report.locale)}
                       </td>
-                      <td className="px-4 py-4 text-right">{formatInteger(campaign.clicks)}</td>
+                      <td className="px-4 py-4 text-right">{reportInteger(campaign.clicks, report.locale)}</td>
                       <td className="px-5 py-4 text-right">
-                        {campaign.conversions.toLocaleString(english ? 'en-GB' : 'fr-FR', { maximumFractionDigits: 1 })}
+                        {reportDecimal(campaign.conversions, report.locale)}
                       </td>
                     </tr>
                   ))}
@@ -196,14 +206,14 @@ export default async function PublicReportPage({
 
 function ReportMetric({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Activity }) {
   return (
-    <Card className="border-black/8 shadow-none">
+    <Card className="min-w-0 border-black/8 shadow-none">
       <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-xs text-[#71808c]">{label}</p>
-            <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+            <p className="mt-2 break-words text-2xl font-semibold tracking-tight">{value}</p>
           </div>
-          <span className="grid size-10 place-items-center rounded-xl bg-[#e6f8ef] text-[#1f7554]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e6f8ef] text-[#1f7554]">
             <Icon className="size-5" />
           </span>
         </div>
@@ -214,7 +224,7 @@ function ReportMetric({ label, value, icon: Icon }: { label: string; value: stri
 
 function YodevAdsMark() {
   return (
-    <span className="relative grid size-10 place-items-center overflow-hidden rounded-xl bg-[#19A58F] text-[#0d1722]">
+    <span className="relative grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#19A58F] text-[#0d1722]">
       <span className="absolute -top-2 h-5 w-7 rounded-full border-2 border-current" />
       <span className="mt-2 text-sm font-black">A</span>
     </span>

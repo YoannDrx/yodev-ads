@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import sharp from 'sharp'
 import { randomUUID } from 'node:crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import { clients, dailyAccountMetrics, jobs, reportEditions, reportSchedules, shareLinks, workspaces } from '../src/db/schema'
@@ -39,8 +40,22 @@ async function main() {
       const [row] = await withSystemTransaction((db) => db.insert(shareLinks).values({ workspaceId, clientId: client.id, createdBy: owner, label: 'Report fixture', mode, periodDays, tokenHash: hashToken(token), tokenPrefix: token.slice(0, 12), encryptedReportToken: encryptSecret(token), expiresAt: new Date(now.getTime() + 90 * 86_400_000) }).returning())
       return row
     }
+    const logoUrl = `https://fixture.public.blob.vercel-storage.com/workspace-branding/${workspaceId}/logo.png`
+    const logoBytes = await sharp({ create: { width: 30, height: 15, channels: 3, background: '#176646' } }).png().toBuffer()
+    let simulatedLogoFetches = 0
+    globalThis.fetch = async (url) => {
+      assert.equal(String(url), logoUrl)
+      simulatedLogoFetches++
+      return new Response(new Uint8Array(logoBytes))
+    }
+    await withSystemTransaction((db) => db.update(workspaces).set({ logoUrl, accentColor: '#fff050' }).where(eq(workspaces.id, workspaceId)))
     const fixed = await share(7)
     const initial = await withTenantTransaction({ workspaceId, userId: owner }, (db) => createReportEditionInTransaction(db, { workspaceId, shareId: fixed.id, actorUserId: owner, kind: 'initial', now }))
+    assert.equal(simulatedLogoFetches, 1)
+    assert(initial.model.branding?.logo?.sha256)
+    assert.equal(initial.model.branding.accentColor, '#fff050')
+    assert.equal(initial.model.poweredByYodev, false)
+    globalThis.fetch = async () => { throw new Error('Provider calls are forbidden in this fixture') }
     assert.equal(initial.model.periodDays, 7)
     assert.equal(initial.model.totals.costMicros, '14000000')
     assert.equal(initial.model.totals.conversions, 2.1)
@@ -49,13 +64,24 @@ async function main() {
     const csv = clientReportCsv(initial.model)
     const day = initial.edition.periodFrom
     await withSystemTransaction((db) => db.update(dailyAccountMetrics).set({ costMicros: '9000000', sourceVersion: 'fixture-v2' }).where(and(eq(dailyAccountMetrics.clientId, client.id), eq(dailyAccountMetrics.metricDate, day))))
-    await withSystemTransaction((db) => db.update(workspaces).set({ brandName: 'Renamed agency' }).where(eq(workspaces.id, workspaceId)))
+    await withSystemTransaction((db) => db.update(workspaces).set({ brandName: 'Renamed agency', logoUrl: null, accentColor: '#000000' }).where(eq(workspaces.id, workspaceId)))
     const reread = await getPublicReportEdition({ workspaceId, shareId: fixed.id, editionId: initial.edition.id, now: new Date(now.getTime() + 86_400_000) })
     assert.equal(clientReportCsv(reread.model), csv, 'Reopening does not rewrite figures, period, branding or publication time')
     const revision = await withTenantTransaction({ workspaceId, userId: owner }, (db) => createReportEditionInTransaction(db, { workspaceId, shareId: fixed.id, actorUserId: owner, kind: 'revision', previousEditionId: initial.edition.id, now }))
     assert.notEqual(revision.edition.id, initial.edition.id)
     assert.equal(revision.model.totals.costMicros, '21000000')
     assert.equal(revision.model.brandName, 'Original agency')
+    assert.deepEqual(revision.model.branding, initial.model.branding, 'Revision freezes the original logo bytes and accent, even after removal')
+    assert.deepEqual(reread.model.branding, initial.model.branding)
+    for (const plan of ['solo', 'studio', 'agency'] as const) {
+      await withSystemTransaction((db) => db.update(workspaces).set({ plan }).where(eq(workspaces.id, workspaceId)))
+      const brandShare = await share(7)
+      const branded = await withTenantTransaction({ workspaceId, userId: owner }, (db) => createReportEditionInTransaction(db, { workspaceId, shareId: brandShare.id, actorUserId: owner, kind: 'initial', now }))
+      assert.equal(branded.model.brandName, plan === 'solo' ? 'Ads by Yodev' : 'Renamed agency')
+      assert.equal(branded.model.branding?.accentColor, plan === 'solo' ? '#176646' : '#000000')
+      assert.equal(branded.model.branding?.logo, null)
+      assert.equal(branded.model.poweredByYodev, plan === 'studio')
+    }
     assert.equal(revision.edition.periodFrom, initial.edition.periodFrom)
     assert.equal((await getPublicReportEdition({ workspaceId, shareId: fixed.id, now })).edition.id, initial.edition.id)
     const dynamic = await share(30, 'dynamic')
@@ -153,7 +179,7 @@ async function main() {
     await assert.rejects(getPublicReportEdition({ workspaceId, shareId: fixed.id, editionId: initial.edition.id, now }))
     await withSystemTransaction((db) => db.delete(reportSchedules).where(eq(reportSchedules.id, schedule.id)))
     assert.equal((await withSystemTransaction((db) => db.query.reportEditions.findFirst({ where: eq(reportEditions.id, scheduled.edition.id) })))?.scheduleId, null)
-    console.log(JSON.stringify({ ok: true, verified: ['qualified_7_30_90_day_editions', 'account_totals_independent_of_campaign_list', 'archived_campaign_included', 'exact_decimal_conversions', 'immutable_reopen_and_csv', 'correction_creates_revision_of_same_period', 'fixed_default_stays_initial', 'concurrent_dynamic_deduplication', 'scheduled_run_freezes_window_and_encrypted_delivery', 'application_and_system_cannot_update_report_content', 'custom_manual_publication_and_revision', 'previous_calendar_month_api_publication', 'pdf_bytes_remain_identical', 'publication_expiry', 'actual_worker_fences_and_accepted_email_reconciliation', 'encryption_rewrap_preserves_report_content', 'tenant_rls_and_composite_scope', 'incomplete_history_does_not_publish', 'existing_edition_survives_history_gap', 'revocation_denies_edition', 'schedule_deletion_preserves_issued_content'], providerCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, verified: ['frozen_normalized_logo_and_accent', 'solo_studio_agency_branding_and_attribution', 'qualified_7_30_90_day_editions', 'account_totals_independent_of_campaign_list', 'archived_campaign_included', 'exact_decimal_conversions', 'immutable_reopen_and_csv', 'correction_creates_revision_of_same_period', 'fixed_default_stays_initial', 'concurrent_dynamic_deduplication', 'scheduled_run_freezes_window_and_encrypted_delivery', 'application_and_system_cannot_update_report_content', 'custom_manual_publication_and_revision', 'previous_calendar_month_api_publication', 'pdf_bytes_remain_identical', 'publication_expiry', 'actual_worker_fences_and_accepted_email_reconciliation', 'encryption_rewrap_preserves_report_content', 'tenant_rls_and_composite_scope', 'incomplete_history_does_not_publish', 'existing_edition_survives_history_gap', 'revocation_denies_edition', 'schedule_deletion_preserves_issued_content'], providerCalls: 0 }))
   } finally {
     for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id)))
   }

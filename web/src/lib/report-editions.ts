@@ -8,6 +8,8 @@ import { buildClientReportModel, deserializeClientReport, serializeClientReport,
 import { encryptSecret } from '@/lib/crypto'
 import { metricCoverage } from '@/lib/metric-coverage'
 import { resolveReportPeriod, storedReportPeriod, type ReportPeriodSelection } from '@/lib/report-period-selection'
+import { loadReportLogo } from '@/lib/report-logo'
+import { reportAccent, DEFAULT_REPORT_ACCENT } from '@/lib/report-branding'
 import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
 
 export const REPORT_MODEL_VERSION = 1
@@ -97,7 +99,9 @@ export async function createReportEditionInTransaction(db: DatabaseTransaction, 
   // Provenance includes account coverage versions and the exact campaign aggregates.
   const sourceVersion = digest({ window: { from: window.from, through: window.through, timezone: window.timezone }, currency: context.client.currencyCode, rows: rows.map((row) => ({ date: row.metricDate, version: row.sourceVersion, observedAt: row.sourceObservedAt, cost: row.costMicros, impressions: row.impressions, clicks: row.clicks, conversions: row.conversions, value: row.conversionValueMicros })), campaigns: aggregates.rows })
   const whiteLabel = ['studio', 'agency', 'internal'].includes(context.workspace.plan)
-  const model = buildClientReportModel({ generatedAt: now, window: { from: window.from, through: window.through, timezone: window.timezone }, sourceVersion, accountTotals,
+  const branding = previousModel ? previousModel.branding ?? { accentColor: DEFAULT_REPORT_ACCENT, logo: null }
+    : { accentColor: whiteLabel ? reportAccent(context.workspace.accentColor) : DEFAULT_REPORT_ACCENT, logo: whiteLabel ? await loadReportLogo(input.workspaceId, context.workspace.logoUrl) : null }
+  const model = buildClientReportModel({ generatedAt: now, branding, window: { from: window.from, through: window.through, timezone: window.timezone }, sourceVersion, accountTotals,
     brandName: previousModel?.brandName ?? (whiteLabel ? context.workspace.brandName : 'Ads by Yodev'),
     poweredByYodev: previousModel?.poweredByYodev ?? context.workspace.plan === 'studio',
     clientName: previousModel?.clientName ?? context.client.name, currencyCode: context.client.currencyCode,

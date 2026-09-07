@@ -77,6 +77,7 @@ const englishMessages: Record<string, string> = {
   'La date d’échéance est requise.': 'A due date is required.',
   'Tâche créée.': 'Task created.',
   'Tâche mise à jour.': 'Task updated.',
+  'Les données complètes de cette période ne sont pas disponibles. Actualisez l’historique du compte avant de publier ce bilan.': 'Complete data for this period is unavailable. Refresh the account history before publishing this report.',
   'Rapport créé. Révélez son URL dans les cinq prochaines minutes.': 'Report created. Reveal its URL within the next five minutes.',
   'Modèle de rapport créé.': 'Report template created.',
   'Le modèle a été modifié ou désactivé. Rechargez la page avant de réessayer.': 'The template was changed or disabled. Reload the page before trying again.',
