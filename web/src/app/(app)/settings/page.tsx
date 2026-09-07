@@ -46,7 +46,7 @@ import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ notice?: string; error?: string; reveal?: string }>
+  searchParams: Promise<{ notice?: string; error?: string; reveal?: string; revealId?: string }>
 }) {
   const query = await searchParams
   const { workspace, isAdmin, entitlements, session, role } = await requireWorkspacePagePermission('workspace:admin', '/settings')
@@ -407,7 +407,7 @@ export default async function SettingsPage({
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-700"><Globe2 className="size-5" /></span>
                 <div><h2 className="font-semibold">{english ? 'Agency custom domain' : 'Domaine personnalisé Agency'}</h2><p className="mt-1 text-sm text-muted-foreground">{english ? 'One domain at a time. It is used only after Yodev TXT proof, Vercel validation, DNS configuration and a successful HTTPS test.' : 'Un seul domaine à la fois. Il n’est utilisé qu’après preuve TXT Yodev, validation Vercel, configuration DNS et test HTTPS réussi.'}</p></div>
               </div>
-              {query.reveal === 'domain-dns' && <SecretRevelation title={english ? 'DNS challenge · one-time reveal' : 'Challenge DNS · révélation unique'} buttonLabel={english ? 'Reveal TXT record' : 'Révéler l’enregistrement TXT'} />}
+              {query.reveal === 'domain-dns' && <SecretRevelation key={`${workspace.id}:${query.revealId}`} workspaceId={workspace.id} revelationId={query.revealId} locale={locale} kind="domain_dns" title={english ? 'DNS challenge · one-time reveal' : 'Challenge DNS · révélation unique'} buttonLabel={english ? 'Reveal TXT record' : 'Révéler l’enregistrement TXT'} />}
               {domains.length === 0 && isAdmin && (
                 <form action={createWorkspaceDomain} className="mt-5 flex max-w-xl gap-2">
                   <Input name="hostname" placeholder={english ? 'reports.your-agency.com' : 'rapports.votre-agence.fr'} required />
@@ -453,7 +453,7 @@ export default async function SettingsPage({
               </div>
             </div>
             {canManageApiKeys && query.reveal === 'api-key' && (
-              <SecretRevelation title={english ? 'New key · one-time reveal' : 'Nouvelle clé · révélation unique'} buttonLabel={english ? 'Reveal and copy now' : 'Révéler et copier maintenant'} />
+              <SecretRevelation key={`${workspace.id}:${query.revealId}`} workspaceId={workspace.id} revelationId={query.revealId} locale={locale} kind="api_key" title={english ? 'New key · one-time reveal' : 'Nouvelle clé · révélation unique'} buttonLabel={english ? 'Reveal key now' : 'Révéler la clé maintenant'} />
             )}
             {canCreateApiKey && (
               <form action={createAgencyApiKey} className="mt-5 flex max-w-xl gap-2">

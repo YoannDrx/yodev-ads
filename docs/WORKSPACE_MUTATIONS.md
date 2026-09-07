@@ -34,4 +34,6 @@ Le [lot 42](./audits/prod-ready-lot-42/README.md) étend le garde transactionnel
 
 Le [lot 43](./audits/prod-ready-lot-43/README.md) protège la persistance d’inventaire manuel par le même garde. La persistance système vérifie le job stocké, sa portée, sa tentative et son bail sous verrou ; les deux chemins verrouillent la connexion et annulent les essais expirant pendant l’écriture. Le contrôle système final inclut les réponses anciennes qui réconcilient les activations.
 
-Les lots 37–43 relient les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Ils ne terminent pas la revue des autres mutations : sessions OAuth, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.
+Le [lot 44](./audits/prod-ready-lot-44/README.md) protège la consommation des trois types de révélations par leurs permissions et ressources actuelles, avec contrôles temporels après attente. Le formulaire lie identifiant/type/espace à la révélation attendue ; les valeurs affichées se réinitialisent par espace et identifiant. Voir le [contrat de révélation](./SECRET_REVELATION.md).
+
+Les lots 37–44 relient les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Ils ne terminent pas la revue des autres mutations : sessions OAuth, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.

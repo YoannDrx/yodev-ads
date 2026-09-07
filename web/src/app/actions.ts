@@ -1817,7 +1817,7 @@ export async function createWorkspaceDomain(formData: FormData) {
       maxAge: 10 * 60,
       path: '/api/secret-revelation',
     })
-    target = `/settings?notice=${encodeURIComponent('Domaine enregistré. Publiez le TXT révélé avant de vérifier.')}&reveal=domain-dns`
+    target = `/settings?notice=${encodeURIComponent('Domaine enregistré. Publiez le TXT révélé avant de vérifier.')}&reveal=domain-dns&revealId=${revelation.id}`
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))
   }
@@ -2025,7 +2025,7 @@ export async function createAgencyApiKey(formData: FormData) {
       maxAge: 5 * 60,
       path: '/api/secret-revelation',
     })
-    target = `/settings?notice=${encodeURIComponent('Clé créée. Révélez-la une seule fois dans les cinq prochaines minutes.')}&reveal=api-key`
+    target = `/settings?notice=${encodeURIComponent('Clé créée. Révélez-la une seule fois dans les cinq prochaines minutes.')}&reveal=api-key&revealId=${revelation.id}`
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))
   }

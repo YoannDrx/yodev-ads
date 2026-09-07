@@ -26,7 +26,6 @@ import {
   reportSchedules,
   reportTemplates,
   safetyPolicies,
-  secretRevelations,
   shareLinks,
   workspaceDomains,
   workspaces,
@@ -39,6 +38,8 @@ import { computePacing, pacingCalendar } from '@/lib/pacing'
 import { workspaceHasCapability } from '@/lib/entitlements'
 import { insertActivationMilestone } from '@/lib/activation'
 import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+
+export { consumeWorkspaceSecretRevelation } from '@/lib/secret-revelation'
 
 export { getPublicShare, publicHostBelongsToWorkspace } from '@/lib/public-share-repository'
 
@@ -133,22 +134,6 @@ export function getDownloadableWorkspaceExport(workspaceId: string, userId: stri
   }))
 }
 
-export function consumeWorkspaceSecretRevelation(workspaceId: string, userId: string, revelationId: string) {
-  return withTenantTransaction({ workspaceId, userId }, async (db) => {
-    const [revelation] = await db
-      .update(secretRevelations)
-      .set({ revealedAt: new Date() })
-      .where(and(
-        eq(secretRevelations.id, revelationId),
-        eq(secretRevelations.workspaceId, workspaceId),
-        eq(secretRevelations.userId, userId),
-        isNull(secretRevelations.revealedAt),
-        gt(secretRevelations.expiresAt, new Date()),
-      ))
-      .returning({ encryptedSecret: secretRevelations.encryptedSecret })
-    return revelation
-  })
-}
 
 export async function listWorkspaceDeadLetters(workspaceId: string) {
   return tenantRead(workspaceId, (db) => db.query.jobs.findMany({

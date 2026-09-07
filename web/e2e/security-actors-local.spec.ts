@@ -25,7 +25,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1' && process.env.PLAYWRIGHT_SECUR
       await keyForm.getByRole('textbox').fill(marker); await keyForm.getByRole('button').click()
       await expect(page).toHaveURL(/reveal=api-key/)
       keyId = (await db.query('select id from api_keys where workspace_id=$1 and name=$2', [workspaceId, marker])).rows[0].id
-      await page.getByRole('button', { name: /Reveal and copy now|Révéler et copier maintenant/ }).click()
+      await page.getByRole('button', { name: /Reveal key now|Révéler la clé maintenant/ }).click()
       await expect(page.locator('input[readonly]')).toHaveValue(/^ya_live_/)
       expect((await page.request.post('/api/secret-revelation')).status()).toBe(404)
       await page.goto('/settings') // Discard the revealed secret before any screenshot.

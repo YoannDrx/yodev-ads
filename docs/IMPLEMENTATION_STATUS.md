@@ -1,6 +1,6 @@
 # Ads by Yodev — registre de fonctionnalités et état de livraison
 
-Mis à jour le **7 septembre 2026**, après le lot 43 sur `codex/prod-ready`. Dernière recette générale : 76 parcours au lot 43, avec contrôles analytiques et de sécurité locaux activés.
+Mis à jour le **7 septembre 2026**, après le lot 44 sur `codex/prod-ready`. Dernière recette générale : 76 parcours au lot 43 ; six parcours ciblés de révélation, clés et rapports au lot 44. Les deux contrôles locaux sont activés.
 
 **La préparation à la production est en cours.** Le dépôt possède les fonctionnalités et les preuves locales ci-dessous. Le candidat courant n’a pas été déployé ni certifié auprès des prestataires par cette exécution. Les validations d’août ne valent pas validation du code de septembre. L’ancien registre est conservé dans [l’archive datée](./audits/implementation-status-before-2026-09-07-refresh.md).
 
@@ -8,7 +8,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 
 ## Référence de vérification actuelle
 
-- **1 463 tests applicatifs / 191 fichiers**, huit tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 43](./audits/prod-ready-lot-43/README.md).
+- **1 480 tests applicatifs / 193 fichiers**, huit tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 44](./audits/prod-ready-lot-44/README.md).
 - **76 scénarios navigateur réussis sans skip en 3,5 minutes** au [lot 43](./audits/prod-ready-lot-43/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques/de sécurité. La première exécution révèle une attente de test de rapports incompatible avec les contrôles activés ; les deux rapports ciblés puis la suite générale passent après correction de cette attente. Le registre des coûts, les alertes qualifiées, les transferts et les exports analytiques font partie de cette exécution. Les intégrations fournisseur restent désactivées ou sans credentials, et aucun worker fournisseur n’est lancé.
 - **Quatre parcours ciblés** de vigies/workflow et qualité des alertes passent au [lot 34](./audits/prod-ready-lot-34/README.md), avec révocation entre affichage et soumission ; les cinq mutations correspondantes sont aussi éprouvées sous concurrence PostgreSQL et expiration d’essai après autorisation.
 - Le [lot 35](./audits/prod-ready-lot-35/README.md) étend le contrôle final d’essai aux avis de qualité : 30 tests ciblés, protocole PostgreSQL et quatre parcours navigateur FR/EN passent. Les refus de permission sont désormais expliqués dans la langue de l’interface.
@@ -20,6 +20,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 - Au [lot 41](./audits/prod-ready-lot-41/README.md), les récapitulatifs annoncent le total exact et leur aperçu de 50 tâches ; 521 tâches sont parcourues intégralement dans le protocole PostgreSQL. Le lien conserve espace et assignation ; les échéances impossibles sont refusées. Quatre parcours de tâches/récapitulatifs passent en FR/EN, puis les deux nouveaux parcours sont rejoués pour leurs captures finales.
 - Au [lot 42](./audits/prod-ready-lot-42/README.md), sélection manuelle et priorités vérifient l’acteur courant et annulent les essais expirant pendant l’écriture. Les formulaires lient espace affiché et sauvegarde ; un rôle révoqué retrouve un refus lisible. Suite PostgreSQL complète et quatre parcours FR/EN de sélection/quota/révocation passent.
 - Au [lot 43](./audits/prod-ready-lot-43/README.md), la persistance manuelle d’inventaire relit l’acteur et la persistance système exige le job, sa portée, sa tentative et son bail courants. Connexion et job sont verrouillés ; les expirations pendant l’audit ou la réconciliation d’une ancienne réponse annulent toute la transaction. Le nouveau protocole et toute la suite PostgreSQL passent sans fournisseur.
+- Au [lot 44](./audits/prod-ready-lot-44/README.md), les révélations de clés API, rapports et challenges DNS vérifient permission, ressource et échéances courantes avant leur consommation unique. Les formulaires sont liés à leur espace/type/identifiant ; copie explicite, champs DNS et refus FR/EN sont disponibles. Toute la suite PostgreSQL et six parcours ciblés passent.
 - **60 migrations cumulées**, de `0000` à `0059`, et la recette PostgreSQL complète depuis une base vide : [lot 33](./audits/prod-ready-lot-33/README.md). Aucun report automatique de ce numéro vers une base distante.
 - La CI utilise désormais le même runner de protocoles PostgreSQL que le local et conserve son test de charge distinct. Une exécution GitHub sur le SHA final reste requise.
 - Les preuves Python, secrets et fournisseurs antérieures gardent leur date et leur commit ; elles devront faire partie du contrôle du candidat final.

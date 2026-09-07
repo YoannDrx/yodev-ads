@@ -51,13 +51,12 @@ npm run dev
 Use `npm run check` for lint, TypeScript, unit tests and a production build, then
 `npm run test:e2e` for the browser smoke suite.
 
-The latest application check is in [lot 32](docs/audits/prod-ready-lot-32/README.md):
-1,362 application tests and seven script tests. Four focused alert/list journeys
-passed in 37.2 seconds; the full 57-journey browser matrix passed in
-[lot 31](docs/audits/prod-ready-lot-31/README.md), before the two new alert-quality
-journeys. [Guided setup](docs/GETTING_STARTED.md) and
-[alert quality](docs/ALERT_QUALITY.md) describe the evidence behind their counters.
-These dated results must be rerun on the final release candidate.
+The [current feature register](docs/IMPLEMENTATION_STATUS.md) links the latest
+application, PostgreSQL and browser checks, and distinguishes focused runs from
+the last complete browser matrix. [Guided setup](docs/GETTING_STARTED.md),
+[alert quality](docs/ALERT_QUALITY.md) and [one-time secret revelation](docs/SECRET_REVELATION.md)
+describe their verification contracts. These dated results must be rerun on the
+final release candidate.
 
 For a fully local authenticated regression run, provision a disposable PostgreSQL 17
 instance named `yodev_test` on loopback, then run `npm run db:verify-local` and

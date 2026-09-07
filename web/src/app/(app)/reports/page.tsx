@@ -60,7 +60,7 @@ export default async function ReportsPage({
       />
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
       {query.reveal === 'report-url' && (
-        <SecretRevelation key={query.revealId} title={english ? 'New report link · one-time reveal' : 'Nouveau lien de rapport · révélation unique'} buttonLabel={english ? 'Reveal link now' : 'Révéler le lien maintenant'} />
+        <SecretRevelation key={`${workspace.id}:${query.revealId}`} workspaceId={workspace.id} revelationId={query.revealId} locale={locale} kind="report_url" title={english ? 'New report link · one-time reveal' : 'Nouveau lien de rapport · révélation unique'} buttonLabel={english ? 'Reveal link now' : 'Révéler le lien maintenant'} />
       )}
 
       {canManage && (
