@@ -112,8 +112,9 @@ async function main() {
     await assert.rejects(operations.verify)
     assert.equal((await snapshot()).domains[0].last_error, 'Opération du domaine non finalisée. Réessayez ou contactez le support.')
     await db.query("insert into workspace_deletion_tombstones(workspace_hash,deletion_requested_at,retain_until) values($1,clock_timestamp(),clock_timestamp()+interval '1 day')", [workspaceHash])
-    const cleanupInput = { workspaceHash, logoUrl: null, hostnames: [hostname] }
+    const cleanupInput = { workspaceHash, logoUrl: null, hostnames: [`cleanup-${hostname}`] }
     await db.query("insert into jobs(id,workspace_id,type,status,lease_owner,lease_expires_at,attempt_count,payload,deduplication_key) values($1,null,'workspace.external_cleanup','running','domain-fixture',clock_timestamp()+interval '5 minutes',1,$2,$3)", [cleanupJobId, JSON.stringify(cleanupInput), `workspace.external_cleanup:${workspaceHash}`])
+    await db.query('insert into workspace_domain_cleanup_reservations(hostname,workspace_hash) values($1,$2)', [cleanupInput.hostnames[0], workspaceHash])
     const cleanupJob = { id: cleanupJobId, workspaceId: null, type: 'workspace.external_cleanup', leaseOwner: 'domain-fixture', attemptCount: 1 } as ClaimedJob
     for (const status of [401, 403, 404, 429, 500]) {
       await restore('revoke')
@@ -135,6 +136,7 @@ async function main() {
   } finally {
     await blocker.query('rollback').catch(() => {}); await blocker.end()
     globalThis.fetch = originalFetch; dns.resolveTxt = originalTxt; syncBuiltinESMExports()
+    await db.query('delete from workspace_domain_cleanup_reservations where workspace_hash=$1', [workspaceHash])
     await db.query('delete from jobs where id=$1', [cleanupJobId])
     await db.query('delete from workspace_deletion_tombstones where workspace_hash=$1', [workspaceHash]); await db.query('delete from workspaces where id=$1', [workspaceId]); await db.query('delete from auth_organizations where id=$1', [organizationId]); await db.query('delete from auth_users where id=$1', [actor]); await db.end()
   }

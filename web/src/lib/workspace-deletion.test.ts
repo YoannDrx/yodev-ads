@@ -82,13 +82,14 @@ describe('workspace purge', () => {
     mocks.database = database.db
     const now = new Date('2026-08-12T10:00:00Z')
     await expect(purgeWorkspace(workspaceId, now)).resolves.toBe('purged')
-    expect(database.capture.values[0]).toMatchObject({
+    expect(database.capture.values[0]).toMatchObject({ hostname: 'reports.example.test', workspaceHash: expect.stringMatching(/^[a-f0-9]{64}$/) })
+    expect(database.capture.values[1]).toMatchObject({
       workspaceHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       deletionRequestedAt: dueRequest.requestedAt,
       retainUntil: new Date(now.getTime() + 10 * 365 * 24 * 60 * 60_000),
       externalCleanupStatus: 'pending',
     })
-    expect(database.capture.values[1]).toMatchObject({
+    expect(database.capture.values[2]).toMatchObject({
       type: 'workspace.external_cleanup',
       workspaceId: null,
       payload: expect.objectContaining({

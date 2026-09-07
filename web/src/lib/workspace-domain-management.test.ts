@@ -93,6 +93,14 @@ describe('workspace custom-domain management', () => {
     await expect(createWorkspaceCustomDomain(input)).rejects.toThrow('révélation one-shot')
   })
 
+  it('reports a cleanup reservation without leaking the failed SQL statement', async () => {
+    const database = domainDatabase()
+    database.db.insert = () => { throw new Error('private SQL statement and parameters', { cause: { constraint: 'domain_cleanup_reservation_active' } }) }
+    mocks.databases.push(database.db)
+    await expect(createWorkspaceCustomDomain({ workspaceId, actorUserId, hostname: domain.hostname, token: 'secret' }))
+      .rejects.toThrow('Ce domaine reste réservé pendant son nettoyage. Contactez le support.')
+  })
+
   it('activates a DNS-owned, configured and reachable domain', async () => {
     const read = domainDatabase({ domain })
     const update = domainDatabase({ domain, statementResults: [[{ id: domainId }]] })

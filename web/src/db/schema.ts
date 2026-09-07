@@ -1401,6 +1401,19 @@ export const workspaceDeletionTombstones = pgTable(
   (table) => [uniqueIndex('workspace_tombstones_hash_idx').on(table.workspaceHash)],
 )
 
+// Survives workspace and terminal-job retention until external operations are reconciled.
+export const workspaceDomainCleanupReservations = pgTable(
+  'workspace_domain_cleanup_reservations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    hostname: varchar('hostname', { length: 253 }).notNull(),
+    workspaceHash: varchar('workspace_hash', { length: 64 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    releasedAt: timestamp('released_at', { withTimezone: true }),
+  },
+  (table) => [uniqueIndex('domain_cleanup_reservation_idx').on(table.hostname, table.workspaceHash)],
+)
+
 export const reportRecipients = pgTable(
   'report_recipients',
   {

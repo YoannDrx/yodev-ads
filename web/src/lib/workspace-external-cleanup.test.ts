@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { databaseDouble } from '../../test/fluent-db'
-import { jobs } from '@/db/schema'
+import { jobs, workspaceDomainCleanupReservations } from '@/db/schema'
 import type { ClaimedJob } from '@/lib/jobs'
 
 const mocks = vi.hoisted(() => ({ database: undefined as unknown, del: vi.fn(), remove: vi.fn() }))
@@ -16,18 +16,18 @@ import { runWorkspaceExternalCleanup } from './workspace-deletion'
 const input = { workspaceHash: 'a'.repeat(64), logoUrl: 'https://store.public.blob.vercel-storage.com/logo.png', hostnames: ['reports.example.test'] }
 const job = { id: '00000000-0000-4000-8000-000000000001', workspaceId: null, type: 'workspace.external_cleanup', leaseOwner: 'worker', attemptCount: 1 } as ClaimedJob
 
-function fixture(options: { current?: boolean; payload?: unknown; completed?: boolean; clock?: boolean } = {}) {
+function fixture(options: { current?: boolean; payload?: unknown; completed?: boolean; clock?: boolean; reserved?: boolean; assigned?: boolean } = {}) {
   let current = options.current !== false
   const tombstone = { id: 'tombstone', externalCleanupStatus: options.completed ? 'completed' : 'pending', externalCleanupCompletedAt: options.completed ? new Date() : null }
   const database = databaseDouble()
   const select = () => ({ from: (table: unknown) => databaseDouble({ statementResults: [table === jobs
     ? (current ? [{ ...job, payload: options.payload ?? input, leaseExpiresAt: new Date(Date.now() + 60_000) }] : [])
-    : [{ ...tombstone }]] }).db.select() })
+    : table === workspaceDomainCleanupReservations ? (options.reserved === false ? [] : [{ id: 'reservation' }]) : [{ ...tombstone }]] }).db.select() })
   const update = () => ({ set: (values: Record<string, unknown>) => {
     Object.assign(tombstone, values)
     return (database.db.update() as { set: (values: unknown) => unknown }).set(values)
   } })
-  mocks.database = { ...database.db, select, update, execute: async () => ({ rows: [{ active: options.clock !== false }] }) }
+  mocks.database = { ...database.db, select, update, query: { workspaceDomains: { findFirst: async () => options.assigned ? { id: 'assigned' } : undefined } }, execute: async () => ({ rows: [{ active: options.clock !== false }] }) }
   return { capture: database.capture, lose: () => { current = false }, tombstone }
 }
 
@@ -52,7 +52,7 @@ describe('external cleanup job admission and receipts', () => {
     expect(mocks.del).not.toHaveBeenCalled(); expect(mocks.remove).not.toHaveBeenCalled(); expect(f.capture.sets).toEqual([])
   })
 
-  it.each([{ current: false }, { clock: false }, { payload: { ...input, hostnames: ['foreign.example.test'] } }])('refuses stale job or changed payload before provider: %j', async (options) => {
+  it.each([{ current: false }, { clock: false }, { reserved: false }, { assigned: true }, { payload: { ...input, hostnames: ['foreign.example.test'] } }])('refuses stale job or changed payload before provider: %j', async (options) => {
     const f = fixture(options)
     await expect(runWorkspaceExternalCleanup(input, job)).rejects.toThrow()
     expect(mocks.del).not.toHaveBeenCalled(); expect(mocks.remove).not.toHaveBeenCalled(); expect(f.capture.sets).toEqual([])

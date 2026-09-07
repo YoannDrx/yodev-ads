@@ -421,6 +421,13 @@
       "when": 1788772358922,
       "tag": "0059_operating_cost_evidence",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1788800474196,
+      "tag": "0060_domain_cleanup_reservations",
+      "breakpoints": true
     }
   ]
 }

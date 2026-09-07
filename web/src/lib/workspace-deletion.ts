@@ -11,6 +11,7 @@ import {
   googleAdsConnections,
   jobs,
   workspaceDeletionTombstones,
+  workspaceDomainCleanupReservations,
   workspaceDomains,
   workspaces,
 } from '@/db/schema'
@@ -175,6 +176,15 @@ export async function purgeWorkspace(workspaceId: string, now = new Date(), stri
     const hostnames = domains.map((domain) => domain.hostname)
     const externalCleanupRequired = Boolean(logoUrl || hostnames.length > 0)
 
+    // The trigger on domain creation takes the same lock. No hostname becomes available between purge and cleanup.
+    for (const hostname of [...new Set(hostnames)].sort()) {
+      await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`domain-hostname:${hostname}`}))`)
+      await db.insert(workspaceDomainCleanupReservations).values({ hostname, workspaceHash }).onConflictDoUpdate({
+        target: [workspaceDomainCleanupReservations.hostname, workspaceDomainCleanupReservations.workspaceHash],
+        set: { releasedAt: null },
+      })
+    }
+
     if (workspace.authOrganizationId) {
       await db.delete(authOrganizations).where(eq(authOrganizations.id, workspace.authOrganizationId))
     }
@@ -226,6 +236,18 @@ async function cleanupContext(db: DatabaseTransaction, input: ExternalCleanupInp
   // Check the SQL clock after both locks. A waiter must not use a pre-lock expiry decision.
   await requireCleanupClock(db, current)
   if (tombstone.externalCleanupStatus === 'completed' && !tombstone.externalCleanupCompletedAt) throw new NonRetryableJobError('External cleanup completion receipt missing')
+  if (tombstone.externalCleanupStatus !== 'completed') {
+    for (const hostname of [...new Set(input.hostnames)].sort()) {
+      const [reservation] = await db.select().from(workspaceDomainCleanupReservations).where(and(
+        eq(workspaceDomainCleanupReservations.hostname, hostname), eq(workspaceDomainCleanupReservations.workspaceHash, input.workspaceHash),
+        isNull(workspaceDomainCleanupReservations.releasedAt),
+      )).limit(1).for('update')
+      if (!reservation) throw new NonRetryableJobError('External cleanup hostname reservation missing')
+      const assigned = await db.query.workspaceDomains.findFirst({ where: eq(workspaceDomains.hostname, hostname), columns: { id: true } })
+      if (assigned) throw new NonRetryableJobError('External cleanup hostname is assigned; reconciliation required')
+    }
+    await requireCleanupClock(db, current)
+  }
   return { current, tombstone }
 }
 

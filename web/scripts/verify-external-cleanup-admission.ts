@@ -53,6 +53,7 @@ async function main() {
   try {
     await db.query("insert into jobs(id,workspace_id,type,status,lease_owner,lease_expires_at,attempt_count,payload,deduplication_key) values($1,null,'workspace.external_cleanup','running','first-worker',clock_timestamp()+interval '1 minute',1,$2,$3)", [jobId, JSON.stringify(input), `workspace.external_cleanup:${workspaceHash}`])
     await db.query("insert into workspace_deletion_tombstones(workspace_hash,deletion_requested_at,retain_until) values($1,clock_timestamp(),clock_timestamp()+interval '1 day')", [workspaceHash])
+    for (const hostname of input.hostnames) await db.query('insert into workspace_domain_cleanup_reservations(hostname,workspace_hash) values($1,$2) on conflict do nothing', [hostname, workspaceHash])
     for (const assignment of ["status='pending'", "lease_owner='successor'", 'attempt_count=2', "type='workspace.purge'", "lease_expires_at=clock_timestamp()-interval '1 second'", "deduplication_key='wrong-cleanup'"]) {
       await reset(); await db.query(`update jobs set ${assignment} where id=$1`, [jobId]); await deny()
     }
@@ -63,6 +64,9 @@ async function main() {
     await db.query("insert into workspace_deletion_tombstones(workspace_hash,deletion_requested_at,retain_until) values($1,clock_timestamp(),clock_timestamp()+interval '1 day')", [workspaceHash])
 
     await reset(); await db.query("update workspace_deletion_tombstones set external_cleanup_status='completed' where workspace_hash=$1", [workspaceHash]); await deny()
+    await reset(); await db.query('delete from workspace_domain_cleanup_reservations where hostname=$1 and workspace_hash=$2', [input.hostnames[0], workspaceHash]); await deny()
+    await db.query('insert into workspace_domain_cleanup_reservations(hostname,workspace_hash,released_at) values($1,$2,clock_timestamp())', [input.hostnames[0], workspaceHash]); await deny()
+    await db.query('update workspace_domain_cleanup_reservations set released_at=null where hostname=$1 and workspace_hash=$2', [input.hostnames[0], workspaceHash])
 
     await reset()
     await blocker.query('begin'); await blocker.query("update jobs set lease_owner='successor',attempt_count=2 where id=$1", [jobId])
@@ -75,6 +79,12 @@ async function main() {
     const tombstoneWait = Promise.allSettled([runWorkspaceExternalCleanup(input, claimed)])
     try { await waitFor('select%from "workspace_deletion_tombstones"%for update'); await waitForExpiry() } finally { await blocker.query('commit') }
     assert.equal((await tombstoneWait)[0].status, 'rejected'); assert.equal(calls.length, 0); assert.equal((await receipt()).external_cleanup_status, 'pending')
+
+    await reset(); await db.query("update jobs set lease_expires_at=clock_timestamp()+interval '1 second' where id=$1", [jobId])
+    await blocker.query('begin'); await blocker.query('select * from workspace_domain_cleanup_reservations where workspace_hash=$1 for update', [workspaceHash])
+    const reservationWait = Promise.allSettled([runWorkspaceExternalCleanup(input, claimed)])
+    try { await waitFor('select%from "workspace_domain_cleanup_reservations"%for update'); await waitForExpiry() } finally { await blocker.query('commit') }
+    assert.equal((await reservationWait)[0].status, 'rejected'); assert.equal(calls.length, 0); assert.equal((await receipt()).external_cleanup_status, 'pending')
 
     await reset()
     onFetch = async () => {
@@ -116,10 +126,11 @@ async function main() {
     await runWorkspaceExternalCleanup(input, claimed)
     assert.equal(calls.length, 2); const completed = await receipt(); assert.equal(completed.external_cleanup_status, 'completed'); assert(completed.external_cleanup_completed_at)
     await runWorkspaceExternalCleanup(input, claimed); assert.equal(calls.length, 2); assert.deepEqual(await receipt(), completed)
-    console.log(JSON.stringify({ ok: true, verified: ['nine_job_and_payload_denials', 'missing_tombstone_and_incomplete_receipt_denied', 'job_row_wait_rechecks_attempt', 'tombstone_wait_rechecks_expiry', 'successor_receipt_not_overwritten', 'expired_attempt_stops_404_followup', 'two_post_write_expiry_rollbacks', 'confirmed_receipt_replay_without_provider'], realProviderCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, verified: ['nine_job_and_payload_denials', 'missing_tombstone_and_incomplete_receipt_denied', 'missing_or_released_reservation_denied', 'reservation_wait_rechecks_expiry', 'job_row_wait_rechecks_attempt', 'tombstone_wait_rechecks_expiry', 'successor_receipt_not_overwritten', 'expired_attempt_stops_404_followup', 'two_post_write_expiry_rollbacks', 'confirmed_receipt_replay_without_provider'], realProviderCalls: 0 }))
   } finally {
     await blocker.query('rollback').catch(() => {}); await blocker.end(); globalThis.fetch = originalFetch
     await db.query('drop trigger if exists fixture_cleanup_receipt_wait on workspace_deletion_tombstones'); await db.query('drop function if exists public.fixture_cleanup_receipt_wait()')
+    await db.query('delete from workspace_domain_cleanup_reservations where workspace_hash=$1', [workspaceHash])
     await db.query('delete from jobs where id=$1', [jobId]); await db.query('delete from workspace_deletion_tombstones where workspace_hash=$1', [workspaceHash]); await db.end()
   }
 }

@@ -53,6 +53,12 @@ export function createWorkspaceCustomDomain(input: ActorContext & {
       metadata: { hostname: input.hostname },
     })
     return revelation
+  }).catch((error: unknown) => {
+    const cause = error instanceof Error ? error.cause : undefined
+    if (cause && typeof cause === 'object' && 'constraint' in cause && cause.constraint === 'domain_cleanup_reservation_active') {
+      throw new Error('Ce domaine reste réservé pendant son nettoyage. Contactez le support.')
+    }
+    throw error
   })
 }
 
