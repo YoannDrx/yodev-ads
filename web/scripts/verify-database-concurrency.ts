@@ -1,6 +1,7 @@
 import 'dotenv/config'
 
-import { createHmac } from 'node:crypto'
+import { Client } from 'pg'
+import { createHmac, randomUUID } from 'node:crypto'
 import type Stripe from 'stripe'
 import { and, eq, inArray } from 'drizzle-orm'
 import {
@@ -83,39 +84,52 @@ async function seedConcurrencyFixture() {
 }
 
 async function verifyConcurrentQuota() {
-  await withSystemTransaction((db) => db.insert(workspaces).values({
-    id: quotaWorkspaceId,
-    ownerUserId: 'integration-quota-owner',
-    name: 'Integration quota',
-    slug: 'integration-quota',
-    plan: 'solo',
-    accessState: 'active',
-  }))
-  const requests = channelLabels.map((label, index) => createWorkspaceNotificationChannel({
-    workspaceId: quotaWorkspaceId,
-    actorUserId: `integration-quota-${index + 1}`,
-    kind: 'email',
-    label,
-    destination: `quota-${index + 1}@example.test`,
-    minimumSeverity: 'warning',
-    entitlements: entitlementContext('active', 'solo'),
-  }))
-  const results = await Promise.allSettled(requests)
-  const fulfilled = results.filter((result) => result.status === 'fulfilled').length
-  const quotaRejected = results.filter((result) => result.status === 'rejected' && /Quota exceeded/.test(String(result.reason))).length
-  const otherRejected = results.length - fulfilled - quotaRejected
-  invariant(
-    fulfilled === 1,
-    `Concurrent quota allowed more or fewer than one channel (fulfilled=${fulfilled}, quotaRejected=${quotaRejected}, otherRejected=${otherRejected})`,
-  )
-  invariant(
-    quotaRejected === 1,
-    `Concurrent quota did not fail closed (fulfilled=${fulfilled}, quotaRejected=${quotaRejected}, otherRejected=${otherRejected})`,
-  )
-  const rows = await withSystemTransaction((db) => db.select({ id: notificationChannels.id }).from(notificationChannels).where(
-    and(eq(notificationChannels.workspaceId, quotaWorkspaceId), inArray(notificationChannels.label, channelLabels)),
-  ))
-  invariant(rows.length === 1, 'Concurrent quota persistence count is not one')
+  const identity = new Client({ connectionString: process.env.DATABASE_SYSTEM_URL ?? process.env.DATABASE_URL })
+  const organization = randomUUID(), actors = [randomUUID(), randomUUID()]
+  await identity.connect()
+  try {
+    for (const actor of actors) await identity.query('insert into auth_users(id,name,email,email_verified) values($1,$1,$2,true)', [actor, `${actor}@example.test`])
+    await identity.query('insert into auth_organizations(id,name,slug) values($1::text,$1::text,$1::text)', [organization])
+    for (const actor of actors) await identity.query("insert into auth_members(id,organization_id,user_id,role) values($1,$2,$3,'admin')", [randomUUID(), organization, actor])
+    await withSystemTransaction((db) => db.insert(workspaces).values({
+      id: quotaWorkspaceId,
+      ownerUserId: actors[0], authOwnerUserId: actors[0], authOrganizationId: organization,
+      name: 'Integration quota',
+      slug: 'integration-quota',
+      plan: 'solo',
+      accessState: 'active',
+    }))
+    const requests = channelLabels.map((label, index) => createWorkspaceNotificationChannel({
+      workspaceId: quotaWorkspaceId,
+      actorUserId: actors[index],
+      kind: 'email',
+      label,
+      destination: `quota-${index + 1}@example.test`,
+      minimumSeverity: 'warning',
+      entitlements: entitlementContext('active', 'solo'),
+    }))
+    const results = await Promise.allSettled(requests)
+    const fulfilled = results.filter((result) => result.status === 'fulfilled').length
+    const quotaRejected = results.filter((result) => result.status === 'rejected' && /Quota exceeded/.test(String(result.reason))).length
+    const otherRejected = results.length - fulfilled - quotaRejected
+    invariant(
+      fulfilled === 1,
+      `Concurrent quota allowed more or fewer than one channel (fulfilled=${fulfilled}, quotaRejected=${quotaRejected}, otherRejected=${otherRejected})`,
+    )
+    invariant(
+      quotaRejected === 1,
+      `Concurrent quota did not fail closed (fulfilled=${fulfilled}, quotaRejected=${quotaRejected}, otherRejected=${otherRejected})`,
+    )
+    const rows = await withSystemTransaction((db) => db.select({ id: notificationChannels.id }).from(notificationChannels).where(
+      and(eq(notificationChannels.workspaceId, quotaWorkspaceId), inArray(notificationChannels.label, channelLabels)),
+    ))
+    invariant(rows.length === 1, 'Concurrent quota persistence count is not one')
+  } finally {
+    await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, quotaWorkspaceId)))
+    await identity.query('delete from auth_organizations where id=$1', [organization])
+    await identity.query('delete from auth_users where id=any($1::text[])', [actors])
+    await identity.end()
+  }
 }
 
 async function verifyApprovalClaim() {

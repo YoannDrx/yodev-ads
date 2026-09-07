@@ -38,6 +38,7 @@ import { featureEnabled, privateApiWorkspaceAllowed } from '@/lib/feature-flags'
 import { formatCustomerId } from '@/lib/ids'
 import { hasSlackOAuthConfiguration } from '@/lib/slack-oauth'
 import { hasTeamsOAuthConfiguration } from '@/lib/teams-oauth'
+import { workspaceDecision } from '@/lib/workspace-decision'
 import { requireWorkspacePagePermission } from '@/lib/workspace'
 import { workspaceMemberRoster } from '@/lib/workspace-members'
 import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
@@ -48,13 +49,15 @@ export default async function SettingsPage({
   searchParams: Promise<{ notice?: string; error?: string; reveal?: string }>
 }) {
   const query = await searchParams
-  const { workspace, isAdmin, entitlements, session } = await requireWorkspacePagePermission('workspace:admin', '/settings')
+  const { workspace, isAdmin, entitlements, session, role } = await requireWorkspacePagePermission('workspace:admin', '/settings')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const canUseCustomDomain = entitlements.capabilities.has('custom_domain') && featureEnabled('customDomains')
   const canUseBranding = entitlements.capabilities.has('reports.white_label')
   const canCollaborate = entitlements.capabilities.has('collaboration')
   const canUsePrivateApi = privateApiWorkspaceAllowed(workspace.id, workspace.accessState)
+  const canManageApiKeys = workspaceDecision({ role, state: workspace.accessState, permission: 'api_keys:manage' }).allowed
+  const canCreateApiKey = canManageApiKeys && entitlements.capabilities.has('api.read')
   const notificationsEnabled = featureEnabled('notifications')
   const [connection, keys, channels, safetyPolicies, clients, deadLetters, domains, taskPreferences, memberRoster] = await Promise.all([
     getWorkspaceConnection(workspace.id),
@@ -362,7 +365,7 @@ export default async function SettingsPage({
               {channels.map((channel) => (
                 <div key={channel.id} className="flex items-center justify-between rounded-xl bg-[#f7f9fa] px-4 py-3">
                   <div><p className="text-sm font-medium">{channel.label} · {channel.kind}</p><p className="mt-1 text-[11px] text-muted-foreground">{channel.destinationHint} · {english ? 'threshold' : 'seuil'} {channel.minimumSeverity}{channel.lastError ? ` · ${english ? 'error' : 'erreur'} : ${channel.lastError}` : ''}</p></div>
-                  {isAdmin && <form action={disableNotificationChannel}><input type="hidden" name="channelId" value={channel.id} /><Button type="submit" size="sm" variant="ghost"><Trash2 className="size-4" /></Button></form>}
+                  {isAdmin && <form action={disableNotificationChannel}><input type="hidden" name="channelId" value={channel.id} /><Button type="submit" size="sm" variant="ghost" aria-label={english ? `Disable ${channel.label}` : `Désactiver ${channel.label}`}><Trash2 className="size-4" /></Button></form>}
                 </div>
               ))}
               {channels.length === 0 && <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">{english ? 'No active channel. Incidents remain available in the cockpit.' : 'Aucun canal actif. Les incidents restent disponibles dans le cockpit.'}</p>}
@@ -458,10 +461,10 @@ export default async function SettingsPage({
                 </p>
               </div>
             </div>
-            {query.reveal === 'api-key' && (
+            {canManageApiKeys && query.reveal === 'api-key' && (
               <SecretRevelation title={english ? 'New key · one-time reveal' : 'Nouvelle clé · révélation unique'} buttonLabel={english ? 'Reveal and copy now' : 'Révéler et copier maintenant'} />
             )}
-            {isAdmin && (
+            {canCreateApiKey && (
               <form action={createAgencyApiKey} className="mt-5 flex max-w-xl gap-2">
                 <Input name="name" placeholder="Codex production" required />
                 <Button type="submit">
@@ -480,10 +483,10 @@ export default async function SettingsPage({
                       {key.lastUsedAt ? `${english ? 'used' : 'utilisée'} ${key.lastUsedAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}` : (english ? 'never used' : 'jamais utilisée')}
                     </p>
                   </div>
-                  {isAdmin && (
+                  {canManageApiKeys && (
                     <form action={revokeAgencyApiKey}>
                       <input type="hidden" name="keyId" value={key.id} />
-                      <Button type="submit" size="sm" variant="ghost">
+                      <Button type="submit" size="sm" variant="ghost" aria-label={english ? `Revoke ${key.name}` : `Révoquer ${key.name}`}>
                         <Trash2 className="size-4" />
                       </Button>
                     </form>

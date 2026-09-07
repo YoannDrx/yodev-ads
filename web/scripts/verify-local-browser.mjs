@@ -28,6 +28,13 @@ if (process.env.YODEV_TEST_ANALYTICS_CONTROLS === '1') {
   env.SCHEDULER_ENABLED = '1'
   env.PLAYWRIGHT_ANALYTICS_CONTROLS = '1'
 }
+// Enables local persistence/revelation controls only; provider credentials stay blank and workers stay off.
+if (process.env.YODEV_TEST_SECURITY_CONTROLS === '1') {
+  env.PUBLIC_API_ENABLED = '1'
+  env.NOTIFICATIONS_ENABLED = '1'
+  env.PRIVATE_API_WORKSPACE_IDS = '80000000-0000-4000-8000-000000000001'
+  env.PLAYWRIGHT_SECURITY_CONTROLS = '1'
+}
 for (const name of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'DATABASE_AUTHENTICATED_URL', 'DATABASE_SYSTEM_URL', 'DATABASE_PURGE_URL', 'DATABASE_AUTH_URL']) env[name] = database.href
 const seed = spawnSync('npx', ['--no-install', 'tsx', 'scripts/seed-local-browser-fixtures.ts'], { env: { ...env, NODE_OPTIONS: '--conditions=react-server' }, stdio: 'inherit' })
 if (seed.status !== 0) process.exit(seed.status ?? 1)

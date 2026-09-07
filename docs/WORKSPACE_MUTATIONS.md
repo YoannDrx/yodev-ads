@@ -20,6 +20,12 @@ Créer, remplacer et supprimer une vue exigent le rôle courant autorisé à `po
 
 Le layout conserve l’identité, la navigation filtrée et les styles. Il ne prend plus une décision de redirection à partir de `x-yodev-pathname` : ce contexte pouvait être repris dans une redirection de Server Action et entraîner des requêtes répétées vers le support. Les Server Actions conservent `requireWorkspacePermission`, qui refuse par exception ; leur contrôle ne dépend pas du rendu d’une page ou d’un bouton.
 
+## Ressources de sécurité
+
+Le [lot 38](./audits/prod-ready-lot-38/README.md) étend le garde aux six opérations de clés, canaux, reprise manuelle de job et règles de sécurité. Créer/révoquer une clé exige `api_keys:manage`, réservé au propriétaire ; les autres opérations exigent `workspace:admin`. La création de clé vérifie aussi l’allowlist privée, les scopes connus, `api.read` ou `api.propose` selon les scopes demandés, puis le quota courant. Les anciens entitlements fournis par l’appelant ne définissent plus les droits. Les contrôles visibles suivent ces permissions.
+
+La règle de sécurité valide sa portée depuis le forfait courant. Un compte client est relu sous verrou dans son espace : manager, compte absent et devise discordante sont refusés. La désactivation d’un canal remplace sa destination chiffrée par un marqueur révoqué ; la reprise de job augmente sa génération et son plafond sans effacer les tentatives acquises. Un essai expirant pendant ces écritures annule toute la transaction. Aucun fournisseur n’est appelé dans ces services.
+
 ## Périmètre de vérification
 
-Le [lot 37](./audits/prod-ready-lot-37/README.md) relie les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Il ne termine pas la revue des autres mutations : sélection des comptes, sécurité, gestion des membres, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.
+Les lots 37 et 38 relient les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Ils ne terminent pas la revue des autres mutations : sélection des comptes, gestion des membres, sessions OAuth, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.

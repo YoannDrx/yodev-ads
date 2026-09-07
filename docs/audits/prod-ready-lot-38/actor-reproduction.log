@@ -1,0 +1,14 @@
+AssertionError [ERR_ASSERTION]: Revoked role: all six operations must refuse
+
+6 !== 0
+
+    at denyAll (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-security-actors.ts:35:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-security-actors.ts:54:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 6,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
