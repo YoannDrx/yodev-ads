@@ -257,6 +257,18 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await invitedPage.getByRole('button', { name: /^(Accept invitation|Accepter l’invitation)$/ }).click()
         await expect(invitedPage.getByRole('main').getByRole('alert')).toBeVisible()
         expect((await db.query('select count(*)::int as count from auth_members where organization_id=$1 and user_id=$2', [organizationId, user.id])).rows[0].count).toBe(0)
+        const ownOrganization = (await db.query('select auth_organization_id from workspaces where auth_owner_user_id=$1', [user.id])).rows[0].auth_organization_id
+        await invitedPage.goto('/dashboard')
+        await invitedPage.waitForURL('**/dashboard')
+        await expect.poll(async () => (await session(invited)).session.activeOrganizationId).toBe(ownOrganization)
+        // Simulate a historical stale session after the last membership vanished.
+        await db.query('delete from auth_members where user_id=$1', [user.id])
+        await invitedPage.goto('/dashboard')
+        await invitedPage.waitForURL('**/onboarding')
+        await expect(invitedPage.getByRole('button', { name: /^(Create secure workspace|Créer l’espace sécurisé)$/ })).toBeVisible()
+        expect((await session(invited)).session.activeOrganizationId).toBeNull()
+        expect((await db.query('select count(*)::int as count from trial_grants where creator_auth_user_id=$1', [user.id])).rows[0].count).toBe(1)
+        await invitedPage.screenshot({ path: test.info().outputPath(`removed-membership-${locale}.png`), caret: 'initial' })
         await invitedPage.goto('/account')
 
         await invitedPage.getByRole('button', { name: /^(Sign out|Se déconnecter)$/ }).click()

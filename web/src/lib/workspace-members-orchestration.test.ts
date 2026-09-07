@@ -31,12 +31,12 @@ import {
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 
-function memberDatabase(input: { statementResults?: unknown[]; workspace?: unknown; member?: unknown; organization?: unknown } = {}) {
+function memberDatabase(input: { statementResults?: unknown[]; workspace?: unknown; member?: unknown; actor?: unknown; organization?: unknown } = {}) {
   return databaseDouble({
     statementResults: input.statementResults,
     query: {
-      workspaces: { findFirst: vi.fn(async () => input.workspace ?? { accessState: 'active', plan: 'studio' }) },
-      authMembers: { findFirst: vi.fn(async () => input.member) },
+      workspaces: { findFirst: vi.fn(async () => input.workspace === null ? null : { accessState: 'active', plan: 'studio', ownerUserId: 'owner-1', authOrganizationId: 'org-1', ...(input.workspace as object ?? {}) }) },
+      authMembers: { findFirst: vi.fn().mockResolvedValueOnce(input.actor === null ? null : input.actor ?? { id: 'actor-member', userId: 'owner-1', role: 'owner' }).mockResolvedValue(input.member) },
       authOrganizations: { findFirst: vi.fn(async () => input.organization ?? { id: 'org-1', name: 'Agency' }) },
     },
   })
@@ -137,5 +137,43 @@ describe('Better Auth workspace member orchestration', () => {
       workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', targetUserId: 'user-2', role: 'client',
     })).rejects.toThrow('Capability required: collaboration')
     expect(database.capture.sets).toEqual([])
+  })
+})
+
+describe('membership authorization under the workspace lock', () => {
+  beforeEach(() => { mocks.databases = []; vi.clearAllMocks() })
+  const input = { workspaceId, organizationId: 'org-1', actorUserId: 'owner-1' }
+  const operations = [
+    () => updateWorkspaceMemberRoleWithAudit({ ...input, targetUserId: 'target', role: 'analyst' }),
+    () => removeWorkspaceMemberWithAudit({ ...input, targetUserId: 'target' }),
+    () => revokeWorkspaceInvitationWithAudit({ ...input, invitationId: 'invitation' }),
+    () => transferWorkspaceOwnershipWithAudit({ ...input, newOwnerUserId: 'target' }),
+    () => inviteWorkspaceMemberWithQuota({ ...input, ownerUserId: 'stale-owner', emailAddress: 'target@example.test', role: 'analyst', entitlements: entitlementContext('internal', 'internal') }),
+  ]
+  it('refuses a removed or demoted actor and mismatched organizations before mutation', async () => {
+    for (const state of [
+      { actor: null },
+      { actor: { role: 'analyst' }, workspace: { ownerUserId: 'new-owner' } },
+      { workspace: { authOrganizationId: 'different-organization' } },
+    ]) for (const operation of operations) {
+      const database = memberDatabase(state)
+      mocks.databases.push(database.db)
+      await expect(operation()).rejects.toThrow()
+      expect(database.capture.sets).toHaveLength(0)
+      expect(database.capture.values).toHaveLength(0)
+    }
+  })
+  it('protects the current owner after a concurrent transfer', async () => {
+    for (const operation of [
+      () => updateWorkspaceMemberRoleWithAudit({ ...input, targetUserId: 'new-owner', role: 'client' }),
+      () => removeWorkspaceMemberWithAudit({ ...input, targetUserId: 'new-owner' }),
+      () => transferWorkspaceOwnershipWithAudit({ ...input, newOwnerUserId: 'someone-else' }),
+    ]) {
+      const database = memberDatabase({ workspace: { ownerUserId: 'new-owner' }, actor: { role: 'admin' } })
+      mocks.databases.push(database.db)
+      await expect(operation()).rejects.toThrow()
+      expect(database.capture.sets).toHaveLength(0)
+      expect(database.capture.values).toHaveLength(0)
+    }
   })
 })

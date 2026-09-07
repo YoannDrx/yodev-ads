@@ -106,20 +106,10 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
-      - name: Apply committed migrations
-        run: npx drizzle-kit migrate
-      - name: Seed isolated RLS fixtures
-        run: npx tsx scripts/seed-rls-verification.ts
-      - name: Verify RLS and database roles
-        run: npx tsx scripts/verify-rls.ts
-      - name: Validate composite tenant constraints
-        run: npx tsx scripts/validate-tenant-constraints.ts
-      - name: Verify tenant invariants
-        run: npx tsx scripts/verify-tenant-invariants.ts
-      - name: Verify database concurrency and lifecycle protocols
-        run: npx tsx scripts/verify-database-concurrency.ts
-      - name: Verify monitor quotas and crashed final job attempts
-        run: npx tsx scripts/verify-prod-ready-concurrency.ts
+      - name: Apply migrations and verify every disposable database protocol
+        env:
+          YODEV_TEST_DATABASE_URL: postgresql://postgres@localhost:5432/yodev_test
+        run: npm run db:verify-local
       - name: Verify database load and bounded connection pools
         env:
           DATABASE_POOL_MAX: '10'

@@ -1,22 +1,34 @@
 import 'server-only'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, gt, sql } from 'drizzle-orm'
 import {
   auditEvents,
   authInvitations,
   authMembers,
   authOrganizations,
+  authSessions,
   authUsers,
   jobs,
   memberNotificationPreferences,
   workspaces,
 } from '@/db/schema'
-import { withSystemTransaction, withTenantTransaction } from '@/db/transactions'
+import { withSystemTransaction, withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { encryptSecret } from '@/lib/crypto'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
-import type { WorkspaceRole } from '@/lib/permissions'
+import { authRoleToWorkspaceRole, requirePermission, type WorkspaceRole } from '@/lib/permissions'
 import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+
+async function lockMemberManagement(db: DatabaseTransaction, input: { workspaceId: string; organizationId: string; actorUserId: string }, ownerOnly = false) {
+  const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'collaboration')
+  const workspace = await db.query.workspaces.findFirst({ where: eq(workspaces.id, input.workspaceId), columns: { ownerUserId: true, authOrganizationId: true } })
+  if (!workspace || workspace.authOrganizationId !== input.organizationId) throw new Error('Organisation du workspace indisponible.')
+  const actor = await db.query.authMembers.findFirst({ where: and(eq(authMembers.organizationId, input.organizationId), eq(authMembers.userId, input.actorUserId)) })
+  if (!actor) throw new Error('Adhésion au workspace requise.')
+  requirePermission(authRoleToWorkspaceRole(actor.role, workspace.ownerUserId === input.actorUserId), 'members:manage')
+  if (ownerOnly && workspace.ownerUserId !== input.actorUserId) throw new Error('Seul le propriétaire peut transférer la propriété.')
+  return { entitlements, ownerUserId: workspace.ownerUserId }
+}
 
 export type ManageableWorkspaceRole = Exclude<WorkspaceRole, 'owner'>
 
@@ -48,6 +60,7 @@ export async function workspaceMemberRoster(organizationId: string, ownerUserId:
     }).from(authInvitations).where(and(
       eq(authInvitations.organizationId, organizationId),
       eq(authInvitations.status, 'pending'),
+      gt(authInvitations.expiresAt, new Date()),
     ))
     return {
       members: members.map((membership) => ({
@@ -134,12 +147,12 @@ export async function inviteWorkspaceMemberWithQuota(input: {
   entitlements: EntitlementContext
 }) {
   const invitation = await withSystemTransaction(async (db) => {
-    const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'collaboration')
+    const { entitlements } = await lockMemberManagement(db, input)
     await db.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`members:${input.workspaceId}`}, 0))`)
     const memberCount = await db.select({ count: sql<number>`count(*)::int` }).from(authMembers)
       .where(eq(authMembers.organizationId, input.organizationId))
     const pendingInvitations = await db.select({ count: sql<number>`count(*)::int` }).from(authInvitations)
-      .where(and(eq(authInvitations.organizationId, input.organizationId), eq(authInvitations.status, 'pending')))
+      .where(and(eq(authInvitations.organizationId, input.organizationId), eq(authInvitations.status, 'pending'), gt(authInvitations.expiresAt, new Date())))
     const duplicateMember = await db.select({ id: authMembers.id }).from(authMembers)
       .innerJoin(authUsers, eq(authUsers.id, authMembers.userId)).where(and(
         eq(authMembers.organizationId, input.organizationId),
@@ -148,6 +161,7 @@ export async function inviteWorkspaceMemberWithQuota(input: {
     const duplicateInvite = await db.select({ id: authInvitations.id }).from(authInvitations).where(and(
       eq(authInvitations.organizationId, input.organizationId),
       eq(authInvitations.status, 'pending'),
+      gt(authInvitations.expiresAt, new Date()),
       sql`lower(${authInvitations.email}) = ${input.emailAddress}`,
     )).limit(1)
     const organization = await db.query.authOrganizations.findFirst({
@@ -196,7 +210,8 @@ export function updateWorkspaceMemberRoleWithAudit(input: {
   role: ManageableWorkspaceRole
 }) {
   return withSystemTransaction(async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'collaboration')
+    const { ownerUserId } = await lockMemberManagement(db, input)
+    if (input.targetUserId === ownerUserId) throw new Error('Le propriétaire actuel est protégé ; utilisez le transfert de propriété.')
     const [membership] = await db.update(authMembers).set({ role: input.role })
       .where(and(eq(authMembers.organizationId, input.organizationId), eq(authMembers.userId, input.targetUserId)))
       .returning()
@@ -220,11 +235,14 @@ export function removeWorkspaceMemberWithAudit(input: {
   targetUserId: string
 }) {
   return withSystemTransaction(async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'collaboration')
+    const { ownerUserId } = await lockMemberManagement(db, input)
+    if (input.targetUserId === ownerUserId) throw new Error('Le propriétaire actuel est protégé ; utilisez le transfert de propriété.')
     const [membership] = await db.delete(authMembers)
       .where(and(eq(authMembers.organizationId, input.organizationId), eq(authMembers.userId, input.targetUserId)))
       .returning()
     if (!membership) throw new Error('Membre Better Auth introuvable.')
+    await db.update(authSessions).set({ activeOrganizationId: null, updatedAt: new Date() })
+      .where(and(eq(authSessions.userId, input.targetUserId), eq(authSessions.activeOrganizationId, input.organizationId)))
     await db.insert(auditEvents).values({
       workspaceId: input.workspaceId,
       actorUserId: input.actorUserId,
@@ -244,7 +262,7 @@ export function revokeWorkspaceInvitationWithAudit(input: {
   invitationId: string
 }) {
   return withSystemTransaction(async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'collaboration')
+    await lockMemberManagement(db, input)
     const [invitation] = await db.update(authInvitations).set({ status: 'canceled' })
       .where(and(
         eq(authInvitations.organizationId, input.organizationId),
@@ -271,7 +289,8 @@ export function transferWorkspaceOwnershipWithAudit(input: {
   newOwnerUserId: string
 }) {
   return withSystemTransaction(async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'collaboration')
+    await lockMemberManagement(db, input, true)
+    if (input.newOwnerUserId === input.actorUserId) throw new Error('Ce membre est déjà propriétaire.')
     const newOwner = await db.query.authMembers.findFirst({ where: and(
       eq(authMembers.organizationId, input.organizationId),
       eq(authMembers.userId, input.newOwnerUserId),

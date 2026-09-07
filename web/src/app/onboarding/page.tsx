@@ -3,11 +3,12 @@ import { Check, Radar, ShieldCheck, Sparkles } from 'lucide-react'
 import { createWorkspace } from '@/app/onboarding/actions'
 import { currentAuthSession } from '@/lib/workspace'
 import { getLocale } from '@/lib/locale'
+import { resolveWorkspaceSelection } from '@/lib/workspace-selection'
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const [session, locale, query] = await Promise.all([currentAuthSession(), getLocale(), searchParams])
   if (!session) redirect('/sign-in')
-  if (session.activeOrganizationId) redirect('/dashboard')
+  if (await resolveWorkspaceSelection({ sessionId: session.id, userId: session.userId })) redirect('/dashboard')
   const english = locale === 'en'
   return (
     <main className="grid min-h-screen place-items-center bg-[#0d1722] p-6 text-white">
@@ -17,7 +18,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <h1 className="mt-5 text-3xl font-semibold tracking-[-.035em]">{english ? 'Welcome to Ads by Yodev' : 'Bienvenue dans Ads by Yodev'}</h1>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-white/55">{english ? 'Create the secure workspace that will contain your clients, monitors and agency identity.' : 'Créez l’espace sécurisé qui contiendra vos clients, vos vigies et votre identité d’agence.'}</p>
           <div className="mx-auto mt-7 max-w-sm space-y-3 text-left">
-            {(english ? ['Data isolated by organization', 'Roles and sessions managed with Better Auth', 'Google Ads writes subject to approval'] : ['Données cloisonnées par organisation', 'Rôles et sessions gérés avec Better Auth', 'Écritures Google Ads sous approbation']).map((item) => (
+            {(english ? ['Data isolated by organization', 'Individual accounts and controlled access', 'Google Ads changes subject to approval'] : ['Données cloisonnées par organisation', 'Comptes individuels et accès contrôlés', 'Modifications Google Ads sous approbation']).map((item) => (
               <p key={item} className="flex items-center gap-3 text-sm text-white/70"><span className="grid size-6 place-items-center rounded-full bg-[#19A58F]/12 text-[#19A58F]"><Check className="size-3.5" /></span>{item}</p>
             ))}
           </div>
