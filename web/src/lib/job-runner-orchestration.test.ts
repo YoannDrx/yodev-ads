@@ -41,7 +41,8 @@ vi.mock('@/lib/alert-reminders', () => ({ deliverAlertReminder: mocks.reminder, 
 vi.mock('@/lib/notification-delivery-recovery', () => ({ recoverNotificationDeliveries: vi.fn(async () => ({ recovered: 0 })) }))
 vi.mock('@/lib/metrics-sync', () => ({ fanOutMetricSync: mocks.fanOutMetrics, executeMetricSyncChunk: mocks.metricsChunk }))
 vi.mock('@/lib/monitoring-scan-jobs', () => ({ executeMonitoringChunk: mocks.runMonitoring, fanOutMonitoringScan: mocks.fanOutMonitoring }))
-vi.mock('@/lib/workspace-deletion', () => ({
+vi.mock('@/lib/workspace-deletion', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/workspace-deletion')>(),
   purgeWorkspace: mocks.purgeWorkspace,
   runWorkspaceExternalCleanup: mocks.externalCleanup,
   revokeWorkspaceGoogleConnection: mocks.revokeGoogleConnection,
@@ -209,7 +210,7 @@ describe('durable job runner orchestration', () => {
     expect(mocks.recordStripeCancellation).toHaveBeenCalledWith(expect.objectContaining({
       workspaceId, subscriptionId: 'sub_123', state: 'confirmed',
     }))
-    expect(mocks.externalCleanup).toHaveBeenCalledOnce()
+    expect(mocks.externalCleanup).toHaveBeenCalledWith({ workspaceHash: 'a'.repeat(64), logoUrl: null, hostnames: [] }, expect.objectContaining({ type: 'workspace.external_cleanup', workspaceId: null, leaseOwner: 'worker', attemptCount: 1 }))
     expect(mocks.revokeGoogleConnection).toHaveBeenCalledWith(workspaceId)
     expect(mocks.stripeReconciliation).toHaveBeenCalledWith(workspaceId, expect.any(Object))
     expect(mocks.rotateSecrets).toHaveBeenCalledWith(workspaceId)

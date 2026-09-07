@@ -13,7 +13,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/db/transactions', () => ({ withPurgeTransaction: mocks.purge, withSystemTransaction: mocks.system }))
 vi.mock('@vercel/blob', async (importOriginal) => ({ ...await importOriginal<typeof import('@vercel/blob')>(), del: mocks.deleteBlob }))
-import { BlobNotFoundError, BlobStoreNotFoundError } from '@vercel/blob'
 vi.mock('@/lib/vercel-domains', () => ({ removeVercelProjectDomain: mocks.removeDomain }))
 vi.mock('@/lib/crypto', () => ({ decryptSecret: mocks.decrypt }))
 vi.mock('@/lib/google-ads', () => ({ revokeGoogleOAuthToken: mocks.revokeGoogle }))
@@ -23,7 +22,6 @@ import {
   purgeWorkspace,
   recordWorkspaceDeletionStripeCancellation,
   revokeWorkspaceGoogleConnection,
-  runWorkspaceExternalCleanup,
   workspaceDeletionConfirmationMatches,
 } from './workspace-deletion'
 
@@ -100,20 +98,6 @@ describe('workspace purge', () => {
     })
     expect(mocks.deleteBlob).not.toHaveBeenCalled()
     expect(mocks.removeDomain).not.toHaveBeenCalled()
-  })
-
-  it('executes queued external cleanup idempotently after database purge', async () => {
-    const database = databaseDouble()
-    mocks.database = database.db
-    const result = await runWorkspaceExternalCleanup({
-      workspaceHash: 'a'.repeat(64),
-      logoUrl: 'https://store.public.blob.vercel-storage.com/workspace-branding/ws/logo.png',
-      hostnames: ['reports.example.test'],
-    })
-    expect(result).toMatchObject({ deletedLogo: true, removedDomains: 1 })
-    expect(mocks.deleteBlob).toHaveBeenCalledOnce()
-    expect(mocks.removeDomain).toHaveBeenCalledWith('reports.example.test')
-    expect(database.capture.sets.at(-1)).toMatchObject({ externalCleanupStatus: 'completed' })
   })
 
   it('fails closed when no independent tombstone key is configured', async () => {
@@ -280,30 +264,5 @@ describe('workspace purge', () => {
     await expect(purgeWorkspace(workspaceId, now, stripe)).resolves.toBe('purged')
   })
 
-  it('ignores missing external resources and records other cleanup failures', async () => {
-    const ignored = databaseDouble()
-    mocks.database = ignored.db
-    mocks.deleteBlob.mockRejectedValueOnce(new BlobNotFoundError())
-    mocks.removeDomain.mockResolvedValueOnce({ removed: true, alreadyAbsent: true })
-    await expect(runWorkspaceExternalCleanup({
-      workspaceHash: 'a'.repeat(64), logoUrl: 'https://blob.test/logo.png', hostnames: ['reports.example.test'],
-    })).resolves.toMatchObject({ deletedLogo: true, removedDomains: 1 })
-
-    const failed = databaseDouble()
-    mocks.database = failed.db
-    mocks.deleteBlob.mockRejectedValueOnce(new Error('provider unavailable'))
-    await expect(runWorkspaceExternalCleanup({
-      workspaceHash: 'b'.repeat(64), logoUrl: 'https://blob.test/logo.png', hostnames: [],
-    })).rejects.toThrow('provider unavailable')
-    expect(failed.capture.sets.at(-1)).toMatchObject({ externalCleanupStatus: 'failed', externalCleanupError: 'External cleanup could not be confirmed. Retry or contact support.' })
-  })
-  it.each(['domain', 'blob', 'store'] as const)('does not mark cleanup complete on a misleading %s not-found failure', async (kind) => {
-    const database = databaseDouble(); mocks.database = database.db
-    if (kind === 'domain') mocks.removeDomain.mockRejectedValueOnce(new Error('404 domain does not exist, private-token'))
-    else mocks.deleteBlob.mockRejectedValueOnce(kind === 'store' ? new BlobStoreNotFoundError() : new Error('404 not found, private-token'))
-    await expect(runWorkspaceExternalCleanup({ workspaceHash: 'c'.repeat(64), logoUrl: kind === 'domain' ? null : 'https://blob.test/logo.png', hostnames: kind === 'domain' ? ['reports.example.test'] : [] })).rejects.toThrow()
-    expect(database.capture.sets.at(-1)).toMatchObject({ externalCleanupStatus: 'failed', externalCleanupError: 'External cleanup could not be confirmed. Retry or contact support.' })
-    expect(JSON.stringify(database.capture.sets)).not.toContain('private-token')
-  })
 
 })

@@ -172,6 +172,15 @@ describe('custom domain validation', () => {
     await expect(removeVercelProjectDomain('reports.example.com')).rejects.toThrow('ne permet pas de confirmer')
   })
 
+  it.each([0, 1, 2])('rechecks removal admission before request %i, including absence lookups', async (stage) => {
+    const missing = () => Response.json({ error: { code: 'not_found' } }, { status: 404 })
+    const fetchMock = vi.fn().mockResolvedValueOnce(missing()).mockResolvedValueOnce(Response.json({ id: 'project_123' })).mockResolvedValueOnce(missing())
+    const admit = vi.fn(async () => { if (admit.mock.calls.length > stage) throw new Error('Cleanup lease lost') })
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(removeVercelProjectDomain('reports.example.com', admit)).rejects.toThrow('Cleanup lease lost')
+    expect(fetchMock).toHaveBeenCalledTimes(stage)
+  })
+
   it.each([Response.json({ error: { message: '404 not found' } }), new Response('private malformed provider body')])('does not accept a malformed successful response as deletion confirmation', async (response) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
     await expect(removeVercelProjectDomain('reports.example.com')).rejects.toThrow('ne permet pas de confirmer')

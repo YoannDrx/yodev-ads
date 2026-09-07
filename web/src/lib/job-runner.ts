@@ -51,6 +51,7 @@ import {
   recordWorkspaceDeletionStripeCancellation,
   revokeWorkspaceGoogleConnection,
   runWorkspaceExternalCleanup,
+  externalCleanupPayload,
 } from '@/lib/workspace-deletion'
 import { getStripe } from '@/lib/billing'
 import { GoogleAdsGateway } from '@/lib/google-ads'
@@ -92,11 +93,6 @@ const mutationObservationPayload = z.object({ observationId: z.string().uuid() }
 const notificationPayload = z.object({ deliveryId: z.string().uuid() })
 const stripeSubscriptionPayload = z.object({ subscriptionId: z.string().min(3) })
 const deletionStripeSubscriptionPayload = stripeSubscriptionPayload.extend({ workspaceId: z.string().uuid().optional() })
-const externalCleanupPayload = z.object({
-  workspaceHash: z.string().regex(/^[a-f0-9]{64}$/),
-  logoUrl: z.string().url().nullable(),
-  hostnames: z.array(z.string().min(1).max(253)).max(100),
-})
 const metricsPayload = z.object({ workspaceId: z.string().uuid(), clientId: z.string().uuid() })
 const exportPayload = z.object({ workspaceId: z.string().uuid(), exportJobId: z.string().uuid() })
 const scheduledReportPayload = z.object({ scheduleId: z.string().uuid(), runKey: z.string().min(10).max(32) })
@@ -211,7 +207,7 @@ async function executeJob(job: ClaimedJob) {
       return purgeWorkspace(workspaceId)
     }
     case 'workspace.external_cleanup':
-      return runWorkspaceExternalCleanup(externalCleanupPayload.parse(job.payload))
+      return runWorkspaceExternalCleanup(externalCleanupPayload.parse(job.payload), job)
     case 'google.revoke_connection': {
       const { workspaceId } = workspacePayload.parse(job.payload)
       return revokeWorkspaceGoogleConnection(workspaceId)

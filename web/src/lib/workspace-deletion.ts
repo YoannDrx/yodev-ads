@@ -2,7 +2,8 @@ import 'server-only'
 
 import { createHmac } from 'node:crypto'
 import type Stripe from 'stripe'
-import { and, eq, inArray, lte } from 'drizzle-orm'
+import { and, eq, inArray, isNull, lte, sql } from 'drizzle-orm'
+import { z } from 'zod'
 import { del, BlobNotFoundError } from '@vercel/blob'
 import {
   authOrganizations,
@@ -13,12 +14,13 @@ import {
   workspaceDomains,
   workspaces,
 } from '@/db/schema'
-import { withPurgeTransaction, withSystemTransaction } from '@/db/transactions'
+import { withPurgeTransaction, withSystemTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { getStripe } from '@/lib/billing'
 import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
 import { decryptSecret } from '@/lib/crypto'
 import { revokeGoogleOAuthToken } from '@/lib/google-ads'
 import { removeVercelProjectDomain } from '@/lib/vercel-domains'
+import { NonRetryableJobError, type ClaimedJob } from '@/lib/jobs'
 
 export function expectedWorkspaceDeletionConfirmation(locale: string) {
   return locale === 'en' ? 'DELETE' : 'SUPPRIMER'
@@ -197,30 +199,80 @@ export async function purgeWorkspace(workspaceId: string, now = new Date(), stri
   })
 }
 
-export async function runWorkspaceExternalCleanup(input: {
-  workspaceHash: string
-  logoUrl: string | null
-  hostnames: string[]
-}) {
-  await withSystemTransaction((db) => db.update(workspaceDeletionTombstones).set({
-    externalCleanupStatus: 'running',
-    externalCleanupError: null,
-  }).where(eq(workspaceDeletionTombstones.workspaceHash, input.workspaceHash)))
+export const externalCleanupPayload = z.object({
+  workspaceHash: z.string().regex(/^[a-f0-9]{64}$/),
+  logoUrl: z.string().url().nullable(),
+  hostnames: z.array(z.string().min(1).max(253)).max(100),
+}).strict()
+type ExternalCleanupInput = z.infer<typeof externalCleanupPayload>
+
+async function requireCleanupClock(db: DatabaseTransaction, job: ClaimedJob) {
+  const result = await db.execute<{ active: boolean }>(sql`select ${job.leaseExpiresAt?.toISOString() ?? null}::timestamptz > clock_timestamp() as active`)
+  if (!result.rows[0]?.active) throw new Error('External cleanup job lease lost')
+}
+
+async function cleanupContext(db: DatabaseTransaction, input: ExternalCleanupInput, job: ClaimedJob) {
+  const [current] = await db.select().from(jobs).where(and(
+    eq(jobs.id, job.id), isNull(jobs.workspaceId), eq(jobs.type, 'workspace.external_cleanup'),
+    eq(jobs.status, 'running'), eq(jobs.leaseOwner, job.leaseOwner!), eq(jobs.attemptCount, job.attemptCount),
+    eq(jobs.deduplicationKey, `workspace.external_cleanup:${input.workspaceHash}`),
+  )).limit(1).for('update')
+  if (!current) throw new Error('External cleanup job lease lost')
+  const payload = externalCleanupPayload.safeParse(current.payload)
+  if (!payload.success || JSON.stringify(payload.data) !== JSON.stringify(input)) throw new NonRetryableJobError('External cleanup job payload mismatch')
+  const [tombstone] = await db.select().from(workspaceDeletionTombstones)
+    .where(eq(workspaceDeletionTombstones.workspaceHash, input.workspaceHash)).limit(1).for('update')
+  if (!tombstone) throw new NonRetryableJobError('External cleanup tombstone missing')
+  // Check the SQL clock after both locks. A waiter must not use a pre-lock expiry decision.
+  await requireCleanupClock(db, current)
+  if (tombstone.externalCleanupStatus === 'completed' && !tombstone.externalCleanupCompletedAt) throw new NonRetryableJobError('External cleanup completion receipt missing')
+  return { current, tombstone }
+}
+
+export async function runWorkspaceExternalCleanup(input: ExternalCleanupInput, job: ClaimedJob) {
+  input = externalCleanupPayload.parse(input)
+  if (job.workspaceId !== null || job.type !== 'workspace.external_cleanup' || !job.leaseOwner) throw new NonRetryableJobError('External cleanup requires its claimed global job')
+  const prepared = await withSystemTransaction(async (db) => {
+    const context = await cleanupContext(db, input, job)
+    if (context.tombstone.externalCleanupStatus === 'completed') return context.tombstone.externalCleanupCompletedAt!
+    await db.update(workspaceDeletionTombstones).set({
+      externalCleanupStatus: 'running', externalCleanupError: null, externalCleanupCompletedAt: null,
+    }).where(eq(workspaceDeletionTombstones.id, context.tombstone.id))
+    await requireCleanupClock(db, context.current)
+    return null
+  })
+  if (prepared) return { completedAt: prepared, skipped: 'already_completed' as const }
+  const admit = () => withSystemTransaction(async (db) => {
+    const { tombstone } = await cleanupContext(db, input, job)
+    if (tombstone.externalCleanupStatus !== 'running') throw new Error('External cleanup is no longer running')
+  })
   try {
-    if (input.logoUrl) await removeBlobIfPresent(input.logoUrl)
-    for (const hostname of input.hostnames) await removeVercelProjectDomain(hostname)
+    if (input.logoUrl) { await admit(); await removeBlobIfPresent(input.logoUrl) }
+    for (const hostname of input.hostnames) await removeVercelProjectDomain(hostname, admit)
+    return await withSystemTransaction(async (db) => {
+      const { current, tombstone } = await cleanupContext(db, input, job)
+      if (tombstone.externalCleanupStatus !== 'running') throw new Error('External cleanup is no longer running')
+      const completedAt = new Date()
+      await db.update(workspaceDeletionTombstones).set({
+        externalCleanupStatus: 'completed', externalCleanupError: null, externalCleanupCompletedAt: completedAt,
+      }).where(eq(workspaceDeletionTombstones.id, tombstone.id))
+      await requireCleanupClock(db, current)
+      return { completedAt, deletedLogo: Boolean(input.logoUrl), removedDomains: input.hostnames.length }
+    })
   } catch (error) {
-    await withSystemTransaction((db) => db.update(workspaceDeletionTombstones).set({
-      externalCleanupStatus: 'failed',
-      externalCleanupError: 'External cleanup could not be confirmed. Retry or contact support.',
-    }).where(eq(workspaceDeletionTombstones.workspaceHash, input.workspaceHash)))
+    try {
+      await withSystemTransaction(async (db) => {
+        const { current, tombstone } = await cleanupContext(db, input, job)
+        if (tombstone.externalCleanupStatus !== 'running') return
+        await db.update(workspaceDeletionTombstones).set({
+          externalCleanupStatus: 'failed', externalCleanupCompletedAt: null,
+          externalCleanupError: 'External cleanup could not be confirmed. Retry or contact support.',
+        }).where(eq(workspaceDeletionTombstones.id, tombstone.id))
+        await requireCleanupClock(db, current)
+      })
+    } catch {
+      // A lost attempt cannot change its successor's receipt or failure state.
+    }
     throw error
   }
-  const completedAt = new Date()
-  await withSystemTransaction((db) => db.update(workspaceDeletionTombstones).set({
-    externalCleanupStatus: 'completed',
-    externalCleanupError: null,
-    externalCleanupCompletedAt: completedAt,
-  }).where(eq(workspaceDeletionTombstones.workspaceHash, input.workspaceHash)))
-  return { completedAt, deletedLogo: Boolean(input.logoUrl), removedDomains: input.hostnames.length }
 }

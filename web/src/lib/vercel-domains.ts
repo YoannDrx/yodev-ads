@@ -125,20 +125,20 @@ export async function getVercelProjectDomain(hostname: string) {
   return projectDomain(await vercelRequest(`/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(hostname)}`), hostname, project)
 }
 
-export async function removeVercelProjectDomain(hostname: string) {
+export async function removeVercelProjectDomain(hostname: string, beforeRequest?: () => Promise<void>) {
   const { project } = vercelConfiguration()
   const path = `/v9/projects/${encodeURIComponent(project)}/domains/${encodeURIComponent(hostname)}`
   try {
-    await vercelRequest(path, { method: 'DELETE' })
+    await vercelRequest(path, { method: 'DELETE' }, beforeRequest)
     return { name: hostname, removed: true, alreadyAbsent: false }
   } catch (error) {
     if (!missingResource(error)) throw error
   }
   // A generic nested-resource 404 can also mean a missing/wrong project. Confirm both scopes.
-  const currentProject = z.object({ id: z.string() }).safeParse(await vercelRequest(`/v9/projects/${encodeURIComponent(project)}`))
+  const currentProject = z.object({ id: z.string() }).safeParse(await vercelRequest(`/v9/projects/${encodeURIComponent(project)}`, {}, beforeRequest))
   if (!currentProject.success || currentProject.data.id !== project) throw new VercelDomainResponseError()
   try {
-    await vercelRequest(path)
+    await vercelRequest(path, {}, beforeRequest)
   } catch (error) {
     if (missingResource(error)) return { name: hostname, removed: true, alreadyAbsent: true }
     throw error
