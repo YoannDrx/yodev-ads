@@ -30,6 +30,7 @@ import {
   notificationChannels,
   offlineConversionDiagnostics,
   performanceSnapshots,
+  analyticalCollections,
   reportSchedules,
   reportTemplates,
   reportTemplateVersions,
@@ -152,6 +153,7 @@ async function collectWorkspaceExport(workspaceId: string) {
     const accountMetrics = await db.query.dailyAccountMetrics.findMany({ where: eq(dailyAccountMetrics.workspaceId, workspaceId) })
     const campaignMetrics = await db.query.dailyCampaignMetrics.findMany({ where: eq(dailyCampaignMetrics.workspaceId, workspaceId) })
     const legacyPerformance = await db.query.performanceSnapshots.findMany({ where: eq(performanceSnapshots.workspaceId, workspaceId) })
+    const analytical = await db.query.analyticalCollections.findMany({ where: eq(analyticalCollections.workspaceId, workspaceId) })
     const changes = await db.query.googleChangeEvents.findMany({ where: eq(googleChangeEvents.workspaceId, workspaceId) })
     const conversions = await db.query.conversionActionSnapshots.findMany({ where: eq(conversionActionSnapshots.workspaceId, workspaceId) })
     const offlineDiagnostics = await db.query.offlineConversionDiagnostics.findMany({ where: eq(offlineConversionDiagnostics.workspaceId, workspaceId) })
@@ -257,6 +259,7 @@ async function collectWorkspaceExport(workspaceId: string) {
       dailyAccountMetrics: accountMetrics,
       dailyCampaignMetrics: campaignMetrics,
       legacyPerformanceSnapshots: legacyPerformance,
+      analyticalCollections: analytical,
       googleChangeEvents: changes,
       conversionActionSnapshots: conversions,
       offlineConversionDiagnostics: offlineDiagnostics,

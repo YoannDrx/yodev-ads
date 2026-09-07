@@ -15,9 +15,16 @@ const env = { ...process.env, NODE_OPTIONS: '', NODE_ENV: 'development', DATABAS
   APP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64url'),
   SENTRY_DSN: '', NEXT_PUBLIC_SENTRY_DSN: '', SENTRY_AUTH_TOKEN: '',
   STRIPE_SECRET_KEY: '', YODEV_MAIL_API_KEY: '', GOOGLE_ADS_DEVELOPER_TOKEN: '',
+  GOOGLE_OAUTH_CLIENT_ID: '', GOOGLE_OAUTH_CLIENT_SECRET: '',
   MAINTENANCE_MODE: '0', FORCE_READ_ONLY: '1',
 }
 for (const name of ['GOOGLE_READS', 'GOOGLE_MUTATIONS', 'SCHEDULER', 'NOTIFICATIONS', 'PUBLIC_API', 'PUBLIC_BETA', 'STRIPE_CHECKOUT', 'CUSTOM_DOMAINS', 'BLOB_UPLOADS', 'SLACK_CONNECTOR', 'TEAMS_CONNECTOR']) env[`${name}_ENABLED`] = '0'
+// Exercise enqueue controls only. Credentials remain blank; no worker is run.
+if (process.env.YODEV_TEST_ANALYTICS_CONTROLS === '1') {
+  env.GOOGLE_READS_ENABLED = '1'
+  env.SCHEDULER_ENABLED = '1'
+  env.PLAYWRIGHT_ANALYTICS_CONTROLS = '1'
+}
 for (const name of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'DATABASE_AUTHENTICATED_URL', 'DATABASE_SYSTEM_URL', 'DATABASE_PURGE_URL', 'DATABASE_AUTH_URL']) env[name] = database.href
 const seed = spawnSync('npx', ['--no-install', 'tsx', 'scripts/seed-local-browser-fixtures.ts'], { env: { ...env, NODE_OPTIONS: '--conditions=react-server' }, stdio: 'inherit' })
 if (seed.status !== 0) process.exit(seed.status ?? 1)

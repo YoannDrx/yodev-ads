@@ -14,6 +14,7 @@ import {
 import { withTenantTransaction } from '@/db/transactions'
 import { ApiV1Error, type CursorValue } from '@/lib/api-v1'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
+import { metricCoverage } from '@/lib/metric-coverage'
 
 type ApiTenant = { workspaceId: string; actorId: string }
 
@@ -152,7 +153,7 @@ export function getApiPerformance(input: ApiTenant & { clientId: string; from: s
       orderBy: [asc(dailyAccountMetrics.metricDate)],
       limit: 750,
     })
-    return { client, metrics }
+    return { client, metrics, coverage: metricCoverage({ window: { from: input.from, through: input.to }, timezone: client.timezone, currencyCode: client.currencyCode, rows: metrics }) }
   })
 }
 

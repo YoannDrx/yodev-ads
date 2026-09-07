@@ -32,7 +32,7 @@ function queryDouble(input: { workspace?: unknown; connection?: unknown; rows?: 
     clientApprovalFeedback: { findMany: many('feedback') }, mutationExecutions: { findMany: many('executions') },
     mutationObservations: { findMany: many('observations') }, auditEvents: { findMany: many('audit') },
     dailyAccountMetrics: { findMany: many('accountMetrics') }, dailyCampaignMetrics: { findMany: many('campaignMetrics') },
-    performanceSnapshots: { findMany: many('legacy') }, googleChangeEvents: { findMany: many('changes') },
+    analyticalCollections: { findMany: many('analytical') }, performanceSnapshots: { findMany: many('legacy') }, googleChangeEvents: { findMany: many('changes') },
     conversionActionSnapshots: { findMany: many('conversions') }, offlineConversionDiagnostics: { findMany: many('offline') },
     safetyPolicies: { findMany: many('policies') }, shareLinks: { findMany: many('reports') },
     reportTemplates: { findMany: many('templates') }, reportTemplateVersions: { findMany: many('templateVersions') },
@@ -61,6 +61,7 @@ describe('workspace export orchestration', () => {
         approvals: [{ id: 'approval-1', title: 'Pause' }],
         observations: [{ id: 'observation-1' }],
         audit: [{ id: 'audit-1' }],
+        analytical: [{ family: 'campaigns', sourceVersion: 'fixture-version', payload: [{ name: 'Archived campaign' }] }],
         accountMetrics: [{ metricDate: '2026-08-12', costMicros: '10' }],
         campaignMetrics: [{ campaignId: '1', metricDate: '2026-08-12' }],
         offline: [{ uploadClient: 'API' }],
@@ -89,6 +90,7 @@ describe('workspace export orchestration', () => {
     expect(raw).toContain('"googleAdsConnection"')
     expect(raw).not.toContain('encryptedRefreshToken')
     expect(raw).not.toContain('tokenHash')
+    expect(raw).toContain('Archived campaign')
     expect(strFromU8(archive['reports/template-versions.csv'])).toContain('templateId,version,snapshot')
     expect(strFromU8(archive['README.txt'])).toContain('secrets OAuth')
     expect(progress.capture.sets[0]).toMatchObject({ progress: 55 })

@@ -337,6 +337,13 @@
       "when": 1788740244371,
       "tag": "0047_metric_date_coverage",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788741902237,
+      "tag": "0048_analytical_collections",
+      "breakpoints": true
     }
   ]
 }

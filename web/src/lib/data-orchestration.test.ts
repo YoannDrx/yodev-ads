@@ -20,6 +20,7 @@ vi.mock('@/db/transactions', () => ({
 vi.mock('next/headers', () => ({ cookies: mocks.cookies }))
 
 import * as repository from './data'
+import { calendarDates, reportCalendarWindow } from './calendar-window'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 const clientId = '00000000-0000-4000-8000-000000000002'
@@ -47,6 +48,20 @@ describe('tenant-aware data repository', () => {
     mocks.cookieValue = undefined
     vi.clearAllMocks()
     delete process.env.NEXT_PUBLIC_APP_URL
+  })
+
+  it('uses complete account history for totals and rejects gaps, legacy rows and mixed currencies', async () => {
+    const client = { id: clientId, timezone: 'Europe/Paris', currencyCode: 'EUR' }
+    const window = reportCalendarWindow({ period: '30', now: new Date(), timezone: client.timezone })
+    const rows = calendarDates(window).map((metricDate, index) => ({ metricDate, ...client, coverageStatus: 'complete', sourceVersion: 'v1', costMicros: index === 0 ? '90071992547409931' : '1', clicks: '1', impressions: '10', conversions: '0.5' }))
+    mocks.databases.push(queryDatabase({ clients: { first: client }, dailyAccountMetrics: { many: rows } }).db)
+    await expect(repository.getQualifiedAccountPerformance(workspaceId, clientId)).resolves.toMatchObject({ coverage: { state: 'complete', completeDays: 30 }, totals: { cost: '90071992547409960', clicks: '30', impressions: '300', conversions: 15 } })
+    for (const incomplete of [rows.slice(1), [{ ...rows[0], currencyCode: 'USD' }, ...rows.slice(1)], [{ ...rows[0], coverageStatus: 'legacy' }, ...rows.slice(1)]]) {
+      mocks.databases.push(queryDatabase({ clients: { first: client }, dailyAccountMetrics: { many: incomplete } }).db)
+      await expect(repository.getQualifiedAccountPerformance(workspaceId, clientId)).resolves.toMatchObject({ coverage: { state: 'incomplete', completeDays: 29 }, totals: null })
+    }
+    mocks.databases.push(queryDatabase({}).db)
+    await expect(repository.getQualifiedAccountPerformance(workspaceId, clientId)).rejects.toThrow('unavailable')
   })
 
   it('routes simple tenant reads through an explicit workspace context', async () => {

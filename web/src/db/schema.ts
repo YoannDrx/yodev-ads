@@ -688,6 +688,29 @@ export const secretRevelations = pgTable(
   (table) => [index('secret_revelations_lookup_idx').on(table.workspaceId, table.userId, table.expiresAt)],
 )
 
+export const analyticalCollections = pgTable(
+  'analytical_collections',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+    clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }).notNull(),
+    family: varchar('family', { length: 40 }).notNull(),
+    contractVersion: integer('contract_version').notNull(),
+    periodFrom: varchar('period_from', { length: 10 }).notNull(),
+    periodThrough: varchar('period_through', { length: 10 }).notNull(),
+    timezone: varchar('timezone', { length: 64 }).notNull(),
+    currencyCode: varchar('currency_code', { length: 3 }).notNull(),
+    sourceVersion: uuid('source_version').notNull(),
+    observedAt: timestamp('observed_at', { withTimezone: true }).notNull(),
+    collectedAt: timestamp('collected_at', { withTimezone: true }).defaultNow().notNull(),
+    payload: jsonb('payload').$type<unknown>().notNull(),
+  },
+  (table) => [
+    uniqueIndex('analytical_collections_client_family_idx').on(table.clientId, table.family),
+    index('analytical_collections_workspace_idx').on(table.workspaceId, table.clientId),
+  ],
+)
+
 export const performanceSnapshots = pgTable(
   'performance_snapshots',
   {

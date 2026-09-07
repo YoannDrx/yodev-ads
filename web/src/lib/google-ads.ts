@@ -838,7 +838,8 @@ export class GoogleAdsGateway {
   private readonly oauthClient: OAuth2Client
   private readonly observedRequestIds: string[] = []
 
-  constructor(credentials: GoogleAdsConnectionCredentials) {
+  constructor(credentials: GoogleAdsConnectionCredentials, private readonly reportWindow?: { from: string; through: string }) {
+    if (reportWindow) calendarDates(reportWindow)
     this.managerCustomerId = normalizeCustomerId(credentials.managerCustomerId)
     this.oauthClient = createOAuthClient()
     this.oauthClient.setCredentials({ refresh_token: decryptSecret(credentials.encryptedRefreshToken) })
@@ -949,6 +950,7 @@ export class GoogleAdsGateway {
   }
 
   private async search<T>(customerId: string, query: string): Promise<T[]> {
+    if (this.reportWindow) query = query.replaceAll('segments.date DURING LAST_30_DAYS', `segments.date BETWEEN '${this.reportWindow.from}' AND '${this.reportWindow.through}'`)
     const normalized = normalizeCustomerId(customerId)
     const { data } = await this.request<Array<{ results?: T[] }>>(
       `/customers/${normalized}/googleAds:searchStream`,

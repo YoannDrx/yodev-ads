@@ -59,7 +59,7 @@ describe('API v1 tenant repository', () => {
       clientId,
       from: '2026-08-01',
       to: '2026-08-12',
-    })).resolves.toEqual({ client, metrics })
+    })).resolves.toMatchObject({ client, metrics, coverage: { state: 'incomplete', expectedDays: 12, completeDays: 0, unqualifiedDates: ['2026-08-12'] } })
     expect(mocks.contexts).toEqual([{ workspaceId, userId: actorId }])
   })
 

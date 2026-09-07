@@ -9,14 +9,17 @@ import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { getClientGoalAndPacing, getWorkspaceClient, getWorkspaceConnection, listAlertIncidents, listWorkspaceClients } from '@/lib/data'
+import { getClientGoalAndPacing, getQualifiedAccountPerformance, getWorkspaceClient, getWorkspaceConnection, listAlertIncidents, listWorkspaceClients } from '@/lib/data'
 import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/format'
-import { GoogleAdsGateway, type CampaignPerformance } from '@/lib/google-ads'
+import { getAnalyticalCollections } from '@/lib/analytical-collections'
+import { analyticalSnapshotData } from '@/lib/analytical-model'
+import { CollectionStatus } from '@/components/collection-status'
+import { workspaceDecision } from '@/lib/workspace-decision'
 import { buildPacingBudgetRecommendations, type PacingGoal } from '@/lib/pacing'
 import { permissionsForRole } from '@/lib/permissions'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
-type DashboardProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string }> }
+type DashboardProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string; sync?: string }> }
 
 export default async function DashboardPage({ searchParams }: DashboardProps) {
   const query = await searchParams
@@ -29,16 +32,15 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     listAlertIncidents(workspace.id),
   ])
   const client = await getWorkspaceClient(workspace.id, query.client)
-  let campaigns: CampaignPerformance[] = []
-  let apiError: string | undefined
-  if (connection && client) {
-    try {
-      campaigns = await new GoogleAdsGateway(connection).campaignPerformance(client.googleCustomerId)
-    } catch (error) {
-      apiError = error instanceof Error ? error.message : english ? 'Unable to load campaigns.' : 'Impossible de charger les campagnes.'
-    }
-  }
-  const goalContext = client ? await getClientGoalAndPacing(workspace.id, client.id, client.timezone) : undefined
+  const [collection, goalContext, accountPerformance] = await Promise.all([
+    client ? getAnalyticalCollections(workspace.id, client.id, ['campaigns']) : { snapshots: [], attempts: [] },
+    client ? getClientGoalAndPacing(workspace.id, client.id, client.timezone) : undefined,
+    client ? getQualifiedAccountPerformance(workspace.id, client.id) : undefined,
+  ])
+  const campaignSnapshot = client ? analyticalSnapshotData(collection.snapshots, 'campaigns', client) : undefined
+  const campaigns = campaignSnapshot ?? []
+  const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
+  const canRefresh = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
   const supportedKpis = new Set<PacingGoal['primaryKpi']>(['cpa', 'roas', 'conversions', 'conversion_value'])
   const storedGoal = goalContext?.goal
   const pacingGoal: PacingGoal | null = storedGoal && supportedKpis.has(storedGoal.primaryKpi as PacingGoal['primaryKpi'])
@@ -66,21 +68,14 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     entitlements.capabilities.has('google.mutate.advanced') &&
     (entitlements.plan === 'agency' || entitlements.plan === 'internal')
 
-  const totals = campaigns.reduce(
-    (sum, campaign) => ({
-      cost: sum.cost + Number(campaign.costMicros),
-      clicks: sum.clicks + Number(campaign.clicks),
-      impressions: sum.impressions + Number(campaign.impressions),
-      conversions: sum.conversions + campaign.conversions,
-    }),
-    { cost: 0, clicks: 0, impressions: 0, conversions: 0 },
-  )
+  const totals = accountPerformance?.totals
+  const coverageNote = accountPerformance ? `${accountPerformance.coverage.completeDays}/30 ${english ? 'covered days' : 'jours couverts'}` : (english ? 'No collection' : 'Aucune collecte')
   const currency = client?.currencyCode ?? 'EUR'
   const { score: healthScore, openIncidents: openAlerts } = dashboardHealth({
-    clientId: client?.id, campaigns: apiError ? null : campaigns,
+    clientId: client?.id, campaigns: campaignSnapshot ?? null,
     incidents: alertRows.map(({ incident }) => incident),
   })
-  const collectedAt = new Date()
+  const collectedAt = collection.snapshots.find((row) => row.family === 'campaigns')?.collectedAt
   const pacingStatusLabel = {
     missing_data: english ? 'Incomplete coverage' : 'Couverture incomplète',
     under: english ? 'Below pace' : 'Sous le rythme prévu',
@@ -119,53 +114,50 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
           ) : undefined
         }
       />
-      <FlashMessage notice={query.notice} error={query.error ?? apiError} locale={locale} />
-      {!connection || !client ? (
+      <FlashMessage notice={query.notice} error={query.error} locale={locale} />
+      {client && <CollectionStatus client={client} {...collection} locale={locale} canRefresh={canRefresh} canConnect={canConnect} destination="/dashboard" feedback={query.sync} />}
+      {!client || (!campaignSnapshot && !totals) ? (
         <div role="status" className="rounded-xl border bg-white p-6">
           <h2 className="font-semibold">{connection ? (english ? 'Sync your client accounts' : 'Synchronisez vos comptes clients') : (english ? 'Connect Google Ads' : 'Connectez Google Ads')}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{connection
             ? (english ? 'Start a sync from settings to import MCC accounts.' : 'Lancez une synchronisation depuis les réglages pour importer les comptes du MCC.')
             : (english ? 'Connect your account to collect new data. Stored budget history remains available below.' : 'Connectez votre compte pour collecter de nouvelles données. L’historique budgétaire enregistré reste disponible ci-dessous.')}</p>
-          <Button asChild variant="outline" className="mt-4"><Link href="/settings">{english ? 'Connection settings' : 'Réglages de connexion'}</Link></Button>
-        </div>
-      ) : apiError ? (
-        <div role="status" className="rounded-xl border bg-white p-8">
-          <h2 className="font-semibold">{english ? 'Performance unavailable' : 'Performances indisponibles'}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{english ? 'The collection failed. Reload this page to retry or check the connection in settings.' : 'La collecte a échoué. Rechargez la page pour réessayer ou vérifiez la connexion dans les réglages.'}</p>
+          {canConnect && <Button asChild variant="outline" className="mt-4"><Link href="/settings">{english ? 'Connection settings' : 'Réglages de connexion'}</Link></Button>}
         </div>
       ) : (
         <>
-          <p className="mb-4 text-xs text-muted-foreground">{english ? 'Google data retrieved at' : 'Données Google récupérées le'} {collectedAt.toLocaleString(english ? 'en-GB' : 'fr-FR', { timeZone: client.timezone })} · {client.timezone}</p>
+          {collectedAt && <p className="mb-4 text-xs text-muted-foreground">{english ? 'Campaign data retrieved at' : 'Données des campagnes récupérées le'} {collectedAt?.toLocaleString(english ? 'en-GB' : 'fr-FR', { timeZone: client.timezone })} · {client.timezone}</p>}
+          <p className="mb-4 text-xs text-muted-foreground">{english ? 'Account totals from complete daily history' : 'Totaux du compte issus de l’historique journalier complet'} · {accountPerformance?.window.from} → {accountPerformance?.window.through}</p>
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label={english ? 'Spend' : 'Investissement'}
-              value={formatMoneyFromMicros(totals.cost, currency)}
+              value={totals ? formatMoneyFromMicros(totals.cost, currency) : '—'}
               icon={ReceiptText}
-              note={english ? 'Last 30 days' : '30 derniers jours'}
+              note={coverageNote}
             />
             <MetricCard
               label={english ? 'Conversions' : 'Conversions'}
-              value={formatInteger(totals.conversions)}
+              value={totals ? formatInteger(totals.conversions) : '—'}
               icon={Target}
               note={
-                totals.conversions
-                  ? `${formatMoneyFromMicros(totals.cost / totals.conversions, currency)} / conv.`
-                  : (english ? 'No conversion' : 'Aucune conversion')
+                totals?.conversions
+                  ? `${formatMoneyFromMicros(Number(totals.cost) / totals.conversions, currency)} / conv.`
+                  : totals ? (english ? 'No conversion' : 'Aucune conversion') : coverageNote
               }
             />
             <MetricCard
               label={english ? 'Clicks' : 'Clics'}
-              value={formatInteger(totals.clicks)}
+              value={totals ? formatInteger(totals.clicks) : '—'}
               icon={MousePointerClick}
               note={
-                totals.impressions ? `${formatPercent(totals.clicks / totals.impressions)} ${english ? 'CTR' : 'de CTR'}` : (english ? 'CTR unavailable' : 'CTR indisponible')
+                totals && Number(totals.impressions) ? `${formatPercent(Number(totals.clicks) / Number(totals.impressions))} ${english ? 'CTR' : 'de CTR'}` : (english ? 'CTR unavailable' : 'CTR indisponible')
               }
             />
             <MetricCard
               label={english ? 'Campaigns' : 'Campagnes'}
-              value={formatInteger(campaigns.length)}
+              value={campaignSnapshot ? formatInteger(campaigns.length) : '—'}
               icon={Activity}
-              note={`${campaigns.filter((item) => item.status === 'ENABLED').length} ${english ? 'active' : 'actives'}`}
+              note={campaignSnapshot ? `${campaigns.filter((item) => item.status === 'ENABLED').length} ${english ? 'active' : 'actives'}` : (english ? 'Collection unavailable' : 'Collecte indisponible')}
             />
           </section>
 
@@ -303,7 +295,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
           </Card>
 
       )}
-      {connection && client && !apiError && (
+      {client && campaignSnapshot && (
           <Card className="mt-6 overflow-hidden border-[#e8e5ef] shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between border-b bg-white">
               <div>

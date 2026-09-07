@@ -1,0 +1,104 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/prod-ready-local.spec.ts --grep stored analytics
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 375ms
+✓ Running next.config.ts took 683ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.1s (next.js: 1507ms, proxy.ts: 203ms, application-code: 396ms)
+ GET /sign-in 200 in 141ms (next.js: 20ms, proxy.ts: 5ms, application-code: 116ms)
+ GET /sign-in 200 in 327ms (next.js: 15ms, proxy.ts: 9ms, application-code: 303ms)
+ GET /icon?a62dacc6b033a714 200 in 396ms (next.js: 86ms, proxy.ts: 13ms, application-code: 298ms)
+ POST /api/auth/sign-in/email 200 in 1459ms (next.js: 1206ms, proxy.ts: 12ms, application-code: 240ms)
+ POST /api/auth/sign-in/email 200 in 103ms (next.js: 4ms, proxy.ts: 3ms, application-code: 96ms)
+ POST /api/auth/sign-in/email 200 in 93ms (next.js: 3ms, proxy.ts: 3ms, application-code: 87ms)
+ POST /api/auth/sign-in/email 200 in 96ms (next.js: 3ms, proxy.ts: 3ms, application-code: 91ms)
+ POST /api/auth/sign-in/email 200 in 103ms (next.js: 3ms, proxy.ts: 2ms, application-code: 98ms)
+ GET /dashboard 200 in 758ms (next.js: 390ms, proxy.ts: 9ms, application-code: 360ms)
+ GET /settings 200 in 270ms (next.js: 44ms, proxy.ts: 2ms, application-code: 224ms)
+ GET /billing 200 in 199ms (next.js: 39ms, proxy.ts: 3ms, application-code: 157ms)
+ GET /support 200 in 166ms (next.js: 36ms, proxy.ts: 2ms, application-code: 127ms)
+ GET /accounts 200 in 146ms (next.js: 21ms, proxy.ts: 3ms, application-code: 122ms)
+ GET /history 200 in 142ms (next.js: 21ms, proxy.ts: 2ms, application-code: 119ms)
+ GET /alerts 200 in 164ms (next.js: 35ms, proxy.ts: 1.8ms, application-code: 126ms)
+ GET /tasks 200 in 186ms (next.js: 40ms, proxy.ts: 1.9ms, application-code: 144ms)
+ GET /approvals 200 in 183ms (next.js: 59ms, proxy.ts: 1.8ms, application-code: 122ms)
+ GET /reports 200 in 201ms (next.js: 58ms, proxy.ts: 1.9ms, application-code: 141ms)
+ GET /audit 200 in 158ms (next.js: 35ms, proxy.ts: 1.9ms, application-code: 121ms)
+ GET /agents 200 in 238ms (next.js: 55ms, proxy.ts: 1.9ms, application-code: 181ms)
+ GET / 200 in 113ms (next.js: 24ms, proxy.ts: 2.0ms, application-code: 87ms)
+ GET /privacy 200 in 63ms (next.js: 22ms, proxy.ts: 1.8ms, application-code: 39ms)
+ GET /terms 200 in 58ms (next.js: 19ms, proxy.ts: 2ms, application-code: 36ms)
+ GET /subprocessors 200 in 111ms (next.js: 50ms, proxy.ts: 3ms, application-code: 58ms)
+ GET /status 200 in 106ms (next.js: 44ms, proxy.ts: 1.9ms, application-code: 60ms)
+ GET /sign-in 200 in 34ms (next.js: 4ms, proxy.ts: 2ms, application-code: 28ms)
+ GET /sign-up 200 in 335ms (next.js: 304ms, proxy.ts: 1.9ms, application-code: 29ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-eHNQSV
+
+Running 2 tests using 1 worker
+
+(node:47094) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 207ms (next.js: 2ms, proxy.ts: 3ms, application-code: 202ms)
+ GET /api/auth/get-session 200 in 42ms (next.js: 18ms, proxy.ts: 4ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 46ms (next.js: 8ms, proxy.ts: 4ms, application-code: 34ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 1757ms (next.js: 1344ms, proxy.ts: 9ms, application-code: 405ms)
+ GET /api/auth/get-session 200 in 44ms (next.js: 22ms, proxy.ts: 4ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 47ms (next.js: 25ms, proxy.ts: 8ms, application-code: 14ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 784ms (next.js: 493ms, proxy.ts: 9ms, application-code: 281ms)
+ GET /api/auth/get-session 200 in 120ms (next.js: 59ms, proxy.ts: 27ms, application-code: 35ms)
+ GET /api/auth/organization/list 200 in 124ms (next.js: 63ms, proxy.ts: 27ms, application-code: 34ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 238ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 234ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 4ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 185ms (next.js: 2ms, proxy.ts: 3ms, application-code: 180ms)
+ GET /api/auth/get-session 200 in 196ms (next.js: 72ms, proxy.ts: 23ms, application-code: 102ms)
+ GET /api/auth/organization/list 200 in 199ms (next.js: 74ms, proxy.ts: 22ms, application-code: 103ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 323ms (next.js: 8ms, proxy.ts: 12ms, application-code: 303ms)
+ GET /api/auth/get-session 200 in 47ms (next.js: 13ms, proxy.ts: 6ms, application-code: 28ms)
+ GET /api/auth/organization/list 200 in 49ms (next.js: 20ms, proxy.ts: 4ms, application-code: 25ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 262ms (next.js: 16ms, proxy.ts: 6ms, application-code: 240ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 6ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 10ms, proxy.ts: 3ms, application-code: 13ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000005 200 in 220ms (next.js: 7ms, proxy.ts: 8ms, application-code: 205ms)
+  └─ ƒ setCookieConsent({}) in 4ms src/app/preferences-actions.ts
+  ✓  1 [chromium] › e2e/prod-ready-local.spec.ts:60:44 › local production readiness regression journeys › stored analytics remain available without Google and during grace in fr (5.8s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 199ms (next.js: 2ms, proxy.ts: 3ms, application-code: 195ms)
+ GET /api/auth/get-session 200 in 37ms (next.js: 12ms, proxy.ts: 3ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 45ms (next.js: 17ms, proxy.ts: 3ms, application-code: 25ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 242ms (next.js: 6ms, proxy.ts: 7ms, application-code: 229ms)
+ GET /api/auth/get-session 200 in 163ms (next.js: 19ms, proxy.ts: 37ms, application-code: 108ms)
+ GET /api/auth/organization/list 200 in 169ms (next.js: 66ms, proxy.ts: 31ms, application-code: 71ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 448ms (next.js: 5ms, proxy.ts: 8ms, application-code: 436ms)
+ GET /api/auth/get-session 200 in 136ms (next.js: 29ms, proxy.ts: 42ms, application-code: 64ms)
+ GET /api/auth/organization/list 200 in 135ms (next.js: 62ms, proxy.ts: 46ms, application-code: 27ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 255ms (next.js: 4ms, proxy.ts: 4ms, application-code: 247ms)
+ GET /api/auth/get-session 200 in 121ms (next.js: 9ms, proxy.ts: 12ms, application-code: 100ms)
+ GET /api/auth/organization/list 200 in 168ms (next.js: 16ms, proxy.ts: 10ms, application-code: 141ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 442ms (next.js: 8ms, proxy.ts: 4ms, application-code: 430ms)
+ GET /api/auth/get-session 200 in 167ms (next.js: 29ms, proxy.ts: 40ms, application-code: 98ms)
+ GET /api/auth/organization/list 200 in 164ms (next.js: 97ms, proxy.ts: 34ms, application-code: 33ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 381ms (next.js: 8ms, proxy.ts: 4ms, application-code: 369ms)
+ GET /api/auth/get-session 200 in 118ms (next.js: 19ms, proxy.ts: 40ms, application-code: 59ms)
+ GET /api/auth/organization/list 200 in 114ms (next.js: 55ms, proxy.ts: 37ms, application-code: 23ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 250ms (next.js: 2ms, proxy.ts: 4ms, application-code: 244ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 3ms, application-code: 11ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000005 200 in 87ms (next.js: 3ms, proxy.ts: 3ms, application-code: 82ms)
+  └─ ƒ setCookieConsent({}) in 1ms src/app/preferences-actions.ts
+  ✓  2 [chromium] › e2e/prod-ready-local.spec.ts:60:44 › local production readiness regression journeys › stored analytics remain available without Google and during grace in en (3.9s)
+
+  2 passed (10.3s)
+[?25h
+{"ok":true,"cleaned":"local-browser-fixtures"}

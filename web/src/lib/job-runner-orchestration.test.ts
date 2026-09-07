@@ -390,7 +390,7 @@ describe('durable job runner orchestration', () => {
       [{ workspaceId, timezone: 'Europe/Paris' }, { workspaceId, timezone: 'Europe/Paris' }],
       [{ approvalId: entityId, workspaceId }],
       [{ workspaceId, purgeAt: new Date('2026-08-09T00:00:00Z') }],
-      [{ workspaceId, clientId, timezone: 'Europe/Paris' }],
+      [{ workspaceId, clientId, timezone: 'Europe/Paris', currencyCode: 'EUR' }],
       [{ exportJobId: entityId, workspaceId }],
       [{ id: entityId, workspaceId, cadence: 'weekly', scheduleWeekday: 1, scheduleMonthday: null, sendHour: 8, timezone: 'Europe/Paris', lastRunKey: null }],
       [{ id: clientId, workspaceId, cadence: 'daily', digestHour: 8, timezone: 'Europe/Paris', lastDigestKey: null }],
@@ -404,7 +404,7 @@ describe('durable job runner orchestration', () => {
     const [pending] = mocks.enqueueJobs.mock.calls[0] as [Array<{ type: string; deduplicationKey: string }>]
     expect(new Set(pending.map((item) => item.type))).toEqual(new Set([
       'retention.run', 'lifecycle.email', 'monitoring.scan', 'monitoring.weekly_digest', 'report.schedule_deliver',
-      'task.personal_digest', 'metrics.daily_sync', 'google.change_sync', 'conversion.actions_sync',
+      'task.personal_digest', 'analytics.collect', 'metrics.daily_sync', 'google.change_sync', 'conversion.actions_sync',
       'google.mutation.reconcile', 'workspace.purge', 'workspace.export',
       'secrets.rotate', 'subprocessor.notice_fanout', 'stripe.reconcile',
     ]))
@@ -412,6 +412,7 @@ describe('durable job runner orchestration', () => {
       type: 'secrets.rotate',
       deduplicationKey: `secrets.rotate:${workspaceId}:kid-2`,
     }))
+    expect(pending.filter((item) => item.type === 'analytics.collect')).toHaveLength(17)
     expect(pending.every((item) => item.deduplicationKey.length > 5)).toBe(true)
   })
 
@@ -425,7 +426,7 @@ describe('durable job runner orchestration', () => {
       [{ workspaceId, timezone: 'Europe/Paris' }],
       [{ approvalId: entityId, workspaceId }],
       [{ workspaceId, purgeAt: new Date('2026-08-09T00:00:00Z') }],
-      [{ workspaceId, clientId, timezone: 'Europe/Paris' }],
+      [{ workspaceId, clientId, timezone: 'Europe/Paris', currencyCode: 'EUR' }],
       [{ exportJobId: entityId, workspaceId }],
       [{ id: entityId, workspaceId, cadence: 'weekly', scheduleWeekday: 1, scheduleMonthday: null, sendHour: 8, timezone: 'Europe/Paris', lastRunKey: null }],
       [{ id: clientId, workspaceId, cadence: 'daily', digestHour: 8, timezone: 'Europe/Paris', lastDigestKey: null }],

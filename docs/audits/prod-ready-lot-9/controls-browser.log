@@ -1,0 +1,94 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/prod-ready-local.spec.ts --grep analytical refresh enqueues
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 359ms
+✓ Running next.config.ts took 649ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1843ms (proxy.ts: 261ms)
+ GET /sign-in 200 in 82ms (next.js: 8ms, proxy.ts: 7ms, application-code: 66ms)
+ POST /api/auth/sign-in/email 200 in 1407ms (next.js: 1128ms, proxy.ts: 3ms, application-code: 275ms)
+ POST /api/auth/sign-in/email 200 in 154ms (next.js: 9ms, proxy.ts: 3ms, application-code: 141ms)
+ POST /api/auth/sign-in/email 200 in 125ms (next.js: 4ms, proxy.ts: 3ms, application-code: 118ms)
+ POST /api/auth/sign-in/email 200 in 136ms (next.js: 6ms, proxy.ts: 4ms, application-code: 126ms)
+ POST /api/auth/sign-in/email 200 in 129ms (next.js: 3ms, proxy.ts: 4ms, application-code: 122ms)
+ GET /dashboard 200 in 1449ms (next.js: 595ms, proxy.ts: 14ms, application-code: 840ms)
+ GET /settings 200 in 580ms (next.js: 64ms, proxy.ts: 3ms, application-code: 514ms)
+ GET /billing 200 in 402ms (next.js: 91ms, proxy.ts: 12ms, application-code: 300ms)
+ GET /support 200 in 711ms (next.js: 47ms, proxy.ts: 2ms, application-code: 662ms)
+ GET /accounts 200 in 249ms (next.js: 51ms, proxy.ts: 3ms, application-code: 195ms)
+ GET /history 200 in 201ms (next.js: 35ms, proxy.ts: 4ms, application-code: 163ms)
+ GET /alerts 200 in 373ms (next.js: 55ms, proxy.ts: 4ms, application-code: 315ms)
+ GET /tasks 200 in 632ms (next.js: 87ms, proxy.ts: 4ms, application-code: 541ms)
+ GET /sign-in 200 in 506ms (next.js: 233ms, proxy.ts: 89ms, application-code: 184ms)
+ GET /approvals 200 in 757ms (next.js: 151ms, proxy.ts: 3ms, application-code: 604ms)
+ GET /reports 200 in 879ms (next.js: 412ms, proxy.ts: 100ms, application-code: 367ms)
+ GET /audit 200 in 518ms (next.js: 52ms, proxy.ts: 7ms, application-code: 459ms)
+ GET /icon?a62dacc6b033a714 200 in 521ms (next.js: 81ms, proxy.ts: 28ms, application-code: 413ms)
+ GET /agents 200 in 489ms (next.js: 73ms, proxy.ts: 4ms, application-code: 412ms)
+ GET / 200 in 300ms (next.js: 68ms, proxy.ts: 26ms, application-code: 206ms)
+ GET /privacy 200 in 132ms (next.js: 31ms, proxy.ts: 10ms, application-code: 91ms)
+ GET /terms 200 in 117ms (next.js: 43ms, proxy.ts: 2ms, application-code: 71ms)
+ GET /subprocessors 200 in 176ms (next.js: 70ms, proxy.ts: 2ms, application-code: 104ms)
+ GET /status 200 in 191ms (next.js: 72ms, proxy.ts: 2ms, application-code: 117ms)
+ GET /sign-in 200 in 69ms (next.js: 6ms, proxy.ts: 2ms, application-code: 61ms)
+ GET /sign-up 200 in 505ms (next.js: 458ms, proxy.ts: 3ms, application-code: 44ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-3hrAcN
+
+Running 2 tests using 1 worker
+
+(node:45611) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 514ms (next.js: 7ms, proxy.ts: 18ms, application-code: 488ms)
+ GET /api/auth/get-session 200 in 82ms (next.js: 18ms, proxy.ts: 8ms, application-code: 56ms)
+ GET /api/auth/organization/list 200 in 111ms (next.js: 29ms, proxy.ts: 7ms, application-code: 75ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 166ms (next.js: 9ms, proxy.ts: 18ms, application-code: 139ms)
+  └─ ƒ setCookieConsent({}) in 6ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=queued 200 in 144ms (next.js: 5ms, proxy.ts: 4ms, application-code: 135ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 198ms (next.js: 4ms, proxy.ts: 5ms, application-code: 189ms)
+  └─ ƒ refreshAnalyticalData({}) in 25ms src/app/analytical-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=pending 200 in 681ms (next.js: 15ms, proxy.ts: 8ms, application-code: 659ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006&sync=queued 200 in 787ms (next.js: 17ms, proxy.ts: 7ms, application-code: 763ms)
+  └─ ƒ refreshAnalyticalData({}) in 26ms src/app/analytical-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 195ms (next.js: 22ms, proxy.ts: 3ms, application-code: 170ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 186ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 182ms)
+ GET /api/auth/get-session 200 in 151ms (next.js: 40ms, proxy.ts: 14ms, application-code: 96ms)
+ GET /api/auth/organization/list 200 in 181ms (next.js: 69ms, proxy.ts: 14ms, application-code: 98ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=unavailable 200 in 236ms (next.js: 9ms, proxy.ts: 7ms, application-code: 220ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 348ms (next.js: 27ms, proxy.ts: 29ms, application-code: 293ms)
+  └─ ƒ refreshAnalyticalData({}) in 42ms src/app/analytical-actions.ts
+  ✓  1 [chromium] › e2e/prod-ready-local.spec.ts:105:99 › local production readiness regression journeys › analytical refresh enqueues once and handles revoked connections in fr (4.6s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 264ms (next.js: 7ms, proxy.ts: 5ms, application-code: 253ms)
+ GET /api/auth/get-session 200 in 47ms (next.js: 8ms, proxy.ts: 6ms, application-code: 32ms)
+ GET /api/auth/organization/list 200 in 50ms (next.js: 17ms, proxy.ts: 5ms, application-code: 29ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 211ms (next.js: 4ms, proxy.ts: 13ms, application-code: 194ms)
+  └─ ƒ setCookieConsent({}) in 3ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=queued 200 in 159ms (next.js: 3ms, proxy.ts: 5ms, application-code: 150ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 198ms (next.js: 4ms, proxy.ts: 7ms, application-code: 187ms)
+  └─ ƒ refreshAnalyticalData({}) in 18ms src/app/analytical-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=pending 200 in 149ms (next.js: 7ms, proxy.ts: 6ms, application-code: 136ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006&sync=queued 200 in 195ms (next.js: 6ms, proxy.ts: 5ms, application-code: 184ms)
+  └─ ƒ refreshAnalyticalData({}) in 20ms src/app/analytical-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 171ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 166ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 196ms (next.js: 2ms, proxy.ts: 4ms, application-code: 190ms)
+ GET /api/auth/get-session 200 in 70ms (next.js: 32ms, proxy.ts: 5ms, application-code: 33ms)
+ GET /api/auth/organization/list 200 in 71ms (next.js: 16ms, proxy.ts: 5ms, application-code: 50ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=unavailable 200 in 88ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 84ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 120ms (next.js: 6ms, proxy.ts: 12ms, application-code: 103ms)
+  └─ ƒ refreshAnalyticalData({}) in 8ms src/app/analytical-actions.ts
+  ✓  2 [chromium] › e2e/prod-ready-local.spec.ts:105:99 › local production readiness regression journeys › analytical refresh enqueues once and handles revoked connections in en (2.7s)
+
+  2 passed (8.3s)
+[?25h
+{"ok":true,"cleaned":"local-browser-fixtures"}

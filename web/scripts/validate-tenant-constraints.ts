@@ -9,6 +9,7 @@ const constraints = [
   ['alert_incidents', 'incidents_workspace_client_fk'],
   ['share_links', 'shares_workspace_client_fk'],
   ['performance_snapshots', 'performance_workspace_client_fk'],
+  ['analytical_collections', 'analytical_collections_workspace_client_fk'],
   ['notification_deliveries', 'deliveries_workspace_channel_fk'],
   ['notification_deliveries', 'deliveries_workspace_incident_fk'],
   ['approval_comments', 'comments_workspace_approval_fk'],

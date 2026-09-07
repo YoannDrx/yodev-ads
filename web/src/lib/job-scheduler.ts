@@ -1,10 +1,12 @@
 import 'server-only'
+import { analyticalCollectionJobs } from '@/lib/analytical-collections'
 
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 import {
   approvalRequests,
   auditEvents,
   clients,
+  googleAdsConnections,
   deletionRequests,
   exportJobs,
   memberNotificationPreferences,
@@ -69,9 +71,10 @@ export async function seedScheduledJobs(now = new Date()) {
           eq(workspaces.accessState, 'deletion_pending'),
         ))
     const accounts = await db
-        .select({ workspaceId: clients.workspaceId, clientId: clients.id, timezone: clients.timezone })
+        .select({ workspaceId: clients.workspaceId, clientId: clients.id, timezone: clients.timezone, currencyCode: clients.currencyCode })
         .from(clients)
         .innerJoin(workspaces, eq(workspaces.id, clients.workspaceId))
+        .innerJoin(googleAdsConnections, and(eq(googleAdsConnections.workspaceId, clients.workspaceId), eq(googleAdsConnections.status, 'active')))
         .where(and(
           eq(clients.active, true),
           eq(clients.isManager, false),
@@ -277,6 +280,7 @@ export async function seedScheduledJobs(now = new Date()) {
   if (googleReadsEnabled) {
     for (const account of metricClients) {
       const local = localScheduleParts(now, account.timezone)
+      if (local.hour >= 5) pending.push(...analyticalCollectionJobs({ ...account, generation: `daily:${local.date}`, now }))
       if (local.hour >= 5) pending.push({
         workspaceId: account.workspaceId,
         type: 'metrics.daily_sync',

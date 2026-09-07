@@ -59,3 +59,11 @@ export function mutationObservationOutcome(baseline: MutationObservationMetrics,
     },
   }
 }
+
+/** Qualify the presentation without rewriting the original stored evidence. */
+export function qualifiedMutationObservation<T extends { status: string; baselineMetrics: MutationObservationMetrics; observedMetrics: MutationObservationMetrics | null; outcome: Record<string, unknown> | null }>(observation: T): T {
+  if (!observation.outcome) return observation
+  if (!observation.observedMetrics) return { ...observation, status: 'insufficient_data', outcome: null }
+  const qualified = mutationObservationOutcome(observation.baselineMetrics, observation.observedMetrics)
+  return { ...observation, status: qualified.state, outcome: qualified }
+}

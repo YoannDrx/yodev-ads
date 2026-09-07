@@ -37,7 +37,9 @@ import {
   workspaces,
 } from '@/db/schema'
 import { hashToken } from '@/lib/tokens'
-import { shiftCalendarDate } from '@/lib/calendar-window'
+import { reportCalendarWindow, shiftCalendarDate } from '@/lib/calendar-window'
+import { metricCoverage } from '@/lib/metric-coverage'
+import { qualifiedMutationObservation } from '@/lib/mutation-observation'
 import { computePacing, pacingCalendar } from '@/lib/pacing'
 import { workspaceHasCapability } from '@/lib/entitlements'
 import { insertActivationMilestone } from '@/lib/activation'
@@ -292,7 +294,7 @@ export async function listApprovals(workspaceId: string) {
     commentsByApproval.set(comment.approvalId, [...(commentsByApproval.get(comment.approvalId) ?? []), comment])
   }
   const feedbackByApproval = new Map(clientFeedback.map((feedback) => [feedback.approvalId, feedback]))
-  const observationByApproval = new Map(observations.map((observation) => [observation.approvalId, observation]))
+  const observationByApproval = new Map(observations.map((observation) => [observation.approvalId, qualifiedMutationObservation(observation)]))
   return rows.map((row) => ({
     ...row,
     comments: commentsByApproval.get(row.request.id) ?? [],
@@ -512,6 +514,21 @@ export async function getVerifiedReportRecipient(workspaceId: string, shareId: s
     ),
     columns: { id: true, email: true, verifiedAt: true },
   }))
+}
+
+export function getQualifiedAccountPerformance(workspaceId: string, clientId: string) {
+  return tenantRead(workspaceId, async (db) => {
+    const client = await db.query.clients.findFirst({ where: and(eq(clients.workspaceId, workspaceId), eq(clients.id, clientId), eq(clients.active, true), eq(clients.isManager, false)) })
+    if (!client) throw new Error('Account performance is unavailable')
+    const window = reportCalendarWindow({ period: '30', now: new Date(), timezone: client.timezone })
+    const rows = await db.query.dailyAccountMetrics.findMany({ where: and(eq(dailyAccountMetrics.workspaceId, workspaceId), eq(dailyAccountMetrics.clientId, clientId),
+      gte(dailyAccountMetrics.metricDate, window.from), lte(dailyAccountMetrics.metricDate, window.through)) })
+    const coverage = metricCoverage({ window, timezone: client.timezone, currencyCode: client.currencyCode, rows })
+    if (coverage.state !== 'complete') return { window, coverage, totals: null }
+    const totals = rows.reduce((sum, row) => ({ cost: sum.cost + BigInt(row.costMicros), clicks: sum.clicks + BigInt(row.clicks), impressions: sum.impressions + BigInt(row.impressions), conversions: sum.conversions + Number(row.conversions) }),
+      { cost: BigInt(0), clicks: BigInt(0), impressions: BigInt(0), conversions: 0 })
+    return { window, coverage, totals: { cost: totals.cost.toString(), clicks: totals.clicks.toString(), impressions: totals.impressions.toString(), conversions: totals.conversions } }
+  })
 }
 
 export async function getClientGoalAndPacing(workspaceId: string, clientId: string, timezone: string) {

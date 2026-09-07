@@ -1,0 +1,57 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run --maxWorkers=2
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+ ❯ src/lib/job-runner-orchestration.test.ts (17 tests | 1 failed) 32ms
+     × seeds every due scheduler family with deterministic deduplication 5ms
+ ❯ src/lib/workspace-export-orchestration.test.ts (3 tests | 1 failed) 9ms
+     × claims, collects, redacts, archives and completes a private export 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/job-runner-orchestration.test.ts > durable job runner orchestration > seeds every due scheduler family with deterministic deduplication
+AssertionError: expected Set{ 'retention.run', …(15) } to deeply equal Set{ 'retention.run', …(14) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  Set {
++   "analytics.collect",
+    "conversion.actions_sync",
+    "google.change_sync",
+    "google.mutation.reconcile",
+    "lifecycle.email",
+    "metrics.daily_sync",
+
+ ❯ src/lib/job-runner-orchestration.test.ts:405:55
+    403|     await seedScheduledJobs(now)
+    404|     const [pending] = mocks.enqueueJobs.mock.calls[0] as [Array<{ type…
+    405|     expect(new Set(pending.map((item) => item.type))).toEqual(new Set([
+       |                                                       ^
+    406|       'retention.run', 'lifecycle.email', 'monitoring.scan', 'monitori…
+    407|       'task.personal_digest', 'metrics.daily_sync', 'google.change_syn…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/lib/workspace-export-orchestration.test.ts > workspace export orchestration > claims, collects, redacts, archives and completes a private export
+TypeError: Cannot read properties of undefined (reading 'findMany')
+ ❯ src/lib/workspace-export.ts:156:61
+    154|     const campaignMetrics = await db.query.dailyCampaignMetrics.findMa…
+    155|     const legacyPerformance = await db.query.performanceSnapshots.find…
+    156|     const analytical = await db.query.analyticalCollections.findMany({…
+       |                                                             ^
+    157|     const changes = await db.query.googleChangeEvents.findMany({ where…
+    158|     const conversions = await db.query.conversionActionSnapshots.findM…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 144 passed (146)
+      Tests  2 failed | 988 passed (990)
+   Start at  02:52:07
+   Duration  17.16s (transform 1.39s, setup 0ms, import 19.57s, tests 2.63s, environment 8ms)
+

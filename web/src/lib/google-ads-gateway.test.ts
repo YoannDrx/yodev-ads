@@ -37,6 +37,17 @@ describe('GoogleAdsGateway v25 contracts', () => {
     process.env.GOOGLE_READS_ENABLED = '1'
   })
 
+  it('pins rolling analytical queries to the requested dates and rejects invalid date literals', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => googleResponse([]))
+    const credentials = { encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' }
+    const gateway = new GoogleAdsGateway(credentials, { from: '2026-08-08', through: '2026-09-06' })
+    await gateway.devicePerformance('1234567890')
+    const query = JSON.parse(fetchMock.mock.calls[0][1]?.body as string).query
+    expect(query).toContain("segments.date BETWEEN '2026-08-08' AND '2026-09-06'")
+    expect(query).not.toContain('LAST_30_DAYS')
+    expect(() => new GoogleAdsGateway(credentials, { from: "2026-01-01' OR 1=1", through: '2026-09-06' })).toThrow()
+  })
+
   it('fails closed before OAuth or HTTP when the Google read switch is off', async () => {
     process.env.GOOGLE_READS_ENABLED = '0'
     const fetchMock = vi.spyOn(globalThis, 'fetch')

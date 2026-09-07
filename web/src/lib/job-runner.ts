@@ -1,4 +1,5 @@
 import 'server-only'
+import { collectAnalyticalFamily } from '@/lib/analytical-collections'
 import { withWorkDeadline } from '@/lib/work-deadline'
 
 import { and, eq, gte, inArray, isNotNull, lt, or } from 'drizzle-orm'
@@ -19,6 +20,7 @@ import {
   notificationOAuthSessions,
   offlineConversionDiagnostics,
   performanceSnapshots,
+  analyticalCollections,
   rateLimitBuckets,
   secretRevelations,
   shareLinks,
@@ -306,6 +308,8 @@ async function executeJob(job: ClaimedJob) {
       }))
       return summary
     }
+    case 'analytics.collect':
+      return collectAnalyticalFamily(job)
     case 'metrics.daily_sync':
       return fanOutMetricSync(job)
     case 'metrics.sync_chunk':
@@ -489,6 +493,7 @@ async function executeJob(job: ClaimedJob) {
           await remove('dailyAccountMetrics', db.delete(dailyAccountMetrics).where(lt(dailyAccountMetrics.metricDate, historyDate)).returning({ id: dailyAccountMetrics.id }))
           await remove('dailyCampaignMetrics', db.delete(dailyCampaignMetrics).where(lt(dailyCampaignMetrics.metricDate, historyDate)).returning({ id: dailyCampaignMetrics.id }))
           await remove('performanceSnapshots', db.delete(performanceSnapshots).where(lt(performanceSnapshots.snapshotDate, historyDate)).returning({ id: performanceSnapshots.id }))
+          await remove('analyticalCollections', db.delete(analyticalCollections).where(lt(analyticalCollections.periodThrough, historyDate)).returning({ id: analyticalCollections.id }))
           await remove('conversionActionSnapshots', db.delete(conversionActionSnapshots).where(lt(conversionActionSnapshots.snapshotDate, historyDate)).returning({ id: conversionActionSnapshots.id }))
           await remove('offlineConversionDiagnostics', db.delete(offlineConversionDiagnostics).where(lt(offlineConversionDiagnostics.snapshotDate, historyDate)).returning({ id: offlineConversionDiagnostics.id }))
           await remove('googleChangeEvents', db.delete(googleChangeEvents).where(lt(googleChangeEvents.changedAt, historyCutoff)).returning({ id: googleChangeEvents.id }))

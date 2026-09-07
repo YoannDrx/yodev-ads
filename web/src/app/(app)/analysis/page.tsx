@@ -24,11 +24,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { analyzeAccount, type AnalysisCategory, type AnalysisFinding } from '@/lib/analysis'
 import { getWorkspaceClient, getWorkspaceConnection, listWorkspaceClients } from '@/lib/data'
 import { formatInteger, formatMoneyFromMicros } from '@/lib/format'
-import { GoogleAdsGateway, type AccountAnalysisData } from '@/lib/google-ads'
+import { getAnalyticalCollections } from '@/lib/analytical-collections'
+import { analyticalSnapshotData } from '@/lib/analytical-model'
+import { CollectionStatus } from '@/components/collection-status'
 import { requireWorkspacePermission } from '@/lib/workspace'
 import { recordActivationMilestone } from '@/lib/activation'
 
-type AnalysisPageProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string }> }
+type AnalysisPageProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string; sync?: string }> }
 
 export default async function AnalysisPage({ searchParams }: AnalysisPageProps) {
   const query = await searchParams
@@ -48,28 +50,19 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
     listWorkspaceClients(workspace.id),
   ])
   const client = await getWorkspaceClient(workspace.id, query.client)
-  let data: AccountAnalysisData | undefined
-  let apiError: string | undefined
+  const collection = client ? await getAnalyticalCollections(workspace.id, client.id, ['campaigns', 'searchTerms', 'keywords', 'ads', 'tracking']) : { snapshots: [], attempts: [] }
+  const campaigns = client ? analyticalSnapshotData(collection.snapshots, 'campaigns', client) : undefined
+  const searchTerms = client ? analyticalSnapshotData(collection.snapshots, 'searchTerms', client) : undefined
+  const keywords = client ? analyticalSnapshotData(collection.snapshots, 'keywords', client) : undefined
+  const ads = client ? analyticalSnapshotData(collection.snapshots, 'ads', client) : undefined
+  const conversionTracking = client ? analyticalSnapshotData(collection.snapshots, 'tracking', client) : undefined
+  const periods = new Set(collection.snapshots.filter((row) => ['campaigns', 'searchTerms', 'keywords', 'ads', 'tracking'].includes(row.family)).map((row) => `${row.periodFrom}/${row.periodThrough}`))
+  const data = campaigns && searchTerms && keywords && ads && conversionTracking && periods.size === 1 ? { campaigns, searchTerms, keywords, ads, conversionTracking } : undefined
+  const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
+  const canRefresh = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
+  if (data && client && entitlements.capabilities.has('google.read')) await recordActivationMilestone({ workspaceId: workspace.id, milestone: 'first_analysis', actorUserId: session.userId, sourceEntityId: client.id }).catch(() => undefined)
 
-  if (connection && client) {
-    try {
-      data = await new GoogleAdsGateway(connection).accountAnalysis(client.googleCustomerId)
-      await recordActivationMilestone({
-        workspaceId: workspace.id,
-        milestone: 'first_analysis',
-        actorUserId: session.userId,
-        sourceEntityId: client.id,
-      }).catch((error) => console.error(JSON.stringify({
-        level: 'error',
-        message: 'activation.first_analysis.failed',
-        error: error instanceof Error ? error.message : String(error),
-      })))
-    } catch (error) {
-      apiError = error instanceof Error ? error.message : english ? 'Unable to run the Google Ads analysis.' : 'Impossible d’exécuter l’analyse Google Ads.'
-    }
-  }
-
-  const analysis = data ? analyzeAccount(data, locale) : undefined
+  const analysis = data?.campaigns.length ? analyzeAccount(data, locale) : undefined
   const currency = client?.currencyCode ?? 'EUR'
 
   return (
@@ -95,19 +88,20 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
                     </option>
                   ))}
               </select>
-              <Button type="submit">{english ? 'Refresh' : 'Actualiser'}</Button>
+              <Button type="submit">{english ? 'Show' : 'Afficher'}</Button>
             </form>
           ) : undefined
         }
       />
-      <FlashMessage notice={query.notice} error={query.error ?? apiError} locale={locale} />
+      <FlashMessage notice={query.notice} error={query.error} locale={locale} />
 
-      {!connection || !client || !data || !analysis ? (
-        <EmptyState
-          title={connection ? (english ? 'No account available for analysis' : 'Aucun compte analysable') : (english ? 'Connect Google Ads to start the analysis' : 'Connectez Google Ads pour lancer l’analyse')}
+      {client && <CollectionStatus client={client} {...collection} locale={locale} canRefresh={canRefresh} canConnect={canConnect} destination="/analysis" feedback={query.sync} />}
+      {!client || !data || !analysis ? (
+        <EmptyState locale={locale} showConnectionAction={canConnect}
+          title={english ? 'Analysis not yet available' : 'Analyse pas encore disponible'}
           description={
             connection
-              ? (english ? 'Sync at least one client account from settings.' : 'Synchronisez au moins un compte client depuis les réglages.')
+              ? (english ? 'Request a collection and wait for all analysis sections to cover the same dates.' : 'Demandez une collecte et attendez que les sections de l’analyse couvrent les mêmes dates.')
               : (english ? 'The analysis uses only the official Google Ads API and remains read-only.' : 'L’analyse utilise uniquement l’API officielle Google Ads et reste en lecture seule.')
           }
         />

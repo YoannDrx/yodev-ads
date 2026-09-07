@@ -7,14 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getWorkspaceClient, getWorkspaceConnection, listWorkspaceClients } from '@/lib/data'
 import { formatInteger, formatMoneyFromMicros, formatPercent } from '@/lib/format'
-import { GoogleAdsGateway, type BreakdownPerformance } from '@/lib/google-ads'
+import type { BreakdownPerformance } from '@/lib/google-ads'
+import { getAnalyticalCollections } from '@/lib/analytical-collections'
+import { analyticalSnapshotData, analyticalSnapshotState, type AnalyticalFamily } from '@/lib/analytical-model'
+import { CollectionStatus } from '@/components/collection-status'
+import { workspaceDecision } from '@/lib/workspace-decision'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
-type InsightsPageProps = { searchParams: Promise<{ client?: string }> }
+type InsightsPageProps = { searchParams: Promise<{ client?: string; sync?: string }> }
 
 function PerformanceTable({ rows, currency, locale }: { rows: BreakdownPerformance[]; currency: string; locale: 'fr' | 'en' }) {
   const english = locale === 'en'
-  if (!rows.length) return <p className="p-5 text-sm text-muted-foreground">{english ? 'No sufficient data over the last 30 days.' : 'Aucune donnée suffisante sur les 30 derniers jours.'}</p>
+  if (!rows.length) return <p className="p-5 text-sm text-muted-foreground">{english ? 'No rows available in the stored collection. Check its status below.' : 'Aucune ligne disponible dans la collecte enregistrée. Consultez son état ci-dessous.'}</p>
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -28,70 +32,43 @@ function PerformanceTable({ rows, currency, locale }: { rows: BreakdownPerforman
 }
 
 function SectionError({ message, locale }: { message?: string; locale: 'fr' | 'en' }) {
-  return message ? <p className="border-t bg-amber-50 px-5 py-3 text-xs text-amber-800">{locale === 'en' ? 'Section unavailable' : 'Section indisponible'} : {message}</p> : null
+  return message ? <p className="border-t bg-amber-50 px-5 py-3 text-xs text-amber-800">{locale === 'en' ? 'Collection status' : 'État de la collecte'} : {message}</p> : null
 }
 
 export default async function InsightsPage({ searchParams }: InsightsPageProps) {
   const query = await searchParams
-  const { workspace } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, role, entitlements } = await requireWorkspacePermission('portfolio:read')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const [connection, clients] = await Promise.all([getWorkspaceConnection(workspace.id), listWorkspaceClients(workspace.id)])
   const client = await getWorkspaceClient(workspace.id, query.client)
+  const collection = client ? await getAnalyticalCollections(workspace.id, client.id, ['devices', 'schedules', 'geographies', 'auctions', 'placements', 'assetGroups', 'assets', 'products', 'productDiagnostics', 'audiences', 'adGroupAudiences', 'groupPlacements']) : { snapshots: [], attempts: [] }
+  const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
+  const canRefresh = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
   const errors: Record<string, string> = {}
-  let devices: Awaited<ReturnType<GoogleAdsGateway['devicePerformance']>> = []
-  let schedules: Awaited<ReturnType<GoogleAdsGateway['schedulePerformance']>> = []
-  let geographies: Awaited<ReturnType<GoogleAdsGateway['geographicPerformance']>> = []
-  let auctions: Awaited<ReturnType<GoogleAdsGateway['auctionInsights']>> = []
-  let placements: Awaited<ReturnType<GoogleAdsGateway['performanceMaxPlacements']>> = []
-  let assetGroups: Awaited<ReturnType<GoogleAdsGateway['assetGroupPerformance']>> = []
-  let assets: Awaited<ReturnType<GoogleAdsGateway['assetPerformance']>> = []
-  let products: Awaited<ReturnType<GoogleAdsGateway['shoppingProductPerformance']>> = []
-  let productDiagnostics: Awaited<ReturnType<GoogleAdsGateway['shoppingProductDiagnostics']>> = []
-  let audiences: Awaited<ReturnType<GoogleAdsGateway['campaignAudiencePerformance']>> = []
-  let adGroupAudiences: Awaited<ReturnType<GoogleAdsGateway['adGroupAudiencePerformance']>> = []
-  let groupPlacements: Awaited<ReturnType<GoogleAdsGateway['groupPlacementPerformance']>> = []
-
-  if (connection && client) {
-    const gateway = new GoogleAdsGateway(connection)
-    const names = ['devices', 'schedules', 'geographies', 'auctions', 'placements', 'assetGroups', 'assets', 'products', 'productDiagnostics', 'audiences', 'adGroupAudiences', 'groupPlacements'] as const
-    const localDate = new Intl.DateTimeFormat('en-CA', { timeZone: client.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
-    const results = await Promise.allSettled([
-      gateway.devicePerformance(client.googleCustomerId),
-      gateway.schedulePerformance(client.googleCustomerId),
-      gateway.geographicPerformance(client.googleCustomerId),
-      gateway.auctionInsights(client.googleCustomerId),
-      gateway.performanceMaxPlacements(client.googleCustomerId),
-      gateway.assetGroupPerformance(client.googleCustomerId),
-      gateway.assetPerformance(client.googleCustomerId, localDate),
-      gateway.shoppingProductPerformance(client.googleCustomerId),
-      gateway.shoppingProductDiagnostics(client.googleCustomerId),
-      gateway.campaignAudiencePerformance(client.googleCustomerId),
-      gateway.adGroupAudiencePerformance(client.googleCustomerId),
-      gateway.groupPlacementPerformance(client.googleCustomerId),
-    ])
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') errors[names[index]] = result.reason instanceof Error ? result.reason.message : english ? 'Google Ads error' : 'Erreur Google Ads'
-    })
-    if (results[0].status === 'fulfilled') devices = results[0].value
-    if (results[1].status === 'fulfilled') schedules = results[1].value
-    if (results[2].status === 'fulfilled') geographies = results[2].value
-    if (results[3].status === 'fulfilled') auctions = results[3].value
-    if (results[4].status === 'fulfilled') placements = results[4].value
-    if (results[5].status === 'fulfilled') assetGroups = results[5].value
-    if (results[6].status === 'fulfilled') assets = results[6].value
-    if (results[7].status === 'fulfilled') products = results[7].value
-    if (results[8].status === 'fulfilled') productDiagnostics = results[8].value
-    if (results[9].status === 'fulfilled') audiences = results[9].value
-    if (results[10].status === 'fulfilled') adGroupAudiences = results[10].value
-    if (results[11].status === 'fulfilled') groupPlacements = results[11].value
+  const devices = client ? analyticalSnapshotData(collection.snapshots, 'devices', client) ?? [] : []
+  const schedules = client ? analyticalSnapshotData(collection.snapshots, 'schedules', client) ?? [] : []
+  const geographies = client ? analyticalSnapshotData(collection.snapshots, 'geographies', client) ?? [] : []
+  const auctions = client ? analyticalSnapshotData(collection.snapshots, 'auctions', client) ?? [] : []
+  const placements = client ? analyticalSnapshotData(collection.snapshots, 'placements', client) ?? [] : []
+  const assetGroups = client ? analyticalSnapshotData(collection.snapshots, 'assetGroups', client) ?? [] : []
+  const assets = client ? analyticalSnapshotData(collection.snapshots, 'assets', client) ?? [] : []
+  const products = client ? analyticalSnapshotData(collection.snapshots, 'products', client) ?? [] : []
+  const productDiagnostics = client ? analyticalSnapshotData(collection.snapshots, 'productDiagnostics', client) ?? [] : []
+  const audiences = client ? analyticalSnapshotData(collection.snapshots, 'audiences', client) ?? [] : []
+  const adGroupAudiences = client ? analyticalSnapshotData(collection.snapshots, 'adGroupAudiences', client) ?? [] : []
+  const groupPlacements = client ? analyticalSnapshotData(collection.snapshots, 'groupPlacements', client) ?? [] : []
+  if (client) for (const family of ['devices', 'schedules', 'geographies', 'auctions', 'placements', 'assetGroups', 'assets', 'products', 'productDiagnostics', 'audiences', 'adGroupAudiences', 'groupPlacements'] as AnalyticalFamily[]) {
+    const state = analyticalSnapshotState(collection.snapshots.find((row) => row.family === family), client)
+    if (state !== 'available') errors[family] = state === 'stale' ? (english ? 'Showing the previous dated collection.' : 'Affichage de la collecte précédente datée.') : (english ? 'No usable collection. This does not mean there is no activity.' : 'Aucune collecte utilisable. Cela ne signifie pas une absence d’activité.')
   }
   const currency = client?.currencyCode ?? 'EUR'
 
   return (
     <>
-      <PageHeading eyebrow={english ? 'Google Ads v25 · read only' : 'Google Ads v25 · lecture seule'} title={english ? 'Extended insights' : 'Insights étendus'} description={english ? 'Separate views by device, schedule, location, auction, Performance Max and Shopping—without extrapolating Search metrics to other campaign types.' : 'Des vues distinctes par appareil, horaire, zone, enchères, Performance Max et Shopping — sans extrapoler les métriques Search aux autres types de campagne.'} actions={clients.length ? <form className="flex gap-2"><select name="client" defaultValue={client?.id} className="h-10 min-w-56 rounded-lg border bg-white px-3 text-sm">{clients.filter((item) => !item.isManager).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><Button type="submit">{english ? 'Refresh' : 'Actualiser'}</Button></form> : undefined} />
-      {!connection || !client ? <EmptyState title={connection ? (english ? 'No account available for analysis' : 'Aucun compte analysable') : (english ? 'Connect Google Ads' : 'Connectez Google Ads')} description={english ? 'Insights use official Google Ads v25 reports and perform no mutations.' : 'Les insights utilisent les rapports officiels Google Ads v25 et ne réalisent aucune mutation.'} /> : (
+      <PageHeading eyebrow={english ? 'Google Ads v25 · read only' : 'Google Ads v25 · lecture seule'} title={english ? 'Extended insights' : 'Insights étendus'} description={english ? 'Separate views by device, schedule, location, auction, Performance Max and Shopping—without extrapolating Search metrics to other campaign types.' : 'Des vues distinctes par appareil, horaire, zone, enchères, Performance Max et Shopping — sans extrapoler les métriques Search aux autres types de campagne.'} actions={clients.length ? <form className="flex gap-2"><select name="client" defaultValue={client?.id} className="h-10 min-w-56 rounded-lg border bg-white px-3 text-sm">{clients.filter((item) => !item.isManager).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><Button type="submit">{english ? 'Show' : 'Afficher'}</Button></form> : undefined} />
+      {client && <CollectionStatus client={client} {...collection} locale={locale} canRefresh={canRefresh} canConnect={canConnect} destination="/insights" feedback={query.sync} />}
+      {!client ? <EmptyState locale={locale} showConnectionAction={canConnect} title={connection ? (english ? 'No account available for analysis' : 'Aucun compte analysable') : (english ? 'Connect Google Ads' : 'Connectez Google Ads')} description={english ? 'Insights use official Google Ads v25 reports and perform no mutations.' : 'Les insights utilisent les rapports officiels Google Ads v25 et ne réalisent aucune mutation.'} /> : (
         <Tabs defaultValue="segments">
           <TabsList className="mb-5 flex h-auto flex-wrap"><TabsTrigger value="segments"><BarChart3 /> Segments</TabsTrigger><TabsTrigger value="audiences"><UsersRound /> Audiences</TabsTrigger><TabsTrigger value="placements"><Video /> Display/YouTube</TabsTrigger><TabsTrigger value="auction"><Crosshair /> {english ? 'Auctions' : 'Enchères'}</TabsTrigger><TabsTrigger value="pmax"><Video /> Performance Max</TabsTrigger><TabsTrigger value="shopping"><PackageSearch /> Shopping</TabsTrigger></TabsList>
           <TabsContent value="segments" className="space-y-5">
@@ -111,7 +88,7 @@ export default async function InsightsPage({ searchParams }: InsightsPageProps) 
           </TabsContent>
           <TabsContent value="shopping">
             <div className="space-y-5">
-              <Card><CardHeader><CardTitle>{english ? 'Current state of products that are not fully eligible' : 'État courant des produits non pleinement éligibles'}</CardTitle><p className="text-sm text-muted-foreground">{english ? 'Google Ads Shopping Product state may lag by up to 24 hours. Each help link indicates whether the fix belongs in Merchant Center or Google Ads.' : 'État Shopping Product Google Ads, susceptible d’avoir jusqu’à 24 h de retard. Chaque lien d’aide indique si la correction relève de Merchant Center ou de Google Ads.'}</p></CardHeader><CardContent className="p-0">{productDiagnostics.length ? <div className="divide-y">{productDiagnostics.slice(0, 100).map((product) => <div key={product.resourceName} className="p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-medium">{product.title}</p><p className="mt-1 text-xs text-muted-foreground">{product.itemId} · Merchant {product.merchantId} · {product.languageCode}/{product.feedLabel}</p></div><Badge variant={product.status === 'NOT_ELIGIBLE' ? 'destructive' : 'outline'}>{product.status}</Badge></div>{product.issues.length ? <ul className="mt-3 space-y-2">{product.issues.map((issue) => <li key={`${issue.errorCode}:${issue.attributeName ?? ''}`} className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900"><span className="font-semibold">{issue.description}</span>{issue.attributeName ? ` · ${english ? 'attribute' : 'attribut'} ${issue.attributeName}` : ''}{issue.affectedRegions.length ? ` · ${issue.affectedRegions.join(', ')}` : ''}{issue.documentation && <a href={issue.documentation} target="_blank" rel="noreferrer" className="ml-2 underline">{english ? 'Google help' : 'Aide Google'}</a>}</li>)}</ul> : <p className="mt-2 text-xs text-muted-foreground">{english ? 'Google provides no additional detail.' : 'Google ne fournit pas de détail supplémentaire.'}</p>}</div>)}</div> : <p className="p-5 text-sm text-muted-foreground">{english ? 'No ineligible or limited product detected.' : 'Aucun produit non éligible ou limité détecté.'}</p>}<SectionError message={errors.productDiagnostics} locale={locale} /></CardContent></Card>
+              <Card><CardHeader><CardTitle>{english ? 'Current state of products that are not fully eligible' : 'État courant des produits non pleinement éligibles'}</CardTitle><p className="text-sm text-muted-foreground">{english ? 'Google Ads Shopping Product state may lag by up to 24 hours. Each help link indicates whether the fix belongs in Merchant Center or Google Ads.' : 'État Shopping Product Google Ads, susceptible d’avoir jusqu’à 24 h de retard. Chaque lien d’aide indique si la correction relève de Merchant Center ou de Google Ads.'}</p></CardHeader><CardContent className="p-0">{productDiagnostics.length ? <div className="divide-y">{productDiagnostics.slice(0, 100).map((product) => <div key={product.resourceName} className="p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-medium">{product.title}</p><p className="mt-1 text-xs text-muted-foreground">{product.itemId} · Merchant {product.merchantId} · {product.languageCode}/{product.feedLabel}</p></div><Badge variant={product.status === 'NOT_ELIGIBLE' ? 'destructive' : 'outline'}>{product.status}</Badge></div>{product.issues.length ? <ul className="mt-3 space-y-2">{product.issues.map((issue) => <li key={`${issue.errorCode}:${issue.attributeName ?? ''}`} className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900"><span className="font-semibold">{issue.description}</span>{issue.attributeName ? ` · ${english ? 'attribute' : 'attribut'} ${issue.attributeName}` : ''}{issue.affectedRegions.length ? ` · ${issue.affectedRegions.join(', ')}` : ''}{issue.documentation && <a href={issue.documentation} target="_blank" rel="noreferrer" className="ml-2 underline">{english ? 'Google help' : 'Aide Google'}</a>}</li>)}</ul> : <p className="mt-2 text-xs text-muted-foreground">{english ? 'Google provides no additional detail.' : 'Google ne fournit pas de détail supplémentaire.'}</p>}</div>)}</div> : <p className="p-5 text-sm text-muted-foreground">{errors.productDiagnostics ? (english ? 'No current result available.' : 'Aucun résultat actuel disponible.') : (english ? 'No ineligible or limited product returned by this collection.' : 'Aucun produit non éligible ou limité renvoyé par cette collecte.')}</p>}<SectionError message={errors.productDiagnostics} locale={locale} /></CardContent></Card>
               <Card><CardHeader><CardTitle>{english ? 'Products that served' : 'Produits ayant diffusé'}</CardTitle><p className="text-sm text-muted-foreground">{english ? 'Historical Shopping/PMax view. It remains separate from the current state above.' : 'Vue historique Shopping/PMax. Elle reste distincte de l’état courant ci-dessus.'}</p></CardHeader><CardContent className="p-0"><PerformanceTable rows={products} currency={currency} locale={locale} /><SectionError message={errors.products} locale={locale} /></CardContent></Card>
             </div>
           </TabsContent>
