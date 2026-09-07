@@ -51,8 +51,8 @@ npm run dev
 Use `npm run check` for lint, TypeScript, unit tests and a production build, then
 `npm run test:e2e` for the browser smoke suite.
 
-The latest application check is in [lot 29](docs/audits/prod-ready-lot-29/README.md):
-1,331 application tests and seven script tests. Nine focused public/authentication
+The latest application check is in [lot 30](docs/audits/prod-ready-lot-30/README.md):
+1,335 application tests and seven script tests. Nine focused public/authentication
 journeys passed in [lot 27](docs/audits/prod-ready-lot-27/README.md); the full 53-journey browser matrix passed in [lot 25](docs/audits/prod-ready-lot-25/README.md).
 These dated results must be rerun on the final release candidate.
 

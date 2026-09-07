@@ -1,3 +1,5 @@
+import { ACTIVATION_STAGES, type ActivationStageField } from '@/lib/activation-stages'
+
 export type ActivationWorkspace = { id: string; createdAt: Date }
 export type ActivationEvent = { workspaceId: string; milestone: string; occurredAt: Date }
 
@@ -40,13 +42,10 @@ export function activationCohorts(
     return {
       weekStart: weekStart.toISOString().slice(0, 10),
       workspaces: 0,
-      googleConnected: 0,
-      firstReport: 0,
-      paid: 0,
+      ...Object.fromEntries(ACTIVATION_STAGES.map(({ field }) => [field, 0])) as Record<ActivationStageField, number>,
     }
   })
-  const reportDurations: number[] = []
-  const paidDurations: number[] = []
+  const durations = Object.fromEntries(ACTIVATION_STAGES.map(({ field }) => [field, [] as number[]])) as Record<ActivationStageField, number[]>
   for (const workspace of workspaces) {
     if (!Number.isFinite(workspace.createdAt.getTime()) || workspace.createdAt > now) continue
     const week = mondayUtc(workspace.createdAt)
@@ -55,22 +54,18 @@ export function activationCohorts(
     const cohort = cohorts[index]
     cohort.workspaces += 1
     const milestones = eventsByWorkspace.get(workspace.id)
-    const googleAt = milestones?.get('google_connected')
-    if (googleAt && googleAt >= workspace.createdAt) cohort.googleConnected += 1
-    const reportAt = milestones?.get('first_report_published')
-    if (reportAt && reportAt >= workspace.createdAt) {
-      cohort.firstReport += 1
-      if (reportAt >= workspace.createdAt) reportDurations.push((reportAt.getTime() - workspace.createdAt.getTime()) / 86_400_000)
-    }
-    const paidAt = milestones?.get('paid_conversion')
-    if (paidAt && paidAt >= workspace.createdAt) {
-      cohort.paid += 1
-      if (paidAt >= workspace.createdAt) paidDurations.push((paidAt.getTime() - workspace.createdAt.getTime()) / 86_400_000)
+    for (const { milestone, field } of ACTIVATION_STAGES) {
+      const occurredAt = milestones?.get(milestone)
+      if (!occurredAt) continue
+      cohort[field] += 1
+      durations[field].push((occurredAt.getTime() - workspace.createdAt.getTime()) / 86_400_000)
     }
   }
   return {
     cohorts,
-    medianDaysToFirstReport: median(reportDurations),
-    medianDaysToPaid: median(paidDurations),
+    asOf: now.toISOString(),
+    medianDaysByStage: Object.fromEntries(ACTIVATION_STAGES.map(({ field }) => [field, median(durations[field])])) as Record<ActivationStageField, number | null>,
+    medianDaysToFirstReport: median(durations.firstReport),
+    medianDaysToPaid: median(durations.paid),
   }
 }

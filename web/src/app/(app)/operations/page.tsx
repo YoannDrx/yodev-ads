@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { Activity, AlertTriangle, CalendarClock, CheckCircle2, CreditCard, LifeBuoy, MailWarning, RadioTower, Webhook } from 'lucide-react'
 import { addInternalSupportReply, addPlatformIncidentUpdate, cancelOperationalDeadLetterJob, createPlatformIncident, createSubprocessorChangeNotice, requestStripeReconciliation, retryGlobalDeadLetterJob, reviewOperationalEmailDeliveryAction, updateInternalSupportTicket } from '@/app/actions'
+import { ActivationOverview } from '@/components/activation-overview'
 import { FlashMessage } from '@/components/flash-message'
 import { PageHeading } from '@/components/page-heading'
 import { StatusBadge } from '@/components/status-badge'
@@ -13,24 +14,13 @@ import { getSystemOperationsSnapshot } from '@/lib/system-operations'
 import { minimumSubprocessorNoticeDate } from '@/lib/subprocessor-change-model'
 import { requireWorkspacePermission } from '@/lib/workspace'
 
-const funnel = [
-  ['google_connected', 'Google connecté'],
-  ['accounts_synced', 'Inventaire synchronisé'],
-  ['accounts_selected', 'Compte géré sélectionné'],
-  ['first_qualified_analysis', 'Première analyse qualifiée'],
-  ['first_monitor', 'Première vigie'],
-  ['first_report_published', 'Premier rapport publié'],
-  ['legal_accepted', 'Cadre légal accepté'],
-  ['paid_conversion', 'Conversion payante'],
-] as const
-
 export default async function OperationsPage({ searchParams }: { searchParams: Promise<{ notice?: string; error?: string }> }) {
   const query = await searchParams
   const { workspace } = await requireWorkspacePermission('workspace:admin')
   if (workspace.accessState !== 'internal') notFound()
   const snapshot = await getSystemOperationsSnapshot()
   const minimumSubprocessorDate = minimumSubprocessorNoticeDate(new Date()).toISOString().slice(0, 10)
-  const totalCommercial = Object.entries(snapshot.workspaceStates).filter(([state]) => !['internal', 'deleted'].includes(state)).reduce((sum, [, total]) => sum + total, 0)
+  const totalCommercial = snapshot.commercialWorkspaceCount
   const openTicketCount = Object.entries(snapshot.supportStatusCounts).filter(([status]) => !['resolved', 'closed'].includes(status)).reduce((sum, [, total]) => sum + total, 0)
 
   return <>
@@ -45,13 +35,7 @@ export default async function OperationsPage({ searchParams }: { searchParams: P
       <Metric label="Emails à inspecter" value={snapshot.failedEmailCount} icon={MailWarning} critical={snapshot.failedEmailCount > 0} />
     </section>
 
-    <Card className="mb-6 shadow-none"><CardHeader><CardTitle>Funnel d’activation commercial</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{funnel.map(([key, label]) => {
-      const value = Number(snapshot.activationFunnel[key] ?? 0)
-      const rate = totalCommercial > 0 ? Math.round(value / totalCommercial * 100) : 0
-      return <div key={key} className="rounded-2xl border p-4"><p className="text-xs text-muted-foreground">{label}</p><div className="mt-2 flex items-end justify-between"><span className="text-2xl font-semibold">{value}</span><Badge variant="outline">{rate} %</Badge></div><progress aria-label={label} value={value} max={Math.max(1, totalCommercial)} className="mt-3 h-1.5 w-full accent-emerald-500" /></div>
-    })}</CardContent></Card>
-
-    <Card className="mb-6 shadow-none"><CardHeader><CardTitle>Cohortes d’activation · 12 semaines</CardTitle><p className="text-xs text-muted-foreground">Semaines UTC. Un rapport publié correspond à une édition disponible ; une planification ou une réception email non prouvée ne compte pas comme publication.</p></CardHeader><CardContent><div className="mb-4 flex flex-wrap gap-2"><Badge variant="outline">Médiane premier rapport publié : {formatMedian(snapshot.activationCohorts.medianDaysToFirstReport)}</Badge><Badge variant="outline">Médiane conversion payante : {formatMedian(snapshot.activationCohorts.medianDaysToPaid)}</Badge></div><div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead><tr className="border-b text-xs text-muted-foreground"><th className="py-2 pr-4 font-medium">Semaine</th><th className="px-3 py-2 text-right font-medium">Workspaces</th><th className="px-3 py-2 text-right font-medium">Google</th><th className="px-3 py-2 text-right font-medium">Rapport</th><th className="pl-3 py-2 text-right font-medium">Payant</th></tr></thead><tbody>{snapshot.activationCohorts.cohorts.toReversed().map((cohort) => <tr key={cohort.weekStart} className="border-b last:border-0"><td className="py-2.5 pr-4 font-medium">{new Date(`${cohort.weekStart}T00:00:00Z`).toLocaleDateString('fr-FR')}</td><td className="px-3 py-2.5 text-right">{cohort.workspaces}</td><td className="px-3 py-2.5 text-right">{cohort.googleConnected} <span className="text-xs text-muted-foreground">({cohortRate(cohort.googleConnected, cohort.workspaces)})</span></td><td className="px-3 py-2.5 text-right">{cohort.firstReport} <span className="text-xs text-muted-foreground">({cohortRate(cohort.firstReport, cohort.workspaces)})</span></td><td className="pl-3 py-2.5 text-right">{cohort.paid} <span className="text-xs text-muted-foreground">({cohortRate(cohort.paid, cohort.workspaces)})</span></td></tr>)}</tbody></table></div></CardContent></Card>
+    <ActivationOverview totalCommercial={totalCommercial} funnel={snapshot.activationFunnel} cohorts={snapshot.activationCohorts} />
 
     <section className="mb-6"><div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-semibold">File support</h2><Badge variant="outline">{openTicketCount} ouverts</Badge></div><div className="space-y-4">{snapshot.tickets.map(({ ticket, workspace: customerWorkspace, messages }) => <Card key={ticket.id} className={`[content-visibility:auto] shadow-none ${ticket.priority === 'urgent' && !['resolved', 'closed'].includes(ticket.status) ? 'border-red-300' : ''}`}><CardContent className="p-5"><div className="flex flex-col gap-4 xl:flex-row xl:justify-between"><div className="min-w-0 flex-1"><div className="flex flex-wrap gap-2"><StatusBadge status={ticket.status} /><Badge variant="outline">{ticket.priority}</Badge><Badge variant="outline">{ticket.category}</Badge></div><h3 className="mt-3 font-semibold">{ticket.subject}</h3><p className="mt-1 text-xs text-muted-foreground">{customerWorkspace.name} · {customerWorkspace.plan} · {customerWorkspace.accessState} · #{ticket.id.slice(0, 8)}</p></div><form action={updateInternalSupportTicket} className="flex gap-2"><input type="hidden" name="ticketId" value={ticket.id} /><select name="status" aria-label="Nouveau statut du ticket" defaultValue={ticket.status} className="h-9 rounded-lg border bg-white px-3 text-xs"><option value="open">Ouvert</option><option value="awaiting_support">Attente support</option><option value="awaiting_customer">Attente client</option><option value="resolved">Résolu</option><option value="closed">Fermé</option></select><Button type="submit" size="sm" variant="outline">Statut</Button></form></div><div className="mt-4 space-y-2 border-t pt-4">{messages.map((supportMessage) => <div key={supportMessage.id} className={`rounded-xl px-3 py-2 text-sm ${supportMessage.internal ? 'border border-amber-200 bg-amber-50' : supportMessage.authorKind === 'support' ? 'bg-emerald-50' : 'bg-slate-50'}`}><p className="whitespace-pre-wrap">{supportMessage.body}</p><p className="mt-1 text-[10px] text-muted-foreground">{supportMessage.internal ? 'Note interne' : supportMessage.authorKind === 'support' ? 'Support Yodev' : 'Client'} · {supportMessage.createdAt.toLocaleString('fr-FR')}</p></div>)}</div><form action={addInternalSupportReply} className="mt-4 grid gap-2 md:grid-cols-[1fr_auto]"><input type="hidden" name="ticketId" value={ticket.id} /><Textarea name="body" aria-label="Réponse ou note interne" maxLength={8000} required placeholder="Réponse client ou note interne" className="min-h-20" /><div className="flex flex-col justify-between gap-2"><label className="flex items-center gap-2 text-xs"><input type="checkbox" name="internal" /> Note interne</label><Button type="submit" variant="outline">Ajouter</Button></div></form></CardContent></Card>)}</div></section>
 
@@ -69,6 +53,3 @@ export default async function OperationsPage({ searchParams }: { searchParams: P
 function Metric({ label, value, icon: Icon, critical = false }: { label: string; value: number; icon: typeof Activity; critical?: boolean }) { return <Card className="shadow-none"><CardContent className="flex items-center justify-between p-5"><div><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-3xl font-semibold">{value}</p></div><span className={`grid size-11 place-items-center rounded-2xl ${critical ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700'}`}><Icon className="size-5" /></span></CardContent></Card> }
 
 function Signal({ title, count, healthy, rows }: { title: string; count: number; healthy: boolean; rows: string[] }) { return <Card className="shadow-none"><CardHeader><CardTitle className="flex items-center justify-between">{title}{healthy ? <CheckCircle2 className="size-5 text-emerald-600" /> : <AlertTriangle className="size-5 text-red-600" />}</CardTitle></CardHeader><CardContent><p className="text-3xl font-semibold">{count}</p><div className="mt-4 space-y-2">{rows.map((row, index) => <p key={`${index}-${row}`} className="line-clamp-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-muted-foreground">{row}</p>)}{!rows.length && <p className="text-sm text-muted-foreground">Aucun signal critique.</p>}</div></CardContent></Card> }
-
-function cohortRate(value: number, total: number) { return total > 0 ? `${Math.round(value / total * 100)} %` : '—' }
-function formatMedian(value: number | null) { return value === null ? 'non disponible' : `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(value)} j` }

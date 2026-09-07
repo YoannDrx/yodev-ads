@@ -227,6 +227,7 @@ export async function getSystemOperationsSnapshot() {
     for (const update of incidentUpdates) updatesByIncident.set(update.incidentId, [...(updatesByIncident.get(update.incidentId) ?? []), update])
     return {
       workspaceStates: Object.fromEntries(workspaceStates.map((row) => [row.state, row.total])),
+      commercialWorkspaceCount: commercialWorkspaces.length,
       activationFunnel: Object.fromEntries(milestones.map((row) => [row.milestone, row.total])),
       activationCohorts: activationCohorts(commercialWorkspaces, activationEvents),
       supportStatusCounts: Object.fromEntries(supportStatusCounts.map((row) => [row.status, row.total])),

@@ -1,6 +1,6 @@
 # Ads by Yodev — registre de fonctionnalités et état de livraison
 
-Mis à jour le **7 septembre 2026**, après les lots 25–29 sur `codex/prod-ready` ; la recette générale du lot 25 précède les corrections ciblées de landing, de digest et d’analyse.
+Mis à jour le **7 septembre 2026**, après les lots 25–30 sur `codex/prod-ready` ; la recette générale du lot 25 précède les corrections ciblées de landing, de digest et d’analyse.
 
 **La préparation à la production est en cours.** Le dépôt possède les fonctionnalités et les preuves locales ci-dessous. Le candidat courant n’a pas été déployé ni certifié auprès des prestataires par cette exécution. Les validations d’août ne valent pas validation du code de septembre. L’ancien registre est conservé dans [l’archive datée](./audits/implementation-status-before-2026-09-07-refresh.md).
 
@@ -8,8 +8,8 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 
 ## Référence de vérification actuelle
 
-- **1 331 tests applicatifs / 183 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 29](./audits/prod-ready-lot-29/README.md).
-- **53 scénarios navigateur réussis sans skip en 2,4 minutes** au [lot 25](./audits/prod-ready-lot-25/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les neuf parcours publics/authentification touchés par le lot 27 passent ensuite en 29,2 s. Cinq parcours analyse/opérations passent ensuite au lot 29 en 12,7 s. Les appels fournisseurs sont désactivés.
+- **1 335 tests applicatifs / 184 fichiers**, sept tests de scripts, lint, TypeScript, frontières des données et des transactions, build et audit runtime sans vulnérabilité détectée : [lot 30](./audits/prod-ready-lot-30/README.md).
+- **53 scénarios navigateur réussis sans skip en 2,4 minutes** au [lot 25](./audits/prod-ready-lot-25/README.md), sur Better Auth et PostgreSQL locaux, avec cinq rôles, FR/EN, mobile et contrôles analytiques. Les neuf parcours publics/authentification touchés par le lot 27 passent ensuite en 29,2 s. Cinq parcours analyse/opérations passent ensuite au lot 29 en 12,7 s, puis trois parcours cohortes/analyse au lot 30 en 6,9 s. Les appels fournisseurs sont désactivés.
 - **57 migrations cumulées**, de `0000` à `0056`, et la recette PostgreSQL complète depuis une base vide : [lot 29](./audits/prod-ready-lot-29/README.md). Aucun report automatique de ce numéro vers une base distante.
 - La CI utilise désormais le même runner de protocoles PostgreSQL que le local et conserve son test de charge distinct. Une exécution GitHub sur le SHA final reste requise.
 - Les preuves Python, secrets et fournisseurs antérieures gardent leur date et leur commit ; elles devront faire partie du contrôle du candidat final.
@@ -37,7 +37,7 @@ Le [plan T00–T23](./PLAN_PROD_READY.md) fixe le périmètre ; le [journal d’
 | Stripe et documents B2B | Catalogue/Price autoritatif, traitement idempotent, upgrade après paiement, downgrade programmé, versions d’acceptation et contrôles serveur présents. | Compte live, achat/renouvellement/remboursement, entité, pièces et validations professionnelles du dossier commercial. |
 | Export, rétention et suppression | Export privé asynchrone, révocation immédiate, purge différée, tombstones, rétention et courses annulation/purge éprouvées localement. | Artefacts réels, nettoyage fournisseur, sauvegarde/restauration du candidat et recette utilisateur complète. |
 | Observabilité et statut | Redaction, diagnostics opérationnels, registre public paginé, incidents anciens inclus et statut inconnu sans observation. | Alertes externes reçues, sonde indépendante, incidents/restaurations exercés et mesures d’exploitation. |
-| Activation | Milestones durables ; compte explicitement sélectionné et rapport réellement publié distingués des anciennes intentions/programmations. [Lot 20](./audits/prod-ready-lot-20/README.md). | Première analyse qualifiée livrée au [lot 29](./audits/prod-ready-lot-29/README.md) ; aide aux abandons, coûts par offre et mesure de qualité/support restent ouverts. |
+| Activation | Huit jalons durables, cohortes UTC et délais médians qualifiés ; compte explicitement sélectionné et rapport réellement publié distingués des anciennes intentions/programmations. [Cohortes](./audits/prod-ready-lot-30/README.md). [Lot 20](./audits/prod-ready-lot-20/README.md). | Première analyse qualifiée livrée au [lot 29](./audits/prod-ready-lot-29/README.md) ; aide aux abandons, coûts par offre et mesure de qualité/support restent ouverts. |
 
 ## Dix modèles de vigies
 

@@ -1,0 +1,12 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/lib/activation-analytics.test.ts src/components/activation-overview.test.tsx src/lib/system-operations.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  3 passed (3)
+      Tests  15 passed (15)
+   Start at  10:18:01
+   Duration  1.04s (transform 132ms, setup 0ms, import 603ms, tests 173ms, environment 549ms)

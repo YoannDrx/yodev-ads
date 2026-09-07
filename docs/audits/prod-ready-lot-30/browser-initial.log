@@ -1,0 +1,73 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep operations counts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 254ms
+✓ Running next.config.ts took 437ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.3s (next.js: 1880ms, proxy.ts: 126ms, application-code: 298ms)
+ POST /api/auth/sign-in/email 200 in 1010ms (next.js: 848ms, proxy.ts: 3ms, application-code: 158ms)
+ POST /api/auth/sign-in/email 200 in 82ms (next.js: 3ms, proxy.ts: 3ms, application-code: 76ms)
+ POST /api/auth/sign-in/email 200 in 80ms (next.js: 2ms, proxy.ts: 2ms, application-code: 75ms)
+ POST /api/auth/sign-in/email 200 in 80ms (next.js: 3ms, proxy.ts: 2ms, application-code: 76ms)
+ POST /api/auth/sign-in/email 200 in 76ms (next.js: 2ms, proxy.ts: 2ms, application-code: 72ms)
+ GET /dashboard 200 in 527ms (next.js: 194ms, proxy.ts: 2ms, application-code: 330ms)
+ GET /settings 200 in 218ms (next.js: 28ms, proxy.ts: 2ms, application-code: 188ms)
+ GET /billing 200 in 158ms (next.js: 12ms, proxy.ts: 2ms, application-code: 143ms)
+ GET /support 200 in 131ms (next.js: 14ms, proxy.ts: 2ms, application-code: 115ms)
+ GET /accounts 200 in 118ms (next.js: 12ms, proxy.ts: 1.9ms, application-code: 104ms)
+ GET /history 200 in 136ms (next.js: 14ms, proxy.ts: 1.7ms, application-code: 120ms)
+ GET /alerts 200 in 133ms (next.js: 21ms, proxy.ts: 1.8ms, application-code: 111ms)
+ GET /tasks 200 in 147ms (next.js: 19ms, proxy.ts: 1.9ms, application-code: 126ms)
+ GET /approvals 200 in 128ms (next.js: 21ms, proxy.ts: 1.8ms, application-code: 105ms)
+ GET /reports 200 in 184ms (next.js: 19ms, proxy.ts: 2.0ms, application-code: 163ms)
+ GET /audit 200 in 126ms (next.js: 20ms, proxy.ts: 1.9ms, application-code: 104ms)
+ GET /agents 200 in 176ms (next.js: 17ms, proxy.ts: 1.9ms, application-code: 156ms)
+ GET / 200 in 97ms (next.js: 18ms, proxy.ts: 1.9ms, application-code: 77ms)
+ GET /privacy 200 in 47ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 34ms)
+ GET /terms 200 in 43ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 31ms)
+ GET /subprocessors 200 in 104ms (next.js: 39ms, proxy.ts: 1.8ms, application-code: 64ms)
+ GET /status 200 in 90ms (next.js: 30ms, proxy.ts: 1.9ms, application-code: 57ms)
+ GET /sign-in 200 in 36ms (next.js: 6ms, proxy.ts: 2ms, application-code: 28ms)
+ GET /sign-up 200 in 326ms (next.js: 296ms, proxy.ts: 1.7ms, application-code: 29ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-uI7IyA
+
+Running 1 test using 1 worker
+
+(node:18218) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18218) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+  ✘  1 [chromium] › e2e/activation-local.spec.ts:7:7 › operations counts published reports and excludes legacy or future activation (47ms)
+
+
+  1) [chromium] › e2e/activation-local.spec.ts:7:7 › operations counts published reports and excludes legacy or future activation
+
+    error: inconsistent types deduced for parameter $1
+
+      23 |       await db.query("insert into activation_milestones(workspace_id,milestone,actor_user_id,occurred_at) values($1,'first_report','fixture',now()),($2,'first_report_published','fixture',now()),($1,'first_report_published','fixture',now()+interval '1 day')",ids.slice(0, 2))
+      24 |       await db.query("insert into activation_milestones(workspace_id,milestone,actor_user_id,occurred_at) values($1,'first_analysis','fixture',now()),($2,'first_qualified_analysis','fixture',now()),($1,'first_qualified_analysis','fixture',now()+interval '1 day')",ids.slice(0, 2))
+    > 25 |       await db.query("insert into workspaces(id,owner_user_id,name,slug,plan,access_state,created_at) values($1,'activation-browser','Future fixture','activation-'||$1,'agency','active',now()+interval '1 day'),($2,'activation-browser','Internal fixture','activation-'||$2,'internal','internal',$3)", [ids[2], ids[3], createdAt])
+         |       ^
+      26 |       await db.query("insert into activation_milestones(workspace_id,milestone,actor_user_id,occurred_at) values($1,'google_connected','fixture',now()),($1,'accounts_synced','fixture',now()),($2,'accounts_synced','fixture',now()),($1,'accounts_selected','fixture',now()),($1,'first_monitor','fixture',now()),($2,'legal_accepted','fixture',now()),($3,'paid_conversion','fixture',now())", [ids[0], ids[1], ids[3]])
+      27 |       const page=await context.newPage()
+      28 |       await page.goto('/operations')
+        at /Users/yoannandrieux/Projets/yodev-ads/web/node_modules/pg/lib/client.js:694:17
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/activation-local.spec.ts:25:7
+
+    Error Context: test-results/activation-local-operation-2f6fc-legacy-or-future-activation-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/activation-local.spec.ts:7:7 › operations counts published reports and excludes legacy or future activation
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

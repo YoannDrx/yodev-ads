@@ -56,4 +56,39 @@ describe('activationCohorts', () => {
     expect(result.cohorts[0].firstReport).toBe(1)
     expect(result.medianDaysToFirstReport).toBe(1)
   })
+  it('measures all intermediate stages independently with observed-only medians', () => {
+    const workspaces = ['a', 'b', 'c'].map((id) => ({ id, createdAt: new Date('2026-08-03') }))
+    const result = activationCohorts(workspaces, [
+      { workspaceId: 'a', milestone: 'accounts_synced', occurredAt: new Date('2026-08-04') },
+      { workspaceId: 'a', milestone: 'accounts_selected', occurredAt: new Date('2026-08-05') },
+      { workspaceId: 'b', milestone: 'accounts_selected', occurredAt: new Date('2026-08-07') },
+      { workspaceId: 'b', milestone: 'first_qualified_analysis', occurredAt: new Date('2026-08-08') },
+      { workspaceId: 'b', milestone: 'first_qualified_analysis', occurredAt: new Date('2026-08-09') },
+      { workspaceId: 'a', milestone: 'first_monitor', occurredAt: new Date('2026-08-10') },
+      { workspaceId: 'a', milestone: 'legal_accepted', occurredAt: new Date('2026-08-03') },
+      { workspaceId: 'c', milestone: 'first_analysis', occurredAt: new Date('2026-08-04') },
+      { workspaceId: 'c', milestone: 'first_monitor', occurredAt: new Date('2026-08-02') },
+      { workspaceId: 'c', milestone: 'legal_accepted', occurredAt: new Date('2026-08-20') },
+      { workspaceId: 'foreign', milestone: 'first_monitor', occurredAt: new Date('2026-08-04') },
+    ], new Date('2026-08-12T00:00:00Z'), 2)
+    expect(result.cohorts[0]).toMatchObject({ workspaces: 3, googleConnected: 0, accountsSynced: 1, accountsSelected: 2, firstAnalysis: 1, firstMonitor: 1, firstReport: 0, legalAccepted: 1, paid: 0 })
+    expect(result.medianDaysByStage).toEqual({ googleConnected: null, accountsSynced: 1, accountsSelected: 3, firstAnalysis: 5, firstMonitor: 7, firstReport: null, legalAccepted: 0, paid: null })
+    expect(result.asOf).toBe('2026-08-12T00:00:00.000Z')
+  })
+
+  it('keeps UTC Monday boundaries over a year change and excludes older cohort conversions', () => {
+    const result = activationCohorts([
+      { id: 'old', createdAt: new Date('2025-12-21T23:59:59Z') },
+      { id: 'sunday', createdAt: new Date('2025-12-28T23:59:59Z') },
+      { id: 'monday', createdAt: new Date('2025-12-29T00:00:00Z') },
+    ], [
+      { workspaceId: 'old', milestone: 'first_qualified_analysis', occurredAt: new Date('2026-01-02') },
+      { workspaceId: 'monday', milestone: 'first_qualified_analysis', occurredAt: new Date('2026-01-02') },
+    ], new Date('2026-01-02T12:00:00Z'), 2)
+    expect(result.cohorts.map(({ weekStart, workspaces, firstAnalysis }) => ({ weekStart, workspaces, firstAnalysis }))).toEqual([
+      { weekStart: '2025-12-22', workspaces: 1, firstAnalysis: 0 }, { weekStart: '2025-12-29', workspaces: 1, firstAnalysis: 1 },
+    ])
+    expect(result.medianDaysByStage.firstAnalysis).toBe(4)
+  })
+
 })

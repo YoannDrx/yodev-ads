@@ -3,16 +3,9 @@ import 'server-only'
 import { activationMilestones } from '@/db/schema'
 import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 
-export const ACTIVATION_MILESTONES = [
-  'google_connected',
-  'accounts_synced',
-  'accounts_selected',
-  'first_qualified_analysis',
-  'first_monitor',
-  'first_report_published',
-  'legal_accepted',
-  'paid_conversion',
-] as const
+import { ACTIVATION_STAGES } from '@/lib/activation-stages'
+
+export const ACTIVATION_MILESTONES = ACTIVATION_STAGES.map((stage) => stage.milestone)
 
 export type ActivationMilestone = (typeof ACTIVATION_MILESTONES)[number]
 
