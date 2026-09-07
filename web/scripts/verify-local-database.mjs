@@ -29,7 +29,7 @@ for (const key of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'DATABASE_AUTHENTICA
 const commands = [
   ['drizzle-kit', 'migrate'],
   ...['seed-rls-verification', 'verify-rls', 'validate-tenant-constraints', 'verify-tenant-invariants', 'verify-database-concurrency', 'verify-prod-ready-concurrency', 'verify-monitoring-checkpoints', 'verify-metric-history', 'verify-analytical-collections', 'verify-analytical-pages', 'verify-account-selection', 'verify-account-selection-actors', 'verify-google-inventory-actors', 'verify-secret-revelations', 'verify-google-connection-actors',
-  'verify-teams-oauth-actors', 'verify-report-editions', 'verify-workspace-collections', 'verify-public-status', 'verify-portfolio', 'verify-portfolio-views', 'verify-activation-evidence', 'verify-membership-boundary', 'verify-membership-admission', 'verify-alert-quality', 'verify-operating-costs', 'verify-monitoring-actors', 'verify-task-actors', 'verify-settings-actors', 'verify-security-actors', 'verify-member-mutations', 'verify-task-recipients'].map((script) => ['tsx', `scripts/${script}.ts`]),
+  'verify-teams-oauth-actors', 'verify-report-management-actors', 'verify-report-editions', 'verify-workspace-collections', 'verify-public-status', 'verify-portfolio', 'verify-portfolio-views', 'verify-activation-evidence', 'verify-membership-boundary', 'verify-membership-admission', 'verify-alert-quality', 'verify-operating-costs', 'verify-monitoring-actors', 'verify-task-actors', 'verify-settings-actors', 'verify-security-actors', 'verify-member-mutations', 'verify-task-recipients'].map((script) => ['tsx', `scripts/${script}.ts`]),
 ]
 for (const args of commands) {
   console.log(`Running ${args.join(' ')}`)

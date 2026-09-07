@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
 vi.mock('@/lib/crypto', () => ({ encryptSecret: mocks.encrypt }))
 vi.mock('@/lib/tokens', () => ({ hashToken: mocks.hash }))
-vi.mock('@/lib/workspace-transaction-guard', () => ({ lockWorkspaceAccessBoundary: vi.fn(async () => undefined), lockWorkspaceEntitlements: vi.fn(async () => entitlementContext('active', 'solo')) }))
+vi.mock('@/lib/workspace-actor-guard', () => ({ withWorkspaceActorTransaction: (context: unknown, callback: (db: unknown, access: unknown) => unknown) => mocks.transaction(context, (db) => callback(db, { entitlements: entitlementContext('active', 'solo') })) }))
 
 import { entitlementContext } from './entitlements'
 import {

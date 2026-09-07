@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { storedReportPeriod, type ReportPeriodSelection } from '@/lib/report-period-selection'
-import { lockWorkspaceAccessBoundary, lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 
 import { and, count, eq, sql } from 'drizzle-orm'
 import {
@@ -12,7 +12,6 @@ import {
   reportTemplateVersions,
   shareLinks,
 } from '@/db/schema'
-import { withTenantTransaction } from '@/db/transactions'
 import { encryptSecret } from '@/lib/crypto'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { hashToken } from '@/lib/tokens'
@@ -41,7 +40,7 @@ function templateSnapshot(template: typeof reportTemplates.$inferSelect) {
 
 export function createWorkspaceReportTemplate(input: ActorContext & ReportTemplateInput) {
   const periodConfig = storedReportPeriod(input)
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db) => {
     const [template] = await db.insert(reportTemplates).values({
       workspaceId: input.workspaceId,
       createdBy: input.actorUserId,
@@ -79,7 +78,7 @@ export function updateWorkspaceReportTemplate(input: ActorContext & ReportTempla
 }) {
   const periodConfig = storedReportPeriod(input)
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db) => {
     const [updated] = await db.update(reportTemplates).set({
       name: input.name,
       locale: input.locale,
@@ -117,7 +116,7 @@ export function updateWorkspaceReportTemplate(input: ActorContext & ReportTempla
 
 export function deactivateWorkspaceReportTemplate(input: ActorContext & { templateId: string; now?: Date }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db) => {
     const [updated] = await db.update(reportTemplates).set({ active: false, updatedAt: now }).where(and(
       eq(reportTemplates.id, input.templateId),
       eq(reportTemplates.workspaceId, input.workspaceId),
@@ -152,8 +151,7 @@ export function createWorkspaceReportSchedule(input: ActorContext & {
   now?: Date
 }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db, { entitlements }) => {
     await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:reports`}))`)
     const usage = await db.select({ count: count() }).from(shareLinks).where(and(eq(shareLinks.workspaceId, input.workspaceId), eq(shareLinks.active, true)))
     const client = await db.query.clients.findFirst({
@@ -221,8 +219,7 @@ export function setWorkspaceReportScheduleEnabled(input: ActorContext & {
   now?: Date
 }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    const entitlements = await lockWorkspaceEntitlements(db, input.workspaceId, 'monitoring')
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db, { entitlements }) => {
     await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:reports`}))`)
     const schedule = await db.query.reportSchedules.findFirst({
       where: and(eq(reportSchedules.id, input.scheduleId), eq(reportSchedules.workspaceId, input.workspaceId)),
@@ -269,8 +266,7 @@ export function rotateWorkspaceScheduledReportToken(input: ActorContext & {
   now?: Date
 }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
-    await lockWorkspaceAccessBoundary(db, input.workspaceId)
+  return withWorkspaceActorTransaction({ workspaceId: input.workspaceId, actorUserId: input.actorUserId, permission: 'reports:manage', capability: 'monitoring' }, async (db) => {
     const schedule = await db.query.reportSchedules.findFirst({
       where: and(eq(reportSchedules.id, input.scheduleId), eq(reportSchedules.workspaceId, input.workspaceId)),
     })

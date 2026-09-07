@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { Client } from 'pg'
 import { randomUUID } from 'node:crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import { activationMilestones, clients, shareLinks, workspaces } from '../src/db/schema'
@@ -14,13 +15,18 @@ const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
 assert(['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && url.pathname.startsWith('/yodev_test'), 'Disposable local database required')
 globalThis.fetch = async () => { throw new Error('Provider calls forbidden') }
 const workspaceId = '85000000-0000-4000-8000-000000000001', foreignId = '85000000-0000-4000-8000-000000000002', owner = 'activation-fixture'
-const cleanup = async () => { for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id))) }
+const authFixture = new Client({ connectionString: url.href })
+const cleanup = async () => { for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id))); await authFixture.query('delete from auth_organizations where id=$1', [workspaceId]); await authFixture.query('delete from auth_users where id=$1', [owner]) }
 async function main() {
+  await authFixture.connect()
   await cleanup()
   const now = new Date(), createdAt = new Date(now.getTime()-3*86_400_000)
   const milestones = () => withSystemTransaction((db) => db.query.activationMilestones.findMany({ where: eq(activationMilestones.workspaceId, workspaceId) }))
   try {
-    await withSystemTransaction((db) => db.insert(workspaces).values([workspaceId, foreignId].map((id) => ({ id, ownerUserId: owner, name: 'Activation fixture', slug: `activation-${id}`, plan: 'agency', accessState: 'active', createdAt }))))
+    await authFixture.query('insert into auth_users(id,name,email,email_verified) values($1,$1,$2,true)', [owner, 'activation-fixture@example.test'])
+    await authFixture.query('insert into auth_organizations(id,name,slug) values($1::text,$1::text,$1::text)', [workspaceId])
+    await authFixture.query("insert into auth_members(id,organization_id,user_id,role) values($1,$1,$2,'owner')", [workspaceId, owner])
+    await withSystemTransaction((db) => db.insert(workspaces).values([workspaceId, foreignId].map((id) => ({ id, authOrganizationId: id === workspaceId ? workspaceId : null, ownerUserId: owner, name: 'Activation fixture', slug: `activation-${id}`, plan: 'agency', accessState: 'active', createdAt }))))
     const [client] = await withSystemTransaction((db) => db.insert(clients).values({ workspaceId, googleCustomerId: '8500000000', name: 'Activation fixture', currencyCode: 'EUR', timezone: 'Europe/Paris' }).returning())
     const schedule = await createWorkspaceReportSchedule({ workspaceId, actorUserId: owner, workspaceLocale: 'fr', clientId: client.id, name: 'Not yet published', cadence: 'weekly', scheduleWeekday: 1, scheduleMonthday: 1, sendHour: 8, timezone: 'Europe/Paris', recipientEmails: ['fixture@example.test'], token: randomUUID(), entitlements: entitlementContext('active','agency'), now })
     assert.equal((await milestones()).length, 0, 'A schedule is not a published report')
@@ -68,6 +74,6 @@ async function main() {
     await assert.rejects(withTenantTransaction({workspaceId:foreignId,userId:owner},(db)=>createReportEditionInTransaction(db,{workspaceId:foreignId,shareId:rollbackShare.id,actorUserId:owner,kind:'initial',now})))
     assert.equal((await withSystemTransaction((db)=>db.query.activationMilestones.findMany({where:and(eq(activationMilestones.workspaceId,foreignId),eq(activationMilestones.milestone,'first_report_published'))}))).length,0)
     console.log(JSON.stringify({ok:true,verified:['schedule_not_publication','failed_publication_no_milestone','edition_atomic_publication_evidence','reopen_idempotent','legacy_marker_preserved_not_counted','edition_and_selection_backfill_idempotent','tenant_scoped_backfill','future_and_invalid_cohorts_covered_by_unit_tests'],providerCalls:0}))
-  } finally { await cleanup() }
+  } finally { await cleanup(); await authFixture.end() }
 }
 main().catch((error)=>{console.error(error);process.exitCode=1})

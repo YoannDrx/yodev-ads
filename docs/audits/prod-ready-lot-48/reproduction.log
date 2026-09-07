@@ -1,0 +1,11 @@
+AssertionError [ERR_ASSERTION]: Missing expected rejection: template_create:client
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async denied (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-report-management-actors.ts:36:108)
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-report-management-actors.ts:60:149) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: /non autorisée|Quota/,
+  operator: 'rejects',
+  diff: 'simple'
+}
