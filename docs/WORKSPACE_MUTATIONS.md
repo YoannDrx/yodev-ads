@@ -38,4 +38,6 @@ Le [lot 44](./audits/prod-ready-lot-44/README.md) protège la consommation des t
 
 Le [lot 45](./audits/prod-ready-lot-45/README.md) protège aussi la persistance OAuth Google : acteur/capacité, version signée comparée sous verrou, échéance après attente et rollback complet. Une première connexion concurrente ne peut pas être écrasée.
 
-Les lots 37–45 relient les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Ils ne terminent pas la revue des autres mutations : sessions OAuth, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.
+Le [lot 46](./audits/prod-ready-lot-46/README.md) protège les trois services OAuth Teams. Droits et session sont relus avant et après renouvellement fournisseur, même sans rotation de refresh token ; la complétion utilise le quota courant et consomme la session atomiquement. Les expirations après attente annulent les écritures. Le callback transmet son échéance signée ; les formulaires et cookies concurrents restent à traiter.
+
+Les lots 37–46 relient les reproductions, les attentes PostgreSQL observées, les audits autoritatifs et les parcours navigateur. Ils ne terminent pas la revue des autres mutations : sessions OAuth, rapports, domaines et lifecycle conservent leurs chantiers identifiés dans le plan. Les garanties locales ne valent pas validation des intégrations déployées.

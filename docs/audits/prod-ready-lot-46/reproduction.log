@@ -1,0 +1,11 @@
+AssertionError [ERR_ASSERTION]: Missing expected rejection: create
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async denied (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-teams-oauth-actors.ts:37:3)
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-teams-oauth-actors.ts:68:160) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: /non autorisée|Capability|Quota/,
+  operator: 'rejects',
+  diff: 'simple'
+}

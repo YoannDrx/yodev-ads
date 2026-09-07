@@ -46,6 +46,7 @@ export async function GET(request: Request) {
       actorUserId: session.userId,
       refreshToken: tokens.refreshToken,
       scopes: tokens.scopes,
+      authorizationExpiresAt: new Date(state.expiresAt),
     })
     cookieStore.set(TEAMS_SESSION_COOKIE_NAME, sealOAuthState({
       provider: 'teams',
