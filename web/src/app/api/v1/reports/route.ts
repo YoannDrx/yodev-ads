@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { apiData, apiError, ApiV1Error, authenticateApiRequest, decodeCursor, pageResult } from '@/lib/api-v1'
+import { apiData, apiError, ApiV1Error, authenticateApiRequest } from '@/lib/api-v1'
 import { reportPeriodSelectionSchema } from '@/lib/report-period-selection'
 import { createShareToken } from '@/lib/tokens'
 import { createApiReport, listApiReports } from '@/lib/api-v1-repository'
@@ -8,16 +8,14 @@ export async function GET(request: Request) {
   const requestId = crypto.randomUUID()
   try {
     const credential = await authenticateApiRequest(request, 'reports:read')
-    const query = z.object({ cursor: z.string().max(500).optional(), limit: z.coerce.number().int().min(1).max(100).default(50) })
+    const query = z.object({ cursor: z.string().max(2048).optional(), limit: z.coerce.number().int().min(1).max(100).default(50) })
       .parse(Object.fromEntries(new URL(request.url).searchParams))
-    const cursor = decodeCursor(query.cursor ?? null)
-    const reports = await listApiReports({
+    const page = await listApiReports({
       workspaceId: credential.workspace.id,
       actorId: `api-key:${credential.key.id}`,
-      cursor,
+      cursor: query.cursor,
       limit: query.limit,
     })
-    const page = pageResult(reports, query.limit, (row) => ({ at: row.report.createdAt, id: row.report.id }))
     return apiData(page.data, requestId, page.nextCursor)
   } catch (error) {
     return apiError(error, requestId)

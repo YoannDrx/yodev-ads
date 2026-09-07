@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, asc, count, desc, eq, gte, lt, lte, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import {
   alertIncidents,
   approvalRequests,
@@ -11,8 +11,9 @@ import {
   monitoringAgents,
   shareLinks,
 } from '@/db/schema'
-import { withTenantTransaction } from '@/db/transactions'
-import { ApiV1Error, type CursorValue } from '@/lib/api-v1'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
+import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
+import { ApiV1Error } from '@/lib/api-v1'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { createReportEditionInTransaction, ReportDataUnavailable } from '@/lib/report-editions'
 import { storedReportPeriod, type ReportPeriodSelection } from '@/lib/report-period-selection'
@@ -20,68 +21,80 @@ import { encryptSecret } from '@/lib/crypto'
 import { hashToken } from '@/lib/tokens'
 import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
 import { metricCoverage } from '@/lib/metric-coverage'
+import { collectionScope, collectionWindow, collectionWhere, exactTimestamp, writeCollectionCursor } from '@/lib/collection-pagination'
 
 type ApiTenant = { workspaceId: string; actorId: string }
 
+type ApiPageInput = ApiTenant & { cursor?: string | null; limit: number }
+async function apiWindow(db: DatabaseTransaction, input: ApiPageInput, collection: string, columns: { id: AnyPgColumn; createdAt: AnyPgColumn }, filters: Record<string, unknown> = {}) {
+  if (!Number.isInteger(input.limit) || input.limit < 1 || input.limit > 100) throw new ApiV1Error('INVALID_INPUT', 'Limit must be between 1 and 100', 400)
+  const scope = collectionScope(input.workspaceId, `api:${collection}`, { ...filters, actorId: input.actorId })
+  const window = await collectionWindow(db, scope, { cursor: input.cursor ?? undefined }, columns)
+  if (!window) throw new ApiV1Error('INVALID_CURSOR', 'Cursor is invalid or expired; restart without a cursor', 400)
+  return window
+}
+function apiPage<T extends { cursorId: string; cursorAt: string }>(rows: T[], limit: number, window: Awaited<ReturnType<typeof apiWindow>>) {
+  const page = rows.slice(0, limit), last = page.at(-1)
+  return {
+    data: page.map(({ cursorId, cursorAt, ...row }) => { void cursorId; void cursorAt; return row }),
+    nextCursor: rows.length > limit && last ? writeCollectionCursor({ scope: window.scope, snapshot: window.snapshot, expires: window.expires, id: last.cursorId, at: last.cursorAt }) : null,
+  }
+}
+
 export function listApiAlerts(input: ApiTenant & {
   status?: 'open' | 'acknowledged' | 'snoozed' | 'resolved' | 'reopened'
-  cursor: CursorValue | null
+  cursor?: string | null
   limit: number
 }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorId }, (db) => {
-    const filters = [eq(alertIncidents.workspaceId, input.workspaceId)]
-    if (input.status) filters.push(eq(alertIncidents.status, input.status))
-    if (input.cursor) filters.push(or(
-      lt(alertIncidents.detectedAt, input.cursor.at),
-      and(eq(alertIncidents.detectedAt, input.cursor.at), lt(alertIncidents.id, input.cursor.id)),
-    )!)
-    return db
-      .select({ alert: alertIncidents, client: { id: clients.id, name: clients.name } })
+  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorId }, async (db) => {
+    const window = await apiWindow(db, input, 'alerts', alertIncidents, { status: input.status ?? null })
+    const rows = await db
+      .select({ alert: alertIncidents, client: { id: clients.id, name: clients.name }, cursorId: alertIncidents.id, cursorAt: exactTimestamp(alertIncidents.createdAt) })
       .from(alertIncidents)
       .innerJoin(clients, and(eq(clients.id, alertIncidents.clientId), eq(clients.workspaceId, alertIncidents.workspaceId)))
-      .where(and(...filters))
-      .orderBy(desc(alertIncidents.detectedAt), desc(alertIncidents.id))
+      .where(collectionWhere(and(eq(alertIncidents.workspaceId, input.workspaceId), input.status ? eq(alertIncidents.status, input.status) : undefined), window))
+      .orderBy(desc(alertIncidents.createdAt), desc(alertIncidents.id))
       .limit(input.limit + 1)
+    return apiPage(rows, input.limit, window)
   })
 }
 
-export function listApiApprovals(input: ApiTenant & { cursor: CursorValue | null; limit: number }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorId }, (db) => db
-    .select({
-      approval: {
-        id: approvalRequests.id,
-        clientId: approvalRequests.clientId,
-        requestedBy: approvalRequests.requestedBy,
-        kind: approvalRequests.kind,
-        title: approvalRequests.title,
-        resourceName: approvalRequests.resourceName,
-        expectedState: approvalRequests.expectedState,
-        proposedState: approvalRequests.proposedState,
-        requiredApprovals: approvalRequests.requiredApprovals,
-        executionState: approvalRequests.executionState,
-        reconciliationState: approvalRequests.reconciliationState,
-        status: approvalRequests.status,
-        expiresAt: approvalRequests.expiresAt,
-        executedAt: approvalRequests.executedAt,
-        createdAt: approvalRequests.createdAt,
-        updatedAt: approvalRequests.updatedAt,
-      },
-      client: { id: clients.id, name: clients.name },
-    })
-    .from(approvalRequests)
-    .innerJoin(clients, and(
-      eq(clients.id, approvalRequests.clientId),
-      eq(clients.workspaceId, approvalRequests.workspaceId),
-    ))
-    .where(and(
-      eq(approvalRequests.workspaceId, input.workspaceId),
-      input.cursor ? or(
-        lt(approvalRequests.createdAt, input.cursor.at),
-        and(eq(approvalRequests.createdAt, input.cursor.at), lt(approvalRequests.id, input.cursor.id)),
-      ) : undefined,
-    ))
-    .orderBy(desc(approvalRequests.createdAt), desc(approvalRequests.id))
-    .limit(input.limit + 1))
+export function listApiApprovals(input: ApiTenant & { cursor?: string | null; limit: number }) {
+  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorId }, async (db) => {
+    const window = await apiWindow(db, input, 'approvals', approvalRequests)
+    const rows = await db
+      .select({
+        cursorId: approvalRequests.id, cursorAt: exactTimestamp(approvalRequests.createdAt),
+        approval: {
+          id: approvalRequests.id,
+          clientId: approvalRequests.clientId,
+          requestedBy: approvalRequests.requestedBy,
+          kind: approvalRequests.kind,
+          title: approvalRequests.title,
+          resourceName: approvalRequests.resourceName,
+          expectedState: approvalRequests.expectedState,
+          proposedState: approvalRequests.proposedState,
+          requiredApprovals: approvalRequests.requiredApprovals,
+          executionState: approvalRequests.executionState,
+          reconciliationState: approvalRequests.reconciliationState,
+          status: approvalRequests.status,
+          expiresAt: approvalRequests.expiresAt,
+          executedAt: approvalRequests.executedAt,
+          createdAt: approvalRequests.createdAt,
+          updatedAt: approvalRequests.updatedAt,
+        },
+        client: { id: clients.id, name: clients.name },
+      })
+      .from(approvalRequests)
+      .innerJoin(clients, and(
+        eq(clients.id, approvalRequests.clientId),
+        eq(clients.workspaceId, approvalRequests.workspaceId),
+      ))
+      .where(collectionWhere(eq(approvalRequests.workspaceId, input.workspaceId), window))
+      .orderBy(desc(approvalRequests.createdAt), desc(approvalRequests.id))
+      .limit(input.limit + 1)
+    return apiPage(rows, input.limit, window)
+  })
 }
 
 export function getApiApprovalContext(input: ApiTenant & { clientId: string }) {
@@ -180,34 +193,33 @@ export function getApiPortfolio(input: ApiTenant) {
   }))
 }
 
-export function listApiReports(input: ApiTenant & { cursor: CursorValue | null; limit: number }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorId }, (db) => db
-    .select({
-      report: {
-        id: shareLinks.id,
-        clientId: shareLinks.clientId,
-        label: shareLinks.label,
-        mode: shareLinks.mode, periodDays: shareLinks.periodDays, periodConfig: shareLinks.periodConfig, locale: shareLinks.locale,
-        active: shareLinks.active,
-        allowFeedback: shareLinks.allowFeedback,
-        lastViewedAt: shareLinks.lastViewedAt,
-        expiresAt: shareLinks.expiresAt,
-        createdAt: shareLinks.createdAt,
-        updatedAt: shareLinks.updatedAt,
-      },
-      client: { id: clients.id, name: clients.name },
-    })
-    .from(shareLinks)
-    .innerJoin(clients, and(eq(clients.id, shareLinks.clientId), eq(clients.workspaceId, shareLinks.workspaceId)))
-    .where(and(
-      eq(shareLinks.workspaceId, input.workspaceId),
-      input.cursor ? or(
-        lt(shareLinks.createdAt, input.cursor.at),
-        and(eq(shareLinks.createdAt, input.cursor.at), lt(shareLinks.id, input.cursor.id)),
-      ) : undefined,
-    ))
-    .orderBy(desc(shareLinks.createdAt), desc(shareLinks.id))
-    .limit(input.limit + 1))
+export function listApiReports(input: ApiTenant & { cursor?: string | null; limit: number }) {
+  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorId }, async (db) => {
+    const window = await apiWindow(db, input, 'reports', shareLinks)
+    const rows = await db
+      .select({
+        cursorId: shareLinks.id, cursorAt: exactTimestamp(shareLinks.createdAt),
+        report: {
+          id: shareLinks.id,
+          clientId: shareLinks.clientId,
+          label: shareLinks.label,
+          mode: shareLinks.mode, periodDays: shareLinks.periodDays, periodConfig: shareLinks.periodConfig, locale: shareLinks.locale,
+          active: shareLinks.active,
+          allowFeedback: shareLinks.allowFeedback,
+          lastViewedAt: shareLinks.lastViewedAt,
+          expiresAt: shareLinks.expiresAt,
+          createdAt: shareLinks.createdAt,
+          updatedAt: shareLinks.updatedAt,
+        },
+        client: { id: clients.id, name: clients.name },
+      })
+      .from(shareLinks)
+      .innerJoin(clients, and(eq(clients.id, shareLinks.clientId), eq(clients.workspaceId, shareLinks.workspaceId)))
+      .where(collectionWhere(eq(shareLinks.workspaceId, input.workspaceId), window))
+      .orderBy(desc(shareLinks.createdAt), desc(shareLinks.id))
+      .limit(input.limit + 1)
+    return apiPage(rows, input.limit, window)
+  })
 }
 
 export function createApiReport(input: ApiTenant & {

@@ -118,6 +118,7 @@ async function seedLoadFixtures() {
       schedule: 'daily',
     }
   })
+  const approvalCreatedAt = new Date(Date.now() - 86_400_000)
   const approvalRows: Array<typeof approvalRequests.$inferInsert> = approvalIds.map((id, index) => ({
     id,
     workspaceId: agencyWorkspaceId,
@@ -131,8 +132,8 @@ async function seedLoadFixtures() {
     expectedStateHash: `database-load-state-${index + 1}`,
     requiredApprovals: 1,
     expiresAt: new Date('2038-01-01T00:00:00.000Z'),
-    createdAt: new Date('2037-08-18T07:00:00.000Z'),
-    updatedAt: new Date('2037-08-18T07:00:00.000Z'),
+    createdAt: approvalCreatedAt,
+    updatedAt: approvalCreatedAt,
   }))
   const deliveryRows: Array<typeof notificationDeliveries.$inferInsert> = Array.from(
     { length: DELIVERY_COUNT },
@@ -279,20 +280,21 @@ async function verifyApprovalBurstAndPagination() {
   invariant(outcomes.every((outcome) => outcome.outcome === 'claimed'), 'Not all 100 simultaneous approvals were claimed once')
 
   const seen = new Set<string>()
-  let cursor: { at: Date; id: string } | null = null
+  let cursor: string | null = null
   let pages = 0
   do {
-    const rows = await listApiApprovals({
+    const page = await listApiApprovals({
       workspaceId: agencyWorkspaceId,
       actorId: 'database-load-api',
       cursor,
       limit: 25,
     })
-    const page = rows.slice(0, 25)
-    for (const row of page) seen.add(row.approval.id)
+    for (const row of page.data) {
+      invariant(!seen.has(row.approval.id), 'Approval cursor duplicated a row')
+      seen.add(row.approval.id)
+    }
     pages += 1
-    const last = page.at(-1)
-    cursor = rows.length > 25 && last ? { at: last.approval.createdAt, id: last.approval.id } : null
+    cursor = page.nextCursor
   } while (cursor)
   invariant(seen.size === APPROVAL_COUNT, 'Approval cursor pagination skipped or duplicated rows')
   invariant(pages === 4, 'Approval cursor pagination did not produce four stable pages')

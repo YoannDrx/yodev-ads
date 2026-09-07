@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { eq, sql } from 'drizzle-orm'
 import { workspaces, clients, monitoringAgents, workspaceTasks, supportTickets, approvalRequests, alertIncidents } from '../src/db/schema'
 import { withSystemTransaction } from '../src/db/transactions'
+import { listApiAlerts, listApiApprovals, listApiReports } from '../src/lib/api-v1-repository'
 import { listAuditPage, listAlertPage, listTaskPage, listApprovalPage, listSupportPage, listDiscussionPage, type DiscussionKind } from '../src/lib/workspace-collections'
 
 const url = new URL(process.env.DATABASE_SYSTEM_URL ?? '')
@@ -50,6 +51,32 @@ async function main() {
       } while (cursor)
       assert.equal(count, 521, `${kind}: missing records at microsecond boundaries`)
     }
+    await withSystemTransaction((db) => db.execute(sql`insert into share_links(workspace_id,client_id,created_by,label,token_hash,token_prefix,created_at) select ${workspaceId},${client.id},'fixture','Report '||n,md5(${workspaceId}||':'||n),'fixture',now()-interval '1 day'+(n/3)*interval '1 microsecond' from generate_series(1,521) n`))
+    for (const [kind, list] of [['alerts', listApiAlerts], ['approvals', listApiApprovals], ['reports', listApiReports]] as const) {
+      let cursor: string | undefined
+      const seen = new Set<string>()
+      do {
+        const page = await list({ workspaceId, actorId: 'api-key:fixture', cursor, limit: 37 })
+        assert(page.data.length <= 37)
+        for (const row of page.data) {
+          const id = 'alert' in row ? row.alert.id : 'approval' in row ? row.approval.id : row.report.id
+          assert(!('cursorAt' in row)); assert(!seen.has(id), `${kind} API duplicate`); seen.add(id)
+        }
+        if (!cursor && page.nextCursor) {
+          for (const change of [{ workspaceId: foreignId }, { actorId: 'api-key:foreign' }, { cursor: 'forged' }]) {
+            await assert.rejects(list({ workspaceId, actorId: 'api-key:fixture', cursor: page.nextCursor, limit: 37, ...change }), (error: unknown) => error instanceof Error && 'code' in error && error.code === 'INVALID_CURSOR')
+          }
+          if (kind === 'alerts') {
+            await assert.rejects(listApiAlerts({ workspaceId, actorId: 'api-key:fixture', cursor: page.nextCursor, limit: 37, status: 'resolved' }))
+            // DetectedAt changes during monitoring; creation ordering must remain stable.
+            await withSystemTransaction((db) => db.update(alertIncidents).set({ detectedAt: new Date() }).where(eq(alertIncidents.workspaceId, workspaceId)))
+          }
+          if (kind === 'reports') await withSystemTransaction((db) => db.execute(sql`insert into share_links(workspace_id,client_id,created_by,label,token_hash,token_prefix) values(${workspaceId},${client.id},'fixture','After snapshot',md5(${workspaceId}||':after'),'fixture')`))
+        }
+        cursor = page.nextCursor ?? undefined
+      } while (cursor)
+      assert.equal(seen.size, 521, `${kind} API missing records at microsecond boundaries`)
+    }
     const firstTasks = await listTaskPage(workspaceId)
     assert((await listTaskPage(workspaceId, { cursor: firstTasks.nextCursor!, q: 'Task 1' })).invalidCursor)
     assert((await listSupportPage(workspaceId, 'other-reader', (await listSupportPage(workspaceId, undefined)).nextCursor ? { cursor: (await listSupportPage(workspaceId, undefined)).nextCursor! } : {})).invalidCursor)
@@ -90,7 +117,7 @@ async function main() {
     const supportPreview = (await listSupportPage(workspaceId, undefined, { id: ticket.id })).items.find((item) => item.ticket.id === ticket.id)!
     assert(supportPreview.hasMoreComments); assert.equal(supportPreview.messages.length, 5)
     assert(supportPreview.messages.every((comment) => !comment.body.includes('PRIVATE')))
-    console.log(JSON.stringify({ ok: true, collections: 5, recordsPerCollection: 521, discussions: 4, messagesPerDiscussion: 701, verified: ['microsecond_and_uuid_ordering', 'concurrent_insert_excluded_from_existing_page_walk', 'tenant_filter_and_reader_bound_cursor', 'forged_cursor_denied', 'literal_search', 'latest_five_previews', 'complete_discussion_history', 'internal_support_messages_hidden'], providerCalls: 0 }))
+    console.log(JSON.stringify({ ok: true, collections: 5, apiCollections: 3, recordsPerCollection: 521, discussions: 4, messagesPerDiscussion: 701, verified: ['microsecond_and_uuid_ordering', 'concurrent_insert_excluded_from_existing_page_walk', 'tenant_filter_and_reader_bound_cursor', 'forged_cursor_denied', 'literal_search', 'latest_five_previews', 'complete_discussion_history', 'internal_support_messages_hidden'], providerCalls: 0 }))
   } finally { for (const id of [workspaceId, foreignId]) await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, id))) }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1 })

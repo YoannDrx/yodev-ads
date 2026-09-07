@@ -12,9 +12,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
 vi.mock('@/lib/report-editions', () => ({ createReportEditionInTransaction: vi.fn(async () => ({ edition: { id: 'edition-1' } })), ReportDataUnavailable: class extends Error {} }))
-vi.mock('@/lib/crypto', () => ({ encryptSecret: (value: string) => `encrypted:${value}` }))
+vi.mock('@/lib/crypto', () => ({ encryptSecret: (value: string) => `encrypted:${value}`, decryptSecret: (value: string) => value.slice('encrypted:'.length) }))
 vi.mock('@/lib/tokens', () => ({ hashToken: () => 'hash' }))
 
+import { collectionScope, writeCollectionCursor, readCollectionCursor } from './collection-pagination'
 import { entitlementContext } from './entitlements'
 import {
   createApiApproval,
@@ -128,21 +129,25 @@ describe('API v1 tenant repository', () => {
     })).rejects.toThrow('Quota exceeded')
   })
 
-  it('lists reports and approvals with both initial and cursor pages', async () => {
-    const createdAt = new Date('2026-08-12T00:00:00Z')
-    const reportRows = [{ report: { id: 'report-1', createdAt }, client: { id: clientId, name: 'Client' } }]
-    const approvalRows = [{ approval: { id: 'approval-1', createdAt }, client: { id: clientId, name: 'Client' } }]
-    mocks.databases.push(
-      databaseDouble({ statementResults: [reportRows] }).db,
-      databaseDouble({ statementResults: [approvalRows] }).db,
-      databaseDouble({ statementResults: [reportRows] }).db,
-      databaseDouble({ statementResults: [approvalRows] }).db,
-    )
-    await expect(listApiReports({ workspaceId, actorId, cursor: null, limit: 20 })).resolves.toEqual(reportRows)
-    await expect(listApiApprovals({ workspaceId, actorId, cursor: null, limit: 20 })).resolves.toEqual(approvalRows)
-    const cursor = { at: createdAt, id: '00000000-0000-4000-8000-000000000009' }
-    await expect(listApiReports({ workspaceId, actorId, cursor, limit: 20 })).resolves.toEqual(reportRows)
-    await expect(listApiApprovals({ workspaceId, actorId, cursor, limit: 20 })).resolves.toEqual(approvalRows)
+  it.each([['reports', listApiReports, 'report'], ['approvals', listApiApprovals, 'approval'], ['alerts', listApiAlerts, 'alert']] as const)('paginates %s with exact dates and hides cursor metadata', async (kind, list, field) => {
+    const at = '2026-08-12T00:00:00.123456Z', snapshot = '2026-08-13T00:00:00.000000Z'
+    const id = '00000000-0000-4000-8000-000000000009'
+    const row = { [field]: { id, createdAt: new Date(at) }, client: { id: clientId, name: 'Client' }, cursorId: id, cursorAt: at }
+    mocks.databases.push(databaseDouble({ statementResults: [{ rows: [{ at: snapshot }] }, [row, row]] }).db)
+    const first = await list({ workspaceId, actorId, cursor: null, limit: 1 })
+    expect(first.data).toEqual([{ [field]: row[field], client: row.client }])
+    expect(first.nextCursor).toBeTruthy()
+    const scope = collectionScope(workspaceId, `api:${kind}`, { actorId, ...(kind === 'alerts' ? { status: null } : {}) })
+    expect(readCollectionCursor(first.nextCursor!, scope)).toMatchObject({ at, snapshot })
+    mocks.databases.push(databaseDouble({ statementResults: [[row]] }).db)
+    await expect(list({ workspaceId, actorId, cursor: first.nextCursor, limit: 20 })).resolves.toEqual({ data: first.data, nextCursor: null })
+    expect(mocks.contexts.at(-1)).toEqual({ workspaceId, userId: actorId })
+  })
+
+  it.each([listApiReports, listApiApprovals, listApiAlerts])('rejects invalid cursors and page sizes', async (list) => {
+    mocks.databases.push(databaseDouble().db, databaseDouble().db)
+    await expect(list({ workspaceId, actorId, cursor: 'forged', limit: 20 })).rejects.toMatchObject({ code: 'INVALID_CURSOR', status: 400 })
+    await expect(list({ workspaceId, actorId, limit: 101 })).rejects.toMatchObject({ code: 'INVALID_INPUT', status: 400 })
   })
 
   it('creates an API approval and immutable audit in the same transaction', async () => {
@@ -174,16 +179,12 @@ describe('API v1 tenant repository', () => {
     })
   })
 
-  it('applies cursor pagination queries without escaping the tenant repository', async () => {
-    const rows = [{ alert: { id: 'alert-1', detectedAt: new Date() }, client: { id: clientId, name: 'Client' } }]
-    mocks.databases.push(databaseDouble({ statementResults: [rows] }).db)
-    await expect(listApiAlerts({
-      workspaceId,
-      actorId,
-      status: 'open',
-      cursor: { at: new Date('2026-08-12T00:00:00Z'), id: '00000000-0000-4000-8000-000000000004' },
-      limit: 50,
-    })).resolves.toEqual(rows)
-    expect(mocks.contexts.at(-1)).toEqual({ workspaceId, userId: actorId })
+  it('binds the alert cursor to its filter, tenant and API key', async () => {
+    const scope = collectionScope(workspaceId, 'api:alerts', { actorId, status: 'open' })
+    const cursor = writeCollectionCursor({ scope, id: clientId, at: '2026-08-12T00:00:00.123456Z', snapshot: '2026-08-13T00:00:00.000000Z', expires: Date.now() + 60_000 })
+    for (const change of [{ actorId: 'foreign-key' }, { workspaceId: clientId }, { status: 'resolved' as const }]) {
+      mocks.databases.push(databaseDouble().db)
+      await expect(listApiAlerts({ workspaceId, actorId, status: 'open', cursor, limit: 50, ...change })).rejects.toMatchObject({ code: 'INVALID_CURSOR' })
+    }
   })
 })
