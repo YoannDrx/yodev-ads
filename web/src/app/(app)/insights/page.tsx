@@ -50,7 +50,7 @@ export default async function InsightsPage({ searchParams }: InsightsPageProps) 
   if (query.client !== undefined && !client) notFound()
   const collection = client ? await getAnalyticalCollections(workspace.id, client.id, ['devices', 'schedules', 'geographies', 'auctions', 'placements', 'assetGroups', 'assets', 'products', 'productDiagnostics', 'audiences', 'adGroupAudiences', 'groupPlacements'], 200) : { snapshots: [], attempts: [] }
   const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
-  const canRefresh = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
+  const canRefresh = connection?.status === 'active' && workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
   const errors: Record<string, string> = {}
   const devices = client ? analyticalSnapshotData(collection.snapshots, 'devices', client) ?? [] : []
   const schedules = client ? analyticalSnapshotData(collection.snapshots, 'schedules', client) ?? [] : []

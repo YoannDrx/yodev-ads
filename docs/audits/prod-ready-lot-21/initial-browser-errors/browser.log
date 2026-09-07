@@ -1,0 +1,245 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep auth lifecycle
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 297ms
+✓ Running next.config.ts took 508ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.7s (next.js: 2.2s, proxy.ts: 138ms, application-code: 326ms)
+ POST /api/auth/sign-in/email 200 in 907ms (next.js: 726ms, proxy.ts: 7ms, application-code: 174ms)
+ POST /api/auth/sign-in/email 200 in 136ms (next.js: 4ms, proxy.ts: 3ms, application-code: 129ms)
+ POST /api/auth/sign-in/email 200 in 152ms (next.js: 17ms, proxy.ts: 5ms, application-code: 130ms)
+ POST /api/auth/sign-in/email 200 in 89ms (next.js: 3ms, proxy.ts: 6ms, application-code: 80ms)
+ POST /api/auth/sign-in/email 200 in 112ms (next.js: 11ms, proxy.ts: 2ms, application-code: 98ms)
+ GET /sign-in 200 in 163ms (next.js: 12ms, proxy.ts: 9ms, application-code: 142ms)
+ GET /dashboard 200 in 912ms (next.js: 294ms, proxy.ts: 5ms, application-code: 613ms)
+ GET /settings 200 in 312ms (next.js: 48ms, proxy.ts: 5ms, application-code: 259ms)
+ GET /icon?a62dacc6b033a714 200 in 142ms (next.js: 53ms, proxy.ts: 5ms, application-code: 85ms)
+ GET /billing 200 in 264ms (next.js: 36ms, proxy.ts: 6ms, application-code: 222ms)
+ GET /support 200 in 168ms (next.js: 17ms, proxy.ts: 2ms, application-code: 149ms)
+ GET /accounts 200 in 115ms (next.js: 13ms, proxy.ts: 1.7ms, application-code: 100ms)
+ GET /history 200 in 123ms (next.js: 15ms, proxy.ts: 1.7ms, application-code: 107ms)
+ GET /alerts 200 in 138ms (next.js: 19ms, proxy.ts: 1.8ms, application-code: 118ms)
+ GET /tasks 200 in 143ms (next.js: 17ms, proxy.ts: 1.8ms, application-code: 124ms)
+ GET /approvals 200 in 127ms (next.js: 17ms, proxy.ts: 2ms, application-code: 108ms)
+ GET /reports 200 in 171ms (next.js: 17ms, proxy.ts: 1.8ms, application-code: 153ms)
+ GET /audit 200 in 140ms (next.js: 17ms, proxy.ts: 1.8ms, application-code: 121ms)
+ GET /agents 200 in 172ms (next.js: 15ms, proxy.ts: 1.8ms, application-code: 156ms)
+ GET / 200 in 89ms (next.js: 15ms, proxy.ts: 2ms, application-code: 71ms)
+ GET /privacy 200 in 48ms (next.js: 11ms, proxy.ts: 1.9ms, application-code: 35ms)
+ GET /terms 200 in 56ms (next.js: 15ms, proxy.ts: 1.8ms, application-code: 40ms)
+ GET /subprocessors 200 in 102ms (next.js: 45ms, proxy.ts: 1.9ms, application-code: 56ms)
+ GET /status 200 in 100ms (next.js: 40ms, proxy.ts: 1.7ms, application-code: 58ms)
+ GET /sign-in 200 in 33ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 27ms)
+ GET /sign-up 200 in 318ms (next.js: 286ms, proxy.ts: 1.9ms, application-code: 30ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-t9yljO
+
+Running 2 tests using 1 worker
+
+(node:18414) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /sign-up 200 in 33ms (next.js: 4ms, proxy.ts: 2ms, application-code: 27ms)
+ POST /api/auth/sign-up/email 200 in 100ms (next.js: 4ms, proxy.ts: 5ms, application-code: 91ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 3ms, proxy.ts: 3ms, application-code: 6ms)
+ GET /sign-in 200 in 42ms (next.js: 5ms, proxy.ts: 3ms, application-code: 34ms)
+ GET /api/auth/get-session 200 in 54ms (next.js: 4ms, proxy.ts: 14ms, application-code: 36ms)
+ POST /api/auth/sign-in/email 403 in 221ms (next.js: 15ms, proxy.ts: 4ms, application-code: 202ms)
+ GET /api/auth/verify-email?token=[REDACTED]&callbackURL=%2Fonboarding 302 in 134ms (next.js: 19ms, proxy.ts: 8ms, application-code: 108ms)
+ GET /onboarding 307 in 1459ms (next.js: 1388ms, proxy.ts: 5ms, application-code: 66ms)
+ GET /sign-in 200 in 69ms (next.js: 7ms, proxy.ts: 5ms, application-code: 58ms)
+ GET /sign-in 200 in 73ms (next.js: 11ms, proxy.ts: 5ms, application-code: 57ms)
+ POST /api/auth/sign-in/email 200 in 120ms (next.js: 5ms, proxy.ts: 3ms, application-code: 111ms)
+ GET /dashboard 307 in 84ms (next.js: 4ms, proxy.ts: 5ms, application-code: 74ms)
+ GET /onboarding 200 in 65ms (next.js: 4ms, proxy.ts: 2ms, application-code: 59ms)
+ GET /settings 200 in 123ms (next.js: 5ms, proxy.ts: 4ms, application-code: 115ms)
+ POST /onboarding 200 in 170ms (next.js: 3ms, proxy.ts: 5ms, application-code: 162ms)
+  └─ ƒ createWorkspace({}) in 20ms src/app/onboarding/actions.ts
+ GET /api/auth/get-session 200 in 53ms (next.js: 6ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /api/auth/organization/list 200 in 59ms (next.js: 11ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 7ms, proxy.ts: 10ms, application-code: 6ms)
+ GET /sign-in 200 in 45ms (next.js: 5ms, proxy.ts: 3ms, application-code: 37ms)
+ POST /api/auth/sign-in/magic-link 200 in 27ms (next.js: 6ms, proxy.ts: 4ms, application-code: 17ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=%2Fsign-in 302 in 17ms (next.js: 3ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /dashboard 200 in 133ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 129ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 4ms, proxy.ts: 5ms, application-code: 11ms)
+ GET /api/auth/get-session 200 in 38ms (next.js: 10ms, proxy.ts: 8ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 41ms (next.js: 11ms, proxy.ts: 9ms, application-code: 21ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=%2Fsign-in 302 in 13ms (next.js: 3ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /sign-in?error=INVALID_TOKEN 200 in 40ms (next.js: 6ms, proxy.ts: 3ms, application-code: 31ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 5ms, proxy.ts: 3ms, application-code: 5ms)
+ GET /forgot-password 200 in 476ms (next.js: 347ms, proxy.ts: 2ms, application-code: 127ms)
+ POST /api/auth/request-password-reset 200 in 23ms (next.js: 3ms, proxy.ts: 4ms, application-code: 16ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 40ms (next.js: 17ms, proxy.ts: 5ms, application-code: 18ms)
+ GET /reset-password?token=[REDACTED] 200 in 419ms (next.js: 367ms, proxy.ts: 3ms, application-code: 49ms)
+ POST /api/auth/reset-password 200 in 101ms (next.js: 3ms, proxy.ts: 4ms, application-code: 94ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 4ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 11ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /reset-password?error=INVALID_TOKEN 200 in 51ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 47ms)
+  ✘  1 [chromium] › e2e/auth-lifecycle-local.spec.ts:59:9 › auth lifecycle fr: verification, magic link, reset, sessions and passkey (7.2s)
+(node:19773) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /sign-up 200 in 52ms (next.js: 18ms, proxy.ts: 3ms, application-code: 32ms)
+ POST /api/auth/sign-up/email 200 in 87ms (next.js: 4ms, proxy.ts: 3ms, application-code: 80ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 3ms, proxy.ts: 2ms, application-code: 5ms)
+ GET /sign-in 200 in 46ms (next.js: 6ms, proxy.ts: 2ms, application-code: 38ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 4ms, proxy.ts: 8ms, application-code: 4ms)
+ GET /api/auth/verify-email?token=[REDACTED]&callbackURL=%2Fonboarding 302 in 16ms (next.js: 4ms, proxy.ts: 4ms, application-code: 8ms)
+ POST /api/auth/sign-in/email 403 in 103ms (next.js: 4ms, proxy.ts: 3ms, application-code: 95ms)
+ GET /onboarding 307 in 57ms (next.js: 2ms, proxy.ts: 2ms, application-code: 53ms)
+ GET /sign-in 200 in 36ms (next.js: 4ms, proxy.ts: 4ms, application-code: 28ms)
+ GET /sign-in 200 in 40ms (next.js: 2ms, proxy.ts: 3ms, application-code: 34ms)
+ POST /api/auth/sign-in/email 200 in 86ms (next.js: 3ms, proxy.ts: 3ms, application-code: 80ms)
+ GET /dashboard 307 in 53ms (next.js: 2ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /onboarding 200 in 52ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /settings 200 in 69ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 65ms)
+ POST /onboarding 200 in 90ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 86ms)
+  └─ ƒ createWorkspace({}) in 11ms src/app/onboarding/actions.ts
+ GET /api/auth/get-session 200 in 23ms (next.js: 5ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 8ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 4ms, proxy.ts: 7ms, application-code: 8ms)
+ GET /sign-in 200 in 43ms (next.js: 4ms, proxy.ts: 10ms, application-code: 29ms)
+ POST /api/auth/sign-in/magic-link 200 in 16ms (next.js: 3ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=%2Fsign-in 302 in 14ms (next.js: 4ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /dashboard 200 in 115ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 111ms)
+ GET /api/auth/get-session 200 in 16ms (next.js: 4ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /api/auth/get-session 200 in 32ms (next.js: 13ms, proxy.ts: 5ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 14ms, proxy.ts: 8ms, application-code: 12ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=%2Fsign-in 302 in 17ms (next.js: 6ms, proxy.ts: 4ms, application-code: 8ms)
+ GET /sign-in?error=INVALID_TOKEN 200 in 35ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 29ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 7ms, proxy.ts: 5ms, application-code: 6ms)
+ GET /forgot-password 200 in 31ms (next.js: 2ms, proxy.ts: 2ms, application-code: 27ms)
+ POST /api/auth/request-password-reset 200 in 14ms (next.js: 2ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 22ms (next.js: 7ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /reset-password?token=[REDACTED] 200 in 28ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 25ms)
+ POST /api/auth/reset-password 200 in 78ms (next.js: 2ms, proxy.ts: 2ms, application-code: 73ms)
+ GET /api/auth/get-session 200 in 9ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 1.9ms, proxy.ts: 1.5ms, application-code: 5ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 10ms (next.js: 1.9ms, proxy.ts: 1.6ms, application-code: 6ms)
+ GET /reset-password?error=INVALID_TOKEN 200 in 28ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 24ms)
+ GET /sign-in 200 in 36ms (next.js: 5ms, proxy.ts: 3ms, application-code: 28ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 18ms, proxy.ts: 1.9ms, application-code: 6ms)
+ POST /api/auth/sign-in/email 200 in 78ms (next.js: 5ms, proxy.ts: 4ms, application-code: 69ms)
+ GET /sign-in 200 in 42ms (next.js: 4ms, proxy.ts: 3ms, application-code: 36ms)
+2026-09-07T06:31:54.874Z WARN [Better Auth]: Invalid password
+ POST /api/auth/sign-in/email 200 in 79ms (next.js: 3ms, proxy.ts: 4ms, application-code: 72ms)
+ GET /dashboard 200 in 106ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 102ms)
+ GET /sign-in 200 in 61ms (next.js: 5ms, proxy.ts: 3ms, application-code: 53ms)
+ GET /api/auth/get-session 200 in 38ms (next.js: 11ms, proxy.ts: 11ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 43ms (next.js: 13ms, proxy.ts: 11ms, application-code: 19ms)
+ POST /api/auth/sign-in/email 200 in 102ms (next.js: 4ms, proxy.ts: 6ms, application-code: 93ms)
+ GET /dashboard 200 in 127ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 122ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 10ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /account 200 in 680ms (next.js: 596ms, proxy.ts: 3ms, application-code: 81ms)
+ GET /api/auth/get-session 200 in 120ms (next.js: 29ms, proxy.ts: 23ms, application-code: 68ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 123ms (next.js: 56ms, proxy.ts: 15ms, application-code: 52ms)
+ GET /api/auth/organization/list 200 in 147ms (next.js: 46ms, proxy.ts: 19ms, application-code: 83ms)
+ POST /api/auth/revoke-other-sessions 200 in 77ms (next.js: 14ms, proxy.ts: 36ms, application-code: 27ms)
+ GET /api/auth/get-session 200 in 105ms (next.js: 74ms, proxy.ts: 5ms, application-code: 26ms)
+ GET /api/auth/get-session 200 in 31ms (next.js: 15ms, proxy.ts: 7ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 4ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /api/auth/passkey/generate-register-options?authenticatorAttachment=platform&name=Ads%20by%20Yodev%20passkey 200 in 22ms (next.js: 3ms, proxy.ts: 5ms, application-code: 14ms)
+ POST /api/auth/passkey/verify-registration 200 in 21ms (next.js: 2ms, proxy.ts: 6ms, application-code: 12ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 10ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 11ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 7ms)
+ POST /api/auth/passkey/delete-passkey 401 in 12ms (next.js: 3ms, proxy.ts: 3ms, application-code: 7ms)
+ POST /api/auth/sign-out 200 in 9ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 5ms)
+ GET /sign-in 200 in 43ms (next.js: 4ms, proxy.ts: 1.7ms, application-code: 37ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 29ms (next.js: 8ms, proxy.ts: 4ms, application-code: 18ms)
+ POST /api/auth/passkey/verify-authentication 200 in 56ms (next.js: 20ms, proxy.ts: 5ms, application-code: 30ms)
+ GET /dashboard 200 in 141ms (next.js: 2ms, proxy.ts: 3ms, application-code: 136ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /api/auth/get-session 200 in 39ms (next.js: 7ms, proxy.ts: 24ms, application-code: 9ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 11ms, proxy.ts: 18ms, application-code: 3ms)
+ GET /account 200 in 72ms (next.js: 1.9ms, proxy.ts: 1.6ms, application-code: 69ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 8ms, proxy.ts: 5ms, application-code: 12ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 25ms (next.js: 10ms, proxy.ts: 5ms, application-code: 10ms)
+ POST /api/auth/passkey/delete-passkey 200 in 16ms (next.js: 2ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 17ms (next.js: 4ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /api/auth/sign-out 200 in 16ms (next.js: 8ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /sign-in 200 in 39ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 33ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 18ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 28ms (next.js: 5ms, proxy.ts: 2ms, application-code: 20ms)
+ POST /api/auth/passkey/verify-authentication 401 in 26ms (next.js: 4ms, proxy.ts: 3ms, application-code: 19ms)
+ POST /api/auth/sign-in/magic-link 200 in 21ms (next.js: 5ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=%2Fsign-in 302 in 23ms (next.js: 3ms, proxy.ts: 2ms, application-code: 18ms)
+ GET /dashboard 200 in 104ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 100ms)
+ GET /api/auth/get-session 200 in 36ms (next.js: 6ms, proxy.ts: 7ms, application-code: 22ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 11ms, proxy.ts: 8ms, application-code: 17ms)
+ GET /invitation?id=e903cf16-1cb0-44e5-937a-661477c1b39d 200 in 430ms (next.js: 393ms, proxy.ts: 1.8ms, application-code: 36ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 4ms, proxy.ts: 8ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 403 in 18ms (next.js: 3ms, proxy.ts: 5ms, application-code: 10ms)
+ GET /invitation?id=77d0ecef-da2a-4ac2-8902-ac253f899c31 200 in 34ms (next.js: 4ms, proxy.ts: 4ms, application-code: 25ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 400 in 38ms (next.js: 4ms, proxy.ts: 2ms, application-code: 32ms)
+ GET /invitation?id=9e8074c0-011c-4555-8d92-5b51e4b6ac8d 200 in 53ms (next.js: 3ms, proxy.ts: 6ms, application-code: 44ms)
+ GET /api/auth/get-session 200 in 36ms (next.js: 3ms, proxy.ts: 7ms, application-code: 26ms)
+ POST /api/auth/organization/accept-invitation 400 in 62ms (next.js: 5ms, proxy.ts: 7ms, application-code: 50ms)
+ GET /invitation?id=7fc567de-009d-4dda-a322-4b51dc47ed67 200 in 58ms (next.js: 7ms, proxy.ts: 3ms, application-code: 48ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 4ms, proxy.ts: 3ms, application-code: 5ms)
+ GET /sign-in?returnTo=%2Finvitation%3Fid%3D7fc567de-009d-4dda-a322-4b51dc47ed67 200 in 40ms (next.js: 5ms, proxy.ts: 2ms, application-code: 32ms)
+  ✘  2 [chromium] › e2e/auth-lifecycle-local.spec.ts:59:9 › auth lifecycle en: verification, magic link, reset, sessions and passkey (9.9s)
+
+
+  1) [chromium] › e2e/auth-lifecycle-local.spec.ts:59:9 › auth lifecycle fr: verification, magic link, reset, sessions and passkey
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('alert')
+    Expected substring: "invalide ou expiré"
+    Error: strict mode violation: getByRole('alert') resolved to 2 elements:
+        1) <p role="alert" class="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">…</p> aka getByText('Ce lien de réinitialisation')
+        2) <div role="alert" aria-live="assertive" id="__next-route-announcer__"></div> aka locator('[id="__next-route-announcer__"]')
+
+    Call log:
+      - Expect "toContainText" with timeout 15000ms
+      - waiting for getByRole('alert')
+
+
+      124 |         expect(await session(magic)).toBeNull()
+      125 |         await replayPage.goto(resetLink)
+    > 126 |         await expect(replayPage.getByRole('alert')).toContainText(locale === 'en' ? 'invalid or expired' : 'invalide ou expiré')
+          |                                                     ^
+      127 |         await signIn(page, recipient, password)
+      128 |         await expect(page.getByRole('alert')).toBeVisible()
+      129 |         expect(await session(original)).toBeNull()
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/auth-lifecycle-local.spec.ts:126:53
+
+    Error Context: test-results/auth-lifecycle-local-auth--e6639--reset-sessions-and-passkey-chromium/error-context.md
+
+  2) [chromium] › e2e/auth-lifecycle-local.spec.ts:59:9 › auth lifecycle en: verification, magic link, reset, sessions and passkey
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "/invitation?id=7fc567de-009d-4dda-a322-4b51dc47ed67"
+    Received: null
+
+      198 |         await invitedPage.goto(`/invitation?id=${invitationIds[3]}`)
+      199 |         await invitedPage.getByRole('link', { name: /^(Sign in to continue|Se connecter pour continuer)$/ }).click()
+    > 200 |         expect(new URL(invitedPage.url()).searchParams.get('returnTo')).toBe(`/invitation?id=${invitationIds[3]}`)
+          |                                                                         ^
+      201 |         await invitedPage.getByLabel(/^(Secure sign-in link|Lien de connexion sécurisé)$/).fill(recipient)
+      202 |         await invitedPage.getByRole('button', { name: /^(Email me a sign-in link|Recevoir un lien par email)$/ }).click()
+      203 |         await expect(invitedPage.getByRole('status')).toBeVisible()
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/auth-lifecycle-local.spec.ts:200:73
+
+    Error Context: test-results/auth-lifecycle-local-auth--ec772--reset-sessions-and-passkey-chromium/error-context.md
+
+  2 failed
+    [chromium] › e2e/auth-lifecycle-local.spec.ts:59:9 › auth lifecycle fr: verification, magic link, reset, sessions and passkey
+    [chromium] › e2e/auth-lifecycle-local.spec.ts:59:9 › auth lifecycle en: verification, magic link, reset, sessions and passkey
+[?25h
+{"ok":true,"cleaned":"local-browser-fixtures"}

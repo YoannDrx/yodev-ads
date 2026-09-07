@@ -44,7 +44,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await navigation.locator('a[href="/operations"]').scrollIntoViewIfNeeded()
         await expect(navigation.locator('a[href="/operations"]')).toBeInViewport()
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
-        await page.screenshot({ path: test.info().outputPath(`navigation-desktop-${locale}.png`) })
+        await page.screenshot({ caret: 'initial', path: test.info().outputPath(`navigation-desktop-${locale}.png`) })
         await page.goto(`/discussions/tasks/${taskId}`)
         await expect(navigation.locator('a[aria-current="page"]')).toHaveAttribute('href', '/tasks')
         for (const width of [390, 768]) {
@@ -64,7 +64,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
           await expect(full.locator('a[aria-current="page"]')).toHaveAttribute('href', '/dashboard')
           await full.locator('a[href="/tasks"]').click()
           expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
-          await page.screenshot({ path: test.info().outputPath(`navigation-mobile-${locale}-${width}.png`) })
+          await page.screenshot({ caret: 'initial', path: test.info().outputPath(`navigation-mobile-${locale}-${width}.png`) })
         }
         for (const path of ['/dashboard', '/analysis', '/insights', '/history']) {
           for (const query of ['client=invalid', 'client=', `client=${managerId}`, `client=${clientId}&client=${managerId}`]) {

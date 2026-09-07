@@ -1,5 +1,6 @@
 import { expect, test, type Browser } from '@playwright/test'
 import { Client } from 'pg'
+import { createHash } from 'node:crypto'
 import { accountCalendarDate, calendarDates, reportCalendarWindow, shiftCalendarDate } from '../src/lib/calendar-window'
 
 // State-changing checks only run against the disposable local fixture.
@@ -10,7 +11,9 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
   const workspaceId = '80000000-0000-4000-8000-000000000001'
   const db = new Client({ connectionString })
   async function pageFor(browser: Browser, role: string, width = 1280) {
-    const context = await browser.newContext({ baseURL: process.env.PLAYWRIGHT_BASE_URL, storageState: process.env[`PLAYWRIGHT_${role.toUpperCase()}_STORAGE_STATE`], viewport: { width, height: 844 } })
+    // Independent fixture readers must not share one artificial rate-limit bucket.
+    const address = createHash('sha256').update(`${test.info().testId}:${role}`).digest()
+    const context = await browser.newContext({ extraHTTPHeaders: { 'x-forwarded-for': `198.18.${address[0]}.${address[1]}` }, baseURL: process.env.PLAYWRIGHT_BASE_URL, storageState: process.env[`PLAYWRIGHT_${role.toUpperCase()}_STORAGE_STATE`], viewport: { width, height: 844 } })
     return { context, page: await context.newPage() }
   }
   test.describe.serial('local production readiness regression journeys', () => {
@@ -69,7 +72,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await page.getByRole('textbox', { name: locale === 'en' ? 'Search by name or account ID' : 'Rechercher par nom ou identifiant' }).fill('Selection')
         await expect(page.getByRole('button', { name: locale === 'en' ? 'Next' : 'Suivant', exact: true })).toBeDisabled()
         await page.evaluate(() => window.scrollTo(0, 0))
-        await page.screenshot({ path: test.info().outputPath(`account-selection-${locale}-${locale === 'fr' ? 390 : 1440}.png`), fullPage: true })
+        await page.screenshot({ caret: 'initial', path: test.info().outputPath(`account-selection-${locale}-${locale === 'fr' ? 390 : 1440}.png`), fullPage: true })
         const analyst = await pageFor(browser, 'analyst')
         try {
           await analyst.page.goto('/accounts')
@@ -114,7 +117,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await expect(spend.locator('p.text-2xl')).toHaveText('—')
         await expect(forecast.locator('p.text-2xl')).toHaveText('—')
         await expect(page.getByText(locale === 'en' ? 'Daily collection required' : 'Collecte journalière requise', { exact: true })).toBeVisible()
-        await page.screenshot({ path: test.info().outputPath(`pacing-gap-${locale}-1440.png`), fullPage: true })
+        await page.screenshot({ caret: 'initial', path: test.info().outputPath(`pacing-gap-${locale}-1440.png`), fullPage: true })
         expect(errors).toEqual([])
       } finally {
         await context.close()
@@ -166,7 +169,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await expect(page.getByRole('cell', { name: 'MOBILE', exact: true })).toBeVisible()
         const consent = page.getByRole('button', { name: /Continuer sans mesure|Continue without/ })
         if (await consent.isVisible()) { await consent.click(); await expect(consent).toBeHidden() }
-        await page.screenshot({ path: test.info().outputPath(`stored-insights-${locale}-1440.png`), fullPage: true })
+        await page.screenshot({ caret: 'initial', path: test.info().outputPath(`stored-insights-${locale}-1440.png`), fullPage: true })
         expect(errors).toEqual([])
       } finally {
         await context.close()
@@ -204,11 +207,14 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
           await expect(analyst.page.getByRole('region', { name: /Synchronisation des données|Data synchronization/ }).getByRole('link', { name: /Connexion|Connection/ })).toHaveCount(0)
         } finally { await analyst.context.close() }
         await db.query(`delete from jobs where workspace_id=$1 and payload->>'clientId'=$2`, [workspaceId, clientId])
-        await db.query('update google_ads_connections set status=$1 where id=$2', ['revoked', connectionId])
+        // Open an enabled form, then revoke the connection before its submission.
         await page.goto(`/dashboard?client=${clientId}`)
+        await expect(refresh).toBeEnabled()
+        await db.query('update google_ads_connections set status=$1 where id=$2', ['revoked', connectionId])
         await refresh.click()
         await expect(page).toHaveURL(/sync=unavailable/)
         await expect(page.getByRole('region', { name: /Synchronisation des données|Data synchronization/ })).toContainText(locale === 'en' ? 'Collection unavailable.' : 'Collecte indisponible.')
+        await expect(refresh).toHaveCount(0)
         expect((await readJobs()).rows).toHaveLength(0)
         expect(errors).toEqual([])
       } finally {
@@ -258,7 +264,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
           const navigation = page.getByRole('navigation', { name: /Navigation complète|Full navigation/ })
           await expect(navigation).toBeVisible()
           for (const href of ['/accounts', '/insights', '/history', '/tasks', '/agents', '/reports', '/support', '/audit', '/settings']) await expect(navigation.locator(`a[href="${href}"]`)).toBeVisible()
-          await page.screenshot({ path: test.info().outputPath(`menu-${locale}-${width}.png`) })
+          await page.screenshot({ caret: 'initial', path: test.info().outputPath(`menu-${locale}-${width}.png`) })
           await menu.press('Escape')
           await expect(navigation).not.toBeVisible()
           await expect(menu).toBeFocused()
@@ -286,7 +292,11 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await selector.selectOption('local-browser-fixture-main')
         await expect(page).toHaveURL(/\/dashboard$/)
         await expect(selector).toHaveValue('local-browser-fixture-main')
-      } finally { await context.close() }
+      } finally {
+        // Restore this test's mutable session even if a navigation assertion fails.
+        await db.query("update auth_sessions set active_organization_id='local-browser-fixture-main' where user_id='local-browser-fixture-owner'")
+        await context.close()
+      }
     })
     test('analysts do not see monitoring controls denied by their role', async ({ browser }) => {
       await db.query('update workspaces set access_state=$1, locale=$2 where id=$3', ['internal', 'fr', workspaceId])

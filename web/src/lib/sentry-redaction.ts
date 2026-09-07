@@ -8,6 +8,8 @@ function redactString(value: string) {
     .replace(bearerToken, 'Bearer [REDACTED]')
     .replace(apiToken, '[REDACTED_API_KEY]')
     .replace(reportPathToken, '$1[REDACTED]')
+    .replace(/(\/api\/auth\/reset-password\/)[^?\s/]+/gi, '$1[REDACTED]')
+    .replace(/([?&](?:token|code|email|password|secret|api_key|access_token|refresh_token)=)[^&#\s]+/gi, '$1[REDACTED]')
   try {
     const url = new URL(tokenRedacted)
     for (const key of [...url.searchParams.keys()]) url.searchParams.set(key, '[REDACTED]')

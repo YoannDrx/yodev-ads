@@ -61,7 +61,7 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
   const periods = new Set(collection.snapshots.filter((row) => ['campaigns', 'searchTerms', 'keywords', 'ads', 'tracking'].includes(row.family)).map((row) => `${row.periodFrom}/${row.periodThrough}`))
   const data = campaigns && searchTerms && keywords && ads && conversionTracking && periods.size === 1 ? { campaigns, searchTerms, keywords, ads, conversionTracking } : undefined
   const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
-  const canRefresh = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
+  const canRefresh = connection?.status === 'active' && workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
   if (data && client && entitlements.capabilities.has('google.read')) await recordActivationMilestone({ workspaceId: workspace.id, milestone: 'first_analysis', actorUserId: session.userId, sourceEntityId: client.id }).catch(() => undefined)
 
   const analysis = data?.campaigns.length ? analyzeAccount(data, locale) : undefined

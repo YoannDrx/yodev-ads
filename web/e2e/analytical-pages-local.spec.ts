@@ -47,7 +47,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         const document = JSON.parse(await readFile(filename!, 'utf8'))
         expect(document.sourceVersion).toBe(version)
         expect(document.records).toEqual(rows)
-        await page.screenshot({ path: test.info().outputPath(`analytical-search-${locale}.png`), fullPage: true })
+        await page.screenshot({ caret: 'initial', path: test.info().outputPath(`analytical-search-${locale}.png`), fullPage: true })
         await db.query('update analytical_collections set source_version=$1 where client_id=$2', [randomUUID(), clientId])
         await page.goto(oldPage)
         await expect(page.getByRole('alert')).toContainText(locale === 'en' ? 'collection changed' : 'collecte a changé')

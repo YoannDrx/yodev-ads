@@ -1,0 +1,12 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run --run src/components/auth-recovery.test.tsx src/lib/auth-destination.test.ts src/lib/auth-request-locale.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  3 passed (3)
+      Tests  21 passed (21)
+   Start at  08:35:38
+   Duration  1.49s (transform 116ms, setup 0ms, import 445ms, tests 364ms, environment 653ms)

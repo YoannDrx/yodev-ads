@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:release-verification": "node --test scripts/lib/release-verification.node-test.mjs",
+    "test:release-verification": "node --test scripts/lib/*.node-test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:local": "node scripts/verify-local-browser.mjs",
     "db:verify-local": "node scripts/verify-local-database.mjs",

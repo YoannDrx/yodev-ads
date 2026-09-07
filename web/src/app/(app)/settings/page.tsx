@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { BellRing, Cable, Gauge, Globe2, KeyRound, Palette, Plus, RefreshCw, ShieldCheck, Trash2, Unplug, UserRound, UsersRound, Workflow } from 'lucide-react'
 import {
   createAgencyApiKey,
@@ -25,7 +26,6 @@ import {
 } from '@/app/actions'
 import { FlashMessage } from '@/components/flash-message'
 import { SecretRevelation } from '@/components/api-key-revelation'
-import { AuthSecurityControls } from '@/components/auth-security-controls'
 import { PageHeading } from '@/components/page-heading'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
@@ -399,9 +399,9 @@ export default async function SettingsPage({
             <div>
               <h2 className="font-semibold">{english ? 'Active security' : 'Sécurité active'}</h2>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                {english ? 'Sessions and roles through Better Auth, organization-scoped data in Neon, encrypted tokens, Google Ads requests validated before approval and a complete audit log.' : 'Sessions et rôles via Better Auth, données par organisation dans Neon, jetons chiffrés, requêtes Google Ads validées avant approbation et journal d’audit complet.'}
+                {english ? 'Manage your passkeys and revoke sessions from your personal security page.' : 'Gérez vos passkeys et révoquez vos sessions depuis votre page de sécurité personnelle.'}
               </p>
-              <AuthSecurityControls locale={locale} />
+              <Link href="/account" className="mt-4 inline-block text-sm font-medium text-[#168977] underline">{english ? 'Manage my account security' : 'Gérer la sécurité de mon compte'}</Link>
             </div>
           </CardContent>
         </Card>

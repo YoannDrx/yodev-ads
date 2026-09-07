@@ -128,6 +128,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify five-role authentication, lifecycle and mobile journeys
         env:
+          YODEV_TEST_ANALYTICS_CONTROLS: '1'
           YODEV_TEST_DATABASE_URL: postgresql://postgres@localhost:5432/yodev_test
         run: npm run test:e2e:local
       - name: Preserve browser traces and mobile screenshots

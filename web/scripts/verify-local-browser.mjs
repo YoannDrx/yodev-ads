@@ -4,6 +4,7 @@ import { mkdtemp, chmod, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { request } from '@playwright/test'
+import { pipeRedactedBrowserLog } from './lib/browser-log-redaction.mjs'
 
 const database = new URL(process.env.YODEV_TEST_DATABASE_URL ?? 'postgresql://postgres@127.0.0.1:55438/yodev_test')
 assert(['localhost', '127.0.0.1', '[::1]'].includes(database.hostname) && database.pathname.startsWith('/yodev_test'), 'Disposable local database required')
@@ -11,8 +12,10 @@ const baseURL = 'http://localhost:3017'
 const env = { ...process.env, NODE_OPTIONS: '', NODE_ENV: 'development', DATABASE_DRIVER: 'node-postgres', DOTENV_CONFIG_PATH: '/dev/null',
   NEXT_PUBLIC_APP_URL: baseURL, NEXT_PUBLIC_RELEASE_TARGET: 'staging', RELEASE_TARGET: 'staging',
   BETTER_AUTH_SECRET: 'local-browser-fixture-secret-at-least-32-characters', BETTER_AUTH_EMAIL_PASSWORD_ENABLED: '1',
+  BETTER_AUTH_ALLOWED_EMAILS: 'auth-flow-fr@local-browser.example.test,auth-flow-en@local-browser.example.test', AUTH_BOOTSTRAP_EMAIL: '',
   BETTER_AUTH_GOOGLE_CLIENT_ID: '', BETTER_AUTH_GOOGLE_CLIENT_SECRET: '', BETTER_AUTH_TRUSTED_ORIGINS: baseURL,
   APP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64url'), RATE_LIMIT_HASH_KEY: 'local-browser-fixture-rate-limit-only',
+  APP_ENCRYPTION_KEYS: '', APP_ENCRYPTION_CURRENT_KID: '',
   SENTRY_DSN: '', NEXT_PUBLIC_SENTRY_DSN: '', SENTRY_AUTH_TOKEN: '',
   STRIPE_SECRET_KEY: '', YODEV_MAIL_API_KEY: '', GOOGLE_ADS_DEVELOPER_TOKEN: '',
   GOOGLE_OAUTH_CLIENT_ID: '', GOOGLE_OAUTH_CLIENT_SECRET: '',
@@ -28,7 +31,9 @@ if (process.env.YODEV_TEST_ANALYTICS_CONTROLS === '1') {
 for (const name of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'DATABASE_AUTHENTICATED_URL', 'DATABASE_SYSTEM_URL', 'DATABASE_PURGE_URL', 'DATABASE_AUTH_URL']) env[name] = database.href
 const seed = spawnSync('npx', ['--no-install', 'tsx', 'scripts/seed-local-browser-fixtures.ts'], { env: { ...env, NODE_OPTIONS: '--conditions=react-server' }, stdio: 'inherit' })
 if (seed.status !== 0) process.exit(seed.status ?? 1)
-const server = spawn('npm', ['run', 'dev', '--', '--hostname', '127.0.0.1', '--port', '3017'], { env, stdio: 'inherit', detached: true })
+const server = spawn('npm', ['run', 'dev', '--', '--hostname', '127.0.0.1', '--port', '3017'], { env, stdio: ['ignore', 'pipe', 'pipe'], detached: true })
+pipeRedactedBrowserLog(server.stdout, process.stdout)
+pipeRedactedBrowserLog(server.stderr, process.stderr)
 const stateDirectory = await mkdtemp(path.join(tmpdir(), 'yodev-ads-browser-'))
 await chmod(stateDirectory, 0o700)
 try {

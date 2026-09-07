@@ -42,7 +42,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const campaignSnapshot = client ? analyticalSnapshotData(collection.snapshots, 'campaigns', client) : undefined
   const campaigns = campaignSnapshot ?? []
   const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
-  const canRefresh = workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
+  const canRefresh = connection?.status === 'active' && workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
   const supportedKpis = new Set<PacingGoal['primaryKpi']>(['cpa', 'roas', 'conversions', 'conversion_value'])
   const storedGoal = goalContext?.goal
   const pacingGoal: PacingGoal | null = storedGoal && supportedKpis.has(storedGoal.primaryKpi as PacingGoal['primaryKpi'])

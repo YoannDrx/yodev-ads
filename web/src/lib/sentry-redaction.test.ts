@@ -19,3 +19,7 @@ describe('Sentry redaction', () => {
     expect(redactSentryEvent({ user: { email: 'person@example.com' }, message: 'safe' })).toEqual({ message: 'safe' })
   })
 })
+
+it('redacts auth secrets inside log messages, not only standalone URLs', () => {
+  expect(redactSensitiveData({ message: 'GET /api/auth/reset-password/secretValue?callbackURL=/reset-password 302; GET /verify?token=otherSecret&ok=1' })).toEqual({ message: 'GET /api/auth/reset-password/[REDACTED]?callbackURL=/reset-password 302; GET /verify?token=[REDACTED]&ok=1' })
+})

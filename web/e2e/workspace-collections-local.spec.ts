@@ -59,11 +59,11 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
             await page.getByRole('searchbox', { name: /Search all results|Rechercher dans tous/ }).fill('COLL_MESSAGE_001')
             await page.getByRole('button', { name: /Apply filters|Appliquer les filtres/ }).click()
             await expect(page.getByText('COLL_MESSAGE_001', { exact: true })).toBeVisible()
-            await page.screenshot({ path: test.info().outputPath(`discussion-${locale}.png`), fullPage: true })
+            await page.screenshot({ caret: 'initial', path: test.info().outputPath(`discussion-${locale}.png`), fullPage: true })
           }
           if (kind === 'support') await expect(page.getByText('PRIVATE_INTERNAL_NOTE')).toHaveCount(0)
         }
-        await page.screenshot({ path: test.info().outputPath(`collections-${locale}.png`), fullPage: true })
+        await page.screenshot({ caret: 'initial', path: test.info().outputPath(`collections-${locale}.png`), fullPage: true })
         await page.goto('/tasks?cursor=forged')
         await expect(page.getByRole('alert')).toContainText(/invalid|invalide/)
         await expect(page.getByText('COLL_TASK_521', { exact: true })).toHaveCount(0)

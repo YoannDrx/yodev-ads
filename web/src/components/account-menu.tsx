@@ -1,20 +1,21 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import Link from 'next/link'
 import { LogOut, ShieldCheck } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 
 export function AccountMenu({ locale }: { locale: string }) {
-  const router = useRouter()
   const session = authClient.useSession()
   const organizations = authClient.useListOrganizations()
   const english = locale === 'en'
+  const [retryingDetails, setRetryingDetails] = useState(false)
+  const detailsError = Boolean(session.error || organizations.error)
   const [switching, setSwitching] = useState(false)
   const [switchError, setSwitchError] = useState(false)
 
   async function switchOrganization(organizationId: string) {
-    if (switching) return
+    if (switching || signingOut) return
     setSwitching(true)
     setSwitchError(false)
     try {
@@ -30,22 +31,42 @@ export function AccountMenu({ locale }: { locale: string }) {
     }
   }
 
+  const [signingOut, setSigningOut] = useState(false)
+  const [signOutError, setSignOutError] = useState(false)
   async function signOut() {
-    await authClient.signOut()
-    router.push('/sign-in')
-    router.refresh()
+    if (signingOut || switching) return
+    setSigningOut(true); setSignOutError(false)
+    try {
+      const result = await authClient.signOut()
+      if (result.error) throw new Error('Sign out rejected')
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Remove the authenticated workspace document after session revocation.
+      window.location.assign('/sign-in')
+    } catch {
+      setSignOutError(true)
+      setSigningOut(false)
+    }
+  }
+
+  async function retryDetails() {
+    setRetryingDetails(true)
+    try { await Promise.allSettled([session.refetch(), organizations.refetch()]) }
+    finally { setRetryingDetails(false) }
   }
 
   return (
     <div className="flex items-center gap-2">
       {(organizations.data?.length ?? 0) > 1 && (
-        <select disabled={switching} aria-busy={switching} aria-label={english ? 'Active workspace' : 'Workspace actif'} value={session.data?.session.activeOrganizationId ?? ''} onChange={(event) => switchOrganization(event.target.value)} className="h-9 max-w-28 sm:max-w-48 rounded-lg border bg-white px-2 text-sm">
+        <select disabled={switching || signingOut} aria-busy={switching} aria-label={english ? 'Active workspace' : 'Workspace actif'} value={session.data?.session.activeOrganizationId ?? ''} onChange={(event) => switchOrganization(event.target.value)} className="h-9 max-w-28 sm:max-w-48 rounded-lg border bg-white px-2 text-sm">
           {organizations.data?.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}
         </select>
       )}
-      {switchError && <span role="alert" className="absolute right-4 top-16 rounded-lg border bg-white p-3 text-xs text-red-700">{english ? 'Unable to switch workspace. Please try again.' : 'Impossible de changer d’espace. Réessayez.'}</span>}
-      <span title={session.data?.user.email ?? ''} className="grid size-9 place-items-center rounded-full bg-[#e6f8ef] text-[#168977]"><ShieldCheck className="size-4" /></span>
-      <button onClick={signOut} title={english ? 'Sign out' : 'Se déconnecter'} className="grid size-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"><LogOut className="size-4" /></button>
+      {(switchError || signOutError || detailsError) && <div role="alert" className="absolute right-4 top-16 z-50 max-w-sm space-y-2 rounded-lg border bg-white p-3 text-xs text-red-700">
+        {switchError && <p>{english ? 'Unable to switch workspace. Please try again.' : 'Impossible de changer d’espace. Réessayez.'}</p>}
+        {signOutError && <p>{english ? 'Unable to sign out. Please try again.' : 'Impossible de vous déconnecter. Réessayez.'}</p>}
+        {detailsError && <><p>{english ? 'Your account details could not be loaded. Please try again in a moment.' : 'Les informations du compte n’ont pas pu être chargées. Réessayez dans un instant.'}</p><button type="button" disabled={retryingDetails} className="font-medium underline" onClick={retryDetails}>{retryingDetails ? '…' : english ? 'Reload account details' : 'Recharger les informations du compte'}</button></>}
+      </div>}
+      <Link href="/account" aria-label={english ? 'Account security' : 'Sécurité du compte'} title={session.data?.user.email ?? ''} className="grid size-9 place-items-center rounded-full bg-[#e6f8ef] text-[#168977]"><ShieldCheck className="size-4" /></Link>
+      <button disabled={signingOut || switching} onClick={signOut} title={english ? 'Sign out' : 'Se déconnecter'} className="grid size-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"><LogOut className="size-4" /></button>
     </div>
   )
 }

@@ -70,7 +70,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
           if (period === '7') {
             await expect(publicPage.getByText(commentary, { exact: true })).toBeVisible()
             await expect(publicPage.getByText(actionPlan, { exact: true })).toBeVisible()
-            await publicPage.screenshot({ path: test.info().outputPath(`report-long-${locale}.png`), fullPage: true })
+            await publicPage.screenshot({ caret: 'initial', path: test.info().outputPath(`report-long-${locale}.png`), fullPage: true })
             // With transport disabled, even the failure path must keep the edition being read.
             await publicPage.getByRole('textbox', { name: /Your email|Votre email/ }).fill('report-fixture@example.test')
             await publicPage.getByRole('button', { name: /Receive a code|Recevoir un code/ }).click()
@@ -98,8 +98,8 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await expect(publicPage.getByText(/Édition figée|Immutable edition/)).toBeVisible()
         const revisedCsv = await context.request.get((await publicPage.getByRole('link', { name: /CSV/ }).getAttribute('href'))!)
         expect(await revisedCsv.text()).not.toBe(initialCsv)
-        await page.screenshot({ path: test.info().outputPath(`report-editions-${locale}.png`), fullPage: true })
-        await publicPage.screenshot({ path: test.info().outputPath(`report-public-${locale}.png`), fullPage: true })
+        await page.screenshot({ caret: 'initial', path: test.info().outputPath(`report-editions-${locale}.png`), fullPage: true })
+        await publicPage.screenshot({ caret: 'initial', path: test.info().outputPath(`report-public-${locale}.png`), fullPage: true })
         // Missing history rejects a new report while the already published edition remains readable.
         await db.query('delete from daily_account_metrics where client_id=$1 and metric_date=$2', [clientId, shiftCalendarDate(today, -1)])
         await page.locator('#report-label').fill(`Incomplete ${locale}`)

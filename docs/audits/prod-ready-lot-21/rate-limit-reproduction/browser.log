@@ -1,0 +1,1202 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 252ms
+✓ Running next.config.ts took 393ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1470ms (next.js: 1045ms, proxy.ts: 132ms, application-code: 292ms)
+ POST /api/auth/sign-in/email 200 in 948ms (next.js: 773ms, proxy.ts: 4ms, application-code: 171ms)
+ POST /api/auth/sign-in/email 200 in 84ms (next.js: 4ms, proxy.ts: 3ms, application-code: 77ms)
+ POST /api/auth/sign-in/email 200 in 80ms (next.js: 2ms, proxy.ts: 3ms, application-code: 75ms)
+ POST /api/auth/sign-in/email 200 in 76ms (next.js: 2ms, proxy.ts: 2ms, application-code: 72ms)
+ POST /api/auth/sign-in/email 200 in 75ms (next.js: 2ms, proxy.ts: 2ms, application-code: 71ms)
+ GET /dashboard 200 in 553ms (next.js: 212ms, proxy.ts: 2ms, application-code: 339ms)
+ GET /settings 200 in 221ms (next.js: 30ms, proxy.ts: 2ms, application-code: 189ms)
+ GET /billing 200 in 153ms (next.js: 13ms, proxy.ts: 2ms, application-code: 138ms)
+ GET /support 200 in 134ms (next.js: 14ms, proxy.ts: 2ms, application-code: 117ms)
+ GET /accounts 200 in 118ms (next.js: 12ms, proxy.ts: 1.9ms, application-code: 104ms)
+ GET /history 200 in 132ms (next.js: 16ms, proxy.ts: 2ms, application-code: 114ms)
+ GET /alerts 200 in 144ms (next.js: 20ms, proxy.ts: 2.0ms, application-code: 122ms)
+ GET /tasks 200 in 157ms (next.js: 23ms, proxy.ts: 2.0ms, application-code: 132ms)
+ GET /approvals 200 in 135ms (next.js: 24ms, proxy.ts: 1.8ms, application-code: 109ms)
+ GET /reports 200 in 236ms (next.js: 22ms, proxy.ts: 1.8ms, application-code: 212ms)
+ GET /audit 200 in 147ms (next.js: 24ms, proxy.ts: 2ms, application-code: 121ms)
+ GET /agents 200 in 222ms (next.js: 18ms, proxy.ts: 2.0ms, application-code: 202ms)
+ GET / 200 in 142ms (next.js: 30ms, proxy.ts: 4ms, application-code: 108ms)
+ GET /privacy 200 in 98ms (next.js: 22ms, proxy.ts: 3ms, application-code: 74ms)
+ GET /terms 200 in 70ms (next.js: 23ms, proxy.ts: 2ms, application-code: 45ms)
+ GET /subprocessors 200 in 177ms (next.js: 83ms, proxy.ts: 5ms, application-code: 90ms)
+ GET /sign-in 200 in 64ms (next.js: 13ms, proxy.ts: 20ms, application-code: 31ms)
+ GET /status 200 in 151ms (next.js: 55ms, proxy.ts: 14ms, application-code: 81ms)
+ GET /sign-in 200 in 67ms (next.js: 15ms, proxy.ts: 6ms, application-code: 46ms)
+ GET /icon?a62dacc6b033a714 200 in 146ms (next.js: 38ms, proxy.ts: 22ms, application-code: 85ms)
+ GET /sign-up 200 in 370ms (next.js: 337ms, proxy.ts: 4ms, application-code: 29ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-s4WC46
+
+Running 51 tests using 1 worker
+
+(node:31446) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /operations 200 in 231ms (next.js: 19ms, proxy.ts: 2.0ms, application-code: 210ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 5ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 9ms, proxy.ts: 3ms, application-code: 25ms)
+  ✓   1 [chromium] › e2e/activation-local.spec.ts:6:7 › operations counts published reports and excludes legacy or future activation (899ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000091 200 in 389ms (next.js: 34ms, proxy.ts: 2ms, application-code: 353ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 5ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 9ms, proxy.ts: 3ms, application-code: 11ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000091 200 in 180ms (next.js: 3ms, proxy.ts: 3ms, application-code: 174ms)
+  └─ ƒ setCookieConsent({}) in 3ms src/app/preferences-actions.ts
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091 200 in 567ms (next.js: 466ms, proxy.ts: 13ms, application-code: 88ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091&cursor=eyJ2IjoxLCJpdiI6Im5TXzg4NE5GTU1vb2ZRRDIiLCJ0YWciOiJyMlhNa2R2TnhwNWJ1cE1GZzlVUkN3IiwiZGF0YSI6Ik1LcGNvLXhXdENmZnFNLW1TeExnSHJQbkszSVlmc2VYX2J4anl5alFzVkpOX1FTWjl6eHB1b1V1MTItVDZtMnhBVnNaN2dOd25PNGVhVmRQMGNKaTljckV0Z1BZejh2ZUpfQlBnQ0t0QWRPaXR0aUprTE0zZWRZTFdSZWZPSF9Ka051dnhfcTFIcC1SRHdDN2UwSHhxdXpoYU5LRGhqcjRCYmNCTkN4bVhGYm9tb0t0SVIxS2V6dXVETXkwd3BiZ05NLUdPZ0ZNSjNaNk56aElfT0x5SGRZaS05QWl3MWpZZGJvbm5wRWFFOF9lSXV4OHVjVzk0c050WFFPR01seDFyNU9FOFM1TkxNTFcifQ 200 in 112ms (next.js: 6ms, proxy.ts: 3ms, application-code: 103ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091&q=%25_ 200 in 129ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 125ms)
+ GET /api/auth/get-session 200 in 35ms (next.js: 13ms, proxy.ts: 7ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 37ms (next.js: 16ms, proxy.ts: 7ms, application-code: 13ms)
+ GET /insights/devices/export?client=80000000-0000-4000-8000-000000000091&version=804b9681-70c9-416c-8012-92212b9c0a7e 200 in 669ms (next.js: 645ms, proxy.ts: 2ms, application-code: 22ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091&cursor=eyJ2IjoxLCJpdiI6Im5TXzg4NE5GTU1vb2ZRRDIiLCJ0YWciOiJyMlhNa2R2TnhwNWJ1cE1GZzlVUkN3IiwiZGF0YSI6Ik1LcGNvLXhXdENmZnFNLW1TeExnSHJQbkszSVlmc2VYX2J4anl5alFzVkpOX1FTWjl6eHB1b1V1MTItVDZtMnhBVnNaN2dOd25PNGVhVmRQMGNKaTljckV0Z1BZejh2ZUpfQlBnQ0t0QWRPaXR0aUprTE0zZWRZTFdSZWZPSF9Ka051dnhfcTFIcC1SRHdDN2UwSHhxdXpoYU5LRGhqcjRCYmNCTkN4bVhGYm9tb0t0SVIxS2V6dXVETXkwd3BiZ05NLUdPZ0ZNSjNaNk56aElfT0x5SGRZaS05QWl3MWpZZGJvbm5wRWFFOF9lSXV4OHVjVzk0c050WFFPR01seDFyNU9FOFM1TkxNTFcifQ 200 in 130ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 125ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 9ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 28ms (next.js: 11ms, proxy.ts: 5ms, application-code: 12ms)
+ GET /insights/devices/export?client=80000000-0000-4000-8000-000000000091&version=804b9681-70c9-416c-8012-92212b9c0a7e 409 in 21ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091&cursor=forged 200 in 146ms (next.js: 5ms, proxy.ts: 2ms, application-code: 139ms)
+ GET /api/auth/get-session 200 in 126ms (next.js: 43ms, proxy.ts: 5ms, application-code: 77ms)
+ GET /api/auth/organization/list 200 in 132ms (next.js: 46ms, proxy.ts: 6ms, application-code: 81ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000099 404 in 157ms (next.js: 9ms, proxy.ts: 11ms, application-code: 137ms)
+ GET /insights/devices/export?client=80000000-0000-4000-8000-000000000099&version=804b9681-70c9-416c-8012-92212b9c0a7e 404 in 40ms (next.js: 6ms, proxy.ts: 7ms, application-code: 28ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 9ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /insights/devices/export?client=80000000-0000-4000-8000-000000000091&version=804b9681-70c9-416c-8012-92212b9c0a7e 403 in 20ms (next.js: 13ms, proxy.ts: 3ms, application-code: 5ms)
+ GET /api/auth/organization/list 200 in 28ms (next.js: 11ms, proxy.ts: 4ms, application-code: 13ms)
+  ✓   2 [chromium] › e2e/analytical-pages-local.spec.ts:15:53 › complete analytical collections › browses, searches and exports all stored rows in fr (4.4s)
+ GET /insights?client=80000000-0000-4000-8000-000000000091 200 in 365ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 361ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000091 200 in 238ms (next.js: 1.7ms, proxy.ts: 6ms, application-code: 230ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091 200 in 182ms (next.js: 9ms, proxy.ts: 6ms, application-code: 167ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091&cursor=eyJ2IjoxLCJpdiI6ImVKZ2ZMZllIX0hwNk0yb1MiLCJ0YWciOiJpZXBNb1AxT0dWVEg1UnJGRElQQTFnIiwiZGF0YSI6IklHLXVFZC1TeFRiZUg1R1RaWU9STF9tei1kLXZyMUEzZEZPNWN6YTBpM3RGM19sd25RMEhuejk5NkFhVHA5dGE2LVhwMWRjSTJ3VFNQcm9fdDlWSzVTaGdYa1dBUm5wTDRNZGNaalNmOG5vUWVpRkxSLTNhSzVxSmFudjhFMzVoMUpLd0VqN3JOUXdMZFpDRHZ2Yk1SSkswckoxZWcySUE0MVRLMDFSTUxGWk9LemxQQzEyQjNmQTVkVWRYMW0xQkhZQkNYUFFyRmgzNWhWTVl3blRkVXNyVmltbjk5MjVyYnpuUmp2YUFEdmhBa2dLUDc5dHZXM21Nd20zMlBDNzNaQUt1U0tFUEtGWloifQ 200 in 136ms (next.js: 4ms, proxy.ts: 4ms, application-code: 128ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091&q=%25_ 200 in 136ms (next.js: 5ms, proxy.ts: 3ms, application-code: 128ms)
+ GET /api/auth/get-session 200 in 34ms (next.js: 6ms, proxy.ts: 3ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 37ms (next.js: 18ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /insights/devices/export?client=80000000-0000-4000-8000-000000000091&version=4c8d5f4c-77f0-4fff-bf9f-9361d4a90719 200 in 21ms (next.js: 3ms, proxy.ts: 2ms, application-code: 16ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091&cursor=eyJ2IjoxLCJpdiI6ImVKZ2ZMZllIX0hwNk0yb1MiLCJ0YWciOiJpZXBNb1AxT0dWVEg1UnJGRElQQTFnIiwiZGF0YSI6IklHLXVFZC1TeFRiZUg1R1RaWU9STF9tei1kLXZyMUEzZEZPNWN6YTBpM3RGM19sd25RMEhuejk5NkFhVHA5dGE2LVhwMWRjSTJ3VFNQcm9fdDlWSzVTaGdYa1dBUm5wTDRNZGNaalNmOG5vUWVpRkxSLTNhSzVxSmFudjhFMzVoMUpLd0VqN3JOUXdMZFpDRHZ2Yk1SSkswckoxZWcySUE0MVRLMDFSTUxGWk9LemxQQzEyQjNmQTVkVWRYMW0xQkhZQkNYUFFyRmgzNWhWTVl3blRkVXNyVmltbjk5MjVyYnpuUmp2YUFEdmhBa2dLUDc5dHZXM21Nd20zMlBDNzNaQUt1U0tFUEtGWloifQ 200 in 121ms (next.js: 2ms, proxy.ts: 2ms, application-code: 117ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 17ms, proxy.ts: 5ms, application-code: 11ms)
+ GET /insights/devices/export?client=80000000-0000-4000-8000-000000000091&version=4c8d5f4c-77f0-4fff-bf9f-9361d4a90719 409 in 44ms (next.js: 3ms, proxy.ts: 3ms, application-code: 38ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 20ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000091&cursor=forged 200 in 204ms (next.js: 4ms, proxy.ts: 3ms, application-code: 197ms)
+ GET /api/auth/get-session 200 in 105ms (next.js: 51ms, proxy.ts: 25ms, application-code: 29ms)
+ GET /api/auth/organization/list 200 in 96ms (next.js: 55ms, proxy.ts: 12ms, application-code: 28ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000099 404 in 145ms (next.js: 3ms, proxy.ts: 3ms, application-code: 140ms)
+ GET /insights/devices/export?client=80000000-0000-4000-8000-000000000099&version=4c8d5f4c-77f0-4fff-bf9f-9361d4a90719 404 in 20ms (next.js: 5ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /insights/devices/export?client=80000000-0000-4000-8000-000000000091&version=4c8d5f4c-77f0-4fff-bf9f-9361d4a90719 403 in 11ms (next.js: 3ms, proxy.ts: 2ms, application-code: 5ms)
+  ✓   3 [chromium] › e2e/analytical-pages-local.spec.ts:15:53 › complete analytical collections › browses, searches and exports all stored rows in en (2.7s)
+ GET /account 307 in 101ms (next.js: 36ms, proxy.ts: 3ms, application-code: 62ms)
+ GET /sign-in?returnTo=%2Faccount 200 in 41ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 35ms)
+ GET /account 200 in 59ms (next.js: 3ms, proxy.ts: 4ms, application-code: 52ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 6ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 25ms (next.js: 12ms, proxy.ts: 4ms, application-code: 9ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 10ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /account 200 in 36ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 32ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 8ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 5ms, proxy.ts: 4ms, application-code: 15ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 24ms (next.js: 10ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /account 200 in 52ms (next.js: 2ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 9ms, proxy.ts: 8ms, application-code: 13ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 30ms (next.js: 13ms, proxy.ts: 8ms, application-code: 9ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 11ms, proxy.ts: 8ms, application-code: 14ms)
+ GET /account 200 in 37ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 32ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 6ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 10ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 16ms (next.js: 4ms, proxy.ts: 6ms, application-code: 6ms)
+ GET /account 200 in 47ms (next.js: 1.8ms, proxy.ts: 11ms, application-code: 34ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 4ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 6ms, proxy.ts: 4ms, application-code: 14ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 24ms (next.js: 11ms, proxy.ts: 4ms, application-code: 9ms)
+  ✓   4 [chromium] › e2e/auth-lifecycle-local.spec.ts:58:7 › personal account security is available to all five workspace roles (2.2s)
+ GET /sign-up 200 in 34ms (next.js: 5ms, proxy.ts: 3ms, application-code: 27ms)
+ POST /api/auth/sign-up/email 200 in 92ms (next.js: 5ms, proxy.ts: 3ms, application-code: 85ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 4ms)
+ GET /sign-in 200 in 37ms (next.js: 3ms, proxy.ts: 1.6ms, application-code: 33ms)
+ POST /api/auth/sign-in/email 403 in 85ms (next.js: 3ms, proxy.ts: 3ms, application-code: 79ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 4ms)
+ GET /api/auth/verify-email?token=[REDACTED]&callbackURL=%2Fdashboard 302 in 11ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 7ms)
+ GET /dashboard 307 in 45ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 40ms)
+ GET /sign-in 200 in 31ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 26ms)
+ GET /sign-in 200 in 49ms (next.js: 3ms, proxy.ts: 4ms, application-code: 42ms)
+ POST /api/auth/sign-in/email 200 in 82ms (next.js: 2ms, proxy.ts: 3ms, application-code: 77ms)
+ GET /dashboard 307 in 53ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 49ms)
+ GET /onboarding 200 in 69ms (next.js: 22ms, proxy.ts: 2ms, application-code: 45ms)
+ GET /settings 200 in 76ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 71ms)
+ POST /onboarding 200 in 98ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 94ms)
+  └─ ƒ createWorkspace({}) in 10ms src/app/onboarding/actions.ts
+ GET /api/auth/get-session 200 in 21ms (next.js: 5ms, proxy.ts: 2ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 9ms, proxy.ts: 2ms, application-code: 14ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 7ms, proxy.ts: 5ms, application-code: 7ms)
+ GET /sign-in 200 in 33ms (next.js: 4ms, proxy.ts: 2ms, application-code: 28ms)
+ POST /api/auth/sign-in/magic-link 200 in 20ms (next.js: 3ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 14ms (next.js: 2ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /dashboard 200 in 109ms (next.js: 2ms, proxy.ts: 9ms, application-code: 98ms)
+ GET /api/auth/get-session 200 in 14ms (next.js: 4ms, proxy.ts: 3ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 10ms, proxy.ts: 6ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 11ms, proxy.ts: 8ms, application-code: 13ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 18ms (next.js: 5ms, proxy.ts: 7ms, application-code: 6ms)
+ GET /sign-in?error=INVALID_TOKEN 200 in 40ms (next.js: 3ms, proxy.ts: 1.6ms, application-code: 35ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 2ms, proxy.ts: 4ms, application-code: 6ms)
+ GET /forgot-password 200 in 51ms (next.js: 14ms, proxy.ts: 1.6ms, application-code: 35ms)
+ POST /api/auth/request-password-reset 200 in 21ms (next.js: 3ms, proxy.ts: 4ms, application-code: 14ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 13ms (next.js: 4ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /reset-password?token=[REDACTED] 200 in 44ms (next.js: 14ms, proxy.ts: 1.8ms, application-code: 28ms)
+ POST /api/auth/reset-password 200 in 78ms (next.js: 2ms, proxy.ts: 3ms, application-code: 73ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 12ms)
+ GET /api/auth/get-session 200 in 9ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 9ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /reset-password?error=INVALID_TOKEN 200 in 28ms (next.js: 1.5ms, proxy.ts: 1.9ms, application-code: 24ms)
+ GET /sign-in 200 in 39ms (next.js: 6ms, proxy.ts: 3ms, application-code: 31ms)
+2026-09-07T06:44:28.266Z WARN [Better Auth]: Invalid password
+ POST /api/auth/sign-in/email 401 in 85ms (next.js: 4ms, proxy.ts: 3ms, application-code: 78ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 4ms)
+ GET /sign-in 200 in 36ms (next.js: 4ms, proxy.ts: 1.6ms, application-code: 31ms)
+ POST /api/auth/sign-in/email 200 in 98ms (next.js: 13ms, proxy.ts: 3ms, application-code: 82ms)
+ GET /dashboard 200 in 109ms (next.js: 3ms, proxy.ts: 3ms, application-code: 103ms)
+ GET /sign-in 200 in 45ms (next.js: 4ms, proxy.ts: 2ms, application-code: 38ms)
+ GET /api/auth/get-session 200 in 45ms (next.js: 21ms, proxy.ts: 10ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 47ms (next.js: 23ms, proxy.ts: 10ms, application-code: 14ms)
+ POST /api/auth/sign-in/email 200 in 81ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 77ms)
+ GET /dashboard 200 in 99ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 95ms)
+ GET /account 200 in 79ms (next.js: 3ms, proxy.ts: 3ms, application-code: 73ms)
+ GET /api/auth/get-session 200 in 34ms (next.js: 9ms, proxy.ts: 8ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 39ms (next.js: 13ms, proxy.ts: 8ms, application-code: 18ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 7ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 10ms, proxy.ts: 5ms, application-code: 14ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 26ms (next.js: 13ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /api/auth/revoke-other-sessions 200 in 15ms (next.js: 4ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 15ms (next.js: 3ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 15ms (next.js: 6ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 9ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /api/auth/passkey/generate-register-options?authenticatorAttachment=platform&name=Passkey%20Ads%20by%20Yodev 200 in 13ms (next.js: 2ms, proxy.ts: 3ms, application-code: 8ms)
+ POST /api/auth/passkey/verify-registration 200 in 17ms (next.js: 2ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 16ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 12ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 9ms (next.js: 1.9ms, proxy.ts: 1.7ms, application-code: 5ms)
+ POST /api/auth/passkey/delete-passkey 401 in 9ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 6ms)
+ POST /api/auth/sign-out 200 in 8ms (next.js: 1.6ms, proxy.ts: 1.5ms, application-code: 5ms)
+ GET /sign-in 200 in 33ms (next.js: 3ms, proxy.ts: 1.6ms, application-code: 28ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 12ms (next.js: 3ms, proxy.ts: 2ms, application-code: 7ms)
+ POST /api/auth/passkey/verify-authentication 200 in 24ms (next.js: 5ms, proxy.ts: 4ms, application-code: 15ms)
+ GET /dashboard 200 in 128ms (next.js: 2ms, proxy.ts: 3ms, application-code: 123ms)
+ GET /api/auth/get-session 200 in 14ms (next.js: 4ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 11ms, proxy.ts: 16ms, application-code: 3ms)
+ GET /api/auth/get-session 200 in 39ms (next.js: 7ms, proxy.ts: 22ms, application-code: 10ms)
+ GET /account 200 in 68ms (next.js: 2ms, proxy.ts: 3ms, application-code: 62ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 10ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 29ms (next.js: 11ms, proxy.ts: 7ms, application-code: 11ms)
+ POST /api/auth/passkey/delete-passkey 200 in 13ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 7ms)
+ POST /api/auth/sign-out 200 in 14ms (next.js: 3ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 15ms (next.js: 6ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /sign-in 200 in 32ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 27ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 14ms (next.js: 3ms, proxy.ts: 3ms, application-code: 8ms)
+ POST /api/auth/passkey/verify-authentication 401 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 9ms, proxy.ts: 4ms, application-code: 5ms)
+ POST /api/auth/sign-in/magic-link 200 in 16ms (next.js: 2ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 12ms (next.js: 2ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /dashboard 200 in 109ms (next.js: 2ms, proxy.ts: 1.5ms, application-code: 106ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 4ms, proxy.ts: 4ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 8ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /invitation?id=298b778f-370d-4c75-a029-97034ad12374 200 in 44ms (next.js: 14ms, proxy.ts: 3ms, application-code: 27ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 3ms, proxy.ts: 3ms, application-code: 5ms)
+ POST /api/auth/organization/accept-invitation 403 in 19ms (next.js: 2ms, proxy.ts: 9ms, application-code: 7ms)
+ GET /invitation?id=2c88cf6b-c5d6-4d7a-b666-cb2b7338a583 200 in 28ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 3ms, proxy.ts: 3ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 400 in 13ms (next.js: 2ms, proxy.ts: 4ms, application-code: 7ms)
+ GET /invitation?id=faffd109-a7dc-42c7-b652-9ade80fcb0c8 200 in 33ms (next.js: 1.3ms, proxy.ts: 2ms, application-code: 29ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: -0.0ms, proxy.ts: 5ms, application-code: 5ms)
+ POST /api/auth/organization/accept-invitation 400 in 10ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /invitation?id=08e2a135-7029-4fd6-a977-ec2d81578e09 200 in 26ms (next.js: 1.5ms, proxy.ts: 1.9ms, application-code: 23ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 3ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /sign-in?returnTo=%2Finvitation%3Fid%3D08e2a135-7029-4fd6-a977-ec2d81578e09 200 in 21ms (next.js: 4ms, proxy.ts: 3ms, application-code: 14ms)
+ POST /api/auth/sign-in/magic-link 200 in 15ms (next.js: 4ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Finvitation%3Fid%3D08e2a135-7029-4fd6-a977-ec2d81578e09&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in%3FreturnTo%3D%252Finvitation%253Fid%253D08e2a135-7029-4fd6-a977-ec2d81578e09 302 in 14ms (next.js: 3ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /invitation?id=08e2a135-7029-4fd6-a977-ec2d81578e09 200 in 30ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 26ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 200 in 13ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 9ms)
+ POST /api/auth/organization/set-active 200 in 10ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 31ms (next.js: 19ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 69ms (next.js: 37ms, proxy.ts: 18ms, application-code: 14ms)
+ GET /dashboard 200 in 121ms (next.js: 2ms, proxy.ts: 3ms, application-code: 116ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 6ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 5ms, application-code: 10ms)
+ POST /api/auth/sign-out 200 in 10ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /sign-in 200 in 58ms (next.js: 4ms, proxy.ts: 1.7ms, application-code: 53ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 4ms, application-code: 9ms)
+  ✓   5 [chromium] › e2e/auth-lifecycle-local.spec.ts:85:9 › auth lifecycle fr: verification, magic link, reset, sessions and passkey (9.3s)
+ GET /sign-up 200 in 37ms (next.js: 5ms, proxy.ts: 3ms, application-code: 29ms)
+ POST /api/auth/sign-up/email 200 in 87ms (next.js: 2ms, proxy.ts: 3ms, application-code: 82ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 3ms, proxy.ts: 2ms, application-code: 5ms)
+ GET /sign-in 200 in 32ms (next.js: 3ms, proxy.ts: 1.5ms, application-code: 27ms)
+ POST /api/auth/sign-in/email 403 in 81ms (next.js: 2ms, proxy.ts: 3ms, application-code: 76ms)
+ GET /api/auth/get-session 200 in 9ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 5ms)
+ GET /api/auth/verify-email?token=[REDACTED]&callbackURL=%2Fdashboard 302 in 17ms (next.js: 1.9ms, proxy.ts: 1.6ms, application-code: 14ms)
+ GET /dashboard 307 in 47ms (next.js: 1.9ms, proxy.ts: 1.6ms, application-code: 44ms)
+ GET /sign-in 200 in 32ms (next.js: 4ms, proxy.ts: 1.7ms, application-code: 27ms)
+ GET /sign-in 200 in 36ms (next.js: 3ms, proxy.ts: 2ms, application-code: 30ms)
+ POST /api/auth/sign-in/email 200 in 81ms (next.js: 3ms, proxy.ts: 2ms, application-code: 76ms)
+ GET /dashboard 307 in 61ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 56ms)
+ GET /onboarding 200 in 38ms (next.js: 1.6ms, proxy.ts: 2.0ms, application-code: 35ms)
+ GET /settings 200 in 74ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 69ms)
+ POST /onboarding 200 in 95ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 92ms)
+  └─ ƒ createWorkspace({}) in 10ms src/app/onboarding/actions.ts
+ GET /api/auth/get-session 200 in 31ms (next.js: 3ms, proxy.ts: 3ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 7ms, proxy.ts: 3ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 9ms, application-code: 6ms)
+ GET /sign-in 200 in 93ms (next.js: 6ms, proxy.ts: 3ms, application-code: 84ms)
+ POST /api/auth/sign-in/magic-link 200 in 15ms (next.js: 4ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 12ms (next.js: 2ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /dashboard 200 in 107ms (next.js: 1.6ms, proxy.ts: 1.5ms, application-code: 103ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 3ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 5ms, proxy.ts: 10ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 8ms, proxy.ts: 10ms, application-code: 13ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 22ms (next.js: 6ms, proxy.ts: 9ms, application-code: 6ms)
+ GET /sign-in?error=INVALID_TOKEN 200 in 32ms (next.js: 4ms, proxy.ts: 1.5ms, application-code: 27ms)
+ GET /api/auth/get-session 200 in 16ms (next.js: 5ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /forgot-password 200 in 32ms (next.js: 3ms, proxy.ts: 2ms, application-code: 27ms)
+ POST /api/auth/request-password-reset 200 in 15ms (next.js: 3ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 9ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /reset-password?token=[REDACTED] 200 in 27ms (next.js: 1.4ms, proxy.ts: 1.5ms, application-code: 24ms)
+ POST /api/auth/reset-password 200 in 78ms (next.js: 2ms, proxy.ts: 2ms, application-code: 73ms)
+ GET /api/auth/get-session 200 in 9ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /api/auth/get-session 200 in 12ms (next.js: 4ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /api/auth/reset-password/[REDACTED]?callbackURL=%2Freset-password 302 in 9ms (next.js: 2ms, proxy.ts: 1.5ms, application-code: 5ms)
+ GET /reset-password?error=INVALID_TOKEN 200 in 27ms (next.js: 1.3ms, proxy.ts: 1.4ms, application-code: 24ms)
+ GET /sign-in 200 in 42ms (next.js: 5ms, proxy.ts: 3ms, application-code: 34ms)
+2026-09-07T06:44:37.508Z WARN [Better Auth]: Invalid password
+ POST /api/auth/sign-in/email 401 in 93ms (next.js: 4ms, proxy.ts: 3ms, application-code: 85ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 4ms)
+ GET /sign-in 200 in 30ms (next.js: 3ms, proxy.ts: 1.3ms, application-code: 25ms)
+ POST /api/auth/sign-in/email 200 in 85ms (next.js: 2ms, proxy.ts: 3ms, application-code: 80ms)
+ GET /dashboard 200 in 114ms (next.js: 2ms, proxy.ts: 4ms, application-code: 108ms)
+ GET /sign-in 200 in 46ms (next.js: 4ms, proxy.ts: 2ms, application-code: 40ms)
+ GET /api/auth/get-session 200 in 42ms (next.js: 16ms, proxy.ts: 11ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 42ms (next.js: 19ms, proxy.ts: 8ms, application-code: 14ms)
+ POST /api/auth/sign-in/email 200 in 88ms (next.js: 3ms, proxy.ts: 3ms, application-code: 82ms)
+ GET /dashboard 200 in 121ms (next.js: 2ms, proxy.ts: 3ms, application-code: 116ms)
+ GET /account 200 in 67ms (next.js: 2ms, proxy.ts: 2ms, application-code: 62ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 9ms, proxy.ts: 10ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 11ms, proxy.ts: 6ms, application-code: 18ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 5ms, proxy.ts: 12ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 9ms, proxy.ts: 10ms, application-code: 16ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 31ms (next.js: 11ms, proxy.ts: 7ms, application-code: 13ms)
+ POST /api/auth/revoke-other-sessions 200 in 24ms (next.js: 3ms, proxy.ts: 5ms, application-code: 16ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 5ms)
+ GET /api/auth/get-session 200 in 8ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /api/auth/passkey/generate-register-options?authenticatorAttachment=platform&name=Ads%20by%20Yodev%20passkey 200 in 12ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 7ms)
+ POST /api/auth/passkey/verify-registration 200 in 13ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 9ms (next.js: 2.0ms, proxy.ts: 1.4ms, application-code: 6ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 9ms (next.js: 2ms, proxy.ts: 1.6ms, application-code: 5ms)
+ POST /api/auth/passkey/delete-passkey 401 in 9ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 5ms)
+ POST /api/auth/sign-out 200 in 7ms (next.js: 1.5ms, proxy.ts: 1.4ms, application-code: 4ms)
+ GET /sign-in 200 in 31ms (next.js: 3ms, proxy.ts: 1.4ms, application-code: 26ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 12ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 8ms)
+ POST /api/auth/passkey/verify-authentication 200 in 30ms (next.js: 5ms, proxy.ts: 2ms, application-code: 22ms)
+ GET /dashboard 200 in 123ms (next.js: 4ms, proxy.ts: 4ms, application-code: 115ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 4ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /api/auth/organization/list 200 in 40ms (next.js: 12ms, proxy.ts: 24ms, application-code: 3ms)
+ GET /api/auth/get-session 200 in 48ms (next.js: 8ms, proxy.ts: 31ms, application-code: 10ms)
+ GET /account 200 in 76ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 72ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 7ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 14ms (next.js: 5ms, proxy.ts: 4ms, application-code: 4ms)
+ POST /api/auth/passkey/delete-passkey 200 in 12ms (next.js: 3ms, proxy.ts: 2ms, application-code: 7ms)
+ POST /api/auth/sign-out 200 in 16ms (next.js: 3ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 17ms (next.js: 7ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /sign-in 200 in 33ms (next.js: 4ms, proxy.ts: 2ms, application-code: 27ms)
+ GET /api/auth/passkey/generate-authenticate-options 200 in 14ms (next.js: 2ms, proxy.ts: 4ms, application-code: 8ms)
+ POST /api/auth/passkey/verify-authentication 401 in 22ms (next.js: 4ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 11ms, proxy.ts: 2ms, application-code: 5ms)
+ POST /api/auth/sign-in/magic-link 200 in 13ms (next.js: 3ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Fdashboard&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in 302 in 11ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 7ms)
+ GET /dashboard 200 in 105ms (next.js: 1.8ms, proxy.ts: 1.5ms, application-code: 102ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 4ms, proxy.ts: 4ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 17ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /invitation?id=f88c89c8-2134-4d59-b38e-dd22dfb2f554 200 in 31ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 25ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 2ms, proxy.ts: 3ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 403 in 11ms (next.js: 2ms, proxy.ts: 3ms, application-code: 6ms)
+ GET /invitation?id=f3cb9d1f-0201-4f6a-bf86-d833d283e9a8 200 in 29ms (next.js: 2ms, proxy.ts: 2ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 11ms (next.js: 3ms, proxy.ts: 3ms, application-code: 5ms)
+ POST /api/auth/organization/accept-invitation 400 in 13ms (next.js: 2ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /invitation?id=59bb4a7f-892a-4f36-a372-c196c9f70313 200 in 28ms (next.js: 1.5ms, proxy.ts: 1.8ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 2ms, proxy.ts: 4ms, application-code: 12ms)
+ POST /api/auth/organization/accept-invitation 400 in 11ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /invitation?id=e41db9be-cf38-4292-b3e5-9eb0b9f3091b 200 in 28ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 24ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 2ms, proxy.ts: 3ms, application-code: 5ms)
+ GET /sign-in?returnTo=%2Finvitation%3Fid%3De41db9be-cf38-4292-b3e5-9eb0b9f3091b 200 in 18ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 13ms)
+ POST /api/auth/sign-in/magic-link 200 in 18ms (next.js: 4ms, proxy.ts: 2ms, application-code: 12ms)
+ GET /api/auth/magic-link/verify?token=[REDACTED]&callbackURL=%2Finvitation%3Fid%3De41db9be-cf38-4292-b3e5-9eb0b9f3091b&errorCallbackURL=http%3A%2F%2Flocalhost%3A3017%2Fsign-in%3FreturnTo%3D%252Finvitation%253Fid%253De41db9be-cf38-4292-b3e5-9eb0b9f3091b 302 in 14ms (next.js: 3ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /invitation?id=e41db9be-cf38-4292-b3e5-9eb0b9f3091b 200 in 29ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 25ms)
+ GET /api/auth/get-session 200 in 10ms (next.js: 2ms, proxy.ts: 2ms, application-code: 6ms)
+ POST /api/auth/organization/accept-invitation 200 in 20ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 16ms)
+ POST /api/auth/organization/set-active 200 in 9ms (next.js: 1.8ms, proxy.ts: 1.5ms, application-code: 6ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 19ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/get-session 200 in 63ms (next.js: 36ms, proxy.ts: 12ms, application-code: 15ms)
+ GET /dashboard 200 in 113ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 108ms)
+ GET /api/auth/get-session 200 in 14ms (next.js: 4ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /api/auth/get-session 200 in 46ms (next.js: 5ms, proxy.ts: 26ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 48ms (next.js: 9ms, proxy.ts: 26ms, application-code: 12ms)
+ POST /api/auth/sign-out 200 in 14ms (next.js: 2ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /sign-in 200 in 69ms (next.js: 5ms, proxy.ts: 1.9ms, application-code: 62ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 6ms, proxy.ts: 3ms, application-code: 9ms)
+  ✓   6 [chromium] › e2e/auth-lifecycle-local.spec.ts:85:9 › auth lifecycle en: verification, magic link, reset, sessions and passkey (9.2s)
+ GET /dashboard 200 in 126ms (next.js: 2ms, proxy.ts: 3ms, application-code: 121ms)
+ GET /api/auth/get-session 200 in 161ms (next.js: 28ms, proxy.ts: 25ms, application-code: 108ms)
+ GET /api/auth/organization/list 200 in 187ms (next.js: 51ms, proxy.ts: 25ms, application-code: 111ms)
+ GET /settings 200 in 228ms (next.js: 5ms, proxy.ts: 2ms, application-code: 221ms)
+ GET /api/auth/get-session 200 in 99ms (next.js: 17ms, proxy.ts: 27ms, application-code: 55ms)
+ GET /api/auth/organization/list 200 in 102ms (next.js: 25ms, proxy.ts: 26ms, application-code: 50ms)
+ GET /billing 200 in 194ms (next.js: 4ms, proxy.ts: 5ms, application-code: 185ms)
+ GET /api/auth/get-session 200 in 87ms (next.js: 14ms, proxy.ts: 24ms, application-code: 49ms)
+ GET /api/auth/organization/list 200 in 110ms (next.js: 22ms, proxy.ts: 23ms, application-code: 66ms)
+ GET /support 200 in 146ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 140ms)
+  ✓   7 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › owner has only its server-authorized product surface (1.3s)
+ GET /dashboard 200 in 109ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 105ms)
+ GET /api/auth/get-session 200 in 121ms (next.js: 20ms, proxy.ts: 27ms, application-code: 74ms)
+ GET /api/auth/organization/list 200 in 203ms (next.js: 39ms, proxy.ts: 26ms, application-code: 139ms)
+ GET /settings 200 in 239ms (next.js: 2.0ms, proxy.ts: 1.9ms, application-code: 235ms)
+ GET /api/auth/get-session 200 in 96ms (next.js: 15ms, proxy.ts: 32ms, application-code: 49ms)
+ GET /api/auth/organization/list 200 in 120ms (next.js: 23ms, proxy.ts: 31ms, application-code: 65ms)
+ GET /support 200 in 152ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 148ms)
+⨯ Error [PermissionDeniedError]: Permission required: billing:manage
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async BillingPage (src/app/(app)/billing/page.tsx:23:40)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3163797875'
+}
+ GET /api/auth/get-session 200 in 92ms (next.js: 31ms, proxy.ts: 28ms, application-code: 32ms)
+ GET /api/auth/organization/list 200 in 90ms (next.js: 38ms, proxy.ts: 27ms, application-code: 25ms)
+ GET /billing 307 in 121ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 116ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 128ms (next.js: 6ms, proxy.ts: 8ms, application-code: 113ms)
+  ✓   8 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › admin has only its server-authorized product surface (1.4s)
+ GET /dashboard 200 in 110ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 106ms)
+ GET /api/auth/get-session 200 in 93ms (next.js: 16ms, proxy.ts: 23ms, application-code: 53ms)
+ GET /api/auth/organization/list 200 in 119ms (next.js: 25ms, proxy.ts: 22ms, application-code: 73ms)
+ GET /tasks 200 in 155ms (next.js: 5ms, proxy.ts: 1.8ms, application-code: 149ms)
+ GET /api/auth/get-session 200 in 68ms (next.js: 35ms, proxy.ts: 11ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 69ms (next.js: 38ms, proxy.ts: 11ms, application-code: 21ms)
+ GET /support 200 in 140ms (next.js: 2.0ms, proxy.ts: 1.8ms, application-code: 137ms)
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3049448933'
+}
+ GET /api/auth/get-session 200 in 71ms (next.js: 22ms, proxy.ts: 25ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 72ms (next.js: 26ms, proxy.ts: 23ms, application-code: 22ms)
+ GET /settings 307 in 101ms (next.js: 2ms, proxy.ts: 2ms, application-code: 97ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 132ms (next.js: 4ms, proxy.ts: 7ms, application-code: 121ms)
+⨯ Error [PermissionDeniedError]: Permission required: billing:manage
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async BillingPage (src/app/(app)/billing/page.tsx:23:40)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3163797875'
+}
+ GET /api/auth/get-session 200 in 76ms (next.js: 19ms, proxy.ts: 25ms, application-code: 32ms)
+ GET /api/auth/organization/list 200 in 76ms (next.js: 23ms, proxy.ts: 24ms, application-code: 30ms)
+ GET /billing 307 in 100ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 96ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 115ms (next.js: 3ms, proxy.ts: 3ms, application-code: 109ms)
+  ✓   9 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › strategist has only its server-authorized product surface (1.6s)
+ GET /dashboard 200 in 104ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 100ms)
+ GET /api/auth/get-session 200 in 98ms (next.js: 17ms, proxy.ts: 24ms, application-code: 57ms)
+ GET /api/auth/organization/list 200 in 133ms (next.js: 19ms, proxy.ts: 24ms, application-code: 89ms)
+ GET /reports 200 in 167ms (next.js: 4ms, proxy.ts: 3ms, application-code: 160ms)
+ GET /api/auth/get-session 200 in 64ms (next.js: 35ms, proxy.ts: 11ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 94ms (next.js: 38ms, proxy.ts: 11ms, application-code: 46ms)
+ GET /support 200 in 142ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 138ms)
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3049448933'
+}
+ GET /api/auth/organization/list 200 in 65ms (next.js: 30ms, proxy.ts: 24ms, application-code: 11ms)
+ GET /api/auth/get-session 200 in 72ms (next.js: 21ms, proxy.ts: 24ms, application-code: 27ms)
+ GET /settings 307 in 92ms (next.js: 3ms, proxy.ts: 2ms, application-code: 87ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 119ms (next.js: 1.9ms, proxy.ts: 5ms, application-code: 113ms)
+⨯ Error [PermissionDeniedError]: Permission required: billing:manage
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async BillingPage (src/app/(app)/billing/page.tsx:23:40)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3163797875'
+}
+ GET /api/auth/get-session 200 in 48ms (next.js: 26ms, proxy.ts: 11ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 51ms (next.js: 28ms, proxy.ts: 10ms, application-code: 12ms)
+ GET /billing 307 in 89ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 85ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 127ms (next.js: 2ms, proxy.ts: 4ms, application-code: 121ms)
+  ✓  10 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › analyst has only its server-authorized product surface (1.6s)
+ GET /support 200 in 95ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 91ms)
+ GET /api/auth/get-session 200 in 67ms (next.js: 49ms, proxy.ts: 4ms, application-code: 14ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:27:54)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '1312823012'
+}
+ GET /api/auth/organization/list 200 in 91ms (next.js: 52ms, proxy.ts: 5ms, application-code: 35ms)
+ GET /dashboard 307 in 99ms (next.js: 4ms, proxy.ts: 4ms, application-code: 91ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 97ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 94ms)
+ GET /api/auth/get-session 200 in 59ms (next.js: 37ms, proxy.ts: 3ms, application-code: 19ms)
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3049448933'
+}
+ GET /api/auth/organization/list 200 in 88ms (next.js: 40ms, proxy.ts: 3ms, application-code: 45ms)
+ GET /settings 307 in 90ms (next.js: 3ms, proxy.ts: 3ms, application-code: 84ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 106ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 100ms)
+⨯ Error [PermissionDeniedError]: Permission required: billing:manage
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async BillingPage (src/app/(app)/billing/page.tsx:23:40)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3163797875'
+}
+ GET /api/auth/get-session 200 in 68ms (next.js: 40ms, proxy.ts: 5ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 87ms (next.js: 46ms, proxy.ts: 5ms, application-code: 35ms)
+ GET /billing 307 in 96ms (next.js: 5ms, proxy.ts: 5ms, application-code: 87ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 101ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 96ms)
+  ✓  11 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › client has only its server-authorized product surface (1.3s)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 404 in 744ms (next.js: 719ms, proxy.ts: 2ms, application-code: 22ms)
+  ✓  12 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › owner cannot cross the direct export API boundary (1.1s)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 403 in 11ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 6ms)
+  ✓  13 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › admin cannot cross the direct export API boundary (47ms)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 403 in 18ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 14ms)
+  ✓  14 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › strategist cannot cross the direct export API boundary (54ms)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 403 in 10ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 7ms)
+  ✓  15 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › analyst cannot cross the direct export API boundary (49ms)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 403 in 12ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 8ms)
+  ✓  16 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › client cannot cross the direct export API boundary (48ms)
+ GET /settings 200 in 169ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 166ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 7ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 12ms, proxy.ts: 3ms, application-code: 16ms)
+ POST /settings 200 in 81ms (next.js: 2ms, proxy.ts: 3ms, application-code: 76ms)
+  └─ ƒ updateWorkspaceLocale({}) in 14ms src/app/actions.ts
+ GET /settings?notice=Workspace+language+updated. 200 in 108ms (next.js: 4ms, proxy.ts: 2ms, application-code: 101ms)
+ GET /settings?notice=Workspace+language+updated. 200 in 76ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 73ms)
+ POST /settings 200 in 130ms (next.js: 13ms, proxy.ts: 11ms, application-code: 106ms)
+  └─ ƒ updateWorkspaceLocale({}) in 25ms src/app/actions.ts
+ GET /settings?notice=Workspace+language+updated. 200 in 67ms (next.js: 1.7ms, proxy.ts: 1.4ms, application-code: 64ms)
+ POST /settings 200 in 81ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 77ms)
+  └─ ƒ updateWorkspaceLocale({}) in 6ms src/app/actions.ts
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3049448933'
+}
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 46ms (next.js: 1.7ms, proxy.ts: 4ms, application-code: 40ms)
+ POST /settings 200 in 66ms (next.js: 1.8ms, proxy.ts: 9ms, application-code: 54ms)
+  └─ ƒ updateWorkspaceLocale({}) in 5ms src/app/actions.ts
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3049448933'
+}
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 42ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 39ms)
+ POST /settings 200 in 55ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 51ms)
+  └─ ƒ updateWorkspaceLocale({}) in 5ms src/app/actions.ts
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '3049448933'
+}
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 48ms (next.js: 2ms, proxy.ts: 1.5ms, application-code: 45ms)
+ POST /settings 200 in 60ms (next.js: 2.0ms, proxy.ts: 1.7ms, application-code: 57ms)
+  └─ ƒ updateWorkspaceLocale({}) in 5ms src/app/actions.ts
+  ✓  17 [chromium] › e2e/authenticated-rbac.spec.ts:93:7 › authenticated Server Action authorization matrix › re-authorizes workspace administration for every session (1.0s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 181ms (next.js: 1.9ms, proxy.ts: 2.0ms, application-code: 177ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 5ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 263ms (next.js: 4ms, proxy.ts: 2ms, application-code: 257ms)
+  └─ ƒ setCookieConsent({}) in 1ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 242ms (next.js: 8ms, proxy.ts: 15ms, application-code: 218ms)
+ GET /api/auth/get-session 200 in 66ms (next.js: 5ms, proxy.ts: 3ms, application-code: 57ms)
+ GET /api/auth/organization/list 200 in 75ms (next.js: 16ms, proxy.ts: 3ms, application-code: 55ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 209ms (next.js: 11ms, proxy.ts: 3ms, application-code: 195ms)
+ GET /api/auth/get-session 200 in 65ms (next.js: 39ms, proxy.ts: 3ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 105ms (next.js: 43ms, proxy.ts: 3ms, application-code: 59ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 211ms (next.js: 3ms, proxy.ts: 3ms, application-code: 205ms)
+ GET /api/auth/get-session 200 in 62ms (next.js: 38ms, proxy.ts: 3ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 106ms (next.js: 41ms, proxy.ts: 3ms, application-code: 61ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 188ms (next.js: 4ms, proxy.ts: 4ms, application-code: 181ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 5ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 10ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000093 200 in 157ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 153ms)
+  ✓  18 [chromium] › e2e/dashboard-health-local.spec.ts:15:53 › qualified cockpit health › counts all alerts and refuses unqualified scores in fr (2.3s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 183ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 179ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 263ms (next.js: 2ms, proxy.ts: 3ms, application-code: 258ms)
+  └─ ƒ setCookieConsent({}) in 1ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 244ms (next.js: 8ms, proxy.ts: 16ms, application-code: 219ms)
+ GET /api/auth/get-session 200 in 107ms (next.js: 25ms, proxy.ts: 26ms, application-code: 55ms)
+ GET /api/auth/organization/list 200 in 105ms (next.js: 27ms, proxy.ts: 30ms, application-code: 48ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 220ms (next.js: 2ms, proxy.ts: 3ms, application-code: 215ms)
+ GET /api/auth/get-session 200 in 61ms (next.js: 31ms, proxy.ts: 3ms, application-code: 27ms)
+ GET /api/auth/organization/list 200 in 67ms (next.js: 34ms, proxy.ts: 3ms, application-code: 30ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 210ms (next.js: 10ms, proxy.ts: 3ms, application-code: 196ms)
+ GET /api/auth/get-session 200 in 71ms (next.js: 37ms, proxy.ts: 3ms, application-code: 30ms)
+ GET /api/auth/organization/list 200 in 106ms (next.js: 41ms, proxy.ts: 3ms, application-code: 61ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000092 200 in 188ms (next.js: 3ms, proxy.ts: 4ms, application-code: 182ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 9ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000093 200 in 157ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 153ms)
+  ✓  19 [chromium] › e2e/dashboard-health-local.spec.ts:15:53 › qualified cockpit health › counts all alerts and refuses unqualified scores in en (2.4s)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000094 200 in 130ms (next.js: 5ms, proxy.ts: 2ms, application-code: 123ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 11ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /tasks 200 in 63ms (next.js: 13ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /discussions/tasks/dc15b695-8c82-43ee-8599-6d7da259ca0f 200 in 538ms (next.js: 426ms, proxy.ts: 1.8ms, application-code: 111ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 7ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 18ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /dashboard 200 in 58ms (next.js: 2ms, proxy.ts: 3ms, application-code: 53ms)
+ GET /tasks 200 in 52ms (next.js: 3ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /dashboard 200 in 56ms (next.js: 2ms, proxy.ts: 2ms, application-code: 51ms)
+ GET /tasks 200 in 46ms (next.js: 2ms, proxy.ts: 3ms, application-code: 41ms)
+ GET /dashboard?client=invalid 404 in 118ms (next.js: 3ms, proxy.ts: 4ms, application-code: 111ms)
+ GET /dashboard?client= 404 in 107ms (next.js: 1.9ms, proxy.ts: 1.7ms, application-code: 103ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000095 404 in 107ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 104ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000094&client=80000000-0000-4000-8000-000000000095 404 in 104ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 100ms)
+ GET /analysis?client=invalid 404 in 126ms (next.js: 21ms, proxy.ts: 1.6ms, application-code: 104ms)
+ GET /analysis?client= 404 in 96ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 93ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000095 404 in 110ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 106ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000094&client=80000000-0000-4000-8000-000000000095 404 in 145ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 142ms)
+ GET /insights?client=invalid 404 in 103ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 99ms)
+ GET /insights?client= 404 in 101ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 98ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000095 404 in 101ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 98ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000094&client=80000000-0000-4000-8000-000000000095 404 in 109ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 106ms)
+ GET /history?client=invalid 404 in 127ms (next.js: 4ms, proxy.ts: 2ms, application-code: 121ms)
+ GET /history?client= 404 in 104ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 101ms)
+ GET /history?client=80000000-0000-4000-8000-000000000095 404 in 98ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 94ms)
+ GET /history?client=80000000-0000-4000-8000-000000000094&client=80000000-0000-4000-8000-000000000095 404 in 100ms (next.js: 1.9ms, proxy.ts: 7ms, application-code: 91ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000094 404 in 108ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 105ms)
+  ✓  20 [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in fr (4.1s)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000094 200 in 118ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 113ms)
+ GET /api/auth/get-session 200 in 45ms (next.js: 8ms, proxy.ts: 3ms, application-code: 34ms)
+ GET /api/auth/organization/list 200 in 49ms (next.js: 16ms, proxy.ts: 3ms, application-code: 30ms)
+ GET /tasks 200 in 76ms (next.js: 2ms, proxy.ts: 5ms, application-code: 68ms)
+ GET /discussions/tasks/6299aaeb-b201-4ad6-84bc-f77dc36e0094 200 in 114ms (next.js: 4ms, proxy.ts: 2ms, application-code: 108ms)
+ GET /api/auth/get-session 200 in 39ms (next.js: 11ms, proxy.ts: 5ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 41ms (next.js: 15ms, proxy.ts: 8ms, application-code: 19ms)
+ GET /dashboard 200 in 63ms (next.js: 3ms, proxy.ts: 3ms, application-code: 58ms)
+ GET /tasks 200 in 43ms (next.js: 2ms, proxy.ts: 2ms, application-code: 38ms)
+ GET /dashboard 200 in 59ms (next.js: 2ms, proxy.ts: 2ms, application-code: 55ms)
+ GET /tasks 200 in 170ms (next.js: 9ms, proxy.ts: 2ms, application-code: 158ms)
+ GET /dashboard?client=invalid 404 in 139ms (next.js: 5ms, proxy.ts: 6ms, application-code: 129ms)
+ GET /dashboard?client= 404 in 107ms (next.js: 2.0ms, proxy.ts: 1.7ms, application-code: 103ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000095 404 in 108ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 104ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000094&client=80000000-0000-4000-8000-000000000095 404 in 97ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 94ms)
+ GET /analysis?client=invalid 404 in 106ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 102ms)
+ GET /analysis?client= 404 in 98ms (next.js: 1.6ms, proxy.ts: 1.5ms, application-code: 94ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000095 404 in 107ms (next.js: 1.7ms, proxy.ts: 1.6ms, application-code: 103ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000094&client=80000000-0000-4000-8000-000000000095 404 in 103ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 99ms)
+ GET /insights?client=invalid 404 in 104ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 101ms)
+ GET /insights?client= 404 in 101ms (next.js: 1.6ms, proxy.ts: 1.5ms, application-code: 98ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000095 404 in 101ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 97ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000094&client=80000000-0000-4000-8000-000000000095 404 in 103ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 99ms)
+ GET /history?client=invalid 404 in 94ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 91ms)
+ GET /history?client= 404 in 101ms (next.js: 1.6ms, proxy.ts: 1.5ms, application-code: 98ms)
+ GET /history?client=80000000-0000-4000-8000-000000000095 404 in 98ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 94ms)
+ GET /history?client=80000000-0000-4000-8000-000000000094&client=80000000-0000-4000-8000-000000000095 404 in 103ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 99ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000094 404 in 113ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 110ms)
+  ✓  21 [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in en (3.4s)
+ GET /portfolio?q=PORTFOLIO_ 200 in 310ms (next.js: 20ms, proxy.ts: 2ms, application-code: 288ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 9ms, proxy.ts: 2ms, application-code: 12ms)
+ GET /portfolio?q=PORTFOLIO_&cursor=eyJ2IjoxLCJpdiI6IlhZYjdpRmg2cGZRenY4d0kiLCJ0YWciOiJqUF9haUdMci1NVUVLWkplSzdNSi1BIiwiZGF0YSI6IkZSTXNtaFhEWWZqV0RsSlNWRkRic1RmLXlISWJqbndMdWRsSjJJLXlxQVJyR1FwSTFwVzA1cEk4UjI1WURMOHEzWGRtTUZRaGhnNEtqN0kzeU5OdFZ0ZVFSdDlZUWtuMEM2VGIweXdoUUdmaTI5NUN3bk1MbllqMlNaR2ctM3pfVVQyTHRhSnZMZHJFUncwMW9hTDBnUG1Cdmx2MktZYzhzcFhTTmxTU0FubW5odEZWNTJwV2lmWkFnQUdPanZQRjJuZGpCcUdqUmxIV0c2RDByT1l1dGdRb3dvLVEyazZORGxOTXNHSW1qZjh4XzducERScmdreTNpMl81LWhxZmRlODgtR0w1NEM1Z0pjRHFmM0w1RWJqdnA3OWhQSnYydVlDLVhnXzFFX01RY3g3cnVXZGhkZ1EifQ 200 in 90ms (next.js: 2ms, proxy.ts: 2ms, application-code: 86ms)
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&currency=&assignee= 200 in 172ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 168ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 4ms, proxy.ts: 5ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 9ms, proxy.ts: 5ms, application-code: 10ms)
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 82ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 78ms)
+ POST /portfolio?q=PORTFOLIO_&attention=missing_data&currency=&assignee= 200 in 102ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 98ms)
+  └─ ƒ storePortfolioView({}) in 10ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 76ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 72ms)
+ POST /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 99ms (next.js: 2ms, proxy.ts: 2ms, application-code: 94ms)
+  └─ ƒ storePortfolioView({}) in 14ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_ 200 in 300ms (next.js: 2ms, proxy.ts: 2ms, application-code: 295ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 5ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 12ms, proxy.ts: 2ms, application-code: 16ms)
+ GET /portfolio?view_notice=conflict 200 in 113ms (next.js: 2ms, proxy.ts: 2ms, application-code: 108ms)
+ POST /portfolio?q=PORTFOLIO_ 200 in 134ms (next.js: 2ms, proxy.ts: 3ms, application-code: 129ms)
+  └─ ƒ removePortfolioView({}) in 9ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_ 200 in 342ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 338ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 5ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 9ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /portfolio?view_notice=deleted 200 in 123ms (next.js: 3ms, proxy.ts: 4ms, application-code: 116ms)
+ POST /portfolio?q=PORTFOLIO_ 200 in 144ms (next.js: 2ms, proxy.ts: 3ms, application-code: 138ms)
+  └─ ƒ removePortfolioView({}) in 9ms src/app/portfolio-actions.ts
+ GET /tasks?status=open&assignee=unassigned 200 in 52ms (next.js: 2ms, proxy.ts: 2ms, application-code: 47ms)
+ GET /portfolio?assignee=local-browser-fixture-owner 200 in 174ms (next.js: 3ms, proxy.ts: 3ms, application-code: 169ms)
+ GET /api/auth/get-session 200 in 119ms (next.js: 18ms, proxy.ts: 34ms, application-code: 67ms)
+ GET /api/auth/organization/list 200 in 119ms (next.js: 20ms, proxy.ts: 34ms, application-code: 65ms)
+ GET /portfolio?assignee=local-browser-fixture-owner 200 in 191ms (next.js: 3ms, proxy.ts: 3ms, application-code: 185ms)
+ GET /api/auth/get-session 200 in 83ms (next.js: 41ms, proxy.ts: 11ms, application-code: 31ms)
+ GET /api/auth/organization/list 200 in 86ms (next.js: 44ms, proxy.ts: 11ms, application-code: 31ms)
+ GET /portfolio?q=PORTFOLIO_ 200 in 330ms (next.js: 4ms, proxy.ts: 2ms, application-code: 324ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 5ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /portfolio?q=PORTFOLIO_ 200 in 296ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 292ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 8ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 12ms, proxy.ts: 2ms, application-code: 9ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async PortfolioPage (src/app/(app)/portfolio/page.tsx:16:40)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '1540256429'
+}
+ GET /portfolio?q=PORTFOLIO_ 307 in 80ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 77ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 87ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 83ms)
+ GET /portfolio?q=PORTFOLIO_ 307 in 52ms (next.js: 1.7ms, proxy.ts: 1.6ms, application-code: 49ms)
+ GET /sign-in 200 in 37ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 30ms)
+{"locale":"fr","developmentStyleViolations":231,"applicationErrors":0}
+  ✓  22 [chromium] › e2e/portfolio-local.spec.ts:13:53 › agency portfolio › reviews 50 accounts, personal views and team workload in fr (6.6s)
+ GET /portfolio?q=PORTFOLIO_ 200 in 311ms (next.js: 2.0ms, proxy.ts: 1.9ms, application-code: 307ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 5ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 9ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /portfolio?q=PORTFOLIO_&cursor=eyJ2IjoxLCJpdiI6IkVadnpYZTUxOVZoQmZndjIiLCJ0YWciOiJzY2JaQU81ZHBhbzRKNkVmb3Ytc2pnIiwiZGF0YSI6IjFEd3hfMlkxX1pKWmFKVWhfS19JWDlBU3ItcVBBRTJXaDJJMklqZWZWLXljT2FfZGlzY1hkLTRrTUlTZ2NXY05VSHlCY2JBQlh6SVJGMFVXSXhNWlVwLWdCTXA0UTN5Tkp0T0R0TGY0LThWRzRRRFRtZWU4UmQ3eUh0UEVkM0VfUG1Fd1E1SHV2cms0aFhvanFxT2I1cEgzQnY3T243OW9KTDJtU200SWJFZmYwNkNJYnhWWnNlNTRueDV6TmRkdDhtUWh4Yzd3WFBTbmdVam1fVEt3LVJEQklrWmVQMUptcjRvbnIzTDV3MGRFY29RSWo2VXNTSmhpZ2hoNlFIellmMWZhMUlqMW5iSnJjdkgxYkNlR2JtQ0FyRmw5OE5UNmZyWUoyOE1BZXJxdzJDdjdKOFBVUlEifQ 200 in 93ms (next.js: 2ms, proxy.ts: 2ms, application-code: 89ms)
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&currency=&assignee= 200 in 182ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 178ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 10ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 120ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 115ms)
+ POST /portfolio?q=PORTFOLIO_&attention=missing_data&currency=&assignee= 200 in 142ms (next.js: 3ms, proxy.ts: 4ms, application-code: 135ms)
+  └─ ƒ storePortfolioView({}) in 8ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 105ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 101ms)
+ POST /portfolio?q=PORTFOLIO_&attention=missing_data&view_notice=saved 200 in 121ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 117ms)
+  └─ ƒ storePortfolioView({}) in 7ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_ 200 in 327ms (next.js: 2ms, proxy.ts: 2ms, application-code: 323ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 5ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 9ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /portfolio?view_notice=conflict 200 in 245ms (next.js: 3ms, proxy.ts: 4ms, application-code: 239ms)
+ POST /portfolio?q=PORTFOLIO_ 200 in 272ms (next.js: 2ms, proxy.ts: 4ms, application-code: 266ms)
+  └─ ƒ removePortfolioView({}) in 10ms src/app/portfolio-actions.ts
+ GET /portfolio?q=PORTFOLIO_ 200 in 327ms (next.js: 14ms, proxy.ts: 2ms, application-code: 311ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 5ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 18ms (next.js: 8ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /portfolio?view_notice=deleted 200 in 151ms (next.js: 4ms, proxy.ts: 4ms, application-code: 143ms)
+ POST /portfolio?q=PORTFOLIO_ 200 in 178ms (next.js: 2ms, proxy.ts: 4ms, application-code: 172ms)
+  └─ ƒ removePortfolioView({}) in 13ms src/app/portfolio-actions.ts
+ GET /tasks?status=open&assignee=unassigned 200 in 51ms (next.js: 2ms, proxy.ts: 2ms, application-code: 46ms)
+ GET /portfolio?assignee=local-browser-fixture-owner 200 in 188ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 184ms)
+ GET /api/auth/get-session 200 in 106ms (next.js: 17ms, proxy.ts: 25ms, application-code: 64ms)
+ GET /api/auth/organization/list 200 in 106ms (next.js: 27ms, proxy.ts: 24ms, application-code: 56ms)
+ GET /portfolio?assignee=local-browser-fixture-owner 200 in 200ms (next.js: 2ms, proxy.ts: 2ms, application-code: 195ms)
+ GET /api/auth/get-session 200 in 97ms (next.js: 55ms, proxy.ts: 12ms, application-code: 30ms)
+ GET /api/auth/organization/list 200 in 99ms (next.js: 63ms, proxy.ts: 12ms, application-code: 24ms)
+ GET /portfolio?q=PORTFOLIO_ 200 in 364ms (next.js: 2ms, proxy.ts: 2ms, application-code: 360ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 7ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 9ms, proxy.ts: 5ms, application-code: 10ms)
+ GET /portfolio?q=PORTFOLIO_ 200 in 331ms (next.js: 2ms, proxy.ts: 3ms, application-code: 326ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 6ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async PortfolioPage (src/app/(app)/portfolio/page.tsx:16:40)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '1540256429'
+}
+ GET /portfolio?q=PORTFOLIO_ 307 in 79ms (next.js: 1.9ms, proxy.ts: 1.6ms, application-code: 75ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 89ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 85ms)
+ GET /portfolio?q=PORTFOLIO_ 307 in 57ms (next.js: 2ms, proxy.ts: 1.6ms, application-code: 53ms)
+ GET /sign-in 200 in 41ms (next.js: 5ms, proxy.ts: 2ms, application-code: 34ms)
+{"locale":"en","developmentStyleViolations":232,"applicationErrors":0}
+  ✓  23 [chromium] › e2e/portfolio-local.spec.ts:13:53 › agency portfolio › reviews 50 accounts, personal views and team workload in en (6.8s)
+ GET /billing 200 in 141ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 136ms)
+ GET /api/auth/get-session 200 in 141ms (next.js: 59ms, proxy.ts: 24ms, application-code: 57ms)
+ GET /api/auth/organization/list 200 in 152ms (next.js: 37ms, proxy.ts: 50ms, application-code: 64ms)
+ GET /accounts 200 in 179ms (next.js: 13ms, proxy.ts: 8ms, application-code: 158ms)
+ GET /api/auth/get-session 200 in 74ms (next.js: 14ms, proxy.ts: 4ms, application-code: 57ms)
+ GET /api/auth/organization/list 200 in 80ms (next.js: 32ms, proxy.ts: 4ms, application-code: 43ms)
+ POST /accounts 200 in 89ms (next.js: 6ms, proxy.ts: 12ms, application-code: 71ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /accounts?selection=saved 200 in 50ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 47ms)
+ POST /accounts 200 in 71ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 67ms)
+  └─ ƒ updateManagedAccounts({}) in 11ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 57ms (next.js: 1.7ms, proxy.ts: 1.6ms, application-code: 54ms)
+ POST /accounts?selection=saved 200 in 78ms (next.js: 2ms, proxy.ts: 3ms, application-code: 73ms)
+  └─ ƒ updateManagedAccounts({}) in 10ms src/app/account-selection-actions.ts
+ GET /accounts?selection=conflict 200 in 53ms (next.js: 1.8ms, proxy.ts: 1.5ms, application-code: 49ms)
+ POST /accounts?selection=saved 200 in 71ms (next.js: 3ms, proxy.ts: 3ms, application-code: 65ms)
+  └─ ƒ updateManagedAccounts({}) in 7ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 55ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 52ms)
+ POST /accounts?selection=conflict 200 in 75ms (next.js: 3ms, proxy.ts: 2ms, application-code: 70ms)
+  └─ ƒ updateManagedAccounts({}) in 10ms src/app/account-selection-actions.ts
+ GET /accounts 200 in 101ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 97ms)
+  ✓  24 [chromium] › e2e/prod-ready-local.spec.ts:23:44 › local production readiness regression journeys › managed account selection preserves priorities and enforces quota in fr (2.6s)
+ GET /billing 200 in 164ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 160ms)
+ GET /api/auth/get-session 200 in 874ms (next.js: 717ms, proxy.ts: 121ms, application-code: 37ms)
+ GET /api/auth/organization/list 200 in 948ms (next.js: 706ms, proxy.ts: 126ms, application-code: 116ms)
+ GET /accounts 200 in 918ms (next.js: 615ms, proxy.ts: 110ms, application-code: 192ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 3ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 8ms, proxy.ts: 3ms, application-code: 12ms)
+ POST /accounts 200 in 71ms (next.js: 2.0ms, proxy.ts: 1.8ms, application-code: 67ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /accounts?selection=saved 200 in 55ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 51ms)
+ POST /accounts 200 in 90ms (next.js: 3ms, proxy.ts: 3ms, application-code: 84ms)
+  └─ ƒ updateManagedAccounts({}) in 22ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 51ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 48ms)
+ POST /accounts?selection=saved 200 in 71ms (next.js: 2ms, proxy.ts: 3ms, application-code: 66ms)
+  └─ ƒ updateManagedAccounts({}) in 9ms src/app/account-selection-actions.ts
+ GET /accounts?selection=conflict 200 in 51ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 46ms)
+ POST /accounts?selection=saved 200 in 80ms (next.js: 3ms, proxy.ts: 3ms, application-code: 74ms)
+  └─ ƒ updateManagedAccounts({}) in 8ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 53ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 49ms)
+ POST /accounts?selection=conflict 200 in 72ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 68ms)
+  └─ ƒ updateManagedAccounts({}) in 10ms src/app/account-selection-actions.ts
+ GET /accounts 200 in 111ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 107ms)
+  ✓  25 [chromium] › e2e/prod-ready-local.spec.ts:23:44 › local production readiness regression journeys › managed account selection preserves priorities and enforces quota in en (3.5s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 172ms (next.js: 3ms, proxy.ts: 1.4ms, application-code: 167ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 4ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 92ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 88ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 174ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 171ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 13ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 7ms, proxy.ts: 3ms, application-code: 20ms)
+  ✓  26 [chromium] › e2e/prod-ready-local.spec.ts:88:44 › local production readiness regression journeys › pacing uses covered completed days and hides forecasts with a gap in fr (1.1s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 170ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 167ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 95ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 91ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 173ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 169ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 3ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 19ms (next.js: 6ms, proxy.ts: 3ms, application-code: 10ms)
+  ✓  27 [chromium] › e2e/prod-ready-local.spec.ts:88:44 › local production readiness regression journeys › pacing uses covered completed days and hides forecasts with a gap in en (1.1s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 175ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 171ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 5ms, proxy.ts: 4ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 11ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 209ms (next.js: 6ms, proxy.ts: 7ms, application-code: 196ms)
+ GET /api/auth/get-session 200 in 86ms (next.js: 47ms, proxy.ts: 15ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 91ms (next.js: 50ms, proxy.ts: 14ms, application-code: 27ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 272ms (next.js: 3ms, proxy.ts: 3ms, application-code: 266ms)
+ GET /api/auth/get-session 200 in 69ms (next.js: 39ms, proxy.ts: 12ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 76ms (next.js: 42ms, proxy.ts: 12ms, application-code: 22ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 207ms (next.js: 2.0ms, proxy.ts: 2.0ms, application-code: 203ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 3ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 185ms (next.js: 2ms, proxy.ts: 3ms, application-code: 180ms)
+ GET /api/auth/get-session 200 in 78ms (next.js: 43ms, proxy.ts: 18ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 78ms (next.js: 45ms, proxy.ts: 14ms, application-code: 19ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 236ms (next.js: 2ms, proxy.ts: 3ms, application-code: 231ms)
+ GET /api/auth/get-session 200 in 72ms (next.js: 22ms, proxy.ts: 14ms, application-code: 37ms)
+ GET /api/auth/organization/list 200 in 76ms (next.js: 24ms, proxy.ts: 15ms, application-code: 38ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 224ms (next.js: 2ms, proxy.ts: 2ms, application-code: 220ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 5ms, proxy.ts: 7ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 9ms, proxy.ts: 4ms, application-code: 16ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000005 200 in 75ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 70ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+  ✓  28 [chromium] › e2e/prod-ready-local.spec.ts:125:44 › local production readiness regression journeys › stored analytics remain available without Google and during grace in fr (3.0s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 176ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 173ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 5ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 10ms, proxy.ts: 3ms, application-code: 22ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 200ms (next.js: 4ms, proxy.ts: 6ms, application-code: 190ms)
+ GET /api/auth/get-session 200 in 76ms (next.js: 42ms, proxy.ts: 12ms, application-code: 22ms)
+ GET /api/auth/organization/list 200 in 79ms (next.js: 46ms, proxy.ts: 12ms, application-code: 22ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 249ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 246ms)
+ GET /api/auth/get-session 200 in 70ms (next.js: 40ms, proxy.ts: 12ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 77ms (next.js: 43ms, proxy.ts: 12ms, application-code: 22ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 206ms (next.js: 2.0ms, proxy.ts: 2.0ms, application-code: 202ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 10ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 4ms, proxy.ts: 3ms, application-code: 20ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 186ms (next.js: 6ms, proxy.ts: 4ms, application-code: 175ms)
+ GET /api/auth/get-session 200 in 70ms (next.js: 39ms, proxy.ts: 13ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 74ms (next.js: 42ms, proxy.ts: 12ms, application-code: 19ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 232ms (next.js: 2ms, proxy.ts: 2ms, application-code: 227ms)
+ GET /api/auth/get-session 200 in 72ms (next.js: 39ms, proxy.ts: 14ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 74ms (next.js: 41ms, proxy.ts: 15ms, application-code: 18ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 228ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 224ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 5ms, proxy.ts: 4ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 38ms (next.js: 9ms, proxy.ts: 4ms, application-code: 24ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000005 200 in 76ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 71ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+  ✓  29 [chromium] › e2e/prod-ready-local.spec.ts:125:44 › local production readiness regression journeys › stored analytics remain available without Google and during grace in en (2.9s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 157ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 153ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 2ms, application-code: 9ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 92ms (next.js: 2ms, proxy.ts: 3ms, application-code: 87ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=queued 200 in 77ms (next.js: 1.9ms, proxy.ts: 1.5ms, application-code: 74ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 100ms (next.js: 2ms, proxy.ts: 2ms, application-code: 95ms)
+  └─ ƒ refreshAnalyticalData({}) in 12ms src/app/analytical-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=pending 200 in 87ms (next.js: 1.7ms, proxy.ts: 1.6ms, application-code: 83ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006&sync=queued 200 in 104ms (next.js: 2ms, proxy.ts: 3ms, application-code: 99ms)
+  └─ ƒ refreshAnalyticalData({}) in 7ms src/app/analytical-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 147ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 143ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 160ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 156ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 9ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=unavailable 200 in 80ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 76ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 103ms (next.js: 2ms, proxy.ts: 2ms, application-code: 99ms)
+  └─ ƒ refreshAnalyticalData({}) in 12ms src/app/analytical-actions.ts
+  ✓  30 [chromium] › e2e/prod-ready-local.spec.ts:177:99 › local production readiness regression journeys › analytical refresh enqueues once and handles revoked connections in fr (2.0s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 158ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 155ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 7ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 11ms, proxy.ts: 4ms, application-code: 10ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 89ms (next.js: 2ms, proxy.ts: 2ms, application-code: 85ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=queued 200 in 77ms (next.js: 2ms, proxy.ts: 1.5ms, application-code: 74ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 97ms (next.js: 2ms, proxy.ts: 2ms, application-code: 92ms)
+  └─ ƒ refreshAnalyticalData({}) in 9ms src/app/analytical-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=pending 200 in 80ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 76ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006&sync=queued 200 in 102ms (next.js: 2ms, proxy.ts: 2ms, application-code: 97ms)
+  └─ ƒ refreshAnalyticalData({}) in 12ms src/app/analytical-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 142ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 139ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 157ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 153ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 6ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 10ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000006&sync=unavailable 200 in 89ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 86ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000006 200 in 108ms (next.js: 2ms, proxy.ts: 2ms, application-code: 104ms)
+  └─ ƒ refreshAnalyticalData({}) in 8ms src/app/analytical-actions.ts
+  ✓  31 [chromium] › e2e/prod-ready-local.spec.ts:177:99 › local production readiness regression journeys › analytical refresh enqueues once and handles revoked connections in en (2.0s)
+ GET /accounts 200 in 90ms (next.js: 2ms, proxy.ts: 1.6ms, application-code: 86ms)
+ GET /api/auth/get-session 200 in 77ms (next.js: 43ms, proxy.ts: 3ms, application-code: 30ms)
+ GET /api/auth/organization/list 200 in 129ms (next.js: 48ms, proxy.ts: 4ms, application-code: 77ms)
+ GET /history 200 in 139ms (next.js: 6ms, proxy.ts: 3ms, application-code: 130ms)
+ GET /api/auth/get-session 200 in 82ms (next.js: 45ms, proxy.ts: 4ms, application-code: 33ms)
+ GET /api/auth/organization/list 200 in 116ms (next.js: 47ms, proxy.ts: 6ms, application-code: 63ms)
+ GET /alerts 200 in 153ms (next.js: 6ms, proxy.ts: 5ms, application-code: 142ms)
+ GET /api/auth/get-session 200 in 73ms (next.js: 39ms, proxy.ts: 3ms, application-code: 31ms)
+ GET /api/auth/organization/list 200 in 92ms (next.js: 45ms, proxy.ts: 3ms, application-code: 44ms)
+ GET /tasks 200 in 141ms (next.js: 4ms, proxy.ts: 3ms, application-code: 134ms)
+ GET /api/auth/get-session 200 in 69ms (next.js: 8ms, proxy.ts: 4ms, application-code: 57ms)
+ GET /api/auth/organization/list 200 in 80ms (next.js: 22ms, proxy.ts: 4ms, application-code: 53ms)
+ GET /approvals 200 in 138ms (next.js: 14ms, proxy.ts: 3ms, application-code: 121ms)
+ GET /api/auth/get-session 200 in 77ms (next.js: 52ms, proxy.ts: 3ms, application-code: 22ms)
+ GET /api/auth/organization/list 200 in 94ms (next.js: 58ms, proxy.ts: 4ms, application-code: 31ms)
+ GET /reports 200 in 147ms (next.js: 6ms, proxy.ts: 3ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 86ms (next.js: 13ms, proxy.ts: 11ms, application-code: 63ms)
+ GET /api/auth/organization/list 200 in 101ms (next.js: 16ms, proxy.ts: 9ms, application-code: 76ms)
+ GET /audit 200 in 191ms (next.js: 16ms, proxy.ts: 14ms, application-code: 162ms)
+ GET /accounts 200 in 90ms (next.js: 2ms, proxy.ts: 2ms, application-code: 86ms)
+ GET /api/auth/get-session 200 in 72ms (next.js: 43ms, proxy.ts: 3ms, application-code: 26ms)
+ GET /api/auth/organization/list 200 in 96ms (next.js: 45ms, proxy.ts: 4ms, application-code: 47ms)
+ GET /history 200 in 124ms (next.js: 4ms, proxy.ts: 3ms, application-code: 117ms)
+ GET /api/auth/get-session 200 in 71ms (next.js: 49ms, proxy.ts: 5ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 104ms (next.js: 52ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /alerts 200 in 133ms (next.js: 4ms, proxy.ts: 5ms, application-code: 124ms)
+ GET /api/auth/get-session 200 in 68ms (next.js: 28ms, proxy.ts: 5ms, application-code: 35ms)
+ GET /api/auth/organization/list 200 in 110ms (next.js: 47ms, proxy.ts: 5ms, application-code: 58ms)
+ GET /tasks 200 in 150ms (next.js: 3ms, proxy.ts: 4ms, application-code: 143ms)
+ GET /api/auth/get-session 200 in 59ms (next.js: 39ms, proxy.ts: 4ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 73ms (next.js: 45ms, proxy.ts: 4ms, application-code: 25ms)
+ GET /approvals 200 in 125ms (next.js: 4ms, proxy.ts: 4ms, application-code: 117ms)
+ GET /api/auth/get-session 200 in 69ms (next.js: 35ms, proxy.ts: 4ms, application-code: 30ms)
+ GET /api/auth/organization/list 200 in 91ms (next.js: 38ms, proxy.ts: 4ms, application-code: 49ms)
+ GET /reports 200 in 113ms (next.js: 3ms, proxy.ts: 4ms, application-code: 106ms)
+  ✓  32 [chromium] › e2e/prod-ready-local.spec.ts:224:9 › local production readiness regression journeys › grace permits stored views while hiding mutations (3.7s)
+⨯ Error [WorkspaceAccessRestrictedError]: Workspace access state does not allow: portfolio:read
+    at requireWorkspacePermission (src/lib/workspace.ts:166:19)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:27:54)
+  164 |   if (!decision.allowed && decision.reason === 'role') requirePermission(context.role, permission)
+  165 |   if (!decision.allowed) {
+> 166 |     const error = new Error(`Workspace access state does not allow: ${permission}`)
+      |                   ^
+  167 |     error.name = 'WorkspaceAccessRestrictedError'
+  168 |     throw error
+  169 |   } {
+  digest: '306327238'
+}
+ GET /dashboard 307 in 79ms (next.js: 2ms, proxy.ts: 2ms, application-code: 74ms)
+ GET /billing?notice=Your%20current%20access%20is%20limited%20to%20billing%20and%20stored%20data. 200 in 119ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 113ms)
+⨯ Error [WorkspaceAccessRestrictedError]: Workspace access state does not allow: portfolio:read
+    at requireWorkspacePermission (src/lib/workspace.ts:166:19)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:27:54)
+  164 |   if (!decision.allowed && decision.reason === 'role') requirePermission(context.role, permission)
+  165 |   if (!decision.allowed) {
+> 166 |     const error = new Error(`Workspace access state does not allow: ${permission}`)
+      |                   ^
+  167 |     error.name = 'WorkspaceAccessRestrictedError'
+  168 |     throw error
+  169 |   } {
+  digest: '306327238'
+}
+ GET /dashboard 307 in 66ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 63ms)
+ GET /support?notice=Your%20current%20access%20is%20limited%20to%20billing%20and%20stored%20data. 200 in 88ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 83ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:27:54)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '1312823012'
+}
+ GET /dashboard 307 in 70ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 66ms)
+ GET /support?notice=Your%20current%20access%20is%20limited%20to%20billing%20and%20stored%20data. 200 in 95ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 91ms)
+  ✓  33 [chromium] › e2e/prod-ready-local.spec.ts:239:9 › local production readiness regression journeys › suspended members have an accessible recovery destination without redirect loops (1.3s)
+ GET /dashboard 200 in 108ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 105ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /dashboard 200 in 81ms (next.js: 3ms, proxy.ts: 2ms, application-code: 76ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /settings 200 in 72ms (next.js: 4ms, proxy.ts: 2ms, application-code: 65ms)
+  ✓  34 [chromium] › e2e/prod-ready-local.spec.ts:251:11 › local production readiness regression journeys › full navigation and workspace selection work at 390px in fr (870ms)
+ GET /dashboard 200 in 122ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 118ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 7ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 12ms, proxy.ts: 4ms, application-code: 9ms)
+ POST /dashboard 200 in 74ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 69ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /settings 200 in 65ms (next.js: 2ms, proxy.ts: 2ms, application-code: 60ms)
+  ✓  35 [chromium] › e2e/prod-ready-local.spec.ts:251:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in fr (775ms)
+ GET /dashboard 200 in 119ms (next.js: 2.0ms, proxy.ts: 2.0ms, application-code: 115ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 7ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 12ms, proxy.ts: 3ms, application-code: 12ms)
+ POST /dashboard 200 in 76ms (next.js: 2ms, proxy.ts: 2ms, application-code: 72ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /settings 200 in 61ms (next.js: 3ms, proxy.ts: 2ms, application-code: 55ms)
+  ✓  36 [chromium] › e2e/prod-ready-local.spec.ts:251:11 › local production readiness regression journeys › full navigation and workspace selection work at 390px in en (807ms)
+ GET /dashboard 200 in 117ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 113ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 6ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 10ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /dashboard 200 in 65ms (next.js: 2ms, proxy.ts: 3ms, application-code: 60ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /settings 200 in 61ms (next.js: 2ms, proxy.ts: 2ms, application-code: 57ms)
+  ✓  37 [chromium] › e2e/prod-ready-local.spec.ts:251:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in en (729ms)
+ GET /dashboard 200 in 109ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 105ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 10ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /dashboard 200 in 77ms (next.js: 2ms, proxy.ts: 2ms, application-code: 73ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ POST /api/auth/organization/set-active 200 in 17ms (next.js: 6ms, proxy.ts: 2ms, application-code: 9ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:27:54)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '1312823012'
+}
+ GET /api/auth/get-session 429 in 38ms (next.js: 23ms, proxy.ts: 9ms, application-code: 7ms)
+ GET /dashboard 307 in 73ms (next.js: 1.5ms, proxy.ts: 1.7ms, application-code: 69ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 94ms (next.js: 2ms, proxy.ts: 2ms, application-code: 90ms)
+ GET /api/auth/get-session 429 in 18ms (next.js: 3ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/organization/list 429 in 18ms (next.js: 8ms, proxy.ts: 3ms, application-code: 8ms)
+  ✘  38 [chromium] › e2e/prod-ready-local.spec.ts:276:9 › local production readiness regression journeys › workspace selection switches context and permissions on mobile (15.8s)
+  -  39 [chromium] › e2e/prod-ready-local.spec.ts:294:9 › local production readiness regression journeys › analysts do not see monitoring controls denied by their role
+(node:32736) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /status 200 in 126ms (next.js: 47ms, proxy.ts: 7ms, application-code: 72ms)
+ GET /status 200 in 184ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 180ms)
+ GET /status?status=active 200 in 27ms (next.js: 2ms, proxy.ts: 2ms, application-code: 22ms)
+ GET /status/60671e7d-3d2b-4c05-8c7d-e1476985e298 200 in 378ms (next.js: 343ms, proxy.ts: 3ms, application-code: 32ms)
+ GET /status/60671e7d-3d2b-4c05-8c7d-e1476985e298?cursor=eyJ2IjoxLCJpdiI6InZNakVva1F6SHdrcllxTnMiLCJ0YWciOiJobEc4ZU8zUGxkRWl5ZF8zTmpmRkRnIiwiZGF0YSI6Iks0Q3R0ZzdPRU9HanI5aV9JbjdlcUoyamNPbDd5ejN2QjRLN3VRaFJlVndZME9OTkZkU0VhbEhwU2hjREE4YnE1a2VzcVRxXzNJcXh6dkdxMXAwMF9mZDZxMkNweHR0czE0U3pURDFkbGJTRDJiajRlb1F1OGRuemZVZVVsSWlPQVlZbTB6WFA1M3l4eE8zdS1ZcTFub21HNVM0ZTlxNlBGZWtrcGtROXNHazlER0lUVVlRczBiNWNFYjNURndYVG9mNDYwV2RubXI2bTdvMWN3MHlhbHlFZE9sdFpHY1JVQU5Ick00bHgwTTVTdHR6T0NqSFowc0ZiSy1TeHRldGtvNXF5aGxlQWRKak82VlVtcmdrMmZabm00UmdwS190ckpkYzlZQl96OTBYWm9KbTFJWnJzcGcifQ 200 in 47ms (next.js: 7ms, proxy.ts: 4ms, application-code: 36ms)
+ GET /status?cursor=forged 200 in 60ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 57ms)
+ GET /status/c76aa73a-6041-4dc9-bad0-d0d713e3b965 404 in 43ms (next.js: 4ms, proxy.ts: 3ms, application-code: 37ms)
+ GET /status/invalid 404 in 51ms (next.js: 4ms, proxy.ts: 2ms, application-code: 44ms)
+  ✓  40 [chromium] › e2e/public-status-local.spec.ts:13:53 › truthful public status › shows unknown health and complete incident history in fr (2.4s)
+ GET /status 200 in 57ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 53ms)
+ GET /status 200 in 166ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 163ms)
+ GET /status?status=active 200 in 33ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 28ms)
+ GET /status/7312fc49-74b2-4498-8c63-0853f7c467ce 200 in 31ms (next.js: 4ms, proxy.ts: 3ms, application-code: 24ms)
+ GET /status/7312fc49-74b2-4498-8c63-0853f7c467ce?cursor=eyJ2IjoxLCJpdiI6IldjTy1FQkJVU0oxbWxRYVEiLCJ0YWciOiJNajFYNnZCNzB2aTBoRTJUMVFGVzRBIiwiZGF0YSI6IllLUGRxZG5yUXFZcWxVTXZNY3RCRDRKZXY1c2p0YlB0YnUxMWxXN2lkVGhvMV9xMjRKUnNYNzd3ZHJNaVhBRkg2TjRmTEppVVVjNVlpb25iRTljMnlNNjA5b2I4NU5ZOXVnMHlrSU8tSnVQS1hBcGQyX2pNZ2tDdXU2YTJjc1dpMGh6a2dWUE16RVBoa0hPaG5id3VXSlctbE5nRjVGQ0dNeEtUS0JCVFFKNU03Wmd6LXE3X3FsTjlCM19EbjNyLUNyYndmSG00cUhubm1McmFKeTBqUjE1ZXRNQzhNSnAtY1NERUFOdFNIYVlIWTlodlJCeFk3X2tUaVI2MGFxVVhWQktTUXZrQ201SjdEaWtDTWVzLTlFTHJTdTd4djBBMFZYcl94ekR1M2ltTHdldHQ2d285TGcifQ 200 in 35ms (next.js: 4ms, proxy.ts: 3ms, application-code: 28ms)
+ GET /status?cursor=forged 200 in 57ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 53ms)
+ GET /status/b4d7a287-03df-476b-98c6-2fc1f41963ca 404 in 44ms (next.js: 5ms, proxy.ts: 4ms, application-code: 35ms)
+ GET /status/invalid 404 in 44ms (next.js: 3ms, proxy.ts: 2ms, application-code: 40ms)
+  ✓  41 [chromium] › e2e/public-status-local.spec.ts:13:53 › truthful public status › shows unknown health and complete incident history in en (1.6s)
+ GET / 200 in 90ms (next.js: 22ms, proxy.ts: 1.9ms, application-code: 67ms)
+  ✓  42 [chromium] › e2e/public.spec.ts:3:5 › public landing exposes the product proposition and account creation (340ms)
+ GET /dashboard 307 in 76ms (next.js: 37ms, proxy.ts: 1.8ms, application-code: 38ms)
+ GET /sign-in 200 in 34ms (next.js: 6ms, proxy.ts: 1.7ms, application-code: 27ms)
+  ✓  43 [chromium] › e2e/public.spec.ts:15:5 › authenticated areas redirect anonymous visitors to sign-in (185ms)
+ GET /privacy 200 in 56ms (next.js: 20ms, proxy.ts: 1.9ms, application-code: 34ms)
+ GET /terms 200 in 54ms (next.js: 20ms, proxy.ts: 2.0ms, application-code: 31ms)
+  ✓  44 [chromium] › e2e/public.spec.ts:21:5 › privacy and terms pages are public (486ms)
+ GET /subprocessors 200 in 56ms (next.js: 20ms, proxy.ts: 1.7ms, application-code: 34ms)
+  ✓  45 [chromium] › e2e/public.spec.ts:28:5 › the subprocessor register and change-notice policy are public (289ms)
+ GET / 200 in 74ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /privacy 200 in 44ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 40ms)
+  ✓  46 [chromium] › e2e/public.spec.ts:35:5 › the public product and legal surface honor the English locale (507ms)
+ GET /status 200 in 53ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 49ms)
+  ✓  47 [chromium] › e2e/public.spec.ts:46:5 › public status page never claims operational health when status storage is unavailable (286ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async ReportsPage (src/app/(app)/reports/page.tsx:41:31)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '2735827461'
+}
+ GET /reports 307 in 105ms (next.js: 32ms, proxy.ts: 1.8ms, application-code: 70ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 129ms (next.js: 30ms, proxy.ts: 2ms, application-code: 97ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 19ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 12ms, proxy.ts: 3ms, application-code: 15ms)
+ POST /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 56ms (next.js: 2ms, proxy.ts: 2ms, application-code: 52ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+  ✘  48 [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in fr (1.9m)
+  -  49 [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in en
+
+
+  1) [chromium] › e2e/prod-ready-local.spec.ts:276:9 › local production readiness regression journeys › workspace selection switches context and permissions on mobile
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: getByRole('combobox', { name: /Workspace actif|Active workspace/ })
+    Expected: "local-browser-fixture-foreign"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" with timeout 15000ms
+      - waiting for getByRole('combobox', { name: /Workspace actif|Active workspace/ })
+
+
+      284 |         await selector.selectOption('local-browser-fixture-foreign')
+      285 |         await expect(page).toHaveURL(/\/support/)
+    > 286 |         await expect(selector).toHaveValue('local-browser-fixture-foreign')
+          |                                ^
+      287 |         await page.locator('summary').filter({ hasText: /^Menu$/ }).click()
+      288 |         await expect(page.getByRole('navigation', { name: /Navigation complète|Full navigation/ }).locator('a[href="/settings"]')).toHaveCount(0)
+      289 |         await selector.selectOption('local-browser-fixture-main')
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/prod-ready-local.spec.ts:286:32
+
+    Error Context: test-results/prod-ready-local-local-pro-69446-t-and-permissions-on-mobile-chromium/error-context.md
+
+    Error Context: test-results/prod-ready-local-local-pro-69446-t-and-permissions-on-mobile-chromium/error-context.md
+
+  2) [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in fr
+
+    Test was interrupted.
+
+    Error: browserContext.close: Target page, context or browser has been closed
+
+      120 |         expect(errors).toEqual([])
+      121 |       } finally {
+    > 122 |         await context.close()
+          |         ^
+      123 |         await db.query('delete from rate_limit_buckets where key_hash=any($1::text[])', [ipKeys])
+      124 |         await db.query('delete from clients where id=$1', [clientId])
+      125 |         await db.query('update workspaces set locale=$1 where id=$2', ['fr', workspaceId])
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/report-editions-local.spec.ts:122:9
+
+  1 failed
+    [chromium] › e2e/prod-ready-local.spec.ts:276:9 › local production readiness regression journeys › workspace selection switches context and permissions on mobile
+  1 interrupted
+    [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in fr
+  4 did not run
+  45 passed (3.8m)
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h
