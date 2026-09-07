@@ -31,6 +31,10 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const { workspace, role, session } = await requireWorkspacePagePermission('portfolio:read', '/tasks')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
+  if (query.workspace && query.workspace !== workspace.id) return <>
+    <PageHeading eyebrow={english ? 'Agency workflow' : 'Workflow agence'} title={english ? 'Tasks from another workspace' : 'Tâches d’un autre espace'} description={english ? 'This notification belongs to another workspace. Select that workspace from your account menu, then reopen the email link.' : 'Cette notification concerne un autre espace. Sélectionnez cet espace dans le menu du compte, puis rouvrez le lien de l’email.'} />
+    <Link href="/tasks" className="text-sm underline">{english ? 'Open tasks in my current workspace' : 'Ouvrir les tâches de mon espace actuel'}</Link>
+  </>
   const criteria = { ...query, status: query.status ?? (query.id ? '' : 'open') }
   const [collection, clients, mentionDirectory] = await Promise.all([
     listTaskPage(workspace.id, criteria),

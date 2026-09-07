@@ -38,7 +38,7 @@ const workspace = {
 
 const preference = {
   id: preferenceId, workspaceId, authUserId: 'user-1', displayName: 'Yoann', encryptedEmail: 'yoann@example.test',
-  mentionNotifications: true, digestCadence: 'daily', lastDigestKey: null,
+  mentionNotifications: true, digestCadence: 'daily', lastDigestKey: null, timezone: 'Europe/Paris',
 }
 const comment = { id: entityId, workspaceId, taskId: 'task-1', body: 'Merci de vérifier.' }
 const task = { id: 'task-1', workspaceId, title: 'Vérifier le budget', status: 'todo', dueAt: new Date('2026-08-15') }
@@ -84,8 +84,8 @@ describe('task notification delivery', () => {
     expect(failed.capture.sets[0]).toMatchObject({ lastError: 'mail down' })
   })
 
-  function digestDatabase(preferenceValue: unknown = preference, tasks: unknown[] = [task]) {
-    return databaseDouble({ statementResults: [preferenceValue ? [{ preference: preferenceValue, workspace, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' }, memberRole: 'analyst' }] : [], [{ expired: false, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' } }]], query: queryMap({
+  function digestDatabase(preferenceValue: unknown = preference, tasks: Array<typeof task> = [task]) {
+    return databaseDouble({ statementResults: [preferenceValue ? [{ preference: preferenceValue, workspace, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' }, memberRole: 'analyst' }] : [], [{ expired: false, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' } }], tasks.map((task) => ({ ...task, total: tasks.length }))], query: queryMap({
       memberNotificationPreferences: { first: preferenceValue }, workspaces: { first: workspace }, workspaceTasks: { many: tasks },
     }) })
   }
@@ -98,7 +98,7 @@ describe('task notification delivery', () => {
 
     const success = databaseDouble()
     mocks.databases.push(digestDatabase().db, success.db)
-    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-11')).resolves.toEqual({ accepted: true, taskCount: 1, providerMessageId: 'email-1' })
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-11')).resolves.toEqual({ accepted: true, taskCount: 1, shownTaskCount: 1, providerMessageId: 'email-1' })
     expect(success.capture.values[0]).toMatchObject({ action: 'task.personal_digest_accepted' })
   })
 

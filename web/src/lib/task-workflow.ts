@@ -29,17 +29,21 @@ function localParts(date: Date, timezone: string) {
     hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
   }).formatToParts(date)
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
-  return Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day), Number(values.hour), Number(values.minute), Number(values.second))
+  const local = new Date(0)
+  local.setUTCFullYear(Number(values.year), Number(values.month) - 1, Number(values.day))
+  local.setUTCHours(Number(values.hour), Number(values.minute), Number(values.second), 0)
+  return local.getTime()
 }
 
 export function workspaceDateEnd(date: string, timezone: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Date d’échéance invalide.')
-  const [year, month, day] = date.split('-').map(Number)
-  const desired = Date.UTC(year, month - 1, day, 23, 59, 59)
-  let candidate = new Date(desired)
+  let candidate = new Date(`${date}T23:59:59.000Z`)
+  if (!Number.isFinite(candidate.getTime()) || date.startsWith('0000-') || candidate.toISOString().slice(0, 10) !== date) throw new Error('Date d’échéance invalide.')
+  const desired = candidate.getTime()
   for (let iteration = 0; iteration < 3; iteration += 1) {
     candidate = new Date(candidate.getTime() + desired - localParts(candidate, timezone))
   }
+  if (localParts(candidate, timezone) !== desired) throw new Error('Date d’échéance inexistante dans ce fuseau.')
   return candidate
 }
 

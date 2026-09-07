@@ -28,4 +28,17 @@ Le même formulaire est utilisé dans les paramètres administrateur. Il porte l
 
 ## Preuves et limites
 
-[Lot 40](./audits/prod-ready-lot-40/README.md) : protocoles PostgreSQL avec rôles réels et attentes observées, transport intercepté en mémoire, recette navigateur FR/EN et contrôle général du projet. Aucun email réel n’est envoyé par ces tests. La réception, la reprise opérateur et le fonctionnement du candidat déployé restent à certifier. Le récapitulatif conserve encore son plafond de 50 tâches ; son information de complétude est une suite T14 identifiée.
+[Lot 40](./audits/prod-ready-lot-40/README.md) : protocoles PostgreSQL avec rôles réels et attentes observées, transport intercepté en mémoire, recette navigateur FR/EN et contrôle général du projet. Aucun email réel n’est envoyé par ces tests. La réception, la reprise opérateur et le fonctionnement du candidat déployé restent à certifier. Le [lot 41](./audits/prod-ready-lot-41/README.md) complète cette preuve avec 521 tâches assignées, un aperçu borné explicitement annoncé et une consultation intégrale paginée.
+
+
+## Complétude du récapitulatif et échéances
+
+`personalTaskDigestSnapshot` lit le nombre exact de tâches ouvertes assignées et leur aperçu dans une même instruction SQL (`count(*) over ()`). Le corps reste borné à 50 tâches, triées par échéance croissante, sans échéance en dernier, puis date de création et UUID. Les anciennes égalités de dates disposent ainsi d’un départage stable. Le total n’est pas déduit de la taille de l’aperçu. Tâches terminées/annulées, non assignées, d’un autre membre ou d’un autre espace sont exclues.
+
+L’objet et le corps annoncent le total réel. Au-delà de 50, le texte précise « 50 tâches sur N » et renvoie vers la liste complète des tâches ouvertes assignées. Le lien porte l’espace concerné et conserve ces paramètres au fil des pages et des recherches. Un autre espace actif affiche une explication et ne charge pas sa collection à la place de celle attendue. La liste consultée reste une vue actuelle, pas une copie historique de l’email.
+
+Le contrôle avant soumission relit également le total et les éléments affichés. Une modification de titre, statut ou assignation pendant l’attente qui change l’aperçu entraîne l’abandon du message préparé. Cette lecture conserve la limite transaction/fournisseur décrite plus haut ; elle ne prétend pas figer les changements après le dernier contrôle. La clé métier est inchangée et un conflit de contenu au retry reste soumis à revue.
+
+Les échéances de l’email utilisent le fuseau personnel explicitement affiché et un libellé FR/EN, avec date et heure. Le HTML déclare UTF-8 et la langue. L’audit et le résultat du job séparent désormais `taskCount` (total exact) et `shownTaskCount` (taille de l’aperçu). Les événements historiques sans ce second champ conservent leur ancienne signification.
+
+Les formulaires de tâches refusent les dates calendaires impossibles, au lieu de les normaliser vers le mois suivant. Le calcul de fin de journée vérifie aussi que la date locale existe dans le fuseau. Années bissextiles, hiver/été et journée entièrement sautée sont couverts ; une date invalide transmise directement à l’action ne crée aucune tâche.

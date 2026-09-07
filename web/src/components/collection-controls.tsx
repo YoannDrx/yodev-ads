@@ -8,7 +8,7 @@ const labels: Record<string, [string, string]> = {
   awaiting_support: ['En attente du support', 'Awaiting support'], awaiting_customer: ['En attente de votre retour', 'Awaiting customer'], closed: ['Fermées', 'Closed'],
 }
 function values(query: CollectionQuery) {
-  return Object.fromEntries(Object.entries(query).filter(([key, value]) => ['id', 'q', 'status', 'client', 'assignee', 'severity'].includes(key) && typeof value === 'string' && value.length > 0)) as Record<string, string>
+  return Object.fromEntries(Object.entries(query).filter(([key, value]) => ['id', 'q', 'status', 'client', 'assignee', 'severity', 'workspace'].includes(key) && typeof value === 'string' && value.length > 0)) as Record<string, string>
 }
 export function CollectionControls({ path, query, page, locale, statuses }: { path: string; query: CollectionQuery; page: Pick<CollectionPage<unknown>, 'total' | 'nextCursor' | 'started' | 'invalidCursor'> & { items: unknown[] }; locale: 'fr' | 'en'; statuses?: readonly string[] }) {
   const english = locale === 'en', criteria = values(query)

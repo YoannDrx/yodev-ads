@@ -1,6 +1,8 @@
 import type { Locale } from '@/lib/i18n'
 
 const englishMessages: Record<string, string> = {
+  'Date d’échéance invalide.': 'Invalid due date.',
+  'Date d’échéance inexistante dans ce fuseau.': 'This due date does not exist in the workspace timezone.',
   'L’état de cette tâche ne permet plus cette action. Rechargez la page pour consulter les actions disponibles.': 'The current task status no longer allows this action. Reload the page to see the available actions.',
   'Action non autorisée pour cet espace.': 'This action is not available with your current workspace access. Reload the page or contact an administrator.',
   'Vos droits actuels ne permettent pas cette action. Rechargez la page ou contactez un administrateur.': 'Your current permissions do not allow this action. Reload the page or contact an administrator.',

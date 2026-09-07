@@ -8,7 +8,7 @@ import type { DatabaseTransaction } from '@/db/transactions'
 import { decryptSecret, encryptSecret } from '@/lib/crypto'
 
 export const COLLECTION_PAGE_SIZE = 25
-export type CollectionQuery = { id?: string; cursor?: string; q?: string; status?: string; client?: string; assignee?: string; severity?: string }
+export type CollectionQuery = { id?: string; cursor?: string; q?: string; status?: string; client?: string; assignee?: string; severity?: string; workspace?: string }
 export type CollectionPage<T> = { items: T[]; total: number; nextCursor: string | null; invalidCursor: boolean; started: boolean }
 const timestamp = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/)
 const cursorSchema = z.object({ version: z.literal(1), scope: z.string().length(64), snapshot: timestamp, at: timestamp, id: z.string().uuid(), expires: z.number().int() }).strict()

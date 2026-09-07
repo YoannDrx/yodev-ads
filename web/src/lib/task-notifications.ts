@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   auditEvents,
   memberNotificationPreferences,
@@ -9,12 +9,14 @@ import {
 } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { NonRetryableJobError, type ClaimedJob } from '@/lib/jobs'
+import { personalTaskDigestSnapshot } from '@/lib/task-digest-snapshot'
 import { taskNotificationRecipient } from '@/lib/task-notification-recipient'
 import { taskDigestEmail, taskMentionEmail } from '@/lib/task-notification-model'
 import { sendTransactionalEmail, TransactionalEmailAdmissionError } from '@/lib/transactional-email'
 
-function appTasksUrl() {
-  return `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr'}/tasks`
+function appTasksUrl(workspaceId: string, assignee?: string) {
+  const query = new URLSearchParams({ workspace: workspaceId, ...(assignee ? { assignee, status: 'open' } : {}) })
+  return `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr'}/tasks?${query}`
 }
 
 async function sendEmail(input: { to: string; subject: string; html: string; idempotencyKey: string; workspaceId: string; referenceId: string; beforeSubmit: () => Promise<boolean> }) {
@@ -51,7 +53,7 @@ export async function deliverTaskMention(commentId: string, preferenceId: string
     displayName: context.name || context.preference.displayName,
     taskTitle: context.task.title,
     comment: context.comment.body,
-    taskUrl: appTasksUrl(),
+    taskUrl: appTasksUrl(context.workspace.id),
   })
   try {
     const providerMessageId = await sendEmail({
@@ -99,20 +101,12 @@ export async function deliverPersonalTaskDigest(preferenceId: string, runKey: st
     if (preference.digestCadence === 'none' || !['internal', 'active', 'trial'].includes(workspace.accessState)) return { skipped: true as const }
     if (!runKey.startsWith(`${preference.digestCadence}:`)) return { skipped: true as const }
     if (preference.lastDigestKey === runKey) return { skipped: true as const }
-    const tasks = await db.query.workspaceTasks.findMany({
-      where: and(
-        eq(workspaceTasks.workspaceId, preference.workspaceId),
-        eq(workspaceTasks.assignedTo, preference.authUserId),
-        inArray(workspaceTasks.status, ['todo', 'in_progress', 'blocked']),
-      ),
-      orderBy: [workspaceTasks.dueAt, workspaceTasks.createdAt],
-      limit: 50,
-    })
-    return { skipped: false as const, preference, workspace, tasks, email: recipient.email, name: recipient.user.name }
+    const snapshot = await personalTaskDigestSnapshot(db, preference.workspaceId, preference.authUserId)
+    return { skipped: false as const, preference, workspace, snapshot, email: recipient.email, name: recipient.user.name }
   })
   if (context.skipped) return context
   const now = new Date()
-  if (context.tasks.length === 0) {
+  if (context.snapshot.tasks.length === 0) {
     await withSystemTransaction((db) => db.update(memberNotificationPreferences).set({
       lastDigestKey: runKey,
       lastDigestAt: now,
@@ -124,8 +118,11 @@ export async function deliverPersonalTaskDigest(preferenceId: string, runKey: st
   const email = taskDigestEmail({
     locale: context.workspace.locale,
     displayName: context.name || context.preference.displayName,
-    taskUrl: appTasksUrl(),
-    tasks: context.tasks.map((task) => ({ title: task.title, status: task.status, dueAt: task.dueAt })),
+    taskUrl: appTasksUrl(context.workspace.id, context.preference.authUserId),
+    workspaceName: context.workspace.name,
+    timezone: context.preference.timezone,
+    total: context.snapshot.total,
+    tasks: context.snapshot.tasks.map((task) => ({ title: task.title, status: task.status, dueAt: task.dueAt })),
   })
   try {
     const providerMessageId = await sendEmail({
@@ -137,9 +134,11 @@ export async function deliverPersonalTaskDigest(preferenceId: string, runKey: st
       referenceId: runKey,
       beforeSubmit: () => withSystemTransaction(async (db) => {
         const current = await taskNotificationRecipient(db, preferenceId, job)
-        return Boolean(current && current.email === context.email && current.preference.digestCadence === context.preference.digestCadence
-          && current.preference.digestHour === context.preference.digestHour && current.preference.timezone === context.preference.timezone
-          && current.preference.lastDigestKey !== runKey)
+        if (!current || current.email !== context.email || current.preference.digestCadence !== context.preference.digestCadence
+          || current.preference.digestHour !== context.preference.digestHour || current.preference.timezone !== context.preference.timezone
+          || current.preference.lastDigestKey === runKey) return false
+        const snapshot = await personalTaskDigestSnapshot(db, current.workspace.id, current.preference.authUserId)
+        return JSON.stringify(snapshot) === JSON.stringify(context.snapshot)
       }),
     })
     await withSystemTransaction(async (db) => {
@@ -155,10 +154,10 @@ export async function deliverPersonalTaskDigest(preferenceId: string, runKey: st
         action: 'task.personal_digest_accepted',
         entityType: 'member_notification_preference',
         entityId: context.preference.id,
-        metadata: { runKey, taskCount: context.tasks.length, providerMessageId },
+        metadata: { runKey, taskCount: context.snapshot.total, shownTaskCount: context.snapshot.tasks.length, providerMessageId },
       })
     })
-    return { accepted: true, taskCount: context.tasks.length, providerMessageId }
+    return { accepted: true, taskCount: context.snapshot.total, shownTaskCount: context.snapshot.tasks.length, providerMessageId }
   } catch (error) {
     if (error instanceof TransactionalEmailAdmissionError) return { skipped: true as const }
     await withSystemTransaction((db) => db.update(memberNotificationPreferences).set({
