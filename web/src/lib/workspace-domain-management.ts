@@ -142,10 +142,8 @@ export async function revokeWorkspaceCustomDomain(input: ActorContext & { domain
   try {
     await removeVercelProjectDomain(domain.hostname)
   } catch (error) {
-    if (!(error instanceof Error) || !/not found|404/i.test(error.message)) {
-      await recordDomainFailure({ ...input, revision: domain.revision, customDomain: false })
-      throw error
-    }
+    await recordDomainFailure({ ...input, revision: domain.revision, customDomain: false })
+    throw error
   }
   return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
     // Record an already-admitted external removal even if the actor subsequently loses access.

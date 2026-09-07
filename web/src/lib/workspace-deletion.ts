@@ -3,7 +3,7 @@ import 'server-only'
 import { createHmac } from 'node:crypto'
 import type Stripe from 'stripe'
 import { and, eq, inArray, lte } from 'drizzle-orm'
-import { del } from '@vercel/blob'
+import { del, BlobNotFoundError } from '@vercel/blob'
 import {
   authOrganizations,
   deletionRequests,
@@ -38,11 +38,11 @@ function safeCleanupError(error: unknown) {
   return (error instanceof Error ? error.message : String(error)).slice(0, 2000)
 }
 
-async function ignoreMissing(operation: Promise<unknown>) {
+async function removeBlobIfPresent(url: string) {
   try {
-    await operation
+    await del(url)
   } catch (error) {
-    if (!(error instanceof Error) || !/not found|404|does not exist/i.test(error.message)) throw error
+    if (!(error instanceof BlobNotFoundError)) throw error
   }
 }
 
@@ -207,12 +207,12 @@ export async function runWorkspaceExternalCleanup(input: {
     externalCleanupError: null,
   }).where(eq(workspaceDeletionTombstones.workspaceHash, input.workspaceHash)))
   try {
-    if (input.logoUrl) await ignoreMissing(del(input.logoUrl))
-    for (const hostname of input.hostnames) await ignoreMissing(removeVercelProjectDomain(hostname))
+    if (input.logoUrl) await removeBlobIfPresent(input.logoUrl)
+    for (const hostname of input.hostnames) await removeVercelProjectDomain(hostname)
   } catch (error) {
     await withSystemTransaction((db) => db.update(workspaceDeletionTombstones).set({
       externalCleanupStatus: 'failed',
-      externalCleanupError: safeCleanupError(error),
+      externalCleanupError: 'External cleanup could not be confirmed. Retry or contact support.',
     }).where(eq(workspaceDeletionTombstones.workspaceHash, input.workspaceHash)))
     throw error
   }

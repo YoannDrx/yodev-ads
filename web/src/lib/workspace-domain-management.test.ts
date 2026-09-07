@@ -181,8 +181,8 @@ describe('workspace custom-domain management', () => {
     expect(update.capture.values[0]).toMatchObject({ action: 'workspace_domain.revoked' })
   })
 
-  it('treats provider 404 as already removed', async () => {
-    mocks.removeVercel.mockRejectedValue(new Error('Vercel domain API: HTTP 404 not found'))
+  it('records the adapter confirmation of an already absent domain', async () => {
+    mocks.removeVercel.mockResolvedValue({ name: domain.hostname, removed: true, alreadyAbsent: true })
     const read = domainDatabase({ domain })
     const update = domainDatabase({ domain, statementResults: [[{ id: domainId }]] })
     mocks.databases.push(read.db, update.db)
