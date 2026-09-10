@@ -106,7 +106,7 @@ export async function verifyWorkspaceCustomDomain(input: ActorContext & { domain
     const beforeRequest = async () => { await findActiveDomain(input, true, domain.revision) }
     const vercel = await addOrVerifyVercelProjectDomain(domain.hostname, domain.vercelStatus !== 'not_submitted', beforeRequest)
     const configured = vercel.verified === true && vercel.configuration?.misconfigured === false
-    const reachable = configured ? await domainReachesApplication(domain.hostname) : false
+    const reachable = configured ? await domainReachesApplication(domain.hostname, beforeRequest) : false
     const active = configured && reachable
     const updated = await withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin', capability: 'custom_domain' }, async (db) => {
       await lockedDomain(db, input, domain.revision)

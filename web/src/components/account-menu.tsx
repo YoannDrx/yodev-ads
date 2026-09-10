@@ -1,16 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { LogOut, ShieldCheck } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 
+const subscribeToHydration = () => () => undefined
+const clientSnapshot = () => true
+const serverSnapshot = () => false
+
 export function AccountMenu({ locale }: { locale: string }) {
+  // Better Auth may populate its client cache before this streamed component hydrates.
+  // Keep its first render identical to SSR, then expose the current client snapshot.
+  const hydrated = useSyncExternalStore(subscribeToHydration, clientSnapshot, serverSnapshot)
   const session = authClient.useSession()
   const organizations = authClient.useListOrganizations()
   const english = locale === 'en'
   const [retryingDetails, setRetryingDetails] = useState(false)
-  const detailsError = Boolean(session.error || organizations.error)
+  const detailsError = hydrated && Boolean(session.error || organizations.error)
   const [switching, setSwitching] = useState(false)
   const [switchError, setSwitchError] = useState(false)
 
@@ -55,7 +62,7 @@ export function AccountMenu({ locale }: { locale: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      {(organizations.data?.length ?? 0) > 1 && (
+      {hydrated && (organizations.data?.length ?? 0) > 1 && (
         <select disabled={switching || signingOut} aria-busy={switching} aria-label={english ? 'Active workspace' : 'Workspace actif'} value={session.data?.session.activeOrganizationId ?? ''} onChange={(event) => switchOrganization(event.target.value)} className="h-9 max-w-28 sm:max-w-48 rounded-lg border bg-white px-2 text-sm">
           {organizations.data?.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}
         </select>
@@ -65,7 +72,7 @@ export function AccountMenu({ locale }: { locale: string }) {
         {signOutError && <p>{english ? 'Unable to sign out. Please try again.' : 'Impossible de vous déconnecter. Réessayez.'}</p>}
         {detailsError && <><p>{english ? 'Your account details could not be loaded. Please try again in a moment.' : 'Les informations du compte n’ont pas pu être chargées. Réessayez dans un instant.'}</p><button type="button" disabled={retryingDetails} className="font-medium underline" onClick={retryDetails}>{retryingDetails ? '…' : english ? 'Reload account details' : 'Recharger les informations du compte'}</button></>}
       </div>}
-      <Link href="/account" aria-label={english ? 'Account security' : 'Sécurité du compte'} title={session.data?.user.email ?? ''} className="grid size-9 place-items-center rounded-full bg-[#e6f8ef] text-[#168977]"><ShieldCheck className="size-4" /></Link>
+      <Link href="/account" aria-label={english ? 'Account security' : 'Sécurité du compte'} title={hydrated ? session.data?.user.email ?? '' : ''} className="grid size-9 place-items-center rounded-full bg-[#e6f8ef] text-[#168977]"><ShieldCheck className="size-4" /></Link>
       <button disabled={signingOut || switching} onClick={signOut} title={english ? 'Sign out' : 'Se déconnecter'} className="grid size-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"><LogOut className="size-4" /></button>
     </div>
   )

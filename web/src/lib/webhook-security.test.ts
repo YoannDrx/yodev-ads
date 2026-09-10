@@ -21,6 +21,15 @@ describe('isPrivateOrReservedIp', () => {
     '100.64.0.1',
     '224.0.0.1',
     '::1',
+    '0:0:0:0:0:0:0:1',
+    '::ffff:7f00:1',
+    '0:0:0:0:0:ffff:a00:1',
+    '64:ff9b::7f00:1',
+    '2002:7f00:1::',
+    '2001:db8::1',
+    '3fff::1',
+    '198.51.100.1',
+    '203.0.113.1',
     'fc00::1',
     'fd00::1',
     'fe80::1',
@@ -37,7 +46,7 @@ describe('isPrivateOrReservedIp', () => {
     expect(isPrivateOrReservedIp(address)).toBe(true)
   })
 
-  it.each(['8.8.8.8', '1.1.1.1', '2606:4700:4700::1111'])('accepts public address %s', (address) => {
+  it.each(['8.8.8.8', '1.1.1.1', '192.0.78.1', '2606:4700:4700::1111'])('accepts public address %s', (address) => {
     expect(isPrivateOrReservedIp(address)).toBe(false)
   })
 
@@ -115,7 +124,7 @@ describe('isPrivateOrReservedIp', () => {
       })
     })
     expect(result).toEqual({ address: '8.8.8.8', family: 4 })
-    expect(requestOptions).toMatchObject({ servername: 'hooks.example.test', timeout: 8_000 })
+    expect(requestOptions).toMatchObject({ servername: 'hooks.example.test', timeout: 8_000, agent: false, rejectUnauthorized: true })
     expect(mocks.lookup).toHaveBeenCalledOnce()
   })
 

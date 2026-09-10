@@ -4,46 +4,36 @@ import { workSignal } from '@/lib/work-deadline'
 
 import { lookup } from 'node:dns/promises'
 import { request as httpsRequest } from 'node:https'
-import { isIP, type LookupFunction } from 'node:net'
+import { BlockList, isIP, type LookupFunction } from 'node:net'
 
 const MAXIMUM_WEBHOOK_RESPONSE_BYTES = 64 * 1024
 
-function privateIpv4(address: string) {
-  const octets = address.split('.').map(Number)
-  if (octets.length !== 4 || octets.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return true
-  const [a, b] = octets
-  return (
-    a === 0 ||
-    a === 10 ||
-    a === 127 ||
-    (a === 100 && b >= 64 && b <= 127) ||
-    (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 0) ||
-    (a === 192 && b === 168) ||
-    (a === 198 && (b === 18 || b === 19)) ||
-    a >= 224
-  )
+// Conservative public-unicast policy; special-purpose/tunnel ranges are not webhook targets.
+// BlockList compares binary addresses, including expanded and hexadecimal IPv6 forms.
+const reservedV4 = new BlockList()
+for (const [address, prefix] of [
+  ['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8],
+  ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.0.0.0', 24], ['192.0.2.0', 24],
+  ['192.88.99.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15],
+  ['198.51.100.0', 24], ['203.0.113.0', 24], ['224.0.0.0', 4], ['240.0.0.0', 4],
+] as const) reservedV4.addSubnet(address, prefix, 'ipv4')
+const globalV6 = new BlockList()
+globalV6.addSubnet('2000::', 3, 'ipv6')
+const reservedV6 = new BlockList()
+for (const [address, prefix] of [['2001::', 23], ['2001:db8::', 32], ['2002::', 16], ['3fff::', 20]] as const) {
+  reservedV6.addSubnet(address, prefix, 'ipv6')
 }
 
 export function isPrivateOrReservedIp(address: string) {
   const normalized = address.toLowerCase().replace(/^\[|\]$/g, '')
   const version = isIP(normalized)
-  if (version === 4) return privateIpv4(normalized)
-  if (version !== 6) return true
-  const mappedIpv4 = normalized.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/)?.[1]
-  if (mappedIpv4) return privateIpv4(mappedIpv4)
-  return (
-    normalized === '::' ||
-    normalized === '::1' ||
-    normalized.startsWith('fc') ||
-    normalized.startsWith('fd') ||
-    /^fe[89ab]/.test(normalized) ||
-    normalized.startsWith('ff')
-  )
+  if (version === 4) return reservedV4.check(normalized, 'ipv4')
+  if (version !== 6 || normalized.includes('%')) return true
+  // Reject mapped IPv4 and NAT64 as well: their embedded destination may be private.
+  return !globalV6.check(normalized, 'ipv6') || reservedV6.check(normalized, 'ipv6')
 }
 
-async function withinSignal<T>(operation: Promise<T>, signal: AbortSignal) {
+export async function withinSignal<T>(operation: Promise<T>, signal: AbortSignal) {
   signal.throwIfAborted()
   let onAbort: () => void = () => {}
   const aborted = new Promise<never>((_resolve, reject) => {
@@ -118,6 +108,7 @@ export async function postSafeWebhook(
     }
     const request = httpsRequest(validated.url, {
       method: 'POST',
+      agent: false, rejectUnauthorized: true,
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(body),

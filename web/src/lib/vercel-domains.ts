@@ -4,6 +4,7 @@ import { isIP } from 'node:net'
 import { z } from 'zod'
 import { resolveTxt } from 'node:dns/promises'
 import { hashToken } from '@/lib/tokens'
+import { probeApplicationDomain } from '@/lib/domain-probe'
 
 const projectDomainSchema = z.object({
   name: z.string().min(1), projectId: z.string().min(1), verified: z.boolean(),
@@ -149,16 +150,7 @@ export async function removeVercelProjectDomain(hostname: string, beforeRequest?
   throw new VercelDomainResponseError()
 }
 
-export async function domainReachesApplication(hostname: string) {
-  try {
-    const response = await fetch(`https://${hostname}/api/health`, {
-      method: 'GET',
-      cache: 'no-store',
-      redirect: 'error',
-      signal: AbortSignal.timeout(8_000),
-    })
-    return response.ok
-  } catch {
-    return false
-  }
+export async function domainReachesApplication(hostname: string, beforeRequest?: () => Promise<void>) {
+  try { return await probeApplicationDomain(normalizeCustomHostname(hostname), beforeRequest) }
+  catch { return false }
 }

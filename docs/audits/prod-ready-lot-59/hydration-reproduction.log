@@ -1,0 +1,264 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/components/account-menu.test.tsx
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/yoannandrieux/Projets/yodev-ads/web
+
+ ❯ src/components/account-menu.test.tsx (4 tests | 4 failed) 49ms
+   × hydrates fr with auth cache populated before the component (error=false) 32ms
+   × hydrates fr with auth cache populated before the component (error=true) 5ms
+   × hydrates en with auth cache populated before the component (error=false) 8ms
+   × hydrates en with auth cache populated before the component (error=true) 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/account-menu.test.tsx > hydrates fr with auth cache populated before the component (error=false)
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      [Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+    
+    - A server/client branch `if (typeof window !== 'undefined')`.
+    - Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+    - Date formatting in a user's locale which doesn't match the server.
+    - External changing data without sending a snapshot of it along with the HTML.
+    - Invalid HTML tag nesting.
+    
+    It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+    
+    https://react.dev/link/hydration-mismatch
+    
+      <AccountMenu locale="fr">
+        <div className="flex items...">
+    +     <select
+    +       disabled={false}
+    +       aria-busy={false}
+    +       aria-label="Workspace actif"
+    +       value="main"
+    +       onChange={function onChange}
+    +       className="h-9 max-w-28 sm:max-w-48 rounded-lg border bg-white px-2 text-sm"
+    +     >
+    -     <a
+    -       aria-label="Sécurité du compte"
+    -       title=""
+    -       className="grid size-9 place-items-center rounded-full bg-[#e6f8ef] text-[#168977]"
+    -       href="/account"
+    -     >
+          ...
+    ],
+      Object {
+        "componentStack": "
+        at select (<anonymous>)
+        at div (<anonymous>)
+        at AccountMenu (/Users/yoannandrieux/Projets/yodev-ads/web/src/components/account-menu.tsx:14:24)",
+      },
+      undefined,
+      undefined,
+      undefined,
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/account-menu.test.tsx:30:36
+     28|     const onRecoverableError = vi.fn()
+     29|     await act(async () => { root = hydrateRoot(container, <AccountMenu…
+     30|     expect(onRecoverableError).not.toHaveBeenCalled()
+       |                                    ^
+     31|     const view = within(container)
+     32|     expect(view.getByRole('link', { name: locale === 'en' ? 'Account s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/components/account-menu.test.tsx > hydrates fr with auth cache populated before the component (error=true)
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      [Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+    
+    - A server/client branch `if (typeof window !== 'undefined')`.
+    - Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+    - Date formatting in a user's locale which doesn't match the server.
+    - External changing data without sending a snapshot of it along with the HTML.
+    - Invalid HTML tag nesting.
+    
+    It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+    
+    https://react.dev/link/hydration-mismatch
+    
+      <AccountMenu locale="fr">
+        <div className="flex items...">
+    +     <div
+    +       role="alert"
+    +       className="absolute right-4 top-16 z-50 max-w-sm space-y-2 rounded-lg border bg-white p-3 text-xs text-red-700"
+    +     >
+    -     <a
+    -       aria-label="Sécurité du compte"
+    -       title=""
+    -       className="grid size-9 place-items-center rounded-full bg-[#e6f8ef] text-[#168977]"
+    -       href="/account"
+    -     >
+          ...
+    ],
+      Object {
+        "componentStack": "
+        at div (<anonymous>)
+        at div (<anonymous>)
+        at AccountMenu (/Users/yoannandrieux/Projets/yodev-ads/web/src/components/account-menu.tsx:14:24)",
+      },
+      undefined,
+      undefined,
+      undefined,
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/account-menu.test.tsx:30:36
+     28|     const onRecoverableError = vi.fn()
+     29|     await act(async () => { root = hydrateRoot(container, <AccountMenu…
+     30|     expect(onRecoverableError).not.toHaveBeenCalled()
+       |                                    ^
+     31|     const view = within(container)
+     32|     expect(view.getByRole('link', { name: locale === 'en' ? 'Account s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/components/account-menu.test.tsx > hydrates en with auth cache populated before the component (error=false)
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      [Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+    
+    - A server/client branch `if (typeof window !== 'undefined')`.
+    - Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+    - Date formatting in a user's locale which doesn't match the server.
+    - External changing data without sending a snapshot of it along with the HTML.
+    - Invalid HTML tag nesting.
+    
+    It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+    
+    https://react.dev/link/hydration-mismatch
+    
+      <AccountMenu locale="en">
+        <div className="flex items...">
+    +     <select
+    +       disabled={false}
+    +       aria-busy={false}
+    +       aria-label="Active workspace"
+    +       value="main"
+    +       onChange={function onChange}
+    +       className="h-9 max-w-28 sm:max-w-48 rounded-lg border bg-white px-2 text-sm"
+    +     >
+    -     <a
+    -       aria-label="Account security"
+    -       title=""
+    -       className="grid size-9 place-items-center rounded-full bg-[#e6f8ef] text-[#168977]"
+    -       href="/account"
+    -     >
+          ...
+    ],
+      Object {
+        "componentStack": "
+        at select (<anonymous>)
+        at div (<anonymous>)
+        at AccountMenu (/Users/yoannandrieux/Projets/yodev-ads/web/src/components/account-menu.tsx:14:24)",
+      },
+      undefined,
+      undefined,
+      undefined,
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/account-menu.test.tsx:30:36
+     28|     const onRecoverableError = vi.fn()
+     29|     await act(async () => { root = hydrateRoot(container, <AccountMenu…
+     30|     expect(onRecoverableError).not.toHaveBeenCalled()
+       |                                    ^
+     31|     const view = within(container)
+     32|     expect(view.getByRole('link', { name: locale === 'en' ? 'Account s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/components/account-menu.test.tsx > hydrates en with auth cache populated before the component (error=true)
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      [Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+    
+    - A server/client branch `if (typeof window !== 'undefined')`.
+    - Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+    - Date formatting in a user's locale which doesn't match the server.
+    - External changing data without sending a snapshot of it along with the HTML.
+    - Invalid HTML tag nesting.
+    
+    It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+    
+    https://react.dev/link/hydration-mismatch
+    
+      <AccountMenu locale="en">
+        <div className="flex items...">
+    +     <div
+    +       role="alert"
+    +       className="absolute right-4 top-16 z-50 max-w-sm space-y-2 rounded-lg border bg-white p-3 text-xs text-red-700"
+    +     >
+    -     <a
+    -       aria-label="Account security"
+    -       title=""
+    -       className="grid size-9 place-items-center rounded-full bg-[#e6f8ef] text-[#168977]"
+    -       href="/account"
+    -     >
+          ...
+    ],
+      Object {
+        "componentStack": "
+        at div (<anonymous>)
+        at div (<anonymous>)
+        at AccountMenu (/Users/yoannandrieux/Projets/yodev-ads/web/src/components/account-menu.tsx:14:24)",
+      },
+      undefined,
+      undefined,
+      undefined,
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/account-menu.test.tsx:30:36
+     28|     const onRecoverableError = vi.fn()
+     29|     await act(async () => { root = hydrateRoot(container, <AccountMenu…
+     30|     expect(onRecoverableError).not.toHaveBeenCalled()
+       |                                    ^
+     31|     const view = within(container)
+     32|     expect(view.getByRole('link', { name: locale === 'en' ? 'Account s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  13:37:15
+   Duration  1.46s (transform 37ms, setup 0ms, import 363ms, tests 49ms, environment 902ms)
+

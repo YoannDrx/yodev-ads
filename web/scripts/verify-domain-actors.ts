@@ -3,6 +3,10 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
 import dns from 'node:dns/promises'
+import https from 'node:https'
+import { EventEmitter } from 'node:events'
+import type { ClientRequest, IncomingMessage } from 'node:http'
+import { answerDomainProbeChallenge, DOMAIN_PROBE_HEADER } from '../src/lib/domain-probe-proof'
 import { syncBuiltinESMExports } from 'node:module'
 import { Client } from 'pg'
 import * as domains from '../src/lib/workspace-domain-management'
@@ -18,16 +22,35 @@ const hostname = `domain-${domainId}.example.test`, token = randomUUID(), worksp
 const context = { workspaceId, actorUserId: actor }, full = { ...context, domainId }
 const calls: string[] = []
 let dnsCalls = 0, onDns: (() => Promise<unknown>) | undefined, onFetch: ((url: string, method: string) => Promise<unknown>) | undefined
-const originalFetch = globalThis.fetch, originalTxt = dns.resolveTxt
+const originalFetch = globalThis.fetch, originalTxt = dns.resolveTxt, originalLookup = dns.lookup, originalRequest = https.request
 process.env.VERCEL_API_TOKEN = 'local-fixture-only'; process.env.VERCEL_PROJECT_ID = 'local-fixture-project'
 dns.resolveTxt = async (name) => {
   assert.equal(name, `_yodev-ads.${hostname}`); dnsCalls++; await onDns?.()
   return [[`yodev-domain-verification=${token}`]]
 }
+dns.lookup = (async () => [{ address: '8.8.8.8', family: 4 }]) as unknown as typeof dns.lookup
+https.request = ((input: URL, init: https.RequestOptions, callback: (response: IncomingMessage) => void) => {
+  assert.equal(input.href, `https://${hostname}/api/domain-probe`)
+  const request = new EventEmitter() as ClientRequest
+  request.destroy = () => request
+  request.end = (() => {
+    void (async () => {
+      calls.push(`GET ${input.href}`)
+      await onFetch?.(input.href, 'GET')
+      const response = Object.assign(new EventEmitter(), { statusCode: 200, headers: { 'content-type': 'application/json' }, destroy: () => {} }) as IncomingMessage
+      callback(response)
+      const challenge = (init.headers as Record<string, string>)[DOMAIN_PROBE_HEADER]
+      response.emit('data', Buffer.from(JSON.stringify({ proof: answerDomainProbeChallenge(challenge, hostname) })))
+      response.emit('end')
+    })().catch((error) => request.emit('error', error))
+    return request
+  }) as ClientRequest['end']
+  return request
+}) as typeof https.request
 syncBuiltinESMExports()
 globalThis.fetch = async (input, init) => {
   const address = String(input), method = init?.method ?? 'GET'
-  assert(address.startsWith('https://api.vercel.com/') || address === `https://${hostname}/api/health`, 'Unexpected provider URL')
+  assert(address.startsWith('https://api.vercel.com/'), 'Unexpected provider URL')
   calls.push(`${method} ${address}`); const custom = await onFetch?.(address, method)
   if (custom instanceof Response) return custom
   return Response.json(address.includes('/config') ? { misconfigured: false } : { name: hostname, projectId: 'local-fixture-project', verified: true })
@@ -93,13 +116,13 @@ async function main() {
       await restore('verify'); const before = await snapshot()
       const demote = () => db.query("update auth_members set role='client' where id=$1", [actor])
       if (stage === 'dns') onDns = demote
-      else onFetch = async (address, method) => { if ((stage === 'provider' && method === 'POST') || (stage === 'health' && address.endsWith('/api/health'))) await demote() }
+      else onFetch = async (address, method) => { if ((stage === 'provider' && method === 'POST') || (stage === 'health' && address.endsWith('/api/domain-probe'))) await demote() }
       await assert.rejects(operations.verify, /non autorisée/)
       assert.deepEqual(await snapshot(), before)
       assert.equal(calls.length, stage === 'dns' ? 0 : stage === 'provider' ? 1 : 3)
     }
     await restore('verify')
-    onFetch = async (address) => { if (address.endsWith('/api/health')) await db.query('update workspace_domains set dns_token_hash=$2 where id=$1', [domainId, hashToken(randomUUID())]) }
+    onFetch = async (address) => { if (address.endsWith('/api/domain-probe')) await db.query('update workspace_domains set dns_token_hash=$2 where id=$1', [domainId, hashToken(randomUUID())]) }
     await assert.rejects(operations.verify, /a changé/)
     const changed = await snapshot(); assert.equal(changed.domains[0].verification_status, 'pending'); assert.equal(changed.domains[0].last_error, null); assert.equal(changed.audits, null)
     await restore('verify'); assert.equal((await domains.verifyWorkspaceCustomDomain(full)).active, true)
@@ -136,7 +159,7 @@ async function main() {
     console.log(JSON.stringify({ ok: true, verified: ['three_current_actor_and_lifecycle_matrices', 'three_membership_row_waits_before_provider', 'current_capability_for_creation_and_verification', 'two_post_audit_trial_rollbacks', 'revocations_during_dns_provider_and_health_waits', 'changed_domain_revision_not_overwritten_or_failed', 'authorized_activation', 'downgrade_still_allows_removal', 'admitted_removal_receipt_survives_later_actor_revocation', 'safe_persisted_failure', 'five_misleading_http_errors_do_not_revoke_or_complete_cleanup', '404_requires_project_access_and_confirmed_domain_absence', 'confirmed_absence_completes_domain_and_tombstone'], realProviderCalls: 0 }))
   } finally {
     await blocker.query('rollback').catch(() => {}); await blocker.end()
-    globalThis.fetch = originalFetch; dns.resolveTxt = originalTxt; syncBuiltinESMExports()
+    globalThis.fetch = originalFetch; dns.resolveTxt = originalTxt; dns.lookup = originalLookup; https.request = originalRequest; syncBuiltinESMExports()
     await db.query('delete from workspace_domain_cleanup_reservations where workspace_hash=$1', [workspaceHash])
     await db.query('delete from domain_cleanup_attempts where job_id=$1', [cleanupJobId])
     await db.query('delete from jobs where id=$1', [cleanupJobId])

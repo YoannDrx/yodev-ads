@@ -40,7 +40,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
         await page.screenshot({ caret: 'initial', path: test.info().outputPath(`status-history-${locale}.png`), fullPage: true })
         await page.goto('/status?cursor=forged')
-        await expect(page.getByRole('alert')).toBeVisible()
+        await expect(page.getByRole('alert').filter({ hasText: locale === 'en' ? 'This page link is invalid or expired.' : 'Ce lien de page est invalide ou expiré.' })).toBeVisible()
         await expect(page.getByRole('heading', { name: /Incident majeur|Major outage/ })).toBeVisible()
         expect((await page.goto(`/status/${privateId}`))?.status()).toBe(404)
         expect((await page.goto('/status/invalid'))?.status()).toBe(404)
