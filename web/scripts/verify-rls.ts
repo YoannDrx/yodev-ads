@@ -66,6 +66,9 @@ async function main() {
       subprocessor_app_select: boolean
       subprocessor_purge_select: boolean
       subprocessor_system_select: boolean
+      purge_organization_id_select: boolean
+      purge_organization_name_select: boolean
+      app_organization_id_select: boolean
     }>(sql`
       select
         has_table_privilege('yodev_app', 'public.support_messages', 'DELETE') as message_delete,
@@ -79,7 +82,10 @@ async function main() {
         has_table_privilege('yodev_app', 'public.report_template_versions', 'DELETE') as template_version_delete,
         has_table_privilege('yodev_app', 'public.subprocessor_change_notices', 'SELECT') as subprocessor_app_select,
         has_table_privilege('yodev_purge', 'public.subprocessor_change_notices', 'SELECT') as subprocessor_purge_select,
-        has_table_privilege('yodev_system', 'public.subprocessor_change_notices', 'SELECT') as subprocessor_system_select
+        has_table_privilege('yodev_system', 'public.subprocessor_change_notices', 'SELECT') as subprocessor_system_select,
+        has_column_privilege('yodev_purge', 'public.auth_organizations', 'id', 'SELECT') as purge_organization_id_select,
+        has_column_privilege('yodev_purge', 'public.auth_organizations', 'name', 'SELECT') as purge_organization_name_select,
+        has_column_privilege('yodev_app', 'public.auth_organizations', 'id', 'SELECT') as app_organization_id_select
     `)
     const supportPolicyResult = await db.execute<{ qual: string | null }>(sql`
       select qual from pg_policies
@@ -138,6 +144,11 @@ async function main() {
       securityMetadata.supportPrivileges?.subprocessor_purge_select ||
       !securityMetadata.supportPrivileges?.subprocessor_system_select) {
     throw new Error('Subprocessor change notices are not restricted to the system role')
+  }
+  if (!securityMetadata.supportPrivileges?.purge_organization_id_select ||
+      securityMetadata.supportPrivileges?.purge_organization_name_select ||
+      securityMetadata.supportPrivileges?.app_organization_id_select) {
+    throw new Error('Organization purge lookup privileges are unsafe')
   }
   if (!securityMetadata.supportSelectPolicy?.includes('internal')) {
     throw new Error('Support message RLS does not hide internal notes')

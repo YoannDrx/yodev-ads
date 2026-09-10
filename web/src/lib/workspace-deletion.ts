@@ -16,6 +16,7 @@ import {
   workspaces,
 } from '@/db/schema'
 import { withPurgeTransaction, withSystemTransaction, type DatabaseTransaction } from '@/db/transactions'
+import { lockWorkspaceAccessBoundary } from '@/lib/workspace-transaction-guard'
 import { getStripe } from '@/lib/billing'
 import { isControlledBrandLogoUrl } from '@/lib/branding-assets'
 import { decryptSecret } from '@/lib/crypto'
@@ -156,6 +157,8 @@ export async function purgeWorkspace(workspaceId: string, now = new Date(), stri
   const workspaceHash = tombstoneHash(workspaceId)
 
   return withPurgeTransaction(async (db) => {
+    // Same order as owner cancellation: workspace boundary, then deletion request.
+    await lockWorkspaceAccessBoundary(db, workspaceId)
     const [request] = await db.update(deletionRequests).set({ status: 'purging' }).where(and(
       eq(deletionRequests.workspaceId, workspaceId),
       eq(deletionRequests.status, 'pending'),

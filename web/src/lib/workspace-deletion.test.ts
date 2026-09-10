@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/db/transactions', () => ({ withPurgeTransaction: mocks.purge, withSystemTransaction: mocks.system }))
 vi.mock('@vercel/blob', async (importOriginal) => ({ ...await importOriginal<typeof import('@vercel/blob')>(), del: mocks.deleteBlob }))
 vi.mock('@/lib/vercel-domains', () => ({ removeVercelProjectDomain: mocks.removeDomain }))
+vi.mock('@/lib/workspace-transaction-guard', () => ({ lockWorkspaceAccessBoundary: vi.fn(async () => {}) }))
 vi.mock('@/lib/crypto', () => ({ decryptSecret: mocks.decrypt }))
 vi.mock('@/lib/google-ads', () => ({ revokeGoogleOAuthToken: mocks.revokeGoogle }))
 

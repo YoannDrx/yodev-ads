@@ -435,6 +435,13 @@
       "when": 1788801940338,
       "tag": "0061_domain_cleanup_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1789041813409,
+      "tag": "0062_purge_auth_organization_lookup",
+      "breakpoints": true
     }
   ]
 }

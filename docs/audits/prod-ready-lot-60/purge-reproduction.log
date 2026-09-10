@@ -1,0 +1,39 @@
+DrizzleQueryError: Failed query: delete from "auth_organizations" where "auth_organizations"."id" = $1
+params: 72b6e24f-3973-40d9-94c2-fd18e7a83d3a
+    at NodePgPreparedQuery.queryWithCache (/Users/yoannandrieux/Projets/yodev-ads/web/node_modules/src/pg-core/session.ts:73:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (/Users/yoannandrieux/Projets/yodev-ads/web/src/lib/workspace-deletion.ts:192:7)
+    ... 4 lines matching cause stack trace ...
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-database-concurrency.ts:355:5) {
+  query: 'delete from "auth_organizations" where "auth_organizations"."id" = $1',
+  params: [ '72b6e24f-3973-40d9-94c2-fd18e7a83d3a' ],
+  cause: error: permission denied for table auth_organizations
+      at /Users/yoannandrieux/Projets/yodev-ads/web/node_modules/pg/lib/client.js:694:17
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async <anonymous> (/Users/yoannandrieux/Projets/yodev-ads/web/node_modules/src/node-postgres/session.ts:149:14)
+      at async NodePgPreparedQuery.queryWithCache (/Users/yoannandrieux/Projets/yodev-ads/web/node_modules/src/pg-core/session.ts:71:12)
+      at async <anonymous> (/Users/yoannandrieux/Projets/yodev-ads/web/src/lib/workspace-deletion.ts:192:7)
+      at async boundedTransaction (/Users/yoannandrieux/Projets/yodev-ads/web/src/db/transactions.ts:97:18)
+      at async NodePgSession.transaction (/Users/yoannandrieux/Projets/yodev-ads/web/node_modules/src/node-postgres/session.ts:259:19)
+      at async Promise.allSettled (index 1)
+      at async verifyPurgeWinsAfterDeadline (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-database-concurrency.ts:297:33)
+      at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-database-concurrency.ts:355:5) {
+    length: 106,
+    severity: 'ERROR',
+    code: '42501',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'aclchk.c',
+    line: '2845',
+    routine: 'aclcheck_error'
+  }
+}
