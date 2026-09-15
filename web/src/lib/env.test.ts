@@ -1,23 +1,38 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { getServerEnv, hasGoogleConfiguration } from './env'
 
-const keys = ['APP_ENCRYPTION_KEY', 'GOOGLE_ADS_DEVELOPER_TOKEN', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET', 'GOOGLE_ADS_API_VERSION'] as const
+describe('Google Cloud project API configuration', () => {
+  beforeEach(() => {
+    vi.stubEnv('APP_ENCRYPTION_KEY', 'x'.repeat(43))
+    vi.stubEnv('GOOGLE_OAUTH_CLIENT_ID', 'oauth-client-id')
+    vi.stubEnv('GOOGLE_OAUTH_CLIENT_SECRET', 'oauth-client-secret')
+    vi.stubEnv('GOOGLE_ADS_DEVELOPER_TOKEN', undefined)
+    vi.stubEnv('GOOGLE_ADS_API_VERSION', undefined)
+  })
+  afterEach(() => vi.unstubAllEnvs())
 
-describe('Google server environment', () => {
-  afterEach(() => { for (const key of keys) delete process.env[key] })
-
-  it('defaults to v25 only when all required secrets are valid', () => {
-    Object.assign(process.env, {
-      APP_ENCRYPTION_KEY: 'x'.repeat(43),
-      GOOGLE_ADS_DEVELOPER_TOKEN: 'developer-token',
-      GOOGLE_OAUTH_CLIENT_ID: 'client-id-valid',
-      GOOGLE_OAUTH_CLIENT_SECRET: 'client-secret-valid',
-    })
+  it('allows OAuth configuration without a developer token', () => {
     expect(hasGoogleConfiguration()).toBe(true)
     expect(getServerEnv().GOOGLE_ADS_API_VERSION).toBe('v25')
+    expect(getServerEnv()).not.toHaveProperty('GOOGLE_ADS_DEVELOPER_TOKEN')
   })
 
-  it('fails closed on incomplete or invalid configuration', () => {
+  it('ignores obsolete deployment tokens', () => {
+    vi.stubEnv('GOOGLE_ADS_DEVELOPER_TOKEN', 'legacy-unused-token')
+    expect(hasGoogleConfiguration()).toBe(true)
+    expect(getServerEnv().GOOGLE_ADS_API_VERSION).toBe('v25')
+    expect(getServerEnv()).not.toHaveProperty('GOOGLE_ADS_DEVELOPER_TOKEN')
+  })
+
+  it('rejects an invalid encryption key', () => {
+    vi.stubEnv('APP_ENCRYPTION_KEY', 'short')
+    expect(hasGoogleConfiguration()).toBe(false)
+    expect(() => getServerEnv()).toThrow()
+  })
+
+  it('still requires OAuth credentials', () => {
+    vi.stubEnv('GOOGLE_OAUTH_CLIENT_SECRET', undefined)
     expect(hasGoogleConfiguration()).toBe(false)
     expect(() => getServerEnv()).toThrow()
   })

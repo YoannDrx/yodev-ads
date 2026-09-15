@@ -4,7 +4,6 @@ import { z } from 'zod'
 
 const serverEnvSchema = z.object({
   APP_ENCRYPTION_KEY: z.string().min(43),
-  GOOGLE_ADS_DEVELOPER_TOKEN: z.string().min(8),
   GOOGLE_OAUTH_CLIENT_ID: z.string().min(8),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().min(8),
   GOOGLE_OAUTH_REDIRECT_URI: z.string().url().optional(),

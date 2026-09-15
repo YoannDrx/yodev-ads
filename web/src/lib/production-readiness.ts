@@ -53,7 +53,6 @@ export function auditProductionConfiguration(
     'SENTRY_API_BASE_URL',
     'SENTRY_ORG',
     'SENTRY_PROJECT',
-    'GOOGLE_ADS_DEVELOPER_TOKEN',
     'GOOGLE_OAUTH_CLIENT_ID',
     'GOOGLE_OAUTH_CLIENT_SECRET',
     'STRIPE_SECRET_KEY',

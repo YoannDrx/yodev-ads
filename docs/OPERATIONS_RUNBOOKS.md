@@ -99,19 +99,23 @@ commander approval. Resume one internal tenant before broader access.
 If the encryption key itself is suspected, follow the key-rotation runbook and treat
 every envelope readable by that key as exposed.
 
-## Yodev Google Ads developer-token leak
+## Google Ads Cloud project access migration
 
-1. Set `GOOGLE_READS_ENABLED=0`, `FORCE_READ_ONLY=1`,
-   `GOOGLE_MUTATIONS_ENABLED=0` and `SCHEDULER_ENABLED=0`.
-2. Remove the compromised secret from every Vercel environment and local operator
-   store. Never put the replacement in Postgres.
-3. Contact Google Ads API support and follow the current token-compromise procedure;
-   request revocation/rotation and document the case ID.
-4. Review Google request IDs and audit events from the possible exposure interval.
-5. Provision the replacement only in the managed deployment secret store, redeploy and
-   validate read-only requests against the controlled staging MCC.
-6. Re-enable reads tenant by tenant. Writes remain disabled until approval, drift,
-   `validateOnly`, submission and reconciliation are all proven with the new token.
+Since September 2026, API access levels belong to the Cloud project owning the
+OAuth client. Developer tokens are ignored and this application no longer sends
+them. Upgrade the Python environment with `pip install -e '.[dev]'` (SDK 32+).
+Remove obsolete `GOOGLE_ADS_DEVELOPER_TOKEN` deployment variables after deploying
+the updated clients; existing unused secrets do not block the migration.
+
+1. Confirm the OAuth client's Cloud project has Google Ads API enabled and the
+   expected access level. Check owners/editors receive Google's API notices.
+2. Validate a read-only account query without a `developer-token` header.
+3. If access fails, distinguish OAuth `invalid_grant` (renew consent) from Cloud
+   project approval or quota errors (check the project's API access level).
+4. OAuth credentials and encryption keys remain sensitive; use the OAuth credential
+   compromise and key-rotation runbooks above if those credentials are exposed.
+
+Reference: https://developers.google.com/google-ads/api/docs/api-policy/developer-token
 
 ## Google Ads outage or quota exhaustion
 
