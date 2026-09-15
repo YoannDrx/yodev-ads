@@ -256,6 +256,7 @@ describe('GoogleAdsGateway v25 contracts', () => {
     })
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(String(fetchMock.mock.calls[0][0])).toContain('/v25/customers/1234567890/googleAds:search')
+
     expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({ Authorization: 'Bearer access-token', 'login-customer-id': '9998887777' })
     expect(fetchMock.mock.calls[0][1]?.headers).not.toHaveProperty('developer-token')
   })
