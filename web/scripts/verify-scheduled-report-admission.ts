@@ -135,10 +135,15 @@ async function main() {
     const auditWait = await fixture(), beforeAudit = submissions
     onSubmit = async () => {
       await blocker.query('begin'); await blocker.query('lock table audit_events in share mode')
-      await db.query("update jobs set lease_expires_at=clock_timestamp()+interval '250 milliseconds' where id=$1", [auditWait.jobId])
+      // Leave enough time for receipt persistence and completion to reach the
+      // audit lock on a shared CI runner; expire only after observing that lock.
+      await db.query("update jobs set lease_expires_at=clock_timestamp()+interval '5 seconds' where id=$1", [auditWait.jobId])
     }
     const waiting = Promise.allSettled([auditWait.run()])
-    try { await waitForLock('insert into "audit_events"%'); await setTimeout(400) } finally { await blocker.query('commit'); onSubmit = undefined }
+    try {
+      await waitForLock('insert into "audit_events"%')
+      while (!(await db.query('select lease_expires_at<=clock_timestamp() as expired from jobs where id=$1', [auditWait.jobId])).rows[0].expired) await setTimeout(20)
+    } finally { await blocker.query('commit'); onSubmit = undefined }
     assert.equal((await waiting)[0].status, 'rejected')
     assert.equal((await db.query('select last_run_key from report_schedules where id=$1', [auditWait.scheduleId])).rows[0].last_run_key, null)
     assert.equal((await db.query("select 1 from audit_events where entity_id=$1 and action='report.schedule_delivered'", [auditWait.scheduleId])).rowCount, 0)
