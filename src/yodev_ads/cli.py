@@ -12,10 +12,7 @@ from rich.table import Table
 
 from yodev_ads.auth import (
     adc_status,
-    gcloud_path,
-    get_developer_token,
     run_oauth_login,
-    set_developer_token,
 )
 from yodev_ads.google_api import GoogleAdsGateway
 from yodev_ads.settings import (
@@ -35,7 +32,7 @@ app = typer.Typer(
     no_args_is_help=True,
     rich_markup_mode="rich",
 )
-auth_app = typer.Typer(help="Manage OAuth and the developer token.", no_args_is_help=True)
+auth_app = typer.Typer(help="Manage Google Cloud OAuth credentials.", no_args_is_help=True)
 accounts_app = typer.Typer(help="Discover Google Ads accounts.", no_args_is_help=True)
 clients_app = typer.Typer(help="Manage local client profiles.", no_args_is_help=True)
 campaigns_app = typer.Typer(help="Inspect and safely change campaigns.", no_args_is_help=True)
@@ -94,10 +91,6 @@ def setup(
     ] = "Google Ads, sous contrôle.",
     logo: Annotated[str, typer.Option(help="Short logo glyph or emoji.")] = "◆",
     accent: Annotated[str, typer.Option(help="Rich terminal accent color.")] = "green",
-    developer_token: Annotated[
-        str | None,
-        typer.Option("--developer-token", help="Token; hidden when prompted if omitted."),
-    ] = None,
 ) -> None:
     """Create the initial safe, multi-client configuration."""
     try:
@@ -122,10 +115,6 @@ def setup(
             currency_code=currency.upper(),
         )
         store.save(config)
-        token = developer_token or get_developer_token()
-        if not token:
-            token = typer.prompt("Developer token", hide_input=True)
-        set_developer_token(token)
     except Exception as error:
         _error(error)
     console.print(
@@ -162,8 +151,6 @@ def doctor() -> None:
         config_ok, config_detail = False, str(error)
     checks = [
         ("Configuration", config_ok, config_detail),
-        ("Developer token", bool(get_developer_token()), "Keychain or environment"),
-        ("gcloud", bool(gcloud_path()), gcloud_path() or "Not installed"),
     ]
     adc_ok, adc_detail = adc_status()
     checks.append(("OAuth ADC", adc_ok, adc_detail))
@@ -172,16 +159,6 @@ def doctor() -> None:
     console.print(table)
     if not all(check[1] for check in checks):
         raise typer.Exit(1)
-
-
-@auth_app.command("token-set")
-def auth_token_set() -> None:
-    """Store the Google Ads developer token in the system keychain."""
-    try:
-        set_developer_token(typer.prompt("Developer token", hide_input=True))
-    except Exception as error:
-        _error(error)
-    console.print("[good]Developer token stored in the system keychain.[/good]")
 
 
 @auth_app.command("login")
@@ -419,7 +396,7 @@ def config_show() -> None:
                 }
                 for key, profile in config.profiles.items()
             },
-            "developer_token": "configured" if get_developer_token() else "missing",
+            "api_access": "google-cloud-project",
         }
     except Exception as error:
         _error(error)

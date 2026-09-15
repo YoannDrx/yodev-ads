@@ -2,34 +2,11 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 from pathlib import Path
 
-import keyring
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-KEYRING_SERVICE = "yodev-ads"
-KEYRING_USERNAME = "google-ads-developer-token"
 GOOGLE_ADS_SCOPES = ["https://www.googleapis.com/auth/adwords"]
-
-
-def get_developer_token() -> str | None:
-    environment_token = os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN")
-    if environment_token:
-        return environment_token.strip()
-    token = keyring.get_password(KEYRING_SERVICE, KEYRING_USERNAME)
-    return token.strip() if token else None
-
-
-def set_developer_token(token: str) -> None:
-    normalized = token.strip()
-    if len(normalized) != 22 or not normalized.isalnum():
-        raise ValueError("A Google Ads developer token must be 22 alphanumeric characters.")
-    keyring.set_password(KEYRING_SERVICE, KEYRING_USERNAME, normalized)
-
-
-def gcloud_path() -> str | None:
-    return shutil.which("gcloud")
 
 
 def adc_path() -> Path:
