@@ -51,7 +51,7 @@ describe('transactional email delivery registry', () => {
       recipientHash: base.recipientHash,
       contentHash: base.contentHash,
       now,
-    })).resolves.toEqual({ delivery: claimed, claimed: true })
+    })).resolves.toEqual({ delivery: claimed, claimed: true, mayHaveBeenSubmitted: false })
     expect(database.capture.values[0]).toMatchObject({
       category: base.category,
       businessKey: base.businessKey,
@@ -64,8 +64,7 @@ describe('transactional email delivery registry', () => {
   it('does not resubmit an accepted delivery', async () => {
     const accepted = { ...base, status: 'accepted', providerMessageId: '00000000-0000-4000-8000-000000000002' }
     const database = databaseDouble({
-      statementResults: [[]],
-      query: { transactionalEmailDeliveries: { findFirst: vi.fn(async () => accepted) } },
+      statementResults: [[], [accepted]],
     })
     mocks.databases.push(database.db)
 
@@ -82,8 +81,7 @@ describe('transactional email delivery registry', () => {
   it('does not automatically resubmit a terminal failed delivery', async () => {
     const failed = { ...base, status: 'failed', terminalAt: now, lastError: 'forbidden' }
     const database = databaseDouble({
-      statementResults: [[]],
-      query: { transactionalEmailDeliveries: { findFirst: vi.fn(async () => failed) } },
+      statementResults: [[], [failed]],
     })
     mocks.databases.push(database.db)
 
@@ -99,8 +97,7 @@ describe('transactional email delivery registry', () => {
 
   it('rejects reuse of a business key with different content', async () => {
     const database = databaseDouble({
-      statementResults: [[]],
-      query: { transactionalEmailDeliveries: { findFirst: vi.fn(async () => base) } },
+      statementResults: [[], [base]],
     })
     mocks.databases.push(database.db)
 
@@ -118,8 +115,7 @@ describe('transactional email delivery registry', () => {
     ['category', 'another_category'],
   ] as const)('rejects reuse of a business key with a different %s', async (field, value) => {
     const database = databaseDouble({
-      statementResults: [[]],
-      query: { transactionalEmailDeliveries: { findFirst: vi.fn(async () => base) } },
+      statementResults: [[], [base]],
     })
     mocks.databases.push(database.db)
     await expect(claimTransactionalEmailDelivery({
@@ -133,8 +129,7 @@ describe('transactional email delivery registry', () => {
 
   it('fails when an insert conflict cannot be resolved', async () => {
     const database = databaseDouble({
-      statementResults: [[]],
-      query: { transactionalEmailDeliveries: { findFirst: vi.fn(async () => undefined) } },
+      statementResults: [[], []],
     })
     mocks.databases.push(database.db)
     await expect(claimTransactionalEmailDelivery({
@@ -148,8 +143,7 @@ describe('transactional email delivery registry', () => {
   it('returns the existing delivery if another worker owns a fresh submission', async () => {
     const submitting = { ...base, status: 'submitting', updatedAt: now }
     const database = databaseDouble({
-      statementResults: [[], []],
-      query: { transactionalEmailDeliveries: { findFirst: vi.fn(async () => submitting) } },
+      statementResults: [[], [submitting], []],
     })
     mocks.databases.push(database.db)
     await expect(claimTransactionalEmailDelivery({
@@ -158,7 +152,7 @@ describe('transactional email delivery registry', () => {
       recipientHash: base.recipientHash,
       contentHash: base.contentHash,
       now,
-    })).resolves.toEqual({ delivery: submitting, claimed: false })
+    })).resolves.toEqual({ delivery: submitting, claimed: false, mayHaveBeenSubmitted: true })
   })
 
   it('records retryable, ambiguous, terminal and accepted outcomes distinctly', async () => {

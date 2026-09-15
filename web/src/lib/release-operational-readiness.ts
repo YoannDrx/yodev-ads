@@ -4,6 +4,7 @@ import { and, count, eq, inArray, lte } from 'drizzle-orm'
 import {
   jobs,
   mutationExecutions,
+  notificationDeliveries,
   stripeWebhookEvents,
   transactionalEmailDeliveries,
   workspaces,
@@ -24,6 +25,7 @@ export async function releaseOperationalIssues(now = new Date()): Promise<Readin
       inArray(transactionalEmailDeliveries.status, ['failed', 'hard_bounced', 'complained', 'ambiguous']),
     )
     const ambiguousMutations = await db.select({ total: count() }).from(mutationExecutions).where(inArray(mutationExecutions.state, ['ambiguous', 'failed']))
+    const unresolvedNotifications = await db.select({ total: count() }).from(notificationDeliveries).where(inArray(notificationDeliveries.status, ['ambiguous', 'dead_letter', 'sending']))
     return {
       deadLetters: deadLetters[0]?.total ?? 0,
       dueJobs: dueJobs[0]?.total ?? 0,
@@ -31,6 +33,7 @@ export async function releaseOperationalIssues(now = new Date()): Promise<Readin
       billingReconciliations: billingReconciliations[0]?.total ?? 0,
       failedEmail: failedEmail[0]?.total ?? 0,
       ambiguousMutations: ambiguousMutations[0]?.total ?? 0,
+      unresolvedNotifications: unresolvedNotifications[0]?.total ?? 0,
     }
   })
 
@@ -53,5 +56,6 @@ export async function releaseOperationalIssues(now = new Date()): Promise<Readin
   if (evidence.ambiguousMutations > 0) {
     issues.push({ code: 'google.unresolved_mutations', message: 'All failed or ambiguous Google mutations must be reconciled' })
   }
+  if (evidence.unresolvedNotifications > 0) issues.push({ code: 'notifications.unresolved_deliveries', message: 'Interrupted, ambiguous or failed notification transports must be reconciled' })
   return issues
 }

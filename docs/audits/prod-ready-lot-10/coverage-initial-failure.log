@@ -1,0 +1,41 @@
+
+> @yodev/ads@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+      Coverage enabled with v8
+
+ ❯ src/lib/data-orchestration.test.ts (13 tests | 1 failed) 51ms
+     × uses an explicitly selected active client and falls back to the first advertiser 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/data-orchestration.test.ts > tenant-aware data repository > uses an explicitly selected active client and falls back to the first advertiser
+AssertionError: expected undefined to deeply equal { id: 'fallback', name: 'Fallback' }
+
+- Expected:
+{
+  "id": "fallback",
+  "name": "Fallback",
+}
+
++ Received:
+undefined
+
+ ❯ src/lib/data-orchestration.test.ts:128:72
+    126|     const fallback = { id: 'fallback', name: 'Fallback' }
+    127|     mocks.databases.push(queryDatabase({ clients: {} }).db, queryDatab…
+    128|     await expect(repository.getWorkspaceClient(workspaceId, 'missing')…
+       |                                                                        ^
+    129|   })
+    130|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 148 passed (149)
+      Tests  1 failed | 1028 passed (1029)
+   Start at  03:43:38
+   Duration  12.01s (transform 5.11s, setup 0ms, import 47.10s, tests 5.39s, environment 13ms)
+

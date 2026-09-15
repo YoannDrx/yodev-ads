@@ -1,0 +1,117 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/member-preferences-local.spec.ts e2e/ownership-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 417ms
+✓ Running next.config.ts took 652ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.7s (next.js: 2.0s, proxy.ts: 258ms, application-code: 391ms)
+ GET /sign-in 200 in 96ms (next.js: 35ms, proxy.ts: 7ms, application-code: 53ms)
+ POST /api/auth/sign-in/email 200 in 1002ms (next.js: 796ms, proxy.ts: 4ms, application-code: 202ms)
+ POST /api/auth/sign-in/email 200 in 91ms (next.js: 4ms, proxy.ts: 3ms, application-code: 84ms)
+ POST /api/auth/sign-in/email 200 in 89ms (next.js: 4ms, proxy.ts: 3ms, application-code: 83ms)
+ POST /api/auth/sign-in/email 200 in 88ms (next.js: 2ms, proxy.ts: 5ms, application-code: 80ms)
+ POST /api/auth/sign-in/email 200 in 90ms (next.js: 3ms, proxy.ts: 3ms, application-code: 85ms)
+ GET /dashboard 200 in 705ms (next.js: 331ms, proxy.ts: 10ms, application-code: 365ms)
+ GET /settings 200 in 270ms (next.js: 31ms, proxy.ts: 3ms, application-code: 237ms)
+ GET /billing 200 in 165ms (next.js: 14ms, proxy.ts: 3ms, application-code: 148ms)
+ GET /support 200 in 141ms (next.js: 14ms, proxy.ts: 2ms, application-code: 125ms)
+ GET /accounts 200 in 122ms (next.js: 17ms, proxy.ts: 1.9ms, application-code: 102ms)
+ GET /history 200 in 136ms (next.js: 22ms, proxy.ts: 2ms, application-code: 112ms)
+ GET /alerts 200 in 171ms (next.js: 20ms, proxy.ts: 2.0ms, application-code: 149ms)
+ GET /tasks 200 in 159ms (next.js: 22ms, proxy.ts: 2.0ms, application-code: 135ms)
+ GET /approvals 200 in 147ms (next.js: 23ms, proxy.ts: 2.0ms, application-code: 122ms)
+ GET /reports 200 in 201ms (next.js: 22ms, proxy.ts: 2ms, application-code: 177ms)
+ GET /audit 200 in 232ms (next.js: 52ms, proxy.ts: 3ms, application-code: 177ms)
+ GET /agents 200 in 208ms (next.js: 23ms, proxy.ts: 2ms, application-code: 184ms)
+ GET / 200 in 137ms (next.js: 21ms, proxy.ts: 2ms, application-code: 114ms)
+ GET /privacy 200 in 119ms (next.js: 19ms, proxy.ts: 3ms, application-code: 98ms)
+ GET /terms 200 in 144ms (next.js: 28ms, proxy.ts: 6ms, application-code: 110ms)
+ GET /subprocessors 200 in 317ms (next.js: 87ms, proxy.ts: 5ms, application-code: 225ms)
+ GET / 200 in 115ms (next.js: 4ms, proxy.ts: 31ms, application-code: 79ms)
+ GET /status 200 in 150ms (next.js: 48ms, proxy.ts: 5ms, application-code: 97ms)
+ GET /sign-in 200 in 74ms (next.js: 12ms, proxy.ts: 5ms, application-code: 56ms)
+ GET /icon?a62dacc6b033a714 200 in 677ms (next.js: 64ms, proxy.ts: 5ms, application-code: 608ms)
+ GET /sign-up 200 in 978ms (next.js: 903ms, proxy.ts: 6ms, application-code: 69ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-sDw3Bp
+
+Running 4 tests using 1 worker
+
+(node:92481) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /settings 200 in 405ms (next.js: 106ms, proxy.ts: 5ms, application-code: 294ms)
+ GET /api/auth/get-session 200 in 37ms (next.js: 16ms, proxy.ts: 4ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 40ms (next.js: 21ms, proxy.ts: 4ms, application-code: 15ms)
+ GET /settings?notice=Pr%C3%A9f%C3%A9rences+personnelles+de+t%C3%A2ches+enregistr%C3%A9es. 200 in 101ms (next.js: 3ms, proxy.ts: 2ms, application-code: 96ms)
+ POST /settings 200 in 136ms (next.js: 2ms, proxy.ts: 3ms, application-code: 131ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 18ms src/app/actions.ts
+ GET /settings?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 322ms (next.js: 2ms, proxy.ts: 3ms, application-code: 317ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 6ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 9ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /settings?error=Workspace+access+state+does+not+allow%3A+workspace%3Aread 200 in 51ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 47ms)
+ POST /settings?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 69ms (next.js: 2ms, proxy.ts: 3ms, application-code: 64ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 6ms src/app/actions.ts
+ GET /support?notice=Votre+acc%C3%A8s+actuel+est+limit%C3%A9+%C3%A0+la+facturation+et+aux+donn%C3%A9es+stock%C3%A9es. 200 in 106ms (next.js: 30ms, proxy.ts: 3ms, application-code: 73ms)
+ GET /support?notice=Votre+acc%C3%A8s+actuel+est+limit%C3%A9+%C3%A0+la+facturation+et+aux+donn%C3%A9es+stock%C3%A9es. 200 in 60ms (next.js: 4ms, proxy.ts: 6ms, application-code: 50ms)
+  ✓  1 [chromium] › e2e/member-preferences-local.spec.ts:6:7 › member preferences fr persist personal settings and refuse a stale grace form (2.3s)
+ GET /settings 200 in 214ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 208ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 9ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /settings?notice=Pr%C3%A9f%C3%A9rences+personnelles+de+t%C3%A2ches+enregistr%C3%A9es. 200 in 89ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 85ms)
+ POST /settings 200 in 118ms (next.js: 2ms, proxy.ts: 3ms, application-code: 113ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 16ms src/app/actions.ts
+ GET /settings?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 228ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 224ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 5ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 8ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /settings?error=Workspace+access+state+does+not+allow%3A+workspace%3Aread 200 in 49ms (next.js: 2ms, proxy.ts: 2ms, application-code: 45ms)
+ POST /settings?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 67ms (next.js: 2ms, proxy.ts: 3ms, application-code: 62ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 6ms src/app/actions.ts
+ GET /support?notice=Your+current+access+is+limited+to+billing+and+stored+data. 200 in 76ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 71ms)
+ GET /support?notice=Your+current+access+is+limited+to+billing+and+stored+data. 200 in 58ms (next.js: 4ms, proxy.ts: 6ms, application-code: 48ms)
+  ✓  2 [chromium] › e2e/member-preferences-local.spec.ts:6:7 › member preferences en persist personal settings and refuse a stale grace form (1.6s)
+ GET /settings 200 in 217ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 213ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 7ms, proxy.ts: 5ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 12ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /settings?error=La+confirmation+ne+correspond+pas+%C3%A0+l%E2%80%99identifiant+de+l%E2%80%99espace. 200 in 146ms (next.js: 7ms, proxy.ts: 4ms, application-code: 135ms)
+ POST /settings 200 in 180ms (next.js: 4ms, proxy.ts: 4ms, application-code: 172ms)
+  └─ ƒ transferWorkspaceOwnership({}) in 14ms src/app/actions.ts
+ GET /settings?notice=Propri%C3%A9t%C3%A9+de+l%E2%80%99espace+transf%C3%A9r%C3%A9e. 200 in 95ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 92ms)
+ POST /settings?error=La%20confirmation%20ne%20correspond%20pas%20%C3%A0%20l%E2%80%99identifiant%20de%20l%E2%80%99espace. 200 in 129ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 124ms)
+  └─ ƒ transferWorkspaceOwnership({}) in 21ms src/app/actions.ts
+ GET /settings?error=Seul+le+propri%C3%A9taire+peut+transf%C3%A9rer+la+propri%C3%A9t%C3%A9. 200 in 99ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 96ms)
+ POST /settings?error=La%20confirmation%20ne%20correspond%20pas%20%C3%A0%20l%E2%80%99identifiant%20de%20l%E2%80%99espace. 200 in 115ms (next.js: 2ms, proxy.ts: 3ms, application-code: 111ms)
+  └─ ƒ transferWorkspaceOwnership({}) in 5ms src/app/actions.ts
+ GET /settings 200 in 204ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 201ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 6ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 28ms (next.js: 10ms, proxy.ts: 4ms, application-code: 14ms)
+  ✓  3 [chromium] › e2e/ownership-local.spec.ts:5:61 › ownership transfer fr rechecks old owner authority and preserves other agencies (2.1s)
+ GET /settings 200 in 213ms (next.js: 2ms, proxy.ts: 2ms, application-code: 208ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 5ms, proxy.ts: 4ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 9ms, proxy.ts: 4ms, application-code: 17ms)
+ GET /settings?error=La+confirmation+ne+correspond+pas+%C3%A0+l%E2%80%99identifiant+de+l%E2%80%99espace. 200 in 110ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 106ms)
+ POST /settings 200 in 128ms (next.js: 2ms, proxy.ts: 3ms, application-code: 122ms)
+  └─ ƒ transferWorkspaceOwnership({}) in 5ms src/app/actions.ts
+ GET /settings?notice=Workspace+ownership+transferred. 200 in 86ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 83ms)
+ POST /settings?error=La%20confirmation%20ne%20correspond%20pas%20%C3%A0%20l%E2%80%99identifiant%20de%20l%E2%80%99espace. 200 in 107ms (next.js: 2ms, proxy.ts: 3ms, application-code: 102ms)
+  └─ ƒ transferWorkspaceOwnership({}) in 10ms src/app/actions.ts
+ GET /settings?error=Seul+le+propri%C3%A9taire+peut+transf%C3%A9rer+la+propri%C3%A9t%C3%A9. 200 in 91ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 87ms)
+ POST /settings?error=La%20confirmation%20ne%20correspond%20pas%20%C3%A0%20l%E2%80%99identifiant%20de%20l%E2%80%99espace. 200 in 107ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 102ms)
+  └─ ƒ transferWorkspaceOwnership({}) in 7ms src/app/actions.ts
+ GET /settings 200 in 206ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 202ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 5ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 12ms, proxy.ts: 3ms, application-code: 19ms)
+  ✓  4 [chromium] › e2e/ownership-local.spec.ts:5:61 › ownership transfer en rechecks old owner authority and preserves other agencies (1.8s)
+
+  4 passed (8.9s)
+{"ok":true,"cleaned":"local-browser-fixtures"}

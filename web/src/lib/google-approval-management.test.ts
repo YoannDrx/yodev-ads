@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
+vi.mock('@/lib/google-mutation-admission', () => ({ admitGoogleMutation: vi.fn() }))
 vi.mock('@/lib/mutation-observations', () => ({ scheduleMutationObservationWithDatabase: mocks.scheduleObservation }))
 
 import {

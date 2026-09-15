@@ -1,0 +1,53 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/lib/webhook-security.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+ ❯ src/lib/webhook-security.test.ts (39 tests | 9 failed) 79ms
+     × rejects private or special address 0:0:0:0:0:0:0:1 5ms
+     × rejects private or special address ::ffff:7f00:1 0ms
+     × rejects private or special address 0:0:0:0:0:ffff:a00:1 0ms
+     × rejects private or special address 64:ff9b::7f00:1 0ms
+     × rejects private or special address 2002:7f00:1:: 0ms
+     × rejects private or special address 2001:db8::1 0ms
+     × rejects private or special address 3fff::1 0ms
+     × rejects private or special address 198.51.100.1 0ms
+     × rejects private or special address 203.0.113.1 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address 0:0:0:0:0:0:0:1
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address ::ffff:7f00:1
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address 0:0:0:0:0:ffff:a00:1
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address 64:ff9b::7f00:1
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address 2002:7f00:1::
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address 2001:db8::1
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address 3fff::1
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address 198.51.100.1
+ FAIL  src/lib/webhook-security.test.ts > isPrivateOrReservedIp > rejects private or special address 203.0.113.1
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/lib/webhook-security.test.ts:46:44
+     44|     '::',
+     45|   ])('rejects private or special address %s', (address) => {
+     46|     expect(isPrivateOrReservedIp(address)).toBe(true)
+       |                                            ^
+     47|   })
+     48|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 30 passed (39)
+   Start at  13:13:01
+   Duration  260ms (transform 35ms, setup 0ms, import 50ms, tests 79ms, environment 0ms)
+

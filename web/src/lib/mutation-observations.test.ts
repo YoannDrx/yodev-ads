@@ -10,7 +10,7 @@ vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }
 import { completeMutationObservation, mutationCampaignIds, scheduleMutationObservationWithDatabase } from './mutation-observations'
 
 const metrics = {
-  dataPoints: 7, costMicros: '100', impressions: '1000', clicks: '100', conversions: '10', conversionValueMicros: '500',
+  coverageVersion: 1, dataPoints: 7, costMicros: '100', impressions: '1000', clicks: '100', conversions: '10', conversionValueMicros: '500',
 }
 
 const approval = {
@@ -32,7 +32,7 @@ describe('mutation observation campaign scope', () => {
 
   it('persists a baseline and schedules exactly one durable observation', async () => {
     const observation = { id: 'observation-1' }
-    const database = databaseDouble({ statementResults: [[metrics], [observation], []] })
+    const database = databaseDouble({ statementResults: [[{ days: 7 }], [metrics], [observation], []] })
     await expect(scheduleMutationObservationWithDatabase(database.db as never, {
       approval: approval as never, client: client as never, executedAt: new Date('2026-08-12T10:00:00Z'),
     })).resolves.toEqual(observation)
@@ -44,7 +44,7 @@ describe('mutation observation campaign scope', () => {
 
   it('resolves a concurrent schedule and rejects missing campaign or unresolved persistence', async () => {
     const query = { mutationObservations: { findFirst: vi.fn(async () => ({ id: 'existing-observation' })) } }
-    const concurrent = databaseDouble({ statementResults: [[metrics], [], []], query })
+    const concurrent = databaseDouble({ statementResults: [[{ days: 7 }], [metrics], [], []], query })
     await expect(scheduleMutationObservationWithDatabase(concurrent.db as never, {
       approval: approval as never, client: client as never, executedAt: new Date('2026-08-12'),
     })).resolves.toBeNull()
@@ -54,7 +54,7 @@ describe('mutation observation campaign scope', () => {
       approval: { ...approval, payload: {} } as never, client: client as never, executedAt: new Date('2026-08-12'),
     })).rejects.toThrow('at least one campaign')
 
-    const unresolved = databaseDouble({ statementResults: [[metrics], []], query: { mutationObservations: { findFirst: vi.fn(async () => undefined) } } })
+    const unresolved = databaseDouble({ statementResults: [[{ days: 7 }], [metrics], []], query: { mutationObservations: { findFirst: vi.fn(async () => undefined) } } })
     await expect(scheduleMutationObservationWithDatabase(unresolved.db as never, {
       approval: approval as never, client: client as never, executedAt: new Date('2026-08-12'),
     })).rejects.toThrow('could not be resolved')
@@ -66,7 +66,7 @@ describe('mutation observation campaign scope', () => {
       status: 'scheduled', campaignIds: ['10'], windowDays: 7, observationFrom: '2026-08-13', observationThrough: '2026-08-19',
       baselineMetrics: { ...metrics, expectedDataPoints: 7 },
     }
-    const database = databaseDouble({ statementResults: [[observation], [{ ...metrics, costMicros: '120' }], [], []] })
+    const database = databaseDouble({ statementResults: [[observation], [{ days: 7 }], [{ ...metrics, costMicros: '120' }], [], []] })
     mocks.database = database.db
     const completedAt = new Date('2026-08-20T12:00:00Z')
     await expect(completeMutationObservation(observation.id, completedAt)).resolves.toMatchObject({

@@ -1,0 +1,1 @@
+{"ok":true,"verified":["current_verified_mailbox","both_recipient_denial_matrices","fourteen_revocations_during_delivery_claim_wait","two_ambiguous_attempts_preserved","accepted_keys_not_resubmitted","job_workspace_payload_lease_attempt_fencing","expired_lease_after_claim_no_submission","auth_identity_role_remains_read_only"],"simulatedSubmissions":4,"realProviderCalls":0}

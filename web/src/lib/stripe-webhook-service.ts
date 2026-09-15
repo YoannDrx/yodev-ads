@@ -2,11 +2,12 @@ import 'server-only'
 
 import type Stripe from 'stripe'
 import { and, eq, isNull, lte, or } from 'drizzle-orm'
-import { auditEvents, clients, googleAdsConnections, jobs, stripeWebhookEvents, workspaces } from '@/db/schema'
+import { auditEvents, googleAdsConnections, jobs, stripeWebhookEvents, workspaces } from '@/db/schema'
 import type { DatabaseTransaction } from '@/db/transactions'
 import { withSystemTransaction } from '@/db/transactions'
 import {
   accessStateForSubscription,
+  accountLimitForPlan,
   accountsWithinPlan,
   chargeRefundRecord,
   planFromPriceId,
@@ -14,6 +15,7 @@ import {
   subscriptionRecord,
   type PlanId,
 } from '@/lib/billing'
+import { reconcileManagedAccountSelection } from '@/lib/account-selection'
 import { insertActivationMilestone } from '@/lib/activation'
 import { enqueueJob } from '@/lib/jobs'
 import { operationsAlertJob } from '@/lib/operations-alert-model'
@@ -76,10 +78,9 @@ async function applyPlanQuota(
   plan: PlanId,
   eventId: string,
 ) {
-  const workspaceClients = await db.query.clients.findMany({
-    where: eq(clients.workspaceId, workspaceId),
-    columns: { id: true, googleCustomerId: true, isManager: true, active: true },
-  })
+  // The preceding workspace UPDATE owns the row lock shared by selection saves.
+  const accountQuota = await reconcileManagedAccountSelection(db, workspaceId, accountLimitForPlan(plan))
+  const accountActivationChanges = accountQuota.changed
   const activeGoogleConnection = await db.query.googleAdsConnections.findFirst({
     where: and(
       eq(googleAdsConnections.workspaceId, workspaceId),
@@ -87,22 +88,6 @@ async function applyPlanQuota(
     ),
     columns: { id: true },
   })
-  const accountQuota = accountsWithinPlan(
-    workspaceClients
-      .filter((client) => client.active)
-      .map((client) => ({ ...client, customerId: client.googleCustomerId })),
-    plan,
-  )
-  const includedClientIds = new Set(accountQuota.included.map((client) => client.id))
-  let accountActivationChanges = 0
-  for (const client of workspaceClients) {
-    const shouldBeActive = includedClientIds.has(client.id)
-    if (client.active === shouldBeActive) continue
-    await db.update(clients)
-      .set({ active: shouldBeActive, updatedAt: new Date() })
-      .where(and(eq(clients.workspaceId, workspaceId), eq(clients.id, client.id)))
-    accountActivationChanges += 1
-  }
   if (activeGoogleConnection) {
     await db.insert(jobs).values({
       workspaceId,

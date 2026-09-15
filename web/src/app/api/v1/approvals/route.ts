@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { apiData, apiError, ApiV1Error, authenticateApiRequest, decodeCursor, pageResult } from '@/lib/api-v1'
+import { apiData, apiError, ApiV1Error, authenticateApiRequest } from '@/lib/api-v1'
 import { createApiApproval, getApiApprovalContext, listApiApprovals } from '@/lib/api-v1-repository'
 import { stateHash } from '@/lib/approval-state'
 import { assertBudgetChangeSafety } from '@/lib/budget-safety'
@@ -9,16 +9,14 @@ export async function GET(request: Request) {
   const requestId = crypto.randomUUID()
   try {
     const credential = await authenticateApiRequest(request, 'approvals:read')
-    const query = z.object({ cursor: z.string().max(500).optional(), limit: z.coerce.number().int().min(1).max(100).default(50) })
+    const query = z.object({ cursor: z.string().max(2048).optional(), limit: z.coerce.number().int().min(1).max(100).default(50) })
       .parse(Object.fromEntries(new URL(request.url).searchParams))
-    const cursor = decodeCursor(query.cursor ?? null)
-    const rows = await listApiApprovals({
+    const page = await listApiApprovals({
       workspaceId: credential.workspace.id,
       actorId: `api-key:${credential.key.id}`,
-      cursor,
+      cursor: query.cursor,
       limit: query.limit,
     })
-    const page = pageResult(rows, query.limit, (row) => ({ at: row.approval.createdAt, id: row.approval.id }))
     return apiData(page.data, requestId, page.nextCursor)
   } catch (error) {
     return apiError(error, requestId)

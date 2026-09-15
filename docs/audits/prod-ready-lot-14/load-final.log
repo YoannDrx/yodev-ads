@@ -1,0 +1,1 @@
+{"ok":true,"fixtures":{"workspaces":100,"clients":149,"monitors":200,"deliveries":10000,"approvals":100},"pool":{"configuredMaximum":10,"observedPeak":10},"reportBurst":{"count":1000,"totalMs":503,"p95Ms":479},"reportRateLimits":{"requests":1000,"allowed":60,"bucketCounts":[60,1000]},"approvals":{"count":100,"pages":4},"scheduler":{"requested":2200,"created":1099}}

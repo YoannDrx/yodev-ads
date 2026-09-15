@@ -1,21 +1,11 @@
-import { timingSafeEqual } from 'node:crypto'
 import { auditProductionConfiguration, type ReleaseTarget } from '@/lib/production-readiness'
 import { releaseOperationalIssues } from '@/lib/release-operational-readiness'
 import { systemHealthSnapshot } from '@/lib/system-health'
+import { releaseIdentityIssue, releaseVerificationAuthorized } from '@/lib/release-verification-access'
 
 export const dynamic = 'force-dynamic'
 
 const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0' }
-
-function authorized(request: Request) {
-  const expected = process.env.RELEASE_VERIFICATION_TOKEN
-  const authorization = request.headers.get('authorization')
-  const provided = authorization?.startsWith('Bearer ') ? authorization.slice(7) : ''
-  if (!expected || !provided) return false
-  const expectedBytes = Buffer.from(expected)
-  const providedBytes = Buffer.from(provided)
-  return expectedBytes.length === providedBytes.length && timingSafeEqual(expectedBytes, providedBytes)
-}
 
 function releaseTarget(value: string | undefined): ReleaseTarget | null {
   return value === 'staging' || value === 'private_beta' || value === 'public' ? value : null
@@ -47,9 +37,11 @@ async function operationalIssues() {
 }
 
 export async function GET(request: Request) {
-  if (!authorized(request)) {
+  if (!releaseVerificationAuthorized(request)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401, headers: noStoreHeaders })
   }
+  const identityIssue = releaseIdentityIssue(request, false)
+  if (identityIssue) return Response.json({ ready: false, code: identityIssue }, { status: 412, headers: noStoreHeaders })
 
   const target = releaseTarget(process.env.RELEASE_TARGET)
   if (!target) {

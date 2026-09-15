@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import {
   bigint,
   boolean,
@@ -267,6 +268,10 @@ export const clients = pgTable(
     timezone: varchar('timezone', { length: 64 }).default('Europe/Paris').notNull(),
     isManager: boolean('is_manager').default(false).notNull(),
     active: boolean('active').default(true).notNull(),
+    managedSelected: boolean('managed_selected').default(true).notNull(),
+    managementPriority: integer('management_priority').default(1000).notNull(),
+    googleAccessible: boolean('google_accessible').default(true).notNull(),
+    inventoryObservedAt: timestamp('inventory_observed_at', { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
@@ -310,6 +315,7 @@ export const approvalRequests = pgTable(
   },
   (table) => [
     uniqueIndex('approvals_idempotency_idx').on(table.idempotencyKey),
+    index('approvals_page_idx').on(table.workspaceId, table.createdAt, table.id),
     index('approvals_workspace_status_idx').on(table.workspaceId, table.status),
   ],
 )
@@ -328,7 +334,13 @@ export const auditEvents = pgTable(
     metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('audit_workspace_created_idx').on(table.workspaceId, table.createdAt)],
+  (table) => [
+    index('audit_page_idx').on(table.workspaceId, table.createdAt, table.id),
+    index('audit_workspace_created_idx').on(table.workspaceId, table.createdAt),
+    index('audit_monitoring_observation_idx')
+      .on(table.workspaceId, table.entityId, sql`(${table.metadata}->>'clientId')`, table.createdAt, table.id)
+      .where(sql`${table.action} = 'monitoring.observation_committed'`),
+  ],
 )
 
 export const usageSnapshots = pgTable(
@@ -345,6 +357,29 @@ export const usageSnapshots = pgTable(
   },
   (table) => [uniqueIndex('usage_workspace_month_idx').on(table.workspaceId, table.month)],
 )
+
+// Aggregate operational evidence, without customer identifiers or invoice contents.
+export const operatingCostEntries = pgTable('operating_cost_entries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceKey: varchar('source_key', { length: 100 }).notNull(),
+  month: varchar('month', { length: 7 }).notNull(),
+  category: varchar('category', { length: 24 }).notNull(),
+  currency: varchar('currency', { length: 3 }).notNull(),
+  basis: varchar('basis', { length: 16 }).notNull(),
+  amountMicros: numeric('amount_micros', { precision: 20, scale: 0 }),
+  supportMinutes: numeric('support_minutes', { precision: 12, scale: 2 }),
+  allocationMethod: varchar('allocation_method', { length: 24 }).notNull(),
+  trialWeight: integer('trial_weight').default(0).notNull(),
+  soloWeight: integer('solo_weight').default(0).notNull(),
+  studioWeight: integer('studio_weight').default(0).notNull(),
+  agencyWeight: integer('agency_weight').default(0).notNull(),
+  internalWeight: integer('internal_weight').default(0).notNull(),
+  unallocatedWeight: integer('unallocated_weight').default(10000).notNull(),
+  voided: boolean('voided').default(false).notNull(),
+  version: integer('version').default(1).notNull(),
+  updatedBy: varchar('updated_by', { length: 64 }).notNull(),
+  ...timestamps,
+}, (table) => [uniqueIndex('operating_cost_source_idx').on(table.sourceKey), index('operating_cost_month_idx').on(table.month, table.currency, table.category)])
 
 export const monitoringAgents = pgTable(
   'monitoring_agents',
@@ -397,6 +432,11 @@ export const alertIncidents = pgTable(
     dueAt: timestamp('due_at', { withTimezone: true }),
     acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
     snoozedUntil: timestamp('snoozed_until', { withTimezone: true }),
+    qualityLabel: varchar('quality_label', { length: 24 }),
+    qualityOccurrence: integer('quality_occurrence'),
+    qualityVersion: integer('quality_version').default(0).notNull(),
+    qualityReviewedAt: timestamp('quality_reviewed_at', { withTimezone: true }),
+    qualityReviewedBy: varchar('quality_reviewed_by', { length: 64 }),
     occurrenceCount: integer('occurrence_count').default(1).notNull(),
     detectedAt: timestamp('detected_at', { withTimezone: true }).defaultNow().notNull(),
     lastNotifiedAt: timestamp('last_notified_at', { withTimezone: true }),
@@ -405,6 +445,7 @@ export const alertIncidents = pgTable(
   },
   (table) => [
     uniqueIndex('alert_incidents_fingerprint_idx').on(table.workspaceId, table.fingerprint),
+    index('alert_incidents_page_idx').on(table.workspaceId, table.createdAt, table.id),
     index('alert_incidents_workspace_status_idx').on(table.workspaceId, table.status),
   ],
 )
@@ -419,7 +460,21 @@ export const alertComments = pgTable(
     body: text('body').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('alert_comments_incident_idx').on(table.workspaceId, table.incidentId, table.createdAt)],
+  (table) => [index('alert_comments_incident_idx').on(table.workspaceId, table.incidentId, table.createdAt), index('alert_comments_page_idx').on(table.workspaceId, table.incidentId, table.createdAt, table.id)],
+)
+
+export const portfolioViews = pgTable(
+  'portfolio_views',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+    userId: varchar('user_id', { length: 64 }).notNull(),
+    name: varchar('name', { length: 80 }).notNull(),
+    criteria: jsonb('criteria').$type<import('@/lib/portfolio-query').PortfolioCriteria>().notNull(),
+    version: uuid('version').defaultRandom().notNull(),
+    ...timestamps,
+  },
+  (table) => [index('portfolio_views_owner_idx').on(table.workspaceId, table.userId, table.createdAt)],
 )
 
 export const workspaceTasks = pgTable(
@@ -445,6 +500,7 @@ export const workspaceTasks = pgTable(
   },
   (table) => [
     index('workspace_tasks_queue_idx').on(table.workspaceId, table.status, table.dueAt),
+    index('workspace_tasks_page_idx').on(table.workspaceId, table.createdAt, table.id),
     index('workspace_tasks_assignee_idx').on(table.workspaceId, table.assignedTo, table.status),
     uniqueIndex('workspace_tasks_source_idx').on(table.workspaceId, table.sourceType, table.sourceEntityId),
   ],
@@ -461,7 +517,7 @@ export const taskComments = pgTable(
     mentions: text('mentions').array().default([]).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('task_comments_task_idx').on(table.workspaceId, table.taskId, table.createdAt)],
+  (table) => [index('task_comments_task_idx').on(table.workspaceId, table.taskId, table.createdAt), index('task_comments_page_idx').on(table.workspaceId, table.taskId, table.createdAt, table.id)],
 )
 
 export const memberNotificationPreferences = pgTable(
@@ -523,6 +579,8 @@ export const supportTickets = pgTable(
     ...timestamps,
   },
   (table) => [
+    index('support_tickets_page_idx').on(table.workspaceId, table.createdAt, table.id),
+    index('support_tickets_reader_page_idx').on(table.workspaceId, table.requestedBy, table.createdAt, table.id),
     index('support_tickets_workspace_status_idx').on(table.workspaceId, table.status, table.lastMessageAt),
     index('support_tickets_status_priority_idx').on(table.status, table.priority, table.lastMessageAt),
   ],
@@ -540,7 +598,7 @@ export const supportMessages = pgTable(
     internal: boolean('internal').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('support_messages_ticket_idx').on(table.workspaceId, table.ticketId, table.createdAt)],
+  (table) => [index('support_messages_ticket_idx').on(table.workspaceId, table.ticketId, table.createdAt), index('support_messages_page_idx').on(table.workspaceId, table.ticketId, table.createdAt, table.id)],
 )
 
 export const platformIncidents = pgTable(
@@ -608,6 +666,9 @@ export const shareLinks = pgTable(
     actionPlan: text('action_plan'),
     locale: varchar('locale', { length: 8 }).default('fr').notNull(),
     periodDays: integer('period_days').default(30).notNull(),
+    periodConfig: jsonb('period_config').$type<import('../lib/report-period-selection').ReportPeriodSelection>(),
+    mode: varchar('mode', { length: 16 }).default('dynamic').notNull(),
+    encryptedReportToken: text('encrypted_report_token'),
     tokenHash: varchar('token_hash', { length: 64 }).notNull(),
     tokenPrefix: varchar('token_prefix', { length: 12 }).notNull(),
     active: boolean('active').default(true).notNull(),
@@ -680,6 +741,30 @@ export const secretRevelations = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index('secret_revelations_lookup_idx').on(table.workspaceId, table.userId, table.expiresAt)],
+)
+
+export const analyticalCollections = pgTable(
+  'analytical_collections',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+    clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }).notNull(),
+    family: varchar('family', { length: 40 }).notNull(),
+    contractVersion: integer('contract_version').notNull(),
+    periodFrom: varchar('period_from', { length: 10 }).notNull(),
+    periodThrough: varchar('period_through', { length: 10 }).notNull(),
+    timezone: varchar('timezone', { length: 64 }).notNull(),
+    currencyCode: varchar('currency_code', { length: 3 }).notNull(),
+    sourceVersion: uuid('source_version').notNull(),
+    observedAt: timestamp('observed_at', { withTimezone: true }).notNull(),
+    collectedAt: timestamp('collected_at', { withTimezone: true }).defaultNow().notNull(),
+    payload: jsonb('payload').$type<unknown>().notNull(),
+    coverage: jsonb('coverage').$type<import('../lib/google-collection-coverage').GoogleCollectionCoverage>(),
+  },
+  (table) => [
+    uniqueIndex('analytical_collections_client_family_idx').on(table.clientId, table.family),
+    index('analytical_collections_workspace_idx').on(table.workspaceId, table.clientId),
+  ],
 )
 
 export const performanceSnapshots = pgTable(
@@ -767,12 +852,15 @@ export const notificationDeliveries = pgTable(
     errorMessage: text('error_message'),
     attemptCount: integer('attempt_count').default(0).notNull(),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }),
+    leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }),
+    dispatchStartedAt: timestamp('dispatch_started_at', { withTimezone: true }),
     terminalAt: timestamp('terminal_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     uniqueIndex('notification_deliveries_event_channel_idx').on(table.eventKey, table.channelId),
     index('notification_deliveries_workspace_idx').on(table.workspaceId, table.createdAt),
+    index('notification_deliveries_recovery_idx').on(table.status, table.leaseExpiresAt, table.nextAttemptAt),
   ],
 )
 
@@ -790,7 +878,7 @@ export const approvalComments = pgTable(
     body: text('body').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [index('approval_comments_approval_idx').on(table.workspaceId, table.approvalId, table.createdAt)],
+  (table) => [index('approval_comments_approval_idx').on(table.workspaceId, table.approvalId, table.createdAt), index('approval_comments_page_idx').on(table.workspaceId, table.approvalId, table.createdAt, table.id)],
 )
 
 export const clientApprovalFeedback = pgTable(
@@ -1076,6 +1164,12 @@ export const dailyAccountMetrics = pgTable(
     conversions: numeric('conversions', { precision: 22, scale: 4 }).default('0').notNull(),
     conversionValueMicros: numeric('conversion_value_micros', { precision: 22, scale: 0 }).default('0').notNull(),
     collectedAt: timestamp('collected_at', { withTimezone: true }).defaultNow().notNull(),
+    timezone: varchar('timezone', { length: 64 }),
+    coverageStatus: varchar('coverage_status', { length: 24 }).default('legacy').notNull(),
+    sourceObservedAt: timestamp('source_observed_at', { withTimezone: true }),
+    sourceVersion: varchar('source_version', { length: 64 }),
+    accountRows: integer('account_rows'),
+    campaignRows: integer('campaign_rows'),
   },
   (table) => [
     uniqueIndex('daily_account_metrics_client_date_idx').on(table.clientId, table.metricDate),
@@ -1233,12 +1327,17 @@ export const jobAttempts = pgTable(
     attempt: integer('attempt').notNull(),
     state: varchar('state', { length: 24 }).notNull(),
     workerId: varchar('worker_id', { length: 128 }).notNull(),
+    billingPlanAtStart: varchar('billing_plan_at_start', { length: 16 }),
     providerMessageId: varchar('provider_message_id', { length: 128 }),
     errorMessage: text('error_message'),
     startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
   },
-  (table) => [uniqueIndex('job_attempts_job_attempt_idx').on(table.jobId, table.attempt)],
+  (table) => [
+    uniqueIndex('job_attempts_job_attempt_idx').on(table.jobId, table.attempt),
+    index('job_attempts_workspace_started_idx').on(table.workspaceId, table.startedAt),
+    index('job_attempts_cost_window_idx').on(table.startedAt, table.billingPlanAtStart),
+  ],
 )
 
 export const exportJobs = pgTable(
@@ -1302,6 +1401,40 @@ export const workspaceDeletionTombstones = pgTable(
   (table) => [uniqueIndex('workspace_tombstones_hash_idx').on(table.workspaceHash)],
 )
 
+// Survives workspace and terminal-job retention until external operations are reconciled.
+export const workspaceDomainCleanupReservations = pgTable(
+  'workspace_domain_cleanup_reservations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    hostname: varchar('hostname', { length: 253 }).notNull(),
+    workspaceHash: varchar('workspace_hash', { length: 64 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    releasedAt: timestamp('released_at', { withTimezone: true }),
+  },
+  (table) => [uniqueIndex('domain_cleanup_reservation_idx').on(table.hostname, table.workspaceHash)],
+)
+
+export const domainCleanupAttempts = pgTable(
+  'domain_cleanup_attempts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    hostname: varchar('hostname', { length: 253 }).notNull(),
+    workspaceHash: varchar('workspace_hash', { length: 64 }).notNull(),
+    jobId: uuid('job_id').notNull(),
+    jobAttempt: integer('job_attempt').notNull(),
+    leaseOwner: varchar('lease_owner', { length: 128 }).notNull(),
+    providerScopeHash: varchar('provider_scope_hash', { length: 64 }).notNull(),
+    state: varchar('state', { length: 24 }).default('submitting').notNull(),
+    alreadyAbsent: boolean('already_absent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('domain_cleanup_attempt_idx').on(table.jobId, table.jobAttempt, table.hostname),
+    index('domain_cleanup_attempt_scope_idx').on(table.hostname, table.workspaceHash),
+  ],
+)
+
 export const reportRecipients = pgTable(
   'report_recipients',
   {
@@ -1335,6 +1468,7 @@ export const reportTemplates = pgTable(
     name: varchar('name', { length: 160 }).notNull(),
     locale: varchar('locale', { length: 8 }).default('fr').notNull(),
     periodDays: integer('period_days').default(30).notNull(),
+    periodConfig: jsonb('period_config').$type<import('../lib/report-period-selection').ReportPeriodSelection>(),
     editorialComment: text('editorial_comment'),
     actionPlan: text('action_plan'),
     currentVersion: integer('current_version').default(1).notNull(),
@@ -1356,6 +1490,7 @@ export const reportTemplateVersions = pgTable(
       name: string
       locale: 'fr' | 'en'
       periodDays: number
+      periodConfig?: import('../lib/report-period-selection').ReportPeriodSelection | null
       editorialComment: string | null
       actionPlan: string | null
     }>().notNull(),
@@ -1386,6 +1521,7 @@ export const reportSchedules = pgTable(
     encryptedReportToken: text('encrypted_report_token').notNull(),
     enabled: boolean('enabled').default(true).notNull(),
     deliveryLeaseUntil: timestamp('delivery_lease_until', { withTimezone: true }),
+    deliveryLeaseOwner: uuid('delivery_lease_owner'),
     lastRunKey: varchar('last_run_key', { length: 32 }),
     lastDeliveredAt: timestamp('last_delivered_at', { withTimezone: true }),
     lastError: text('last_error'),
@@ -1395,6 +1531,41 @@ export const reportSchedules = pgTable(
     uniqueIndex('report_schedules_share_idx').on(table.shareId),
     index('report_schedules_due_idx').on(table.enabled, table.cadence, table.sendHour),
     index('report_schedules_workspace_idx').on(table.workspaceId, table.createdAt),
+  ],
+)
+
+/** Issued content is append-only. Corrections create a separate edition. */
+export const reportEditions = pgTable(
+  'report_editions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+    clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }).notNull(),
+    shareId: uuid('share_id').references(() => shareLinks.id, { onDelete: 'cascade' }).notNull(),
+    scheduleId: uuid('schedule_id').references(() => reportSchedules.id, { onDelete: 'set null' }),
+    kind: varchar('kind', { length: 16 }).notNull(),
+    editionNumber: integer('edition_number').notNull(),
+    deduplicationKey: varchar('deduplication_key', { length: 200 }).notNull(),
+    // Opaque historical reference; retention must not rewrite a surviving edition.
+    previousEditionId: uuid('previous_edition_id'),
+    periodFrom: varchar('period_from', { length: 10 }).notNull(),
+    periodThrough: varchar('period_through', { length: 10 }).notNull(),
+    timezone: varchar('timezone', { length: 64 }).notNull(),
+    currencyCode: varchar('currency_code', { length: 3 }).notNull(),
+    sourceVersion: varchar('source_version', { length: 64 }).notNull(),
+    modelVersion: integer('model_version').default(1).notNull(),
+    payload: jsonb('payload').$type<import('../lib/client-report-model').SerializedClientReportModel>().notNull(),
+    runKey: varchar('run_key', { length: 32 }),
+    encryptedDelivery: text('encrypted_delivery'),
+    deliveryTokenHash: varchar('delivery_token_hash', { length: 64 }),
+    generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('report_editions_share_dedup_idx').on(table.shareId, table.deduplicationKey),
+    uniqueIndex('report_editions_share_number_idx').on(table.shareId, table.editionNumber),
+    index('report_editions_workspace_share_idx').on(table.workspaceId, table.shareId, table.generatedAt),
+    index('report_editions_expiry_idx').on(table.expiresAt),
   ],
 )
 

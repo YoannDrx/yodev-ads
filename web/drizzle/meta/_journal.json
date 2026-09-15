@@ -309,6 +309,139 @@
       "when": 1787070986395,
       "tag": "0043_add_email_delivery_reviewed",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1788736145079,
+      "tag": "0044_notification_delivery_leases",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1788738491337,
+      "tag": "0045_job_workspace_fairness",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1788739558238,
+      "tag": "0046_monitoring_observation_lookup",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788740244371,
+      "tag": "0047_metric_date_coverage",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788741902237,
+      "tag": "0048_analytical_collections",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1788744220781,
+      "tag": "0049_managed_account_selection",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1788746712676,
+      "tag": "0050_report_editions",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1788752204382,
+      "tag": "0051_workspace_collection_pages",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1788754234967,
+      "tag": "0052_analytical_source_coverage",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1788758827726,
+      "tag": "0053_portfolio_saved_views",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1788760939048,
+      "tag": "0054_published_report_activation",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1788766000428,
+      "tag": "0055_atomic_membership_admission",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1788768270823,
+      "tag": "0056_qualified_analysis_activation",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1788770726380,
+      "tag": "0057_alert_quality_reviews",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1788771387569,
+      "tag": "0058_locked_actor_expiry",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1788772358922,
+      "tag": "0059_operating_cost_evidence",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1788800474196,
+      "tag": "0060_domain_cleanup_reservations",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1788801940338,
+      "tag": "0061_domain_cleanup_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1789041813409,
+      "tag": "0062_purge_auth_organization_lookup",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,97 @@
+
+> @yodev/ads@0.1.0 build
+> next build
+
+▲ Next.js 16.3.0 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 626ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.9s
+  Running next.config.js provided runAfterProductionCompile ...
+✓ Completed runAfterProductionCompile in 259ms
+  Running TypeScript ...
+  Finished TypeScript in 10.5s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/52) ...
+  Generating static pages using 7 workers (13/52) 
+{"level":"error","message":"auth.session.unavailable"}
+{"level":"error","message":"auth.session.unavailable"}
+  Generating static pages using 7 workers (26/52) 
+{"level":"error","message":"auth.session.unavailable"}
+  Generating static pages using 7 workers (39/52) 
+{"level":"error","message":"auth.session.unavailable"}
+✓ Generating static pages using 7 workers (52/52) in 2.8s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /accounts
+├ ƒ /agents
+├ ƒ /alerts
+├ ƒ /analysis
+├ ƒ /api/auth/[...all]
+├ ƒ /api/connectors/slack/callback
+├ ƒ /api/connectors/slack/connect
+├ ƒ /api/connectors/teams/callback
+├ ƒ /api/connectors/teams/connect
+├ ƒ /api/cron/monitor
+├ ƒ /api/cron/scheduler
+├ ƒ /api/exports/[exportId]
+├ ƒ /api/google-ads/callback
+├ ƒ /api/google-ads/connect
+├ ƒ /api/health
+├ ƒ /api/internal/google-ads-read-drill
+├ ƒ /api/internal/release-readiness
+├ ƒ /api/internal/sentry-drill
+├ ƒ /api/secret-revelation
+├ ƒ /api/v1/alerts
+├ ƒ /api/v1/approvals
+├ ƒ /api/v1/performance
+├ ƒ /api/v1/portfolio
+├ ƒ /api/v1/reports
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/webhooks/yodev-mail
+├ ƒ /approvals
+├ ƒ /audit
+├ ƒ /billing
+├ ƒ /cookies
+├ ƒ /dashboard
+├ ƒ /dpa
+├ ƒ /forgot-password
+├ ƒ /getting-started
+├ ƒ /history
+├ ○ /icon
+├ ƒ /insights
+├ ƒ /invitation
+├ ƒ /legal
+├ ƒ /maintenance
+├ ƒ /onboarding
+├ ○ /opengraph-image
+├ ƒ /operations
+├ ƒ /privacy
+├ ƒ /r/[token]
+├ ƒ /r/[token]/csv
+├ ƒ /r/[token]/pdf
+├ ƒ /reports
+├ ƒ /reset-password
+├ ƒ /settings
+├ ƒ /settings/teams
+├ ƒ /sign-in/[[...sign-in]]
+├ ƒ /sign-up/[[...sign-up]]
+├ ƒ /status
+├ ƒ /subprocessors
+├ ƒ /support
+├ ƒ /tasks
+├ ƒ /terms
+└ ƒ /withdrawal
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

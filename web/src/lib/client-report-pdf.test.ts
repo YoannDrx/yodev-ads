@@ -1,3 +1,5 @@
+import sharp from 'sharp'
+import { createHash } from 'node:crypto'
 import { PDFDocument } from 'pdf-lib'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
@@ -30,7 +32,7 @@ describe('client PDF report', () => {
       generatedAt: new Date('2026-07-21T12:00:00Z'),
     }))
     expect(Buffer.from(bytes).subarray(0, 4).toString()).toBe('%PDF')
-    const pdf = await PDFDocument.load(bytes)
+    const pdf = await PDFDocument.load(bytes, { updateMetadata: false })
     expect(pdf.getPageCount()).toBe(2)
     expect(pdf.getPage(0).getSize()).toMatchObject({ width: 595, height: 842 })
     if (process.env.WRITE_PDF_FIXTURE === '1') {
@@ -39,4 +41,20 @@ describe('client PDF report', () => {
       await writeFile(resolve(directory, 'yodev-ads-report-fixture.pdf'), bytes)
     }
   })
+  it.each(['valid', 'missing', 'corrupt'] as const)('paginates both long editorial fields and renders %s branding safely', async (kind) => {
+    const logoBytes = kind === 'corrupt' ? Buffer.from('not-png') : await sharp({ create: { width: 20, height: 10, channels: 3, background: '#176646' } }).png().toBuffer()
+    const model = buildClientReportModel({ brandName: 'Élan Ανάλυση', clientName: 'Unicode 東京 🚀', currencyCode: 'EUR', locale: 'en', campaigns: [], generatedAt: new Date('2026-09-07T02:00:00Z'),
+      window: { from: '2026-08-01', through: '2026-08-31', timezone: 'Europe/Paris' }, sourceVersion: 'a'.repeat(64), poweredByYodev: true,
+      branding: { accentColor: '#ffff00', logo: kind === 'missing' ? null : { contentType: 'image/png', base64: logoBytes.toString('base64'), sha256: createHash('sha256').update(logoBytes).digest('hex') } },
+      editorialComment: 'é'.repeat(5000), actionPlan: 'LONG_WORD_'.repeat(500),
+    })
+    const bytes = await createClientReportPdf(model)
+    const pdf = await PDFDocument.load(bytes, { updateMetadata: false })
+    expect(pdf.getPageCount()).toBeGreaterThanOrEqual(3)
+    expect(pdf.getTitle()).toBe('Google Ads report - Unicode 東京 🚀')
+    expect(pdf.getCreationDate()).toEqual(model.generatedAt)
+    expect(pdf.getModificationDate()).toEqual(model.generatedAt)
+    expect(createHash('sha256').update(await createClientReportPdf(model)).digest('hex')).toBe(createHash('sha256').update(bytes).digest('hex'))
+  })
+
 })

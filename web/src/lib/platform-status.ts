@@ -5,8 +5,8 @@ export const PLATFORM_INCIDENT_STATUSES = ['investigating', 'identified', 'monit
 export type PlatformComponent = (typeof PLATFORM_COMPONENTS)[number]
 export type PlatformImpact = (typeof PLATFORM_IMPACTS)[number]
 
-const impactRank: Record<PlatformImpact | 'operational', number> = {
-  operational: 0,
+const impactRank: Record<PlatformImpact | 'unknown', number> = {
+  unknown: 0,
   maintenance: 1,
   degraded: 2,
   partial_outage: 3,
@@ -17,9 +17,10 @@ export function platformStatusSummary(incidents: Array<{
   component: string
   impact: string
   status: string
+  count?: number
 }>) {
   const active = incidents.filter((incident) => incident.status !== 'resolved')
-  const statusByComponent = Object.fromEntries(PLATFORM_COMPONENTS.map((component) => [component, 'operational'])) as Record<PlatformComponent, PlatformImpact | 'operational'>
+  const statusByComponent = Object.fromEntries(PLATFORM_COMPONENTS.map((component) => [component, 'unknown'])) as Record<PlatformComponent, PlatformImpact | 'unknown'>
   for (const incident of active) {
     if (!PLATFORM_COMPONENTS.includes(incident.component as PlatformComponent)) continue
     if (!PLATFORM_IMPACTS.includes(incident.impact as PlatformImpact)) continue
@@ -27,8 +28,8 @@ export function platformStatusSummary(incidents: Array<{
     const impact = incident.impact as PlatformImpact
     if (impactRank[impact] > impactRank[statusByComponent[component]]) statusByComponent[component] = impact
   }
-  const overall = Object.values(statusByComponent).reduce<PlatformImpact | 'operational'>((worst, status) => (
+  const overall = Object.values(statusByComponent).reduce<PlatformImpact | 'unknown'>((worst, status) => (
     impactRank[status] > impactRank[worst] ? status : worst
-  ), 'operational')
-  return { overall, components: statusByComponent, activeIncidentCount: active.length }
+  ), 'unknown')
+  return { overall, components: statusByComponent, activeIncidentCount: active.reduce((sum, incident) => sum + (incident.count ?? 1), 0) }
 }

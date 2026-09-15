@@ -30,7 +30,10 @@ import {
   notificationChannels,
   offlineConversionDiagnostics,
   performanceSnapshots,
+  analyticalCollections,
+  portfolioViews,
   reportSchedules,
+  reportEditions,
   reportTemplates,
   reportTemplateVersions,
   safetyPolicies,
@@ -42,16 +45,17 @@ import {
   workspaces,
 } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
+import { spreadsheetText } from '@/lib/csv'
 
 function csvCell(value: unknown) {
   if (value === null || value === undefined) return ''
-  const text = typeof value === 'object' ? JSON.stringify(value) : String(value)
+  const text = typeof value === 'object' ? JSON.stringify(value) : typeof value === 'string' ? spreadsheetText(value) : String(value)
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 
 export function rowsToCsv(rows: Array<Record<string, unknown>>, columns?: string[]) {
   const headers = columns ?? [...new Set(rows.flatMap((row) => Object.keys(row)))]
-  return [headers.join(','), ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(','))].join('\r\n')
+  return [headers.map(csvCell).join(','), ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(','))].join('\r\n')
 }
 
 export function exportArchive(files: Record<string, string>) {
@@ -117,6 +121,7 @@ async function collectWorkspaceExport(workspaceId: string) {
     const alerts = await db.query.alertIncidents.findMany({ where: eq(alertIncidents.workspaceId, workspaceId) })
     const activation = await db.query.activationMilestones.findMany({ where: eq(activationMilestones.workspaceId, workspaceId) })
     const alertNotes = await db.query.alertComments.findMany({ where: eq(alertComments.workspaceId, workspaceId) })
+    const savedPortfolioViews = await db.query.portfolioViews.findMany({ where: eq(portfolioViews.workspaceId, workspaceId) })
     const tasks = await db.query.workspaceTasks.findMany({ where: eq(workspaceTasks.workspaceId, workspaceId) })
     const taskNotes = await db.query.taskComments.findMany({ where: eq(taskComments.workspaceId, workspaceId) })
     const support = await db.query.supportTickets.findMany({ where: eq(supportTickets.workspaceId, workspaceId) })
@@ -151,6 +156,7 @@ async function collectWorkspaceExport(workspaceId: string) {
     const accountMetrics = await db.query.dailyAccountMetrics.findMany({ where: eq(dailyAccountMetrics.workspaceId, workspaceId) })
     const campaignMetrics = await db.query.dailyCampaignMetrics.findMany({ where: eq(dailyCampaignMetrics.workspaceId, workspaceId) })
     const legacyPerformance = await db.query.performanceSnapshots.findMany({ where: eq(performanceSnapshots.workspaceId, workspaceId) })
+    const analytical = await db.query.analyticalCollections.findMany({ where: eq(analyticalCollections.workspaceId, workspaceId) })
     const changes = await db.query.googleChangeEvents.findMany({ where: eq(googleChangeEvents.workspaceId, workspaceId) })
     const conversions = await db.query.conversionActionSnapshots.findMany({ where: eq(conversionActionSnapshots.workspaceId, workspaceId) })
     const offlineDiagnostics = await db.query.offlineConversionDiagnostics.findMany({ where: eq(offlineConversionDiagnostics.workspaceId, workspaceId) })
@@ -165,12 +171,18 @@ async function collectWorkspaceExport(workspaceId: string) {
         label: true,
         active: true,
         allowFeedback: true,
+        mode: true, periodDays: true, periodConfig: true, locale: true, editorialComment: true, actionPlan: true,
         expiresAt: true,
         lastViewedAt: true,
         createdAt: true,
         updatedAt: true,
       },
     })
+    const reportEditionRows = await db.query.reportEditions.findMany({ where: eq(reportEditions.workspaceId, workspaceId), columns: {
+      id: true, clientId: true, shareId: true, scheduleId: true, kind: true, editionNumber: true, previousEditionId: true,
+      periodFrom: true, periodThrough: true, timezone: true, currencyCode: true, sourceVersion: true, modelVersion: true,
+      payload: true, runKey: true, generatedAt: true, expiresAt: true,
+    } })
     const reportTemplateRows = await db.query.reportTemplates.findMany({ where: eq(reportTemplates.workspaceId, workspaceId) })
     const reportTemplateVersionRows = await db.query.reportTemplateVersions.findMany({ where: eq(reportTemplateVersions.workspaceId, workspaceId) })
     const reportScheduleRows = await db.query.reportSchedules.findMany({
@@ -242,6 +254,7 @@ async function collectWorkspaceExport(workspaceId: string) {
       activationMilestones: activation,
       alertComments: alertNotes,
       tasks,
+      portfolioViews: savedPortfolioViews,
       taskComments: taskNotes,
       supportTickets: support,
       supportMessages: supportConversation,
@@ -256,6 +269,7 @@ async function collectWorkspaceExport(workspaceId: string) {
       dailyAccountMetrics: accountMetrics,
       dailyCampaignMetrics: campaignMetrics,
       legacyPerformanceSnapshots: legacyPerformance,
+      analyticalCollections: analytical,
       googleChangeEvents: changes,
       conversionActionSnapshots: conversions,
       offlineConversionDiagnostics: offlineDiagnostics,
@@ -264,6 +278,7 @@ async function collectWorkspaceExport(workspaceId: string) {
       reportTemplates: reportTemplateRows,
       reportTemplateVersions: reportTemplateVersionRows,
       reportSchedules: reportScheduleRows,
+      reportEditions: reportEditionRows,
       apiKeys: keys,
       notificationChannels: channels,
       legalAcceptances: legal,
@@ -311,6 +326,7 @@ export async function runWorkspaceExport(exportJobId: string, workspaceId: strin
       'reports/templates.csv': rowsToCsv(data.reportTemplates),
       'reports/template-versions.csv': rowsToCsv(data.reportTemplateVersions),
       'reports/schedules.csv': rowsToCsv(data.reportSchedules),
+      'reports/editions.json': JSON.stringify(data.reportEditions, null, 2),
       'README.txt': 'Export Ads by Yodev. Les secrets OAuth, clés API complètes, tokens de rapport et destinations de notification sont volontairement exclus.\n',
     }
     const archive = exportArchive(files)

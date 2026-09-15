@@ -1,0 +1,254 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep guided setup
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 284ms
+✓ Running next.config.ts took 390ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.5s (next.js: 2.2s, proxy.ts: 140ms, application-code: 164ms)
+ GET / 200 in 2.5s (next.js: 1937ms, proxy.ts: 136ms, application-code: 472ms)
+ GET /icon?a62dacc6b033a714 200 in 252ms (next.js: 61ms, proxy.ts: 16ms, application-code: 174ms)
+ POST /api/auth/sign-in/email 200 in 916ms (next.js: 735ms, proxy.ts: 3ms, application-code: 178ms)
+ POST /api/auth/sign-in/email 200 in 87ms (next.js: 4ms, proxy.ts: 3ms, application-code: 81ms)
+ POST /api/auth/sign-in/email 200 in 92ms (next.js: 3ms, proxy.ts: 3ms, application-code: 87ms)
+ POST /api/auth/sign-in/email 200 in 75ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 71ms)
+ POST /api/auth/sign-in/email 200 in 78ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 74ms)
+ GET /dashboard 200 in 426ms (next.js: 172ms, proxy.ts: 3ms, application-code: 251ms)
+ GET /settings 200 in 218ms (next.js: 28ms, proxy.ts: 2ms, application-code: 188ms)
+ GET /billing 200 in 161ms (next.js: 12ms, proxy.ts: 2.0ms, application-code: 147ms)
+ GET /support 200 in 134ms (next.js: 13ms, proxy.ts: 1.8ms, application-code: 119ms)
+ GET /accounts 200 in 114ms (next.js: 11ms, proxy.ts: 1.8ms, application-code: 101ms)
+ GET /history 200 in 113ms (next.js: 13ms, proxy.ts: 1.7ms, application-code: 98ms)
+ GET /alerts 200 in 128ms (next.js: 13ms, proxy.ts: 1.9ms, application-code: 113ms)
+ GET /tasks 200 in 145ms (next.js: 19ms, proxy.ts: 1.9ms, application-code: 125ms)
+ GET /approvals 200 in 125ms (next.js: 21ms, proxy.ts: 1.9ms, application-code: 103ms)
+ GET /reports 200 in 183ms (next.js: 19ms, proxy.ts: 1.8ms, application-code: 163ms)
+ GET /audit 200 in 131ms (next.js: 21ms, proxy.ts: 1.9ms, application-code: 108ms)
+ GET /agents 200 in 173ms (next.js: 17ms, proxy.ts: 1.8ms, application-code: 154ms)
+ GET / 200 in 67ms (next.js: 1.4ms, proxy.ts: 1.8ms, application-code: 63ms)
+ GET /privacy 200 in 52ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 39ms)
+ GET /terms 200 in 48ms (next.js: 14ms, proxy.ts: 1.7ms, application-code: 32ms)
+ GET /subprocessors 200 in 94ms (next.js: 37ms, proxy.ts: 1.7ms, application-code: 55ms)
+ GET /status 200 in 96ms (next.js: 31ms, proxy.ts: 1.7ms, application-code: 64ms)
+ GET /sign-in 200 in 33ms (next.js: 4ms, proxy.ts: 1.7ms, application-code: 27ms)
+ GET /sign-up 200 in 307ms (next.js: 273ms, proxy.ts: 1.8ms, application-code: 33ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-XhdiNR
+
+Running 2 tests using 1 worker
+
+(node:26889) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ POST /api/auth/organization/set-active 200 in 37ms (next.js: 10ms, proxy.ts: 9ms, application-code: 18ms)
+⨯ Error: Failed query: select exists(select 1 from google_ads_connections g where g.workspace_id="id" and g.status='active'), exists(select 1 from clients c where c.workspace_id="id" and c.active and not c.is_manager), (select c.id from clients c where c.workspace_id="id" and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1), exists(select 1 from client_goals g join clients c on c.id=g.client_id and c.workspace_id=g.workspace_id where g.workspace_id="id" and c.active and not c.is_manager and c.managed_selected), exists(select 1 from monitoring_agents a where a.workspace_id="id" and a.enabled and exists(select 1 from clients c where c.workspace_id=a.workspace_id and c.active and not c.is_manager and c.managed_selected and (a.client_id is null or a.client_id=c.id))), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_qualified_analysis' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_report_published' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from legal_acceptances a where a.workspace_id="id" and a.terms_version=$1 and a.privacy_version=$2 and a.dpa_version=$3 and a.context='checkout_business' and a.accepted_at>="created_at" and a.accepted_at<=now()) from "workspaces" where ("workspaces"."id" = $4 and "workspaces"."access_state" in ($5, $6, $7, $8)) limit $9
+params: 2026-08-16-b2b,2026-08-16-b2b,2026-08-16-b2b,d451b3c6-47c4-4943-a1de-060dbf41403b,active,trial,internal,grace,1
+    at async (src/lib/getting-started-data.ts:11:24)
+    at async boundedTransaction (src/db/transactions.ts:97:18)
+    at async GettingStartedPage (src/app/(app)/getting-started/page.tsx:17:20)
+   9 | export function getGettingStartedEvidence(workspaceId: string, userId: string) {
+  10 |   return withTenantTransaction({ workspaceId, userId }, async (db) => {
+> 11 |     const [evidence] = await db.select({
+     |                        ^
+  12 |       connected: sql<boolean>`exists(select 1 from google_ads_connections g where g.workspace_id=${workspaces.id} and g.status='active')`,
+  13 |       hasAdvertiser: sql<boolean>`exists(select 1 from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager)`,
+  14 |       selectedClientId: sql<string | null>`(select c.id from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1)`, {
+  query: `select exists(select 1 from google_ads_connections g where g.workspace_id="id" and g.status='active'), exists(select 1 from clients c where c.workspace_id="id" and c.active and not c.is_manager), (select c.id from clients c where c.workspace_id="id" and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1), exists(select 1 from client_goals g join clients c on c.id=g.client_id and c.workspace_id=g.workspace_id where g.workspace_id="id" and c.active and not c.is_manager and c.managed_selected), exists(select 1 from monitoring_agents a where a.workspace_id="id" and a.enabled and exists(select 1 from clients c where c.workspace_id=a.workspace_id and c.active and not c.is_manager and c.managed_selected and (a.client_id is null or a.client_id=c.id))), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_qualified_analysis' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_report_published' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from legal_acceptances a where a.workspace_id="id" and a.terms_version=$1 and a.privacy_version=$2 and a.dpa_version=$3 and a.context='checkout_business' and a.accepted_at>="created_at" and a.accepted_at<=now()) from "workspaces" where ("workspaces"."id" = $4 and "workspaces"."access_state" in ($5, $6, $7, $8)) limit $9`,
+  params: [
+    '2026-08-16-b2b',
+    '2026-08-16-b2b',
+    '2026-08-16-b2b',
+    'd451b3c6-47c4-4943-a1de-060dbf41403b',
+    'active',
+    'trial',
+    'internal',
+    'grace',
+    1
+  ],
+  digest: '2699015745',
+  [cause]: error: column reference "id" is ambiguous
+      at async (src/lib/getting-started-data.ts:11:24)
+      at async boundedTransaction (src/db/transactions.ts:97:18)
+      at async GettingStartedPage (src/app/(app)/getting-started/page.tsx:17:20)
+     9 | export function getGettingStartedEvidence(workspaceId: string, userId: string) {
+    10 |   return withTenantTransaction({ workspaceId, userId }, async (db) => {
+  > 11 |     const [evidence] = await db.select({
+       |                        ^
+    12 |       connected: sql<boolean>`exists(select 1 from google_ads_connections g where g.workspace_id=${workspaces.id} and g.status='active')`,
+    13 |       hasAdvertiser: sql<boolean>`exists(select 1 from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager)`,
+    14 |       selectedClientId: sql<string | null>`(select c.id from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1)`, {
+    length: 108,
+    severity: 'ERROR',
+    code: '42702',
+    detail: undefined,
+    hint: undefined,
+    position: '465',
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'parse_relation.c',
+    line: '835',
+    routine: 'scanRTEForColumn'
+  }
+}
+ GET /getting-started 500 in 1315ms (next.js: 750ms, proxy.ts: 1.9ms, application-code: 563ms)
+[browser] Uncaught Error: Failed query: select exists(select 1 from google_ads_connections g where g.workspace_id="id" and g.status='active'), exists(select 1 from clients c where c.workspace_id="id" and c.active and not c.is_manager), (select c.id from clients c where c.workspace_id="id" and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1), exists(select 1 from client_goals g join clients c on c.id=g.client_id and c.workspace_id=g.workspace_id where g.workspace_id="id" and c.active and not c.is_manager and c.managed_selected), exists(select 1 from monitoring_agents a where a.workspace_id="id" and a.enabled and exists(select 1 from clients c where c.workspace_id=a.workspace_id and c.active and not c.is_manager and c.managed_selected and (a.client_id is null or a.client_id=c.id))), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_qualified_analysis' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_report_published' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from legal_acceptances a where a.workspace_id="id" and a.terms_version=$1 and a.privacy_version=$2 and a.dpa_version=$3 and a.context='checkout_business' and a.accepted_at>="created_at" and a.accepted_at<=now()) from "workspaces" where ("workspaces"."id" = $4 and "workspaces"."access_state" in ($5, $6, $7, $8)) limit $9
+params: 2026-08-16-b2b,2026-08-16-b2b,2026-08-16-b2b,d451b3c6-47c4-4943-a1de-060dbf41403b,active,trial,internal,grace,1
+    at <anonymous> (src/lib/getting-started-data.ts:11:24)
+    at boundedTransaction (src/db/transactions.ts:97:18)
+    at GettingStartedPage (src/app/(app)/getting-started/page.tsx:17:20)
+   9 | export function getGettingStartedEvidence(workspaceId: string, userId: string) {
+  10 |   return withTenantTransaction({ workspaceId, userId }, async (db) => {
+> 11 |     const [evidence] = await db.select({
+     |                        ^
+  12 |       connected: sql<boolean>`exists(select 1 from google_ads_connections g where g.workspace_id=${workspaces.id} and g.status='active')`,
+  13 |       hasAdvertiser: sql<boolean>`exists(select 1 from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager)`,
+  14 |       selectedClientId: sql<string | null>`(select c.id from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1)`,
+ GET /api/auth/get-session 200 in 72ms (next.js: 6ms, proxy.ts: 11ms, application-code: 55ms)
+ GET /api/auth/organization/list 200 in 88ms (next.js: 22ms, proxy.ts: 8ms, application-code: 57ms)
+  ✘  1 [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup fr requires selected accounts and qualified milestones (17.5s)
+(node:27091) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ POST /api/auth/organization/set-active 200 in 83ms (next.js: 54ms, proxy.ts: 12ms, application-code: 16ms)
+⨯ Error: Failed query: select exists(select 1 from google_ads_connections g where g.workspace_id="id" and g.status='active'), exists(select 1 from clients c where c.workspace_id="id" and c.active and not c.is_manager), (select c.id from clients c where c.workspace_id="id" and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1), exists(select 1 from client_goals g join clients c on c.id=g.client_id and c.workspace_id=g.workspace_id where g.workspace_id="id" and c.active and not c.is_manager and c.managed_selected), exists(select 1 from monitoring_agents a where a.workspace_id="id" and a.enabled and exists(select 1 from clients c where c.workspace_id=a.workspace_id and c.active and not c.is_manager and c.managed_selected and (a.client_id is null or a.client_id=c.id))), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_qualified_analysis' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_report_published' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from legal_acceptances a where a.workspace_id="id" and a.terms_version=$1 and a.privacy_version=$2 and a.dpa_version=$3 and a.context='checkout_business' and a.accepted_at>="created_at" and a.accepted_at<=now()) from "workspaces" where ("workspaces"."id" = $4 and "workspaces"."access_state" in ($5, $6, $7, $8)) limit $9
+params: 2026-08-16-b2b,2026-08-16-b2b,2026-08-16-b2b,bf4ecd15-b779-4349-9f88-fba936f38bb8,active,trial,internal,grace,1
+    at async (src/lib/getting-started-data.ts:11:24)
+    at async boundedTransaction (src/db/transactions.ts:97:18)
+    at async GettingStartedPage (src/app/(app)/getting-started/page.tsx:17:20)
+   9 | export function getGettingStartedEvidence(workspaceId: string, userId: string) {
+  10 |   return withTenantTransaction({ workspaceId, userId }, async (db) => {
+> 11 |     const [evidence] = await db.select({
+     |                        ^
+  12 |       connected: sql<boolean>`exists(select 1 from google_ads_connections g where g.workspace_id=${workspaces.id} and g.status='active')`,
+  13 |       hasAdvertiser: sql<boolean>`exists(select 1 from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager)`,
+  14 |       selectedClientId: sql<string | null>`(select c.id from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1)`, {
+  query: `select exists(select 1 from google_ads_connections g where g.workspace_id="id" and g.status='active'), exists(select 1 from clients c where c.workspace_id="id" and c.active and not c.is_manager), (select c.id from clients c where c.workspace_id="id" and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1), exists(select 1 from client_goals g join clients c on c.id=g.client_id and c.workspace_id=g.workspace_id where g.workspace_id="id" and c.active and not c.is_manager and c.managed_selected), exists(select 1 from monitoring_agents a where a.workspace_id="id" and a.enabled and exists(select 1 from clients c where c.workspace_id=a.workspace_id and c.active and not c.is_manager and c.managed_selected and (a.client_id is null or a.client_id=c.id))), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_qualified_analysis' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_report_published' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from legal_acceptances a where a.workspace_id="id" and a.terms_version=$1 and a.privacy_version=$2 and a.dpa_version=$3 and a.context='checkout_business' and a.accepted_at>="created_at" and a.accepted_at<=now()) from "workspaces" where ("workspaces"."id" = $4 and "workspaces"."access_state" in ($5, $6, $7, $8)) limit $9`,
+  params: [
+    '2026-08-16-b2b',
+    '2026-08-16-b2b',
+    '2026-08-16-b2b',
+    'bf4ecd15-b779-4349-9f88-fba936f38bb8',
+    'active',
+    'trial',
+    'internal',
+    'grace',
+    1
+  ],
+  digest: '344306433',
+  [cause]: error: column reference "id" is ambiguous
+      at async (src/lib/getting-started-data.ts:11:24)
+      at async boundedTransaction (src/db/transactions.ts:97:18)
+      at async GettingStartedPage (src/app/(app)/getting-started/page.tsx:17:20)
+     9 | export function getGettingStartedEvidence(workspaceId: string, userId: string) {
+    10 |   return withTenantTransaction({ workspaceId, userId }, async (db) => {
+  > 11 |     const [evidence] = await db.select({
+       |                        ^
+    12 |       connected: sql<boolean>`exists(select 1 from google_ads_connections g where g.workspace_id=${workspaces.id} and g.status='active')`,
+    13 |       hasAdvertiser: sql<boolean>`exists(select 1 from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager)`,
+    14 |       selectedClientId: sql<string | null>`(select c.id from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1)`, {
+    length: 108,
+    severity: 'ERROR',
+    code: '42702',
+    detail: undefined,
+    hint: undefined,
+    position: '465',
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'parse_relation.c',
+    line: '835',
+    routine: 'scanRTEForColumn'
+  }
+}
+ GET /getting-started 500 in 274ms (next.js: 137ms, proxy.ts: 1.8ms, application-code: 135ms)
+[browser] Uncaught Error: Failed query: select exists(select 1 from google_ads_connections g where g.workspace_id="id" and g.status='active'), exists(select 1 from clients c where c.workspace_id="id" and c.active and not c.is_manager), (select c.id from clients c where c.workspace_id="id" and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1), exists(select 1 from client_goals g join clients c on c.id=g.client_id and c.workspace_id=g.workspace_id where g.workspace_id="id" and c.active and not c.is_manager and c.managed_selected), exists(select 1 from monitoring_agents a where a.workspace_id="id" and a.enabled and exists(select 1 from clients c where c.workspace_id=a.workspace_id and c.active and not c.is_manager and c.managed_selected and (a.client_id is null or a.client_id=c.id))), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_qualified_analysis' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from activation_milestones a where a.workspace_id="id" and a.milestone='first_report_published' and a.occurred_at>="created_at" and a.occurred_at<=now()), exists(select 1 from legal_acceptances a where a.workspace_id="id" and a.terms_version=$1 and a.privacy_version=$2 and a.dpa_version=$3 and a.context='checkout_business' and a.accepted_at>="created_at" and a.accepted_at<=now()) from "workspaces" where ("workspaces"."id" = $4 and "workspaces"."access_state" in ($5, $6, $7, $8)) limit $9
+params: 2026-08-16-b2b,2026-08-16-b2b,2026-08-16-b2b,bf4ecd15-b779-4349-9f88-fba936f38bb8,active,trial,internal,grace,1
+    at <anonymous> (src/lib/getting-started-data.ts:11:24)
+    at boundedTransaction (src/db/transactions.ts:97:18)
+    at GettingStartedPage (src/app/(app)/getting-started/page.tsx:17:20)
+   9 | export function getGettingStartedEvidence(workspaceId: string, userId: string) {
+  10 |   return withTenantTransaction({ workspaceId, userId }, async (db) => {
+> 11 |     const [evidence] = await db.select({
+     |                        ^
+  12 |       connected: sql<boolean>`exists(select 1 from google_ads_connections g where g.workspace_id=${workspaces.id} and g.status='active')`,
+  13 |       hasAdvertiser: sql<boolean>`exists(select 1 from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager)`,
+  14 |       selectedClientId: sql<string | null>`(select c.id from clients c where c.workspace_id=${workspaces.id} and c.active and not c.is_manager and c.managed_selected order by c.name,c.id limit 1)`,
+ GET /api/auth/get-session 200 in 42ms (next.js: 11ms, proxy.ts: 5ms, application-code: 27ms)
+ GET /api/auth/organization/list 200 in 50ms (next.js: 19ms, proxy.ts: 5ms, application-code: 26ms)
+  ✘  2 [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup en requires selected accounts and qualified milestones (15.9s)
+
+
+  1) [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup fr requires selected accounts and qualified milestones
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('[data-setup-step="inventory"]')
+    Expected: "false"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 15000ms
+      - waiting for locator('[data-setup-step="inventory"]')
+
+
+      23 |       const step = (key: string) => page.locator(`[data-setup-step="${key}"]`)
+      24 |       await page.goto('/getting-started')
+    > 25 |       await expect(step('inventory')).toHaveAttribute('data-complete', 'false')
+         |                                       ^
+      26 |       await expect(step('selection')).toHaveAttribute('data-complete', 'false')
+      27 |       await expect(step('legal')).toHaveAttribute('data-complete', 'false')
+      28 |       await expect(page.getByRole('progressbar', { name: /Product setup progress|Progression du démarrage produit/ })).toHaveAttribute('max', '8')
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/getting-started-local.spec.ts:25:39
+
+    Error Context: test-results/getting-started-local-guid-7d041-ts-and-qualified-milestones-chromium/error-context.md
+
+  2) [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup en requires selected accounts and qualified milestones
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: locator('[data-setup-step="inventory"]')
+    Expected: "false"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 15000ms
+      - waiting for locator('[data-setup-step="inventory"]')
+
+
+      23 |       const step = (key: string) => page.locator(`[data-setup-step="${key}"]`)
+      24 |       await page.goto('/getting-started')
+    > 25 |       await expect(step('inventory')).toHaveAttribute('data-complete', 'false')
+         |                                       ^
+      26 |       await expect(step('selection')).toHaveAttribute('data-complete', 'false')
+      27 |       await expect(step('legal')).toHaveAttribute('data-complete', 'false')
+      28 |       await expect(page.getByRole('progressbar', { name: /Product setup progress|Progression du démarrage produit/ })).toHaveAttribute('max', '8')
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/getting-started-local.spec.ts:25:39
+
+    Error Context: test-results/getting-started-local-guid-06540-ts-and-qualified-milestones-chromium/error-context.md
+
+  2 failed
+    [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup fr requires selected accounts and qualified milestones
+    [chromium] › e2e/getting-started-local.spec.ts:6:7 › guided setup en requires selected accounts and qualified milestones
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

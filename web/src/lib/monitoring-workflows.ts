@@ -1,12 +1,45 @@
 import 'server-only'
 
-import { and, count, eq, sql } from 'drizzle-orm'
-import { alertComments, alertIncidents, auditEvents, monitoringAgents } from '@/db/schema'
+import { and, count, eq, inArray, sql } from 'drizzle-orm'
+import { alertComments, alertIncidents, auditEvents, jobs, monitoringAgents } from '@/db/schema'
 import { withTenantTransaction } from '@/db/transactions'
 import { insertActivationMilestone } from '@/lib/activation'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
+import { requireFeature } from '@/lib/feature-flags'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
+
+export async function requestWorkspaceMonitoringScan(input: ActorContext & { agentId?: string; now?: Date }) {
+  requireFeature('googleReads', 'Les lectures Google Ads sont temporairement désactivées.')
+  requireFeature('scheduler', 'Les analyses en arrière-plan sont temporairement indisponibles.')
+  return withWorkspaceActorTransaction({ ...input, permission: 'monitoring:run', capability: 'monitoring' }, async (db) => {
+    if (input.agentId) {
+      const agent = await db.query.monitoringAgents.findFirst({
+        where: and(eq(monitoringAgents.workspaceId, input.workspaceId), eq(monitoringAgents.id, input.agentId), eq(monitoringAgents.enabled, true)),
+      })
+      if (!agent) throw new Error('Vigie introuvable ou en pause.')
+    }
+    const active = await db.query.jobs.findFirst({
+      where: and(eq(jobs.workspaceId, input.workspaceId), inArray(jobs.type, ['monitoring.scan', 'monitoring.scan_chunk']),
+        inArray(jobs.status, ['queued', 'running', 'retrying'])),
+      columns: { id: true },
+    })
+    if (active) return { created: false, jobId: active.id }
+    const now = input.now ?? new Date()
+    const [created] = await db.insert(jobs).values({
+      workspaceId: input.workspaceId, type: 'monitoring.scan',
+      payload: { workspaceId: input.workspaceId, agentId: input.agentId }, priority: 50,
+      deduplicationKey: `monitoring.manual:${input.workspaceId}:${Math.floor(now.getTime() / 300_000)}`,
+    }).onConflictDoNothing().returning({ id: jobs.id })
+    if (!created) return { created: false, jobId: null }
+    await db.insert(auditEvents).values({
+      workspaceId: input.workspaceId, actorUserId: input.actorUserId, action: 'monitoring.scan_requested',
+      entityType: 'job', entityId: created.id, metadata: { agentId: input.agentId ?? null },
+    })
+    return { created: true, jobId: created.id }
+  })
+}
 
 export type AlertWorkflowOperation =
   | 'acknowledge'
@@ -25,13 +58,13 @@ export function createWorkspaceMonitoringAgent(input: ActorContext & {
   reminderIntervalHours: number | null
   entitlements: EntitlementContext
 }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'monitoring:run', capability: 'monitoring' }, async (transaction, { entitlements }) => {
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:monitors`}))`)
     const [usage] = await transaction
       .select({ count: count() })
       .from(monitoringAgents)
       .where(and(eq(monitoringAgents.workspaceId, input.workspaceId), eq(monitoringAgents.enabled, true)))
-    requireQuota(input.entitlements, 'monitors', usage.count)
+    requireQuota(entitlements, 'monitors', usage.count)
     const [created] = await transaction
       .insert(monitoringAgents)
       .values({
@@ -69,16 +102,35 @@ export async function setWorkspaceMonitoringAgentEnabled(input: ActorContext & {
   enabled: boolean
   now?: Date
 }) {
-  const [agent] = await withTenantTransaction(
-    { workspaceId: input.workspaceId, userId: input.actorUserId },
-    (db) => db
+  return withWorkspaceActorTransaction(
+    { ...input, permission: 'monitoring:run', capability: 'monitoring' },
+    async (db, { entitlements }) => {
+      await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:monitors`}))`)
+      const existing = await db.query.monitoringAgents.findFirst({
+        where: and(eq(monitoringAgents.id, input.agentId), eq(monitoringAgents.workspaceId, input.workspaceId)),
+      })
+      if (!existing) throw new Error('Vigie introuvable.')
+      if (existing.enabled === input.enabled) return existing
+      if (input.enabled) {
+        const [usage] = await db.select({ count: count() }).from(monitoringAgents)
+          .where(and(eq(monitoringAgents.workspaceId, input.workspaceId), eq(monitoringAgents.enabled, true)))
+        requireQuota(entitlements, 'monitors', usage.count)
+      }
+      const [agent] = await db
       .update(monitoringAgents)
       .set({ enabled: input.enabled, updatedAt: input.now ?? new Date() })
       .where(and(eq(monitoringAgents.id, input.agentId), eq(monitoringAgents.workspaceId, input.workspaceId)))
-      .returning(),
+      .returning()
+      if (!agent) throw new Error('Vigie introuvable.')
+      await db.insert(auditEvents).values({
+        workspaceId: input.workspaceId, actorUserId: input.actorUserId,
+        action: input.enabled ? 'monitoring.agent_enabled' : 'monitoring.agent_disabled',
+        entityType: 'monitoring_agent', entityId: agent.id,
+        metadata: { previouslyEnabled: existing.enabled },
+      })
+      return agent
+    },
   )
-  if (!agent) throw new Error('Vigie introuvable.')
-  return agent
 }
 
 export function recordWorkspaceMonitoringScan(input: ActorContext & {
@@ -98,7 +150,7 @@ export function recordWorkspaceMonitoringScan(input: ActorContext & {
 }
 
 export function acknowledgeWorkspaceAlert(input: ActorContext & { incidentId: string; now?: Date }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'alerts:manage' }, async (db) => {
     const now = input.now ?? new Date()
     const [incident] = await db
       .update(alertIncidents)
@@ -139,7 +191,7 @@ export function updateWorkspaceAlertWorkflow(input: ActorContext & {
             ? { assignedTo: input.actorUserId, ...(dueAt ? { dueAt } : {}) }
             : { assignedTo: null, dueAt: null }
 
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'alerts:manage' }, async (transaction) => {
     const [incident] = await transaction
       .update(alertIncidents)
       .set({ ...changes, updatedAt: now })

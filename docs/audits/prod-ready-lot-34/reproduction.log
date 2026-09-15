@@ -1,0 +1,14 @@
+AssertionError [ERR_ASSERTION]: Role revoked after action precheck: all five mutations must refuse a stale actor; results=fulfilled,fulfilled,fulfilled,fulfilled,fulfilled
+
+5 !== 0
+
+    at denied (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-monitoring-actors.ts:27:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-monitoring-actors.ts:40:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 5,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}

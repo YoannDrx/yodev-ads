@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { workSignal } from '@/lib/work-deadline'
+
 import { createHash, createHmac } from 'node:crypto'
 import { z } from 'zod'
 import { NonRetryableJobError } from '@/lib/jobs'
@@ -20,6 +22,12 @@ export type TransactionalEmailInput = {
   category: string
   workspaceId?: string | null
   referenceId?: string
+  /** Revalidate permission after a durable-claim wait, immediately before provider submission. */
+  beforeSubmit?: () => Promise<boolean>
+}
+
+export class TransactionalEmailAdmissionError extends NonRetryableJobError {
+  constructor() { super('Transactional email recipient is no longer authorized') }
 }
 
 const acceptedResponseSchema = z.object({
@@ -130,10 +138,24 @@ async function submitOne(input: TransactionalEmailInput, recipient: string, mult
     contentHash: createHash('sha256').update(JSON.stringify(body)).digest('hex'),
   })
   if (!claim.claimed) {
+    if (['submitting', 'pending', 'ambiguous'].includes(claim.delivery.status)) throw new YodevMailAmbiguousError()
+    if (!['accepted', 'sent', 'delivered'].includes(claim.delivery.status)) throw new NonRetryableJobError('Transactional email has a terminal unsuccessful outcome')
     return { provider: 'yodev_mail' as const, providerMessageId: claim.delivery.providerMessageId, status: claim.delivery.status }
   }
 
   let response: Response
+  if (input.beforeSubmit) {
+    let allowed: boolean
+    try { allowed = await input.beforeSubmit() }
+    catch (error) {
+      await markTransactionalEmailFailure(claim.delivery.id, claim.mayHaveBeenSubmitted ? 'ambiguous' : 'pending', 'recipient_check_unavailable')
+      throw error
+    }
+    if (!allowed) {
+      await markTransactionalEmailFailure(claim.delivery.id, claim.mayHaveBeenSubmitted ? 'ambiguous' : 'failed', 'recipient_no_longer_authorized')
+      throw new TransactionalEmailAdmissionError()
+    }
+  }
   try {
     response = await fetch(`${apiUrl}/v1/emails`, {
       method: 'POST',
@@ -143,7 +165,7 @@ async function submitOne(input: TransactionalEmailInput, recipient: string, mult
         'idempotency-key': businessKey,
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
+      signal: workSignal(15_000),
     })
   } catch (error) {
     await markTransactionalEmailFailure(claim.delivery.id, 'ambiguous', error)
@@ -170,6 +192,8 @@ async function submitOne(input: TransactionalEmailInput, recipient: string, mult
     throw new YodevMailAmbiguousError()
   }
   await markTransactionalEmailAccepted(claim.delivery.id, parsed.data.data.id, parsed.data.data.status)
+  if (parsed.data.data.status === 'unknown') throw new YodevMailAmbiguousError()
+  if (['soft_bounced', 'hard_bounced', 'complained', 'suppressed', 'failed'].includes(parsed.data.data.status)) throw new NonRetryableJobError('Transactional email has a terminal unsuccessful outcome')
   return { provider: 'yodev_mail' as const, providerMessageId: parsed.data.data.id, status: parsed.data.data.status }
 }
 
@@ -181,5 +205,6 @@ export async function sendTransactionalEmail(input: TransactionalEmailInput) {
     provider: 'yodev_mail' as const,
     providerMessageId: deliveries.length === 1 ? deliveries[0].providerMessageId : null,
     providerMessageIds: deliveries.map((delivery) => delivery.providerMessageId).filter((id): id is string => Boolean(id)),
+    deliveries,
   }
 }

@@ -1,12 +1,12 @@
 import 'server-only'
 
-import { and, count, desc, eq, gt, gte, isNotNull, isNull, lte, sql, sum } from 'drizzle-orm'
+import { and, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, sql, sum } from 'drizzle-orm'
+import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 import {
   alertIncidents,
   apiKeys,
-  approvalComments,
   approvalRequests,
   auditEvents,
   clients,
@@ -19,7 +19,6 @@ import {
   googleChangeEvents,
   jobs,
   monitoringAgents,
-  mutationObservations,
   memberNotificationPreferences,
   notificationChannels,
   offlineConversionDiagnostics,
@@ -27,20 +26,19 @@ import {
   reportSchedules,
   reportTemplates,
   safetyPolicies,
-  secretRevelations,
   shareLinks,
-  supportMessages,
-  supportTickets,
-  taskComments,
-  workspaceTasks,
   workspaceDomains,
   workspaces,
 } from '@/db/schema'
+import type { ClientAlertSummary } from '@/lib/dashboard-health'
 import { hashToken } from '@/lib/tokens'
+import { reportCalendarWindow, shiftCalendarDate } from '@/lib/calendar-window'
+import { metricCoverage } from '@/lib/metric-coverage'
 import { computePacing, pacingCalendar } from '@/lib/pacing'
 import { workspaceHasCapability } from '@/lib/entitlements'
-import { insertActivationMilestone } from '@/lib/activation'
-import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+export { saveWorkspaceGoogleConnection, googleConnectionVersion } from '@/lib/google-connection-management'
+
+export { consumeWorkspaceSecretRevelation } from '@/lib/secret-revelation'
 
 export { getPublicShare, publicHostBelongsToWorkspace } from '@/lib/public-share-repository'
 
@@ -54,56 +52,6 @@ export async function getWorkspaceConnection(workspaceId: string) {
   }))
 }
 
-export function saveWorkspaceGoogleConnection(input: {
-  workspaceId: string
-  userId: string
-  managerCustomerId: string
-  googleEmail: string | null
-  encryptedRefreshToken: string
-  scopes: string[]
-}) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.userId }, async (db) => {
-    await lockWorkspaceEntitlements(db, input.workspaceId, 'google.read')
-    const [connection] = await db
-      .insert(googleAdsConnections)
-      .values({
-        workspaceId: input.workspaceId,
-        managerCustomerId: input.managerCustomerId,
-        googleEmail: input.googleEmail,
-        encryptedRefreshToken: input.encryptedRefreshToken,
-        scopes: input.scopes,
-        connectedBy: input.userId,
-      })
-      .onConflictDoUpdate({
-        target: googleAdsConnections.workspaceId,
-        set: {
-          managerCustomerId: input.managerCustomerId,
-          googleEmail: input.googleEmail,
-          encryptedRefreshToken: input.encryptedRefreshToken,
-          scopes: input.scopes,
-          connectedBy: input.userId,
-          status: 'active',
-          updatedAt: new Date(),
-        },
-      })
-      .returning()
-    await db.insert(auditEvents).values({
-      workspaceId: input.workspaceId,
-      actorUserId: input.userId,
-      action: 'google_ads.connected',
-      entityType: 'google_ads_connection',
-      entityId: connection.id,
-      metadata: { managerCustomerId: input.managerCustomerId, googleEmail: input.googleEmail },
-    })
-    await insertActivationMilestone(db, {
-      workspaceId: input.workspaceId,
-      milestone: 'google_connected',
-      actorUserId: input.userId,
-      sourceEntityId: connection.id,
-    })
-    return connection
-  })
-}
 
 export async function listWorkspaceClients(workspaceId: string) {
   return tenantRead(workspaceId, (db) => db.query.clients.findMany({
@@ -132,22 +80,6 @@ export function getDownloadableWorkspaceExport(workspaceId: string, userId: stri
   }))
 }
 
-export function consumeWorkspaceSecretRevelation(workspaceId: string, userId: string, revelationId: string) {
-  return withTenantTransaction({ workspaceId, userId }, async (db) => {
-    const [revelation] = await db
-      .update(secretRevelations)
-      .set({ revealedAt: new Date() })
-      .where(and(
-        eq(secretRevelations.id, revelationId),
-        eq(secretRevelations.workspaceId, workspaceId),
-        eq(secretRevelations.userId, userId),
-        isNull(secretRevelations.revealedAt),
-        gt(secretRevelations.expiresAt, new Date()),
-      ))
-      .returning({ encryptedSecret: secretRevelations.encryptedSecret })
-    return revelation
-  })
-}
 
 export async function listWorkspaceDeadLetters(workspaceId: string) {
   return tenantRead(workspaceId, (db) => db.query.jobs.findMany({
@@ -184,11 +116,12 @@ export async function activeWorkspaceOrigin(workspaceId: string) {
 }
 
 export async function getWorkspaceClient(workspaceId: string, clientId?: string) {
-  if (clientId) {
+  if (clientId !== undefined) {
+    if (!z.string().uuid().safeParse(clientId).success) return undefined
     const selected = await tenantRead(workspaceId, (db) => db.query.clients.findFirst({
-      where: and(eq(clients.workspaceId, workspaceId), eq(clients.id, clientId), eq(clients.active, true)),
+      where: and(eq(clients.workspaceId, workspaceId), eq(clients.id, clientId), eq(clients.active, true), eq(clients.isManager, false)),
     }))
-    if (selected) return selected
+    return selected
   }
   return tenantRead(workspaceId, (db) => db.query.clients.findFirst({
     where: and(eq(clients.workspaceId, workspaceId), eq(clients.active, true), eq(clients.isManager, false)),
@@ -265,50 +198,6 @@ export async function listClientTimeline(workspaceId: string, clientId: string) 
   })
 }
 
-export async function listApprovals(workspaceId: string) {
-  return tenantRead(workspaceId, async (db) => {
-  const rows = await db
-      .select({ request: approvalRequests, client: clients })
-      .from(approvalRequests)
-      .innerJoin(clients, and(eq(clients.id, approvalRequests.clientId), eq(clients.workspaceId, workspaceId)))
-      .where(eq(approvalRequests.workspaceId, workspaceId))
-      .orderBy(desc(approvalRequests.createdAt))
-      .limit(100)
-  const comments = await db.query.approvalComments.findMany({
-      where: eq(approvalComments.workspaceId, workspaceId),
-      orderBy: [approvalComments.createdAt],
-    })
-  const clientFeedback = await db.query.clientApprovalFeedback.findMany({
-      where: eq(clientApprovalFeedback.workspaceId, workspaceId),
-      orderBy: [desc(clientApprovalFeedback.createdAt)],
-    })
-  const observations = await db.query.mutationObservations.findMany({
-      where: eq(mutationObservations.workspaceId, workspaceId),
-      orderBy: [desc(mutationObservations.createdAt)],
-    })
-  const commentsByApproval = new Map<string, typeof comments>()
-  for (const comment of comments) {
-    commentsByApproval.set(comment.approvalId, [...(commentsByApproval.get(comment.approvalId) ?? []), comment])
-  }
-  const feedbackByApproval = new Map(clientFeedback.map((feedback) => [feedback.approvalId, feedback]))
-  const observationByApproval = new Map(observations.map((observation) => [observation.approvalId, observation]))
-  return rows.map((row) => ({
-    ...row,
-    comments: commentsByApproval.get(row.request.id) ?? [],
-    clientFeedback: feedbackByApproval.get(row.request.id),
-    observation: observationByApproval.get(row.request.id),
-  }))
-  })
-}
-
-export async function listAuditEvents(workspaceId: string) {
-  return tenantRead(workspaceId, (db) => db.query.auditEvents.findMany({
-    where: eq(auditEvents.workspaceId, workspaceId),
-    orderBy: [desc(auditEvents.createdAt)],
-    limit: 150,
-  }))
-}
-
 export async function listMonitoringAgents(workspaceId: string) {
   return tenantRead(workspaceId, (db) => db
     .select({ agent: monitoringAgents, client: clients })
@@ -318,56 +207,16 @@ export async function listMonitoringAgents(workspaceId: string) {
     .orderBy(desc(monitoringAgents.createdAt)))
 }
 
-export async function listAlertIncidents(workspaceId: string) {
-  return tenantRead(workspaceId, (db) => db
-    .select({ incident: alertIncidents, client: clients, agent: monitoringAgents })
-    .from(alertIncidents)
-    .innerJoin(clients, eq(clients.id, alertIncidents.clientId))
-    .innerJoin(monitoringAgents, eq(monitoringAgents.id, alertIncidents.agentId))
-    .where(eq(alertIncidents.workspaceId, workspaceId))
-    .orderBy(desc(alertIncidents.detectedAt))
-    .limit(200))
-}
-
-export async function listWorkspaceTasks(workspaceId: string) {
+export async function getClientAlertSummary(workspaceId: string, clientId: string): Promise<ClientAlertSummary> {
   return tenantRead(workspaceId, async (db) => {
-    const rows = await db.select({ task: workspaceTasks, client: clients })
-        .from(workspaceTasks)
-        .leftJoin(clients, and(eq(clients.id, workspaceTasks.clientId), eq(clients.workspaceId, workspaceId)))
-        .where(eq(workspaceTasks.workspaceId, workspaceId))
-        .orderBy(workspaceTasks.status, workspaceTasks.dueAt, desc(workspaceTasks.createdAt))
-        .limit(300)
-    const comments = await db.query.taskComments.findMany({
-      where: eq(taskComments.workspaceId, workspaceId),
-      orderBy: [taskComments.createdAt],
-      limit: 2000,
-    })
-    const byTask = new Map<string, typeof comments>()
-    for (const comment of comments) byTask.set(comment.taskId, [...(byTask.get(comment.taskId) ?? []), comment])
-    return rows.map((row) => ({ ...row, comments: byTask.get(row.task.id) ?? [] }))
-  })
-}
-
-export async function listWorkspaceSupportTickets(workspaceId: string, requestedBy?: string) {
-  return tenantRead(workspaceId, async (db) => {
-    const tickets = await db.query.supportTickets.findMany({
-      where: and(
-        eq(supportTickets.workspaceId, workspaceId),
-        requestedBy ? eq(supportTickets.requestedBy, requestedBy) : undefined,
-      ),
-      orderBy: [desc(supportTickets.lastMessageAt)],
-      limit: 100,
-    })
-    const messages = await db.query.supportMessages.findMany({
-      where: and(eq(supportMessages.workspaceId, workspaceId), eq(supportMessages.internal, false)),
-      orderBy: [supportMessages.createdAt],
-      limit: 3000,
-    })
-    const byTicket = new Map<string, typeof messages>()
-    for (const supportMessage of messages) {
-      byTicket.set(supportMessage.ticketId, [...(byTicket.get(supportMessage.ticketId) ?? []), supportMessage])
-    }
-    return tickets.map((ticket) => ({ ticket, messages: byTicket.get(ticket.id) ?? [] }))
+    const [summary] = await db.select({
+      openCount: count(),
+      criticalCount: sql<number>`count(*) filter (where ${alertIncidents.severity} = 'critical')`.mapWith(Number),
+    }).from(alertIncidents).where(and(
+      eq(alertIncidents.workspaceId, workspaceId), eq(alertIncidents.clientId, clientId),
+      inArray(alertIncidents.status, ['open', 'reopened']),
+    ))
+    return { clientId, ...summary }
   })
 }
 
@@ -513,18 +362,37 @@ export async function getVerifiedReportRecipient(workspaceId: string, shareId: s
   }))
 }
 
+export function getQualifiedAccountPerformance(workspaceId: string, clientId: string) {
+  return tenantRead(workspaceId, async (db) => {
+    const client = await db.query.clients.findFirst({ where: and(eq(clients.workspaceId, workspaceId), eq(clients.id, clientId), eq(clients.active, true), eq(clients.isManager, false)) })
+    if (!client) throw new Error('Account performance is unavailable')
+    const window = reportCalendarWindow({ period: '30', now: new Date(), timezone: client.timezone })
+    const rows = await db.query.dailyAccountMetrics.findMany({ where: and(eq(dailyAccountMetrics.workspaceId, workspaceId), eq(dailyAccountMetrics.clientId, clientId),
+      gte(dailyAccountMetrics.metricDate, window.from), lte(dailyAccountMetrics.metricDate, window.through)) })
+    const coverage = metricCoverage({ window, timezone: client.timezone, currencyCode: client.currencyCode, rows })
+    if (coverage.state !== 'complete') return { window, coverage, totals: null }
+    const totals = rows.reduce((sum, row) => ({ cost: sum.cost + BigInt(row.costMicros), clicks: sum.clicks + BigInt(row.clicks), impressions: sum.impressions + BigInt(row.impressions), conversions: sum.conversions + Number(row.conversions) }),
+      { cost: BigInt(0), clicks: BigInt(0), impressions: BigInt(0), conversions: 0 })
+    return { window, coverage, totals: { cost: totals.cost.toString(), clicks: totals.clicks.toString(), impressions: totals.impressions.toString(), conversions: totals.conversions } }
+  })
+}
+
 export async function getClientGoalAndPacing(workspaceId: string, clientId: string, timezone: string) {
   return tenantRead(workspaceId, async (db) => {
     const goal = await db.query.clientGoals.findFirst({
       where: and(eq(clientGoals.workspaceId, workspaceId), eq(clientGoals.clientId, clientId)),
     })
     if (!goal) return { goal: undefined, pacing: undefined }
-    const calendar = pacingCalendar(new Date(), timezone)
+    const currentCalendar = pacingCalendar(new Date(), timezone)
+    const calendar = { ...currentCalendar, through: shiftCalendarDate(currentCalendar.through, -1), elapsedDays: currentCalendar.elapsedDays - 1 }
     const [metrics] = await db.select({ observedDays: count(), spendMicros: sum(dailyAccountMetrics.costMicros) })
       .from(dailyAccountMetrics)
       .where(and(
         eq(dailyAccountMetrics.workspaceId, workspaceId),
         eq(dailyAccountMetrics.clientId, clientId),
+        eq(dailyAccountMetrics.timezone, timezone),
+        eq(dailyAccountMetrics.coverageStatus, 'complete'),
+        isNotNull(dailyAccountMetrics.sourceVersion),
         gte(dailyAccountMetrics.metricDate, calendar.from),
         lte(dailyAccountMetrics.metricDate, calendar.through),
       ))

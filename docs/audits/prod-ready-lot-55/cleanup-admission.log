@@ -1,0 +1,1 @@
+{"ok":true,"verified":["nine_job_and_payload_denials","missing_tombstone_and_incomplete_receipt_denied","job_row_wait_rechecks_attempt","tombstone_wait_rechecks_expiry","successor_receipt_not_overwritten","expired_attempt_stops_404_followup","two_post_write_expiry_rollbacks","confirmed_receipt_replay_without_provider"],"realProviderCalls":0}

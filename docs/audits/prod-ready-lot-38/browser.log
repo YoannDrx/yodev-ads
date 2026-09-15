@@ -1,0 +1,199 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/security-actors-local.spec.ts e2e/settings-actors-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 297ms
+✓ Running next.config.ts took 395ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 3.2s (next.js: 2.3s, proxy.ts: 218ms, application-code: 700ms)
+ GET /sign-in 200 in 54ms (next.js: 9ms, proxy.ts: 5ms, application-code: 40ms)
+ POST /api/auth/sign-in/email 200 in 940ms (next.js: 752ms, proxy.ts: 3ms, application-code: 185ms)
+ POST /api/auth/sign-in/email 200 in 86ms (next.js: 3ms, proxy.ts: 3ms, application-code: 79ms)
+ POST /api/auth/sign-in/email 200 in 80ms (next.js: 2ms, proxy.ts: 3ms, application-code: 75ms)
+ POST /api/auth/sign-in/email 200 in 80ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 76ms)
+ POST /api/auth/sign-in/email 200 in 79ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 75ms)
+ GET /dashboard 200 in 542ms (next.js: 199ms, proxy.ts: 3ms, application-code: 340ms)
+ GET /settings 200 in 286ms (next.js: 33ms, proxy.ts: 3ms, application-code: 250ms)
+ GET /billing 200 in 219ms (next.js: 18ms, proxy.ts: 2ms, application-code: 199ms)
+ GET /support 200 in 353ms (next.js: 36ms, proxy.ts: 4ms, application-code: 313ms)
+ GET /accounts 200 in 299ms (next.js: 41ms, proxy.ts: 10ms, application-code: 248ms)
+ GET /history 200 in 406ms (next.js: 42ms, proxy.ts: 7ms, application-code: 358ms)
+ GET / 200 in 201ms (next.js: 65ms, proxy.ts: 24ms, application-code: 112ms)
+ GET /alerts 200 in 219ms (next.js: 35ms, proxy.ts: 5ms, application-code: 179ms)
+ GET /tasks 200 in 604ms (next.js: 47ms, proxy.ts: 13ms, application-code: 544ms)
+ GET /icon?a62dacc6b033a714 200 in 223ms (next.js: 92ms, proxy.ts: 4ms, application-code: 127ms)
+ GET /approvals 200 in 168ms (next.js: 23ms, proxy.ts: 6ms, application-code: 139ms)
+ GET /reports 200 in 288ms (next.js: 17ms, proxy.ts: 2ms, application-code: 269ms)
+ GET /audit 200 in 183ms (next.js: 19ms, proxy.ts: 2ms, application-code: 162ms)
+ GET /agents 200 in 229ms (next.js: 27ms, proxy.ts: 2ms, application-code: 200ms)
+ GET / 200 in 109ms (next.js: 2ms, proxy.ts: 3ms, application-code: 104ms)
+ GET /privacy 200 in 52ms (next.js: 12ms, proxy.ts: 2ms, application-code: 38ms)
+ GET /terms 200 in 47ms (next.js: 12ms, proxy.ts: 2ms, application-code: 33ms)
+ GET /subprocessors 200 in 97ms (next.js: 30ms, proxy.ts: 1.9ms, application-code: 65ms)
+ GET /status 200 in 85ms (next.js: 25ms, proxy.ts: 1.8ms, application-code: 59ms)
+ GET /sign-in 200 in 35ms (next.js: 5ms, proxy.ts: 2.0ms, application-code: 28ms)
+ GET /sign-up 200 in 306ms (next.js: 267ms, proxy.ts: 2ms, application-code: 36ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-9CUnM9
+
+Running 4 tests using 1 worker
+
+(node:80462) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /settings 200 in 225ms (next.js: 3ms, proxy.ts: 5ms, application-code: 217ms)
+ GET /api/auth/get-session 200 in 36ms (next.js: 7ms, proxy.ts: 4ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 40ms (next.js: 15ms, proxy.ts: 3ms, application-code: 22ms)
+ GET /settings?notice=Cl%C3%A9+cr%C3%A9%C3%A9e.+R%C3%A9v%C3%A9lez-la+une+seule+fois+dans+les+cinq+prochaines+minutes.&reveal=api-key 200 in 116ms (next.js: 4ms, proxy.ts: 3ms, application-code: 109ms)
+ POST /settings 200 in 156ms (next.js: 2ms, proxy.ts: 3ms, application-code: 151ms)
+  └─ ƒ createAgencyApiKey({}) in 19ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 133ms (next.js: 99ms, proxy.ts: 4ms, application-code: 31ms)
+ POST /api/secret-revelation 404 in 15ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /settings 200 in 222ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 218ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 5ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 9ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /settings?notice=Cl%C3%A9+API+r%C3%A9voqu%C3%A9e. 200 in 105ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 101ms)
+ POST /settings 200 in 129ms (next.js: 2ms, proxy.ts: 4ms, application-code: 123ms)
+  └─ ƒ revokeAgencyApiKey({}) in 11ms src/app/actions.ts
+ GET /settings?notice=Canal+de+notification+ajout%C3%A9. 200 in 85ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 81ms)
+ POST /settings?notice=Cl%C3%A9%20API%20r%C3%A9voqu%C3%A9e. 200 in 108ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 103ms)
+  └─ ƒ createNotificationChannel({}) in 12ms src/app/actions.ts
+ GET /settings?notice=Canal+d%C3%A9sactiv%C3%A9. 200 in 96ms (next.js: 4ms, proxy.ts: 3ms, application-code: 90ms)
+ POST /settings?notice=Canal%20de%20notification%20ajout%C3%A9. 200 in 136ms (next.js: 2.0ms, proxy.ts: 4ms, application-code: 130ms)
+  └─ ƒ disableNotificationChannel({}) in 26ms src/app/actions.ts
+ GET /settings?notice=R%C3%A8gles+de+s%C3%A9curit%C3%A9+enregistr%C3%A9es. 200 in 86ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 82ms)
+ POST /settings?notice=Canal%20d%C3%A9sactiv%C3%A9. 200 in 114ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 110ms)
+  └─ ƒ updateSafetyRules({}) in 18ms src/app/actions.ts
+ GET /settings?notice=Le+job+sera+r%C3%A9ex%C3%A9cut%C3%A9+par+le+prochain+worker+disponible. 200 in 79ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 76ms)
+ POST /settings?notice=R%C3%A8gles%20de%20s%C3%A9curit%C3%A9%20enregistr%C3%A9es. 200 in 100ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 95ms)
+  └─ ƒ retryDeadLetterJob({}) in 11ms src/app/actions.ts
+ GET /settings 200 in 202ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 198ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 5ms, proxy.ts: 3ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 12ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 50ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 46ms)
+ POST /settings 200 in 71ms (next.js: 3ms, proxy.ts: 3ms, application-code: 65ms)
+  └─ ƒ createNotificationChannel({}) in 8ms src/app/actions.ts
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 63ms (next.js: 2ms, proxy.ts: 2ms, application-code: 58ms)
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 52ms (next.js: 4ms, proxy.ts: 6ms, application-code: 42ms)
+  ✓  1 [chromium] › e2e/security-actors-local.spec.ts:6:7 › security actor fr manages resources and rejects obsolete authority (4.0s)
+ GET /settings 200 in 233ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 229ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /settings?notice=Cl%C3%A9+cr%C3%A9%C3%A9e.+R%C3%A9v%C3%A9lez-la+une+seule+fois+dans+les+cinq+prochaines+minutes.&reveal=api-key 200 in 126ms (next.js: 4ms, proxy.ts: 3ms, application-code: 118ms)
+ POST /settings 200 in 160ms (next.js: 5ms, proxy.ts: 4ms, application-code: 152ms)
+  └─ ƒ createAgencyApiKey({}) in 16ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 15ms (next.js: 1.3ms, proxy.ts: 3ms, application-code: 11ms)
+ POST /api/secret-revelation 404 in 11ms (next.js: 1.3ms, proxy.ts: 1.9ms, application-code: 8ms)
+ GET /settings 200 in 253ms (next.js: 1.8ms, proxy.ts: 2.0ms, application-code: 249ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 12ms, proxy.ts: 5ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 16ms, proxy.ts: 5ms, application-code: 12ms)
+ GET /settings?notice=Cl%C3%A9+API+r%C3%A9voqu%C3%A9e. 200 in 129ms (next.js: 2ms, proxy.ts: 2ms, application-code: 124ms)
+ POST /settings 200 in 171ms (next.js: 3ms, proxy.ts: 5ms, application-code: 163ms)
+  └─ ƒ revokeAgencyApiKey({}) in 24ms src/app/actions.ts
+ GET /settings?notice=Canal+de+notification+ajout%C3%A9. 200 in 112ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 108ms)
+ POST /settings?notice=Cl%C3%A9%20API%20r%C3%A9voqu%C3%A9e. 200 in 134ms (next.js: 2ms, proxy.ts: 3ms, application-code: 129ms)
+  └─ ƒ createNotificationChannel({}) in 11ms src/app/actions.ts
+ GET /settings?notice=Canal+d%C3%A9sactiv%C3%A9. 200 in 91ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 87ms)
+ POST /settings?notice=Canal%20de%20notification%20ajout%C3%A9. 200 in 112ms (next.js: 2ms, proxy.ts: 3ms, application-code: 108ms)
+  └─ ƒ disableNotificationChannel({}) in 10ms src/app/actions.ts
+ GET /settings?notice=R%C3%A8gles+de+s%C3%A9curit%C3%A9+enregistr%C3%A9es. 200 in 85ms (next.js: 2ms, proxy.ts: 2ms, application-code: 80ms)
+ POST /settings?notice=Canal%20d%C3%A9sactiv%C3%A9. 200 in 120ms (next.js: 2ms, proxy.ts: 3ms, application-code: 115ms)
+  └─ ƒ updateSafetyRules({}) in 24ms src/app/actions.ts
+ GET /settings?notice=Le+job+sera+r%C3%A9ex%C3%A9cut%C3%A9+par+le+prochain+worker+disponible. 200 in 91ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 87ms)
+ POST /settings?notice=R%C3%A8gles%20de%20s%C3%A9curit%C3%A9%20enregistr%C3%A9es. 200 in 111ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 107ms)
+  └─ ƒ retryDeadLetterJob({}) in 10ms src/app/actions.ts
+ GET /settings 200 in 204ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 200ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 8ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 50ms (next.js: 4ms, proxy.ts: 2ms, application-code: 44ms)
+ POST /settings 200 in 72ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 68ms)
+  └─ ƒ createNotificationChannel({}) in 12ms src/app/actions.ts
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 74ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 69ms)
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 56ms (next.js: 3ms, proxy.ts: 5ms, application-code: 48ms)
+  ✓  2 [chromium] › e2e/security-actors-local.spec.ts:6:7 › security actor en manages resources and rejects obsolete authority (3.3s)
+ GET /settings 200 in 236ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 232ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 8ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /settings?notice=Workspace+language+updated. 200 in 101ms (next.js: 4ms, proxy.ts: 2ms, application-code: 95ms)
+ POST /settings 200 in 125ms (next.js: 3ms, proxy.ts: 3ms, application-code: 119ms)
+  └─ ƒ updateWorkspaceLocale({}) in 11ms src/app/actions.ts
+ GET /settings?notice=Langue+de+l%E2%80%99espace+mise+%C3%A0+jour. 200 in 104ms (next.js: 1.9ms, proxy.ts: 9ms, application-code: 93ms)
+ POST /settings?notice=Workspace%20language%20updated. 200 in 126ms (next.js: 2ms, proxy.ts: 3ms, application-code: 121ms)
+  └─ ƒ updateWorkspaceLocale({}) in 10ms src/app/actions.ts
+ GET /settings?notice=Politique+d%E2%80%99approbation+mise+%C3%A0+jour. 200 in 114ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 110ms)
+ POST /settings?notice=Langue%20de%20l%E2%80%99espace%20mise%20%C3%A0%20jour. 200 in 135ms (next.js: 2ms, proxy.ts: 3ms, application-code: 130ms)
+  └─ ƒ updateApprovalPolicy({}) in 10ms src/app/actions.ts
+ GET /settings?notice=Identit%C3%A9+de+marque+enregistr%C3%A9e. 200 in 83ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 79ms)
+ POST /settings?notice=Politique%20d%E2%80%99approbation%20mise%20%C3%A0%20jour. 200 in 101ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 95ms)
+  └─ ƒ updateBranding({}) in 8ms src/app/actions.ts
+ GET /settings?error=Capability+required%3A+approvals.dual 200 in 98ms (next.js: 2ms, proxy.ts: 2ms, application-code: 94ms)
+ POST /settings?notice=Identit%C3%A9%20de%20marque%20enregistr%C3%A9e. 200 in 116ms (next.js: 2ms, proxy.ts: 3ms, application-code: 111ms)
+  └─ ƒ updateApprovalPolicy({}) in 7ms src/app/actions.ts
+ GET /settings 200 in 197ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 193ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 50ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 46ms)
+ POST /settings 200 in 66ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 62ms)
+  └─ ƒ updateBranding({}) in 6ms src/app/actions.ts
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 78ms (next.js: 3ms, proxy.ts: 2ms, application-code: 73ms)
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 60ms (next.js: 5ms, proxy.ts: 6ms, application-code: 49ms)
+ GET /settings 307 in 96ms (next.js: 2ms, proxy.ts: 2ms, application-code: 91ms)
+ GET /portfolio 200 in 205ms (next.js: 22ms, proxy.ts: 2ms, application-code: 181ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 8ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 14ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /portfolio?view_notice=unavailable 200 in 58ms (next.js: 1.8ms, proxy.ts: 2.0ms, application-code: 55ms)
+ POST /portfolio 200 in 79ms (next.js: 3ms, proxy.ts: 4ms, application-code: 73ms)
+  └─ ƒ storePortfolioView({}) in 7ms src/app/portfolio-actions.ts
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 57ms (next.js: 6ms, proxy.ts: 6ms, application-code: 46ms)
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 87ms (next.js: 3ms, proxy.ts: 2ms, application-code: 82ms)
+ GET /portfolio 307 in 82ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 78ms)
+  ✓  3 [chromium] › e2e/settings-actors-local.spec.ts:6:7 › settings actor fr saves current policy and rejects downgraded or revoked forms (3.6s)
+ GET /settings 200 in 229ms (next.js: 3ms, proxy.ts: 3ms, application-code: 224ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 11ms, proxy.ts: 4ms, application-code: 9ms)
+ GET /settings?notice=Langue+de+l%E2%80%99espace+mise+%C3%A0+jour. 200 in 121ms (next.js: 13ms, proxy.ts: 4ms, application-code: 105ms)
+ POST /settings 200 in 146ms (next.js: 3ms, proxy.ts: 3ms, application-code: 140ms)
+  └─ ƒ updateWorkspaceLocale({}) in 10ms src/app/actions.ts
+ GET /settings?notice=Workspace+language+updated. 200 in 98ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 94ms)
+ POST /settings?notice=Langue%20de%20l%E2%80%99espace%20mise%20%C3%A0%20jour. 200 in 117ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 113ms)
+  └─ ƒ updateWorkspaceLocale({}) in 9ms src/app/actions.ts
+ GET /settings?notice=Approval+policy+updated. 200 in 107ms (next.js: 2ms, proxy.ts: 3ms, application-code: 102ms)
+ POST /settings?notice=Workspace%20language%20updated. 200 in 142ms (next.js: 8ms, proxy.ts: 7ms, application-code: 126ms)
+  └─ ƒ updateApprovalPolicy({}) in 11ms src/app/actions.ts
+ GET /settings?notice=Identit%C3%A9+de+marque+enregistr%C3%A9e. 200 in 84ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 80ms)
+ POST /settings?notice=Approval%20policy%20updated. 200 in 108ms (next.js: 2ms, proxy.ts: 3ms, application-code: 104ms)
+  └─ ƒ updateBranding({}) in 14ms src/app/actions.ts
+ GET /settings?error=Capability+required%3A+approvals.dual 200 in 111ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 107ms)
+ POST /settings?notice=Identit%C3%A9%20de%20marque%20enregistr%C3%A9e. 200 in 128ms (next.js: 2ms, proxy.ts: 3ms, application-code: 123ms)
+  └─ ƒ updateApprovalPolicy({}) in 7ms src/app/actions.ts
+ GET /settings 200 in 224ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 220ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 11ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 51ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 47ms)
+ POST /settings 200 in 71ms (next.js: 2ms, proxy.ts: 3ms, application-code: 66ms)
+  └─ ƒ updateBranding({}) in 8ms src/app/actions.ts
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 66ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 62ms)
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 56ms (next.js: 4ms, proxy.ts: 5ms, application-code: 47ms)
+ GET /settings 307 in 103ms (next.js: 6ms, proxy.ts: 6ms, application-code: 90ms)
+ GET /portfolio 200 in 180ms (next.js: 2ms, proxy.ts: 3ms, application-code: 175ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 9ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /portfolio?view_notice=unavailable 200 in 45ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 41ms)
+ POST /portfolio 200 in 63ms (next.js: 2ms, proxy.ts: 3ms, application-code: 58ms)
+  └─ ƒ storePortfolioView({}) in 7ms src/app/portfolio-actions.ts
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 88ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 83ms)
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 70ms (next.js: 13ms, proxy.ts: 5ms, application-code: 52ms)
+ GET /portfolio 307 in 95ms (next.js: 13ms, proxy.ts: 3ms, application-code: 78ms)
+  ✓  4 [chromium] › e2e/settings-actors-local.spec.ts:6:7 › settings actor en saves current policy and rejects downgraded or revoked forms (3.4s)
+
+  4 passed (15.0s)
+{"ok":true,"cleaned":"local-browser-fixtures"}

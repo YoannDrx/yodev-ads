@@ -1,0 +1,99 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep managed account selection
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 252ms
+✓ Running next.config.ts took 441ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1742ms (next.js: 1292ms, proxy.ts: 157ms, application-code: 294ms)
+ POST /api/auth/sign-in/email 200 in 1101ms (next.js: 808ms, proxy.ts: 4ms, application-code: 288ms)
+ POST /api/auth/sign-in/email 200 in 170ms (next.js: 20ms, proxy.ts: 23ms, application-code: 127ms)
+ GET /sign-in 200 in 116ms (next.js: 38ms, proxy.ts: 15ms, application-code: 63ms)
+ POST /api/auth/sign-in/email 200 in 242ms (next.js: 6ms, proxy.ts: 24ms, application-code: 212ms)
+ POST /api/auth/sign-in/email 200 in 256ms (next.js: 3ms, proxy.ts: 4ms, application-code: 249ms)
+ GET /icon?a62dacc6b033a714 200 in 183ms (next.js: 42ms, proxy.ts: 7ms, application-code: 135ms)
+ POST /api/auth/sign-in/email 200 in 87ms (next.js: 4ms, proxy.ts: 3ms, application-code: 80ms)
+ GET /dashboard 200 in 481ms (next.js: 194ms, proxy.ts: 3ms, application-code: 284ms)
+ GET /settings 200 in 237ms (next.js: 28ms, proxy.ts: 4ms, application-code: 205ms)
+ GET /billing 200 in 174ms (next.js: 25ms, proxy.ts: 1.9ms, application-code: 147ms)
+ GET /support 200 in 143ms (next.js: 25ms, proxy.ts: 1.7ms, application-code: 116ms)
+ GET /accounts 200 in 129ms (next.js: 13ms, proxy.ts: 2ms, application-code: 114ms)
+ GET /history 200 in 135ms (next.js: 13ms, proxy.ts: 1.7ms, application-code: 120ms)
+ GET /alerts 200 in 140ms (next.js: 26ms, proxy.ts: 1.9ms, application-code: 112ms)
+ GET /tasks 200 in 158ms (next.js: 26ms, proxy.ts: 1.8ms, application-code: 130ms)
+ GET /approvals 200 in 154ms (next.js: 43ms, proxy.ts: 1.9ms, application-code: 109ms)
+ GET /reports 200 in 163ms (next.js: 41ms, proxy.ts: 1.6ms, application-code: 120ms)
+ GET /audit 200 in 133ms (next.js: 21ms, proxy.ts: 1.8ms, application-code: 110ms)
+ GET /agents 200 in 215ms (next.js: 42ms, proxy.ts: 2ms, application-code: 170ms)
+ GET / 200 in 95ms (next.js: 17ms, proxy.ts: 1.9ms, application-code: 76ms)
+ GET /privacy 200 in 48ms (next.js: 11ms, proxy.ts: 1.9ms, application-code: 36ms)
+ GET /terms 200 in 43ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 31ms)
+ GET /subprocessors 200 in 96ms (next.js: 38ms, proxy.ts: 1.7ms, application-code: 57ms)
+ GET /status 200 in 89ms (next.js: 32ms, proxy.ts: 1.8ms, application-code: 55ms)
+ GET /sign-in 200 in 33ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 28ms)
+ GET /sign-up 200 in 299ms (next.js: 270ms, proxy.ts: 1.9ms, application-code: 27ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-DK2DUi
+
+Running 2 tests using 1 worker
+
+(node:78967) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /billing 200 in 192ms (next.js: 2ms, proxy.ts: 2ms, application-code: 188ms)
+ GET /api/auth/get-session 200 in 96ms (next.js: 55ms, proxy.ts: 12ms, application-code: 29ms)
+ GET /api/auth/organization/list 200 in 100ms (next.js: 58ms, proxy.ts: 12ms, application-code: 29ms)
+ GET /accounts 200 in 139ms (next.js: 2ms, proxy.ts: 2ms, application-code: 134ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 4ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 7ms, proxy.ts: 3ms, application-code: 16ms)
+ POST /accounts 200 in 65ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 61ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /accounts?selection=saved 200 in 49ms (next.js: 1.5ms, proxy.ts: 1.8ms, application-code: 46ms)
+ POST /accounts 200 in 72ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 68ms)
+  └─ ƒ updateManagedAccounts({}) in 12ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 56ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 52ms)
+ POST /accounts?selection=saved 200 in 83ms (next.js: 4ms, proxy.ts: 5ms, application-code: 74ms)
+  └─ ƒ updateManagedAccounts({}) in 10ms src/app/account-selection-actions.ts
+ GET /accounts?selection=conflict 200 in 55ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 51ms)
+ POST /accounts?selection=saved 200 in 77ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 71ms)
+  └─ ƒ updateManagedAccounts({}) in 9ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 55ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 52ms)
+ POST /accounts?selection=conflict 200 in 73ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 69ms)
+  └─ ƒ updateManagedAccounts({}) in 9ms src/app/account-selection-actions.ts
+ GET /accounts 200 in 99ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 95ms)
+  ✓  1 [chromium] › e2e/prod-ready-local.spec.ts:23:44 › local production readiness regression journeys › managed account selection preserves priorities and enforces quota in fr (2.7s)
+ GET /billing 200 in 148ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 144ms)
+ GET /api/auth/get-session 200 in 95ms (next.js: 55ms, proxy.ts: 16ms, application-code: 24ms)
+ GET /api/auth/organization/list 200 in 99ms (next.js: 58ms, proxy.ts: 16ms, application-code: 26ms)
+ GET /accounts 200 in 142ms (next.js: 3ms, proxy.ts: 2ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 4ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 19ms (next.js: 6ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /accounts 200 in 65ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 59ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /accounts?selection=saved 200 in 53ms (next.js: 2ms, proxy.ts: 2ms, application-code: 49ms)
+ POST /accounts 200 in 73ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 68ms)
+  └─ ƒ updateManagedAccounts({}) in 10ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 55ms (next.js: 1.5ms, proxy.ts: 2.0ms, application-code: 52ms)
+ POST /accounts?selection=saved 200 in 75ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 71ms)
+  └─ ƒ updateManagedAccounts({}) in 10ms src/app/account-selection-actions.ts
+ GET /accounts?selection=conflict 200 in 55ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 51ms)
+ POST /accounts?selection=saved 200 in 74ms (next.js: 2ms, proxy.ts: 4ms, application-code: 68ms)
+  └─ ƒ updateManagedAccounts({}) in 7ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 48ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 45ms)
+ POST /accounts?selection=conflict 200 in 66ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 62ms)
+  └─ ƒ updateManagedAccounts({}) in 9ms src/app/account-selection-actions.ts
+ GET /accounts 200 in 111ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 108ms)
+  ✓  2 [chromium] › e2e/prod-ready-local.spec.ts:23:44 › local production readiness regression journeys › managed account selection preserves priorities and enforces quota in en (2.5s)
+
+  2 passed (5.8s)
+[?25h
+{"ok":true,"cleaned":"local-browser-fixtures"}

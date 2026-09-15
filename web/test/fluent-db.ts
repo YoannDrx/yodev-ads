@@ -1,6 +1,7 @@
 export type DatabaseDoubleCapture = {
   sets: unknown[]
   values: unknown[]
+  conflicts: unknown[]
 }
 
 type FluentStatement = Record<string | symbol, unknown>
@@ -16,6 +17,7 @@ function fluentStatement(result: unknown, capture: DatabaseDoubleCapture): Fluen
       return (...args: unknown[]) => {
         if (property === 'set') capture.sets.push(args[0])
         if (property === 'values') capture.values.push(args[0])
+        if (property === 'onConflictDoUpdate') capture.conflicts.push(args[0])
         if (property === 'returning') return Promise.resolve(result)
         return proxy
       }
@@ -28,12 +30,13 @@ export function databaseDouble(input: {
   statementResults?: unknown[]
   query?: Record<string, Record<string, (...args: unknown[]) => unknown>>
 } = {}) {
-  const capture: DatabaseDoubleCapture = { sets: [], values: [] }
+  const capture: DatabaseDoubleCapture = { sets: [], values: [], conflicts: [] }
   const results = [...(input.statementResults ?? [])]
   const nextStatement = () => fluentStatement(results.shift() ?? [], capture)
   return {
     db: {
       select: nextStatement,
+      selectDistinctOn: nextStatement,
       insert: nextStatement,
       update: nextStatement,
       delete: nextStatement,

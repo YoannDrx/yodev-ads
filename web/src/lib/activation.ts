@@ -3,15 +3,9 @@ import 'server-only'
 import { activationMilestones } from '@/db/schema'
 import { withTenantTransaction, type DatabaseTransaction } from '@/db/transactions'
 
-export const ACTIVATION_MILESTONES = [
-  'google_connected',
-  'accounts_synced',
-  'first_analysis',
-  'first_monitor',
-  'first_report',
-  'legal_accepted',
-  'paid_conversion',
-] as const
+import { ACTIVATION_STAGES } from '@/lib/activation-stages'
+
+export const ACTIVATION_MILESTONES = ACTIVATION_STAGES.map((stage) => stage.milestone)
 
 export type ActivationMilestone = (typeof ACTIVATION_MILESTONES)[number]
 
@@ -21,6 +15,7 @@ export function insertActivationMilestone(db: DatabaseTransaction, input: {
   actorUserId: string
   sourceEntityId?: string | null
   metadata?: Record<string, unknown>
+  occurredAt?: Date
 }) {
   return db.insert(activationMilestones).values({
     workspaceId: input.workspaceId,
@@ -28,6 +23,7 @@ export function insertActivationMilestone(db: DatabaseTransaction, input: {
     actorUserId: input.actorUserId,
     sourceEntityId: input.sourceEntityId ?? null,
     metadata: input.metadata ?? {},
+    occurredAt: input.occurredAt,
   }).onConflictDoNothing({ target: [activationMilestones.workspaceId, activationMilestones.milestone] })
 }
 

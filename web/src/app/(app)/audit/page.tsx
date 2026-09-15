@@ -3,8 +3,10 @@ import { enGB, fr } from 'date-fns/locale'
 import { Fingerprint } from 'lucide-react'
 import { PageHeading } from '@/components/page-heading'
 import { Card, CardContent } from '@/components/ui/card'
-import { listAuditEvents } from '@/lib/data'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { listAuditPage } from '@/lib/workspace-collections'
+import { CollectionControls } from '@/components/collection-controls'
+import type { CollectionQuery } from '@/lib/collection-pagination'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
 const actionLabels: Record<'fr' | 'en', Record<string, string>> = {
   fr: {
@@ -19,16 +21,19 @@ const actionLabels: Record<'fr' | 'en', Record<string, string>> = {
   },
 }
 
-export default async function AuditPage() {
-  const { workspace } = await requireWorkspacePermission('workspace:admin')
+export default async function AuditPage({ searchParams }: { searchParams: Promise<CollectionQuery> }) {
+  const { workspace } = await requireWorkspacePagePermission('audit:read', '/audit')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
-  const events = await listAuditEvents(workspace.id)
+  const query = await searchParams
+  const collection = await listAuditPage(workspace.id, query)
+  const events = collection.items
   return <>
     <PageHeading eyebrow={english ? 'Traceability' : 'Traçabilité'} title={english ? 'Audit log' : 'Journal d’audit'} description={english ? 'Sensitive events are recorded append-only, one organization at a time.' : 'Les événements sensibles sont consignés de façon append-only, organisation par organisation.'} />
-    <Card className="overflow-hidden border-[#e8e5ef] shadow-sm"><CardContent className="p-0"><div className="divide-y">
-      {events.map((event) => <div key={event.id} className="flex gap-4 bg-white px-5 py-4"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#f3f1fb] text-[var(--brand-accent)]"><Fingerprint className="size-4" /></span><div className="min-w-0"><p className="text-sm font-medium">{actionLabels[locale][event.action] ?? event.action}</p><p className="mt-1 text-xs text-muted-foreground">{format(event.createdAt, english ? 'd MMMM yyyy HH:mm' : "d MMMM yyyy 'à' HH:mm", { locale: english ? enGB : fr })} · {english ? 'actor' : 'acteur'} {event.actorUserId}</p>{Object.keys(event.metadata).length > 0 && <code className="mt-2 block max-w-full overflow-hidden text-ellipsis whitespace-nowrap rounded bg-muted px-2 py-1 text-[10px] text-muted-foreground">{JSON.stringify(event.metadata)}</code>}</div></div>)}
-      {events.length === 0 && <div className="p-14 text-center text-muted-foreground">{english ? 'No event has been recorded yet.' : 'Aucun événement consigné pour le moment.'}</div>}
+    <CollectionControls path="/audit" query={query} page={collection} locale={locale} />
+    <Card className="overflow-hidden border-border "><CardContent className="p-0"><div className="divide-y">
+      {events.map((event) => <div key={event.id} className="flex gap-4 bg-card px-5 py-4"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-card text-[var(--brand-accent)]"><Fingerprint className="size-4" /></span><div className="min-w-0"><p className="text-sm font-medium">{actionLabels[locale][event.action] ?? event.action}</p><p className="mt-1 text-xs text-muted-foreground">{format(event.createdAt, english ? 'd MMMM yyyy HH:mm' : "d MMMM yyyy 'à' HH:mm", { locale: english ? enGB : fr })} · {english ? 'actor' : 'acteur'} {event.actorUserId}</p>{Object.keys(event.metadata).length > 0 && <code className="mt-2 block max-w-full overflow-x-auto whitespace-pre-wrap break-words rounded bg-muted px-2 py-1 text-[10px] text-muted-foreground">{JSON.stringify(event.metadata)}</code>}</div></div>)}
+      {!collection.invalidCursor && events.length === 0 && <div className="p-14 text-center text-muted-foreground">{english ? 'No event has been recorded yet.' : 'Aucun événement consigné pour le moment.'}</div>}
     </div></CardContent></Card>
   </>
 }

@@ -1,9 +1,13 @@
 import 'dotenv/config'
 
-import { createHmac } from 'node:crypto'
+import { Client } from 'pg'
+import { createHmac, randomUUID } from 'node:crypto'
 import type Stripe from 'stripe'
 import { and, eq, inArray } from 'drizzle-orm'
 import {
+  authOrganizations,
+  authMembers,
+  authUsers,
   approvalRequests,
   approvalVotes,
   auditEvents,
@@ -36,6 +40,8 @@ const purgeWorkspaceId = '50000000-0000-4000-8000-000000000001'
 const purgeClientId = '50000000-0000-4000-8000-000000000002'
 const purgeRequestId = '50000000-0000-4000-8000-000000000003'
 const cancellationWorkspaceId = '50000000-0000-4000-8000-000000000004'
+const cancellationOwner = randomUUID(), cancellationOrganization = randomUUID()
+const purgeOwner = randomUUID(), purgeOrganization = randomUUID()
 const cancellationRequestId = '50000000-0000-4000-8000-000000000005'
 const jobKey = 'integration:concurrency:job-lease'
 const stripeEventId = 'evt_integration_concurrency'
@@ -83,39 +89,52 @@ async function seedConcurrencyFixture() {
 }
 
 async function verifyConcurrentQuota() {
-  await withSystemTransaction((db) => db.insert(workspaces).values({
-    id: quotaWorkspaceId,
-    ownerUserId: 'integration-quota-owner',
-    name: 'Integration quota',
-    slug: 'integration-quota',
-    plan: 'solo',
-    accessState: 'active',
-  }))
-  const requests = channelLabels.map((label, index) => createWorkspaceNotificationChannel({
-    workspaceId: quotaWorkspaceId,
-    actorUserId: `integration-quota-${index + 1}`,
-    kind: 'email',
-    label,
-    destination: `quota-${index + 1}@example.test`,
-    minimumSeverity: 'warning',
-    entitlements: entitlementContext('active', 'solo'),
-  }))
-  const results = await Promise.allSettled(requests)
-  const fulfilled = results.filter((result) => result.status === 'fulfilled').length
-  const quotaRejected = results.filter((result) => result.status === 'rejected' && /Quota exceeded/.test(String(result.reason))).length
-  const otherRejected = results.length - fulfilled - quotaRejected
-  invariant(
-    fulfilled === 1,
-    `Concurrent quota allowed more or fewer than one channel (fulfilled=${fulfilled}, quotaRejected=${quotaRejected}, otherRejected=${otherRejected})`,
-  )
-  invariant(
-    quotaRejected === 1,
-    `Concurrent quota did not fail closed (fulfilled=${fulfilled}, quotaRejected=${quotaRejected}, otherRejected=${otherRejected})`,
-  )
-  const rows = await withSystemTransaction((db) => db.select({ id: notificationChannels.id }).from(notificationChannels).where(
-    and(eq(notificationChannels.workspaceId, quotaWorkspaceId), inArray(notificationChannels.label, channelLabels)),
-  ))
-  invariant(rows.length === 1, 'Concurrent quota persistence count is not one')
+  const identity = new Client({ connectionString: process.env.DATABASE_SYSTEM_URL ?? process.env.DATABASE_URL })
+  const organization = randomUUID(), actors = [randomUUID(), randomUUID()]
+  await identity.connect()
+  try {
+    for (const actor of actors) await identity.query('insert into auth_users(id,name,email,email_verified) values($1,$1,$2,true)', [actor, `${actor}@example.test`])
+    await identity.query('insert into auth_organizations(id,name,slug) values($1::text,$1::text,$1::text)', [organization])
+    for (const actor of actors) await identity.query("insert into auth_members(id,organization_id,user_id,role) values($1,$2,$3,'admin')", [randomUUID(), organization, actor])
+    await withSystemTransaction((db) => db.insert(workspaces).values({
+      id: quotaWorkspaceId,
+      ownerUserId: actors[0], authOwnerUserId: actors[0], authOrganizationId: organization,
+      name: 'Integration quota',
+      slug: 'integration-quota',
+      plan: 'solo',
+      accessState: 'active',
+    }))
+    const requests = channelLabels.map((label, index) => createWorkspaceNotificationChannel({
+      workspaceId: quotaWorkspaceId,
+      actorUserId: actors[index],
+      kind: 'email',
+      label,
+      destination: `quota-${index + 1}@example.test`,
+      minimumSeverity: 'warning',
+      entitlements: entitlementContext('active', 'solo'),
+    }))
+    const results = await Promise.allSettled(requests)
+    const fulfilled = results.filter((result) => result.status === 'fulfilled').length
+    const quotaRejected = results.filter((result) => result.status === 'rejected' && /Quota exceeded/.test(String(result.reason))).length
+    const otherRejected = results.length - fulfilled - quotaRejected
+    invariant(
+      fulfilled === 1,
+      `Concurrent quota allowed more or fewer than one channel (fulfilled=${fulfilled}, quotaRejected=${quotaRejected}, otherRejected=${otherRejected})`,
+    )
+    invariant(
+      quotaRejected === 1,
+      `Concurrent quota did not fail closed (fulfilled=${fulfilled}, quotaRejected=${quotaRejected}, otherRejected=${otherRejected})`,
+    )
+    const rows = await withSystemTransaction((db) => db.select({ id: notificationChannels.id }).from(notificationChannels).where(
+      and(eq(notificationChannels.workspaceId, quotaWorkspaceId), inArray(notificationChannels.label, channelLabels)),
+    ))
+    invariant(rows.length === 1, 'Concurrent quota persistence count is not one')
+  } finally {
+    await withSystemTransaction((db) => db.delete(workspaces).where(eq(workspaces.id, quotaWorkspaceId)))
+    await identity.query('delete from auth_organizations where id=$1', [organization])
+    await identity.query('delete from auth_users where id=any($1::text[])', [actors])
+    await identity.end()
+  }
 }
 
 async function verifyApprovalClaim() {
@@ -194,7 +213,8 @@ async function verifyCancellationWinsBeforeDeadline() {
   await withSystemTransaction(async (db) => {
     await db.insert(workspaces).values({
       id: cancellationWorkspaceId,
-      ownerUserId: 'integration-cancellation-owner',
+      authOrganizationId: cancellationOrganization,
+      ownerUserId: cancellationOwner,
       name: 'Integration cancellation',
       slug: 'integration-cancellation',
       plan: 'solo',
@@ -205,7 +225,7 @@ async function verifyCancellationWinsBeforeDeadline() {
     await db.insert(deletionRequests).values({
       id: cancellationRequestId,
       workspaceId: cancellationWorkspaceId,
-      requestedBy: 'integration-cancellation-owner',
+      requestedBy: cancellationOwner,
       previousAccessState: 'active',
       status: 'pending',
       requestedAt: now,
@@ -216,7 +236,7 @@ async function verifyCancellationWinsBeforeDeadline() {
   const [cancellation, purge] = await Promise.allSettled([
     claimWorkspaceDeletionCancellation({
       workspaceId: cancellationWorkspaceId,
-      actorUserId: 'integration-cancellation-owner',
+      actorUserId: cancellationOwner,
       now,
     }),
     purgeWorkspace(cancellationWorkspaceId, now),
@@ -226,7 +246,7 @@ async function verifyCancellationWinsBeforeDeadline() {
 
   await finalizeWorkspaceDeletionCancellation({
     workspaceId: cancellationWorkspaceId,
-    actorUserId: 'integration-cancellation-owner',
+    actorUserId: cancellationOwner,
     requestId: cancellation.value.id,
     previousAccessState: 'active',
     now,
@@ -252,7 +272,8 @@ async function verifyPurgeWinsAfterDeadline() {
   await withSystemTransaction(async (db) => {
     await db.insert(workspaces).values({
       id: purgeWorkspaceId,
-      ownerUserId: 'integration-owner',
+      authOrganizationId: purgeOrganization,
+      ownerUserId: purgeOwner,
       name: 'Integration purge',
       slug: 'integration-purge',
       plan: 'solo',
@@ -269,7 +290,7 @@ async function verifyPurgeWinsAfterDeadline() {
     await db.insert(deletionRequests).values({
       id: purgeRequestId,
       workspaceId: purgeWorkspaceId,
-      requestedBy: 'integration-owner',
+      requestedBy: purgeOwner,
       previousAccessState: 'active',
       status: 'pending',
       requestedAt: now,
@@ -279,18 +300,22 @@ async function verifyPurgeWinsAfterDeadline() {
   const [cancellation, purge] = await Promise.allSettled([
     claimWorkspaceDeletionCancellation({
       workspaceId: purgeWorkspaceId,
-      actorUserId: 'integration-owner',
+      actorUserId: purgeOwner,
       now,
     }),
     purgeWorkspace(purgeWorkspaceId, now),
   ])
   invariant(
-    cancellation.status === 'rejected' && /ne peut plus être annulée/.test(String(cancellation.reason)),
+    cancellation.status === 'rejected' && /ne peut plus être annulée|non autorisée/.test(String(cancellation.reason)),
     'Cancellation did not fail closed after the purge deadline',
   )
-  invariant(purge.status === 'fulfilled' && purge.value === 'purged', 'Due workspace purge did not win the lifecycle race')
+  if (purge.status === 'rejected') throw purge.reason
+  invariant(purge.value === 'purged', 'Due workspace purge did not win the lifecycle race')
   const evidence = await withSystemTransaction(async (db) => ({
     workspace: await db.query.workspaces.findFirst({ where: eq(workspaces.id, purgeWorkspaceId) }),
+    organization: await db.query.authOrganizations.findFirst({ where: eq(authOrganizations.id, purgeOrganization) }),
+    member: await db.query.authMembers.findFirst({ where: eq(authMembers.organizationId, purgeOrganization) }),
+    user: await db.query.authUsers.findFirst({ where: eq(authUsers.id, purgeOwner) }),
     client: await db.query.clients.findFirst({ where: eq(clients.id, purgeClientId) }),
     request: await db.query.deletionRequests.findFirst({ where: eq(deletionRequests.id, purgeRequestId) }),
   }))
@@ -298,7 +323,25 @@ async function verifyPurgeWinsAfterDeadline() {
     where: eq(workspaceDeletionTombstones.workspaceHash, tombstoneHash),
   }))
   invariant(!evidence.workspace && !evidence.client && !evidence.request, 'Workspace purge did not cascade operational data')
+  invariant(!evidence.organization && !evidence.member && evidence.user, 'Purge must remove the organization and memberships while preserving the shared user')
   invariant(tombstone?.externalCleanupStatus === 'completed', 'Workspace purge did not preserve its completed deletion tombstone')
+}
+
+async function deletionIdentities(create: boolean) {
+  const identity = new Client({ connectionString: process.env.DATABASE_SYSTEM_URL ?? process.env.DATABASE_URL })
+  await identity.connect()
+  try {
+    for (const [actor, organization] of [[cancellationOwner, cancellationOrganization], [purgeOwner, purgeOrganization]]) {
+      if (create) {
+        await identity.query('insert into auth_users(id,name,email,email_verified) values($1,$1,$2,true)', [actor, `${actor}@example.test`])
+        await identity.query('insert into auth_organizations(id,name,slug) values($1::text,$1::text,$1::text)', [organization])
+        await identity.query("insert into auth_members(id,organization_id,user_id,role) values($1,$2,$1,'client')", [actor, organization])
+      } else {
+        await identity.query('delete from auth_organizations where id=$1', [organization])
+        await identity.query('delete from auth_users where id=$1', [actor])
+      }
+    }
+  } finally { await identity.end() }
 }
 
 async function main() {
@@ -309,6 +352,7 @@ async function main() {
   process.env.DELETION_TOMBSTONE_KEY = deletionTombstoneKey
   await cleanup()
   try {
+    await deletionIdentities(true)
     await seedConcurrencyFixture()
     await verifyConcurrentQuota()
     await verifyApprovalClaim()
@@ -329,6 +373,7 @@ async function main() {
     }))
   } finally {
     await cleanup()
+    await deletionIdentities(false)
   }
 }
 

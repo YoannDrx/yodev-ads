@@ -1,10 +1,24 @@
 import 'server-only'
 
-import { and, eq, gt } from 'drizzle-orm'
-import { authInvitations, authOrganizations, workspaces } from '@/db/schema'
+import { and, eq, gt, sql } from 'drizzle-orm'
+import { authInvitations, authMembers, authOrganizations, workspaces } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
 import { sendAuthEmail } from '@/lib/auth-emails'
 import { NonRetryableJobError } from '@/lib/jobs'
+
+/** Read an already acquired membership after a lost acceptance response; never create one. */
+export async function acceptedInvitationOrganization(input: { invitationId: string; userId: string; email: string; emailVerified: boolean }) {
+  if (!input.emailVerified || !/^[a-zA-Z0-9_-]{1,128}$/.test(input.invitationId)) return null
+  return withSystemTransaction(async (db) => {
+    const [row] = await db.select({ organizationId: authInvitations.organizationId })
+      .from(authInvitations)
+      .innerJoin(authMembers, and(eq(authMembers.organizationId, authInvitations.organizationId), eq(authMembers.userId, input.userId)))
+      .where(and(eq(authInvitations.id, input.invitationId), eq(authInvitations.status, 'accepted'),
+        sql`lower(${authInvitations.email}) = ${input.email.trim().toLowerCase()}`))
+      .limit(1)
+    return row?.organizationId ?? null
+  })
+}
 
 export async function deliverAuthInvitation(input: { invitationId: string; workspaceId: string }) {
   const invitation = await withSystemTransaction(async (db) => {

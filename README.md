@@ -5,22 +5,27 @@ media buyers. The repository contains both the hosted product and a safe local C
 
 ## Hosted product
 
-The Next.js application in [`web`](web) provides:
+The Next.js application in [`web`](web) implements the following capabilities.
+Availability depends on the workspace plan, lifecycle, enabled integrations and
+release evidence. The current branch is still undergoing production-readiness
+work; local verification does not certify a deployed commercial service. See the
+[current feature register and remaining gates](docs/IMPLEMENTATION_STATUS.md).
 
 - self-hosted Better Auth sessions, passkeys, organizations and organization-scoped roles;
 - an isolated workspace, branding and client portfolio for every tenant;
 - hosted Google OAuth with AES-256-GCM encryption of refresh tokens;
 - MCC account synchronization through the official Google Ads API v25;
-- live 30-day campaign performance;
+- stored campaign collections with explicit dates, freshness and source coverage;
 - durable daily performance history in Neon;
-- a live 360° analysis of search terms, keyword quality, responsive search ads and conversion tracking;
+- a 360° analysis of stored search terms, keyword quality, responsive search ads and conversion tracking;
 - configurable monitoring agents with manual and daily execution;
-- eight explainable monitoring templates, including wasted queries, Quality Score, ad strength and tracking gaps;
+- ten explainable monitoring templates, including wasted queries, Quality Score, ad strength, tracking gaps, pacing and forecast;
 - explainable alert incidents and acknowledgement workflows;
 - Google `validate_only` checks before every proposed mutation;
 - approval and execution flows for campaign status/budgets, keywords, ads and paused
   responsive-search-ad drafts;
-- revocable, read-only client reports backed by live Google Ads data;
+- revocable, read-only client reports with immutable editions backed by qualified daily history;
+- 7/30/90-day and calendar/custom reporting periods, with explicit refusal when history is incomplete;
 - downloadable, visually verified PDF reports and consultative client approvals;
 - encrypted email, OAuth-provisioned Slack, native Microsoft Graph Teams and SSRF-safe generic webhook notifications;
 - weekly performance digests and deduplicated incident delivery;
@@ -28,10 +33,10 @@ The Next.js application in [`web`](web) provides:
 - Stripe subscription checkout, billing portal and signed webhook handling;
 - FR/EN legal, consent and commercial-readiness gates;
 - public subprocessor register with enforced 15-day bilingual, durable change notices;
-- scoped public API v1, asynchronous private exports and J+30 deletion workflows;
+- scoped API v1 restricted to the private allowlist, asynchronous private exports and J+30 deletion workflows;
 - Agency custom report domains with DNS and Vercel verification;
-- Vercel Web Analytics and Speed Insights;
-- one-time agency API keys for Codex and internal tooling;
+- consent-gated Vercel Web Analytics and Speed Insights;
+- one-time API-key revelation for eligible agencies in the private API program;
 - an append-only operational audit trail;
 - Neon Postgres persistence and a Vercel deployment target.
 
@@ -44,8 +49,31 @@ npm run dev
 ```
 
 Use `npm run check` for lint, TypeScript, unit tests and a production build, then
-`npm run test:e2e` for the browser smoke suite. Secrets are provisioned through
-Vercel and must never be committed.
+`npm run test:e2e` for the browser smoke suite.
+
+The [current feature register](docs/IMPLEMENTATION_STATUS.md) links the latest
+application, PostgreSQL and browser checks, and distinguishes focused runs from
+the last complete browser matrix. [Guided setup](docs/GETTING_STARTED.md),
+[alert quality](docs/ALERT_QUALITY.md) and [one-time secret revelation](docs/SECRET_REVELATION.md)
+describe their verification contracts. These dated results must be rerun on the
+final release candidate.
+
+For a fully local authenticated regression run, provision a disposable PostgreSQL 17
+instance named `yodev_test` on loopback, then run `npm run db:verify-local` and
+`npm run test:e2e:local` from `web`. The default database is
+`postgresql://postgres@127.0.0.1:55438/yodev_test`; override it with
+`YODEV_TEST_DATABASE_URL`. Both runners refuse remote databases. They apply the
+committed migrations, verify tenant boundaries and real concurrency, then create
+five verified fixture identities, sign them in through Better Auth and run the
+browser matrix without missing-session skips. Provider switches are disabled;
+no real Google, payment or email action is performed. The browser runner owns port
+3017, stops its server and removes its fixture identities, workspaces and temporary
+sessions after the run. These checks complement the deployed provider and
+authenticated release gates.
+
+Worker transactions require PostgreSQL 17 or newer. See [worker deadlines and fair scheduling](docs/WORKER_EXECUTION.md) for the runtime budgets, migration and rollback procedure.
+
+Secrets are provisioned through Vercel and must never be committed.
 
 ## Operator CLI
 

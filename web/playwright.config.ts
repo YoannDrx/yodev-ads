@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
+  // Disposable fixtures use a development server; compilation is not a
+  // production performance measurement. Remote release checks keep defaults.
+  ...(process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1' ? { timeout: 120_000, expect: { timeout: 15_000 } } : {}),
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
   reporter: 'html',

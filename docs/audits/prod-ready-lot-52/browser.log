@@ -1,0 +1,285 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs report-workspace-forms-local.spec.ts report-management-actors-local.spec.ts report-editions-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 254ms
+✓ Running next.config.ts took 436ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 998ms (proxy.ts: 5ms)
+ GET /sign-in 200 in 2.8s (next.js: 2.3s, proxy.ts: 111ms, application-code: 389ms)
+ GET /sign-in 200 in 58ms (next.js: 6ms, proxy.ts: 12ms, application-code: 40ms)
+ POST /api/auth/sign-in/email 200 in 1162ms (next.js: 864ms, proxy.ts: 4ms, application-code: 295ms)
+ POST /api/auth/sign-in/email 200 in 241ms (next.js: 4ms, proxy.ts: 3ms, application-code: 234ms)
+ GET /sign-in 200 in 155ms (next.js: 31ms, proxy.ts: 9ms, application-code: 115ms)
+ POST /api/auth/sign-in/email 200 in 208ms (next.js: 49ms, proxy.ts: 10ms, application-code: 148ms)
+ GET /icon?a62dacc6b033a714 200 in 190ms (next.js: 28ms, proxy.ts: 5ms, application-code: 157ms)
+ POST /api/auth/sign-in/email 200 in 260ms (next.js: 3ms, proxy.ts: 3ms, application-code: 255ms)
+ POST /api/auth/sign-in/email 200 in 82ms (next.js: 3ms, proxy.ts: 3ms, application-code: 77ms)
+ GET /dashboard 200 in 434ms (next.js: 175ms, proxy.ts: 3ms, application-code: 256ms)
+ GET /settings 200 in 251ms (next.js: 28ms, proxy.ts: 1.9ms, application-code: 221ms)
+ GET /billing 200 in 166ms (next.js: 26ms, proxy.ts: 1.8ms, application-code: 139ms)
+ GET /support 200 in 148ms (next.js: 27ms, proxy.ts: 1.8ms, application-code: 119ms)
+ GET /accounts 200 in 117ms (next.js: 11ms, proxy.ts: 1.8ms, application-code: 104ms)
+ GET /history 200 in 124ms (next.js: 13ms, proxy.ts: 1.9ms, application-code: 109ms)
+ GET /alerts 200 in 165ms (next.js: 42ms, proxy.ts: 1.9ms, application-code: 122ms)
+ GET /tasks 200 in 171ms (next.js: 44ms, proxy.ts: 2.0ms, application-code: 125ms)
+ GET /approvals 200 in 149ms (next.js: 45ms, proxy.ts: 1.8ms, application-code: 102ms)
+ GET /reports 200 in 218ms (next.js: 35ms, proxy.ts: 1.9ms, application-code: 181ms)
+ GET /audit 200 in 122ms (next.js: 19ms, proxy.ts: 1.8ms, application-code: 102ms)
+ GET /agents 200 in 197ms (next.js: 40ms, proxy.ts: 1.9ms, application-code: 154ms)
+ GET / 200 in 96ms (next.js: 17ms, proxy.ts: 1.8ms, application-code: 78ms)
+ GET /privacy 200 in 49ms (next.js: 11ms, proxy.ts: 1.8ms, application-code: 36ms)
+ GET /terms 200 in 49ms (next.js: 10ms, proxy.ts: 1.9ms, application-code: 36ms)
+ GET /subprocessors 200 in 92ms (next.js: 37ms, proxy.ts: 1.7ms, application-code: 53ms)
+ GET /status 200 in 90ms (next.js: 30ms, proxy.ts: 1.9ms, application-code: 57ms)
+ GET /sign-in 200 in 37ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 32ms)
+ GET /sign-up 200 in 285ms (next.js: 257ms, proxy.ts: 1.9ms, application-code: 27ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-NGUFQV
+
+Running 6 tests using 1 worker
+
+(node:78498) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /reports 200 in 153ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 149ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 9ms, proxy.ts: 3ms, application-code: 13ms)
+ POST /reports 200 in 75ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 71ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=b6954cd4-7a51-4a3e-a8fc-2d9607191df8 200 in 73ms (next.js: 1.5ms, proxy.ts: 1.9ms, application-code: 69ms)
+ POST /reports 200 in 112ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 107ms)
+  └─ ƒ createShareLink({}) in 28ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 165ms (next.js: 127ms, proxy.ts: 3ms, application-code: 36ms)
+ GET /r/[REDACTED]?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 788ms (next.js: 673ms, proxy.ts: 2.0ms, application-code: 112ms)
+ GET /r/[REDACTED]/csv?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 624ms (next.js: 604ms, proxy.ts: 4ms, application-code: 16ms)
+ GET /r/[REDACTED]/pdf?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 963ms (next.js: 721ms, proxy.ts: 2ms, application-code: 240ms)
+ GET /r/[REDACTED]?error=L%E2%80%99envoi+de+codes+email+n%E2%80%99est+pas+configur%C3%A9.&edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 49ms (next.js: 2ms, proxy.ts: 2ms, application-code: 44ms)
+ POST /r/[REDACTED]?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 70ms (next.js: 4ms, proxy.ts: 2ms, application-code: 63ms)
+  └─ ƒ requestReportFeedbackOtp({}) in 8ms src/app/actions.ts
+ GET /r/[REDACTED]?edition=e6b91d45-d501-47fe-a137-65b89aecb78c&otp=1 200 in 77ms (next.js: 2ms, proxy.ts: 2ms, application-code: 72ms)
+ GET /r/[REDACTED]?error=Demandez+un+nouveau+code.&otp=1&edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 46ms (next.js: 2ms, proxy.ts: 2ms, application-code: 42ms)
+ POST /r/[REDACTED]?edition=e6b91d45-d501-47fe-a137-65b89aecb78c&otp=1 200 in 65ms (next.js: 3ms, proxy.ts: 2ms, application-code: 59ms)
+  └─ ƒ verifyReportFeedbackOtp({}) in 6ms src/app/actions.ts
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=04c7b4f5-4ed2-40d6-965f-d448c608b016 200 in 102ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 98ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=b6954cd4-7a51-4a3e-a8fc-2d9607191df8 200 in 136ms (next.js: 2ms, proxy.ts: 3ms, application-code: 131ms)
+  └─ ƒ createShareLink({}) in 23ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 17ms (next.js: 1.4ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /r/[REDACTED]?edition=75562970-a3a8-4ddc-8c24-cc09ebe35400 200 in 79ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 73ms)
+ GET /r/[REDACTED]/csv?edition=75562970-a3a8-4ddc-8c24-cc09ebe35400 200 in 19ms (next.js: 4ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /r/[REDACTED]/pdf?edition=75562970-a3a8-4ddc-8c24-cc09ebe35400 200 in 97ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 92ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=7e317335-fe3f-4b2f-b1f6-53641f857873 200 in 71ms (next.js: 2ms, proxy.ts: 3ms, application-code: 66ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=04c7b4f5-4ed2-40d6-965f-d448c608b016 200 in 102ms (next.js: 4ms, proxy.ts: 3ms, application-code: 96ms)
+  └─ ƒ createShareLink({}) in 18ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 29ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 23ms)
+ GET /r/[REDACTED]?edition=e30ac467-7300-48df-a935-eec35291f53f 200 in 103ms (next.js: 5ms, proxy.ts: 4ms, application-code: 94ms)
+ GET /r/[REDACTED]/csv?edition=e30ac467-7300-48df-a935-eec35291f53f 200 in 18ms (next.js: 3ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/[REDACTED]/pdf?edition=e30ac467-7300-48df-a935-eec35291f53f 200 in 72ms (next.js: 1.9ms, proxy.ts: 1.7ms, application-code: 69ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=e369e7d3-75be-42de-bb11-0b039c7a2fa8 200 in 70ms (next.js: 1.4ms, proxy.ts: 1.7ms, application-code: 67ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=7e317335-fe3f-4b2f-b1f6-53641f857873 200 in 98ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 93ms)
+  └─ ƒ createShareLink({}) in 18ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 17ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /r/[REDACTED]?edition=560c5a18-36c8-440f-872c-a4d053e5ccc0 200 in 80ms (next.js: 4ms, proxy.ts: 3ms, application-code: 73ms)
+ GET /r/[REDACTED]/csv?edition=560c5a18-36c8-440f-872c-a4d053e5ccc0 200 in 14ms (next.js: 3ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /r/[REDACTED]/pdf?edition=560c5a18-36c8-440f-872c-a4d053e5ccc0 200 in 75ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 69ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=03c92c4c-ed9b-4e1b-96b2-13873b54a62c 200 in 75ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 71ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=e369e7d3-75be-42de-bb11-0b039c7a2fa8 200 in 114ms (next.js: 3ms, proxy.ts: 6ms, application-code: 105ms)
+  └─ ƒ createShareLink({}) in 23ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 25ms (next.js: 5ms, proxy.ts: 4ms, application-code: 16ms)
+ GET /r/[REDACTED]?edition=ac3ff815-263e-4414-8be5-6fc2f486618b 200 in 84ms (next.js: 4ms, proxy.ts: 5ms, application-code: 75ms)
+ GET /r/[REDACTED]/csv?edition=ac3ff815-263e-4414-8be5-6fc2f486618b 200 in 22ms (next.js: 8ms, proxy.ts: 2ms, application-code: 12ms)
+ GET /r/[REDACTED]/pdf?edition=ac3ff815-263e-4414-8be5-6fc2f486618b 200 in 76ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 72ms)
+ GET /r/[REDACTED]?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 85ms (next.js: 4ms, proxy.ts: 2ms, application-code: 78ms)
+ GET /r/[REDACTED]/csv?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 16ms (next.js: 2ms, proxy.ts: 5ms, application-code: 9ms)
+ GET /r/[REDACTED]/pdf?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 187ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 182ms)
+ GET /reports?notice=R%C3%A9vision+publi%C3%A9e.+Les+%C3%A9ditions+pr%C3%A9c%C3%A9dentes+restent+inchang%C3%A9es.&reveal=report-url&revealId=2432bb6f-35f6-4b6e-a078-019eb057e02f 200 in 79ms (next.js: 3ms, proxy.ts: 5ms, application-code: 71ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=03c92c4c-ed9b-4e1b-96b2-13873b54a62c 200 in 112ms (next.js: 2ms, proxy.ts: 4ms, application-code: 106ms)
+  └─ ƒ reviseReportEdition({}) in 19ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 24ms (next.js: 7ms, proxy.ts: 4ms, application-code: 14ms)
+ GET /r/[REDACTED]?edition=95710eaa-0c7c-4f8f-9b63-5aa22f9b5b43 200 in 87ms (next.js: 4ms, proxy.ts: 2ms, application-code: 80ms)
+ GET /r/[REDACTED]/csv?edition=95710eaa-0c7c-4f8f-9b63-5aa22f9b5b43 200 in 25ms (next.js: 5ms, proxy.ts: 2ms, application-code: 18ms)
+ GET /reports?error=Les+donn%C3%A9es+compl%C3%A8tes+de+cette+p%C3%A9riode+ne+sont+pas+disponibles.+Actualisez+l%E2%80%99historique+du+compte+avant+de+publier+ce+bilan. 200 in 120ms (next.js: 2ms, proxy.ts: 3ms, application-code: 115ms)
+ POST /reports?notice=R%C3%A9vision%20publi%C3%A9e.%20Les%20%C3%A9ditions%20pr%C3%A9c%C3%A9dentes%20restent%20inchang%C3%A9es.&reveal=report-url&revealId=2432bb6f-35f6-4b6e-a078-019eb057e02f 200 in 154ms (next.js: 3ms, proxy.ts: 3ms, application-code: 147ms)
+  └─ ƒ createShareLink({}) in 16ms src/app/report-actions.ts
+ GET /r/[REDACTED]?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 200 in 109ms (next.js: 3ms, proxy.ts: 5ms, application-code: 101ms)
+ GET /r/[REDACTED]/pdf?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 429 in 11ms (next.js: 3ms, proxy.ts: 2ms, application-code: 5ms)
+ GET /r/[REDACTED]/csv?edition=e6b91d45-d501-47fe-a137-65b89aecb78c 404 in 8ms (next.js: 3ms, proxy.ts: 1.6ms, application-code: 4ms)
+ GET /reports 200 in 143ms (next.js: 3ms, proxy.ts: 2ms, application-code: 137ms)
+ GET /api/auth/organization/list 200 in 45ms (next.js: 27ms, proxy.ts: 7ms, application-code: 11ms)
+ GET /api/auth/get-session 200 in 47ms (next.js: 15ms, proxy.ts: 5ms, application-code: 27ms)
+  ✓  1 [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in fr (9.4s)
+ GET /reports 200 in 163ms (next.js: 4ms, proxy.ts: 6ms, application-code: 154ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 5ms, proxy.ts: 3ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 8ms, proxy.ts: 3ms, application-code: 18ms)
+ POST /reports 200 in 67ms (next.js: 2ms, proxy.ts: 3ms, application-code: 62ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /reports?notice=Report+created.+Reveal+its+URL+within+the+next+five+minutes.&reveal=report-url&revealId=95d998c4-8ffe-4f90-922d-d87696bc6d63 200 in 71ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 67ms)
+ POST /reports 200 in 101ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 97ms)
+  └─ ƒ createShareLink({}) in 21ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 17ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /r/[REDACTED]?edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 80ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 75ms)
+ GET /r/[REDACTED]/csv?edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 15ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 9ms)
+ GET /r/[REDACTED]/pdf?edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 187ms (next.js: 3ms, proxy.ts: 1.6ms, application-code: 182ms)
+ GET /r/[REDACTED]?error=Email+code+delivery+is+not+configured.&edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 65ms (next.js: 4ms, proxy.ts: 3ms, application-code: 59ms)
+ POST /r/[REDACTED]?edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 90ms (next.js: 4ms, proxy.ts: 2ms, application-code: 83ms)
+  └─ ƒ requestReportFeedbackOtp({}) in 12ms src/app/actions.ts
+ GET /r/[REDACTED]?edition=0501320f-5158-4ce2-b373-263be9e728d1&otp=1 200 in 91ms (next.js: 4ms, proxy.ts: 2ms, application-code: 85ms)
+ GET /r/[REDACTED]?error=Request+a+new+code.&otp=1&edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 49ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 45ms)
+ POST /r/[REDACTED]?edition=0501320f-5158-4ce2-b373-263be9e728d1&otp=1 200 in 66ms (next.js: 3ms, proxy.ts: 3ms, application-code: 60ms)
+  └─ ƒ verifyReportFeedbackOtp({}) in 6ms src/app/actions.ts
+ GET /reports?notice=Report+created.+Reveal+its+URL+within+the+next+five+minutes.&reveal=report-url&revealId=318c6aee-450b-49cd-9252-66bb40410ec7 200 in 63ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 59ms)
+ POST /reports?notice=Report%20created.%20Reveal%20its%20URL%20within%20the%20next%20five%20minutes.&reveal=report-url&revealId=95d998c4-8ffe-4f90-922d-d87696bc6d63 200 in 90ms (next.js: 2ms, proxy.ts: 2ms, application-code: 85ms)
+  └─ ƒ createShareLink({}) in 17ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 16ms (next.js: 1.3ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /r/[REDACTED]?edition=96c46778-ae18-4872-862c-efed4bf03fa7 200 in 90ms (next.js: 4ms, proxy.ts: 2ms, application-code: 84ms)
+ GET /r/[REDACTED]/csv?edition=96c46778-ae18-4872-862c-efed4bf03fa7 200 in 16ms (next.js: 3ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /r/[REDACTED]/pdf?edition=96c46778-ae18-4872-862c-efed4bf03fa7 200 in 74ms (next.js: 3ms, proxy.ts: 1.6ms, application-code: 69ms)
+ GET /reports?notice=Report+created.+Reveal+its+URL+within+the+next+five+minutes.&reveal=report-url&revealId=d0eff50b-bc53-404c-ad54-f0540641aed1 200 in 74ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 68ms)
+ POST /reports?notice=Report%20created.%20Reveal%20its%20URL%20within%20the%20next%20five%20minutes.&reveal=report-url&revealId=318c6aee-450b-49cd-9252-66bb40410ec7 200 in 111ms (next.js: 3ms, proxy.ts: 4ms, application-code: 104ms)
+  └─ ƒ createShareLink({}) in 22ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 31ms (next.js: 8ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /r/[REDACTED]?edition=a73c7705-7377-47ff-9344-d0ce681c0d50 200 in 85ms (next.js: 5ms, proxy.ts: 3ms, application-code: 77ms)
+ GET /r/[REDACTED]/csv?edition=a73c7705-7377-47ff-9344-d0ce681c0d50 200 in 17ms (next.js: 5ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /r/[REDACTED]/pdf?edition=a73c7705-7377-47ff-9344-d0ce681c0d50 200 in 69ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 65ms)
+ GET /reports?notice=Report+created.+Reveal+its+URL+within+the+next+five+minutes.&reveal=report-url&revealId=792faf51-f103-4722-8778-2782243ab325 200 in 72ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 68ms)
+ POST /reports?notice=Report%20created.%20Reveal%20its%20URL%20within%20the%20next%20five%20minutes.&reveal=report-url&revealId=d0eff50b-bc53-404c-ad54-f0540641aed1 200 in 98ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 94ms)
+  └─ ƒ createShareLink({}) in 16ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 17ms (next.js: 1.4ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /r/[REDACTED]?edition=f468e3b9-83cd-4c61-ab46-ba4916deabcf 200 in 77ms (next.js: 4ms, proxy.ts: 2ms, application-code: 71ms)
+ GET /r/[REDACTED]/csv?edition=f468e3b9-83cd-4c61-ab46-ba4916deabcf 200 in 17ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /r/[REDACTED]/pdf?edition=f468e3b9-83cd-4c61-ab46-ba4916deabcf 200 in 65ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 60ms)
+ GET /reports?notice=Report+created.+Reveal+its+URL+within+the+next+five+minutes.&reveal=report-url&revealId=b5b920db-f06b-49e9-a3f7-0867622bcaaa 200 in 84ms (next.js: 3ms, proxy.ts: 2ms, application-code: 79ms)
+ POST /reports?notice=Report%20created.%20Reveal%20its%20URL%20within%20the%20next%20five%20minutes.&reveal=report-url&revealId=792faf51-f103-4722-8778-2782243ab325 200 in 122ms (next.js: 4ms, proxy.ts: 5ms, application-code: 114ms)
+  └─ ƒ createShareLink({}) in 22ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 17ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /r/[REDACTED]?edition=ba196182-a69b-4ef2-910c-fdab85cee1ba 200 in 82ms (next.js: 4ms, proxy.ts: 2ms, application-code: 76ms)
+ GET /r/[REDACTED]/csv?edition=ba196182-a69b-4ef2-910c-fdab85cee1ba 200 in 14ms (next.js: 3ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /r/[REDACTED]/pdf?edition=ba196182-a69b-4ef2-910c-fdab85cee1ba 200 in 65ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 61ms)
+ GET /r/[REDACTED]?edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 96ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 90ms)
+ GET /r/[REDACTED]/csv?edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 14ms (next.js: 2ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /r/[REDACTED]/pdf?edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 198ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 193ms)
+ GET /reports?notice=Revision+published.+Previous+editions+remain+unchanged.&reveal=report-url&revealId=63322c5d-af9d-4c4a-8b03-dfc18331ff57 200 in 95ms (next.js: 4ms, proxy.ts: 3ms, application-code: 88ms)
+ POST /reports?notice=Report%20created.%20Reveal%20its%20URL%20within%20the%20next%20five%20minutes.&reveal=report-url&revealId=b5b920db-f06b-49e9-a3f7-0867622bcaaa 200 in 135ms (next.js: 3ms, proxy.ts: 5ms, application-code: 128ms)
+  └─ ƒ reviseReportEdition({}) in 23ms src/app/report-actions.ts
+ POST /api/secret-revelation 200 in 21ms (next.js: 3ms, proxy.ts: 4ms, application-code: 14ms)
+ GET /r/[REDACTED]?edition=4310500e-1480-42de-a0bf-1dde22b8e618 200 in 84ms (next.js: 5ms, proxy.ts: 3ms, application-code: 75ms)
+ GET /r/[REDACTED]/csv?edition=4310500e-1480-42de-a0bf-1dde22b8e618 200 in 18ms (next.js: 4ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /reports?error=Les+donn%C3%A9es+compl%C3%A8tes+de+cette+p%C3%A9riode+ne+sont+pas+disponibles.+Actualisez+l%E2%80%99historique+du+compte+avant+de+publier+ce+bilan. 200 in 100ms (next.js: 3ms, proxy.ts: 5ms, application-code: 92ms)
+ POST /reports?notice=Revision%20published.%20Previous%20editions%20remain%20unchanged.&reveal=report-url&revealId=63322c5d-af9d-4c4a-8b03-dfc18331ff57 200 in 133ms (next.js: 2ms, proxy.ts: 3ms, application-code: 127ms)
+  └─ ƒ createShareLink({}) in 19ms src/app/report-actions.ts
+ GET /r/[REDACTED]?edition=0501320f-5158-4ce2-b373-263be9e728d1 200 in 110ms (next.js: 4ms, proxy.ts: 2ms, application-code: 104ms)
+ GET /r/[REDACTED]/pdf?edition=0501320f-5158-4ce2-b373-263be9e728d1 429 in 13ms (next.js: 5ms, proxy.ts: 3ms, application-code: 5ms)
+ GET /r/[REDACTED]/csv?edition=0501320f-5158-4ce2-b373-263be9e728d1 404 in 12ms (next.js: 4ms, proxy.ts: 2ms, application-code: 6ms)
+ GET /reports 200 in 149ms (next.js: 7ms, proxy.ts: 5ms, application-code: 137ms)
+  ✓  2 [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in en (6.7s)
+ GET /reports 200 in 140ms (next.js: 2ms, proxy.ts: 2ms, application-code: 135ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 10ms, proxy.ts: 2ms, application-code: 17ms)
+ GET /reports?notice=Mod%C3%A8le+de+rapport+cr%C3%A9%C3%A9. 200 in 71ms (next.js: 1.9ms, proxy.ts: 2.0ms, application-code: 67ms)
+ POST /reports 200 in 92ms (next.js: 2ms, proxy.ts: 2ms, application-code: 87ms)
+  └─ ƒ createReportTemplate({}) in 11ms src/app/report-actions.ts
+ GET /reports?notice=Nouvelle+version+du+mod%C3%A8le+enregistr%C3%A9e. 200 in 73ms (next.js: 1.8ms, proxy.ts: 1.7ms, application-code: 69ms)
+ POST /reports?notice=Mod%C3%A8le%20de%20rapport%20cr%C3%A9%C3%A9. 200 in 91ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 86ms)
+  └─ ƒ updateReportTemplate({}) in 9ms src/app/report-actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+cr%C3%A9%C3%A9. 200 in 67ms (next.js: 1.9ms, proxy.ts: 1.6ms, application-code: 63ms)
+ POST /reports?notice=Nouvelle%20version%20du%20mod%C3%A8le%20enregistr%C3%A9e. 200 in 88ms (next.js: 2ms, proxy.ts: 2ms, application-code: 84ms)
+  └─ ƒ createReportSchedule({}) in 12ms src/app/report-actions.ts
+ GET /reports?error=Un+envoi+est+en+cours.+R%C3%A9essayez+dans+quelques+minutes. 200 in 69ms (next.js: 1.8ms, proxy.ts: 2.0ms, application-code: 65ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20cr%C3%A9%C3%A9. 200 in 88ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 84ms)
+  └─ ƒ rotateScheduledReportToken({}) in 10ms src/app/report-actions.ts
+ GET /reports?error=Un+envoi+est+en+cours.+R%C3%A9essayez+dans+quelques+minutes. 200 in 74ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 71ms)
+ POST /reports?error=Un%20envoi%20est%20en%20cours.%20R%C3%A9essayez%20dans%20quelques%20minutes. 200 in 91ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 87ms)
+  └─ ƒ toggleReportSchedule({}) in 8ms src/app/report-actions.ts
+ GET /reports?notice=Token+du+rapport+planifi%C3%A9+renouvel%C3%A9.+L%E2%80%99ancien+lien+est+imm%C3%A9diatement+invalide. 200 in 66ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 63ms)
+ POST /reports?error=Un%20envoi%20est%20en%20cours.%20R%C3%A9essayez%20dans%20quelques%20minutes. 200 in 82ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 78ms)
+  └─ ƒ rotateScheduledReportToken({}) in 7ms src/app/report-actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+suspendu+et+lien+r%C3%A9voqu%C3%A9. 200 in 62ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 59ms)
+ POST /reports?notice=Token%20du%20rapport%20planifi%C3%A9%20renouvel%C3%A9.%20L%E2%80%99ancien%20lien%20est%20imm%C3%A9diatement%20invalide. 200 in 79ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 74ms)
+  └─ ƒ toggleReportSchedule({}) in 8ms src/app/report-actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+activ%C3%A9. 200 in 70ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 66ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20suspendu%20et%20lien%20r%C3%A9voqu%C3%A9. 200 in 91ms (next.js: 2ms, proxy.ts: 3ms, application-code: 85ms)
+  └─ ƒ toggleReportSchedule({}) in 10ms src/app/report-actions.ts
+ GET /reports?notice=Mod%C3%A8le+d%C3%A9sactiv%C3%A9.+Les+rapports+existants+conservent+leur+snapshot. 200 in 64ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 60ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20activ%C3%A9. 200 in 83ms (next.js: 2ms, proxy.ts: 3ms, application-code: 77ms)
+  └─ ƒ deactivateReportTemplate({}) in 8ms src/app/report-actions.ts
+ GET /reports?error=Permission+required%3A+reports%3Amanage 200 in 42ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 38ms)
+ POST /reports?notice=Mod%C3%A8le%20d%C3%A9sactiv%C3%A9.%20Les%20rapports%20existants%20conservent%20leur%20snapshot. 200 in 57ms (next.js: 2ms, proxy.ts: 3ms, application-code: 52ms)
+  └─ ƒ createReportTemplate({}) in 6ms src/app/report-actions.ts
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 66ms (next.js: 4ms, proxy.ts: 2ms, application-code: 60ms)
+ GET /support?error=Vous+n%E2%80%99avez+plus+acc%C3%A8s+%C3%A0+cette+page.+Choisissez+une+rubrique+disponible+ou+contactez+un+administrateur. 200 in 59ms (next.js: 11ms, proxy.ts: 6ms, application-code: 42ms)
+  ✓  3 [chromium] › e2e/report-management-actors-local.spec.ts:6:7 › analyst manages templates and schedules and loses write access in fr (2.5s)
+ GET /reports 200 in 138ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 134ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 5ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 19ms (next.js: 9ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /reports?notice=Mod%C3%A8le+de+rapport+cr%C3%A9%C3%A9. 200 in 69ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 65ms)
+ POST /reports 200 in 86ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 82ms)
+  └─ ƒ createReportTemplate({}) in 8ms src/app/report-actions.ts
+ GET /reports?notice=Nouvelle+version+du+mod%C3%A8le+enregistr%C3%A9e. 200 in 72ms (next.js: 1.8ms, proxy.ts: 2.0ms, application-code: 69ms)
+ POST /reports?notice=Mod%C3%A8le%20de%20rapport%20cr%C3%A9%C3%A9. 200 in 91ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 87ms)
+  └─ ƒ updateReportTemplate({}) in 9ms src/app/report-actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+cr%C3%A9%C3%A9. 200 in 70ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 66ms)
+ POST /reports?notice=Nouvelle%20version%20du%20mod%C3%A8le%20enregistr%C3%A9e. 200 in 91ms (next.js: 3ms, proxy.ts: 3ms, application-code: 86ms)
+  └─ ƒ createReportSchedule({}) in 11ms src/app/report-actions.ts
+ GET /reports?error=Un+envoi+est+en+cours.+R%C3%A9essayez+dans+quelques+minutes. 200 in 71ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 67ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20cr%C3%A9%C3%A9. 200 in 87ms (next.js: 2ms, proxy.ts: 2ms, application-code: 83ms)
+  └─ ƒ rotateScheduledReportToken({}) in 8ms src/app/report-actions.ts
+ GET /reports?error=Un+envoi+est+en+cours.+R%C3%A9essayez+dans+quelques+minutes. 200 in 74ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 71ms)
+ POST /reports?error=Un%20envoi%20est%20en%20cours.%20R%C3%A9essayez%20dans%20quelques%20minutes. 200 in 90ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 86ms)
+  └─ ƒ toggleReportSchedule({}) in 6ms src/app/report-actions.ts
+ GET /reports?notice=Token+du+rapport+planifi%C3%A9+renouvel%C3%A9.+L%E2%80%99ancien+lien+est+imm%C3%A9diatement+invalide. 200 in 73ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 69ms)
+ POST /reports?error=Un%20envoi%20est%20en%20cours.%20R%C3%A9essayez%20dans%20quelques%20minutes. 200 in 90ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 86ms)
+  └─ ƒ rotateScheduledReportToken({}) in 9ms src/app/report-actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+suspendu+et+lien+r%C3%A9voqu%C3%A9. 200 in 61ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 58ms)
+ POST /reports?notice=Token%20du%20rapport%20planifi%C3%A9%20renouvel%C3%A9.%20L%E2%80%99ancien%20lien%20est%20imm%C3%A9diatement%20invalide. 200 in 79ms (next.js: 2ms, proxy.ts: 2ms, application-code: 75ms)
+  └─ ƒ toggleReportSchedule({}) in 9ms src/app/report-actions.ts
+ GET /reports?notice=Envoi+planifi%C3%A9+activ%C3%A9. 200 in 74ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 71ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20suspendu%20et%20lien%20r%C3%A9voqu%C3%A9. 200 in 97ms (next.js: 2ms, proxy.ts: 3ms, application-code: 92ms)
+  └─ ƒ toggleReportSchedule({}) in 10ms src/app/report-actions.ts
+ GET /reports?notice=Mod%C3%A8le+d%C3%A9sactiv%C3%A9.+Les+rapports+existants+conservent+leur+snapshot. 200 in 63ms (next.js: 2ms, proxy.ts: 2ms, application-code: 59ms)
+ POST /reports?notice=Envoi%20planifi%C3%A9%20activ%C3%A9. 200 in 77ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 73ms)
+  └─ ƒ deactivateReportTemplate({}) in 6ms src/app/report-actions.ts
+ GET /reports?error=Permission+required%3A+reports%3Amanage 200 in 47ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 43ms)
+ POST /reports?notice=Mod%C3%A8le%20d%C3%A9sactiv%C3%A9.%20Les%20rapports%20existants%20conservent%20leur%20snapshot. 200 in 61ms (next.js: 2ms, proxy.ts: 3ms, application-code: 56ms)
+  └─ ƒ createReportTemplate({}) in 6ms src/app/report-actions.ts
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 60ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 55ms)
+ GET /support?error=You+no+longer+have+access+to+this+page.+Choose+an+available+section+or+contact+an+administrator. 200 in 43ms (next.js: 3ms, proxy.ts: 5ms, application-code: 34ms)
+  ✓  4 [chromium] › e2e/report-management-actors-local.spec.ts:6:7 › analyst manages templates and schedules and loses write access in en (2.4s)
+ POST /api/auth/organization/set-active 200 in 15ms (next.js: 4ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /reports 200 in 144ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 140ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 4ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 7ms, proxy.ts: 3ms, application-code: 14ms)
+ POST /api/auth/organization/set-active 200 in 16ms (next.js: 4ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /reports?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 81ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 77ms)
+ POST /reports 200 in 100ms (next.js: 3ms, proxy.ts: 3ms, application-code: 95ms)
+  └─ ƒ createReportTemplate({}) in 7ms src/app/report-actions.ts
+ GET /reports?notice=Mod%C3%A8le+de+rapport+cr%C3%A9%C3%A9. 200 in 62ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 58ms)
+ POST /reports?error=L%E2%80%99espace%20actif%20a%20chang%C3%A9.%20Rechargez%20la%20page%20avant%20d%E2%80%99enregistrer. 200 in 85ms (next.js: 3ms, proxy.ts: 8ms, application-code: 75ms)
+  └─ ƒ createReportTemplate({}) in 8ms src/app/report-actions.ts
+ POST /api/auth/organization/set-active 200 in 14ms (next.js: 4ms, proxy.ts: 2ms, application-code: 8ms)
+  ✓  5 [chromium] › e2e/report-workspace-forms-local.spec.ts:6:7 › report draft fr cannot cross workspaces after another tab switches the session (1.0s)
+ POST /api/auth/organization/set-active 200 in 11ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 7ms)
+ GET /reports 200 in 144ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 140ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 4ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 8ms, proxy.ts: 3ms, application-code: 13ms)
+ POST /api/auth/organization/set-active 200 in 14ms (next.js: 3ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /reports?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 85ms (next.js: 3ms, proxy.ts: 4ms, application-code: 77ms)
+ POST /reports 200 in 106ms (next.js: 3ms, proxy.ts: 3ms, application-code: 100ms)
+  └─ ƒ createReportTemplate({}) in 8ms src/app/report-actions.ts
+ GET /reports?notice=Mod%C3%A8le+de+rapport+cr%C3%A9%C3%A9. 200 in 61ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 58ms)
+ POST /reports?error=L%E2%80%99espace%20actif%20a%20chang%C3%A9.%20Rechargez%20la%20page%20avant%20d%E2%80%99enregistrer. 200 in 78ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 74ms)
+  └─ ƒ createReportTemplate({}) in 8ms src/app/report-actions.ts
+ POST /api/auth/organization/set-active 200 in 14ms (next.js: 4ms, proxy.ts: 2ms, application-code: 8ms)
+  ✓  6 [chromium] › e2e/report-workspace-forms-local.spec.ts:6:7 › report draft en cannot cross workspaces after another tab switches the session (1.0s)
+
+  6 passed (23.7s)
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

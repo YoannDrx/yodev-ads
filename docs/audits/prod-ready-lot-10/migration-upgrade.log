@@ -1,0 +1,1 @@
+{"ok":true,"migrations":50,"verified":["49_to_50_upgrade","active_advertisers_preserved","inactive_accounts_not_auto_selected","managers_free","stable_legacy_priority","no_fabricated_inventory_timestamp"],"providerCalls":0}

@@ -1,0 +1,93 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep live navigation state
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 262ms
+✓ Running next.config.ts took 416ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1241ms (next.js: 782ms, proxy.ts: 172ms, application-code: 287ms)
+ POST /api/auth/sign-in/email 200 in 923ms (next.js: 740ms, proxy.ts: 3ms, application-code: 179ms)
+ POST /api/auth/sign-in/email 200 in 84ms (next.js: 4ms, proxy.ts: 3ms, application-code: 77ms)
+ POST /api/auth/sign-in/email 200 in 79ms (next.js: 2ms, proxy.ts: 2ms, application-code: 75ms)
+ POST /api/auth/sign-in/email 200 in 79ms (next.js: 2ms, proxy.ts: 2ms, application-code: 75ms)
+ POST /api/auth/sign-in/email 200 in 77ms (next.js: 2ms, proxy.ts: 2ms, application-code: 72ms)
+ GET /dashboard 200 in 505ms (next.js: 181ms, proxy.ts: 2ms, application-code: 322ms)
+ GET /settings 200 in 224ms (next.js: 29ms, proxy.ts: 3ms, application-code: 191ms)
+ GET /billing 200 in 177ms (next.js: 27ms, proxy.ts: 2ms, application-code: 148ms)
+ GET /support 200 in 154ms (next.js: 29ms, proxy.ts: 2ms, application-code: 123ms)
+ GET /accounts 200 in 116ms (next.js: 12ms, proxy.ts: 1.9ms, application-code: 102ms)
+ GET /history 200 in 114ms (next.js: 13ms, proxy.ts: 1.7ms, application-code: 100ms)
+ GET /alerts 200 in 159ms (next.js: 44ms, proxy.ts: 2.0ms, application-code: 114ms)
+ GET /tasks 200 in 180ms (next.js: 47ms, proxy.ts: 1.8ms, application-code: 131ms)
+ GET /approvals 200 in 153ms (next.js: 46ms, proxy.ts: 2.0ms, application-code: 105ms)
+ GET /reports 200 in 216ms (next.js: 45ms, proxy.ts: 2ms, application-code: 169ms)
+ GET /audit 200 in 122ms (next.js: 20ms, proxy.ts: 2ms, application-code: 100ms)
+ GET /agents 200 in 201ms (next.js: 42ms, proxy.ts: 1.8ms, application-code: 157ms)
+ GET / 200 in 97ms (next.js: 17ms, proxy.ts: 1.8ms, application-code: 78ms)
+ GET /privacy 200 in 48ms (next.js: 11ms, proxy.ts: 1.8ms, application-code: 35ms)
+ GET /terms 200 in 44ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 32ms)
+ GET /subprocessors 200 in 95ms (next.js: 38ms, proxy.ts: 1.8ms, application-code: 55ms)
+ GET /status 200 in 102ms (next.js: 35ms, proxy.ts: 8ms, application-code: 59ms)
+ GET /sign-in 200 in 32ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 26ms)
+ GET /sign-up 200 in 307ms (next.js: 278ms, proxy.ts: 1.7ms, application-code: 28ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-er7pRK
+
+Running 2 tests using 1 worker
+
+(node:45860) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000094 200 in 651ms (next.js: 445ms, proxy.ts: 2ms, application-code: 204ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 9ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000094 200 in 50ms (next.js: 5ms, proxy.ts: 4ms, application-code: 41ms)
+ GET /sign-in 200 in 130ms (next.js: 77ms, proxy.ts: 12ms, application-code: 40ms)
+ GET /icon?a62dacc6b033a714 200 in 164ms (next.js: 61ms, proxy.ts: 3ms, application-code: 100ms)
+  ✘  1 [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in fr (16.2s)
+  -  2 [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in en
+
+
+  1) [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in fr 
+
+    Error: expect(locator).toBeFocused() failed
+
+    Locator:  locator('#main-content')
+    Expected: focused
+    Received: inactive
+    Timeout:  15000ms
+
+    Call log:
+      - Expect "toBeFocused" with timeout 15000ms
+      - waiting for locator('#main-content')
+        34 × locator resolved to <main tabindex="-1" id="main-content" class="mx-auto max-w-[1500px] px-4 pb-24 pt-7 sm:px-7 sm:pt-9 lg:pb-10">…</main>
+           - unexpected value "inactive"
+
+
+      27 |         await expect(skip).toBeFocused()
+      28 |         await page.keyboard.press('Enter')
+    > 29 |         await expect(page.locator('#main-content')).toBeFocused()
+         |                                                     ^
+      30 |         const navigation = page.getByRole('navigation', { name: /Navigation principale|Main navigation/ })
+      31 |         await expect(navigation.locator('a[aria-current="page"]')).toHaveAttribute('href', '/insights')
+      32 |         await page.evaluate(() => Object.assign(window, { __navigationSentinel: 'retained' }))
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/navigation-state-local.spec.ts:29:53
+
+    Error Context: test-results/navigation-state-local-liv-5c367--and-invalid-accounts-in-fr-chromium/error-context.md
+
+    Error Context: test-results/navigation-state-local-liv-5c367--and-invalid-accounts-in-fr-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in fr 
+  1 did not run
+[?25h
+{"ok":true,"cleaned":"local-browser-fixtures"}

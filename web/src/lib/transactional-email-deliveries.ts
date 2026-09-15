@@ -32,9 +32,8 @@ export async function claimTransactionalEmailDelivery(input: {
       recipientHash: input.recipientHash,
       contentHash: input.contentHash,
     }).onConflictDoNothing({ target: transactionalEmailDeliveries.businessKey }).returning()
-    const existing = inserted ?? await db.query.transactionalEmailDeliveries.findFirst({
-      where: eq(transactionalEmailDeliveries.businessKey, input.businessKey),
-    })
+    const existing = inserted ?? (await db.select().from(transactionalEmailDeliveries)
+      .where(eq(transactionalEmailDeliveries.businessKey, input.businessKey)).limit(1).for('update'))[0]
     if (!existing) throw new Error('Unable to resolve transactional email delivery')
     if (
       existing.recipientHash !== input.recipientHash
@@ -58,7 +57,7 @@ export async function claimTransactionalEmailDelivery(input: {
         and(eq(transactionalEmailDeliveries.status, 'submitting'), lte(transactionalEmailDeliveries.updatedAt, staleSubmittingAt)),
       ),
     )).returning()
-    return { delivery: claimed ?? existing, claimed: Boolean(claimed) }
+    return { delivery: claimed ?? existing, claimed: Boolean(claimed), mayHaveBeenSubmitted: ['ambiguous', 'submitting'].includes(existing.status) }
   })
 }
 

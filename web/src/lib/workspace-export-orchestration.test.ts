@@ -25,6 +25,7 @@ function queryDouble(input: { workspace?: unknown; connection?: unknown; rows?: 
     clients: { findMany: many('clients') }, clientGoals: { findMany: many('clientGoals') },
     monitoringAgents: { findMany: many('monitoringAgents') }, alertIncidents: { findMany: many('alerts') },
     activationMilestones: { findMany: many('activation') }, alertComments: { findMany: many('alertComments') },
+    portfolioViews: { findMany: many('portfolioViews') },
     workspaceTasks: { findMany: many('tasks') }, taskComments: { findMany: many('taskComments') },
     supportTickets: { findMany: many('supportTickets') }, supportMessages: { findMany: many('supportMessages') },
     memberNotificationPreferences: { findMany: many('memberPreferences') }, approvalRequests: { findMany: many('approvals') },
@@ -32,10 +33,11 @@ function queryDouble(input: { workspace?: unknown; connection?: unknown; rows?: 
     clientApprovalFeedback: { findMany: many('feedback') }, mutationExecutions: { findMany: many('executions') },
     mutationObservations: { findMany: many('observations') }, auditEvents: { findMany: many('audit') },
     dailyAccountMetrics: { findMany: many('accountMetrics') }, dailyCampaignMetrics: { findMany: many('campaignMetrics') },
-    performanceSnapshots: { findMany: many('legacy') }, googleChangeEvents: { findMany: many('changes') },
+    analyticalCollections: { findMany: many('analytical') }, performanceSnapshots: { findMany: many('legacy') }, googleChangeEvents: { findMany: many('changes') },
     conversionActionSnapshots: { findMany: many('conversions') }, offlineConversionDiagnostics: { findMany: many('offline') },
     safetyPolicies: { findMany: many('policies') }, shareLinks: { findMany: many('reports') },
     reportTemplates: { findMany: many('templates') }, reportTemplateVersions: { findMany: many('templateVersions') },
+    reportEditions: { findMany: many('editions') },
     reportSchedules: { findMany: many('schedules') }, apiKeys: { findMany: many('keys') },
     notificationChannels: { findMany: many('channels') }, legalAcceptances: { findMany: many('legal') },
   }
@@ -58,9 +60,11 @@ describe('workspace export orchestration', () => {
       connection,
       rows: {
         clients: [{ id: 'client-1', name: 'Client' }],
+        portfolioViews: [{ id: 'view-1', userId: 'owner', name: 'Pending decisions', criteria: { attention: 'pending_approval' } }],
         approvals: [{ id: 'approval-1', title: 'Pause' }],
         observations: [{ id: 'observation-1' }],
         audit: [{ id: 'audit-1' }],
+        analytical: [{ family: 'campaigns', sourceVersion: 'fixture-version', payload: [{ name: 'Archived campaign' }] }],
         accountMetrics: [{ metricDate: '2026-08-12', costMicros: '10' }],
         campaignMetrics: [{ campaignId: '1', metricDate: '2026-08-12' }],
         offline: [{ uploadClient: 'API' }],
@@ -70,6 +74,7 @@ describe('workspace export orchestration', () => {
         memberPreferences: [{ id: 'preference-1', mentionHandle: 'owner' }],
         templates: [{ id: 'template-1', name: 'Monthly' }],
         templateVersions: [{ templateId: 'template-1', version: 1, snapshot: { name: 'Monthly' } }],
+        editions: [{ id: 'edition-1', periodFrom: '2026-08-01', payload: { totals: { costMicros: '123' } } }],
         schedules: [{ id: 'schedule-1' }], keys: [{ tokenPrefix: 'ak_test' }],
         channels: [{ destinationHint: 'o***@example.test' }], legal: [{ termsVersion: 'v1' }],
       },
@@ -89,6 +94,11 @@ describe('workspace export orchestration', () => {
     expect(raw).toContain('"googleAdsConnection"')
     expect(raw).not.toContain('encryptedRefreshToken')
     expect(raw).not.toContain('tokenHash')
+    expect(raw).not.toContain('encryptedDelivery')
+    expect(raw).not.toContain('encryptedReportToken')
+    expect(strFromU8(archive['reports/editions.json'])).toContain('edition-1')
+    expect(raw).toContain('Archived campaign')
+    expect(JSON.parse(raw).portfolioViews).toEqual([{ id: 'view-1', userId: 'owner', name: 'Pending decisions', criteria: { attention: 'pending_approval' } }])
     expect(strFromU8(archive['reports/template-versions.csv'])).toContain('templateId,version,snapshot')
     expect(strFromU8(archive['README.txt'])).toContain('secrets OAuth')
     expect(progress.capture.sets[0]).toMatchObject({ progress: 55 })

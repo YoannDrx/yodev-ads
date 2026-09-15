@@ -1,5 +1,7 @@
 # Ads by Yodev — gates de commercialisation B2B
 
+**Qualification du 7 septembre 2026 :** les cases et preuves d’août ci-dessous sont historiques. Elles ne certifient pas le candidat courant. Consulter le [registre actuel](./IMPLEMENTATION_STATUS.md) et le [journal des corrections](./PROD_READY_EXECUTION.md) ; rejouer chaque gate applicable sur le SHA/configuration de release exact avant toute décision de lancement. Aucun nouveau déploiement ni démarrage du compteur de bêta n’est attesté par les recettes locales de septembre.
+
 Dernière mise à jour : 2026-08-18. Ce document est la checklist de décision de mise
 en production. Une case ne peut être cochée qu’avec un lien vers une preuve horodatée
 (exécution CI, événement fournisseur, facture, rapport de drill ou validation signée).

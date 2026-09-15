@@ -1,0 +1,15 @@
+AssertionError [ERR_ASSERTION]: A trial expiring during the lock wait must refuse the mutation
++ actual - expected
+
++ 'fulfilled'
+- 'rejected'
+
+    at main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-alert-quality.ts:72:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'fulfilled',
+  expected: 'rejected',
+  operator: 'strictEqual',
+  diff: 'simple'
+}

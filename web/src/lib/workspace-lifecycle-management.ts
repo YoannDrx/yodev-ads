@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, eq, gt, inArray, isNull, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import {
   apiKeys,
   auditEvents,
@@ -15,15 +15,16 @@ import {
   shareLinks,
   workspaces,
 } from '@/db/schema'
-import { withSystemTransaction, withTenantTransaction } from '@/db/transactions'
+import { withSystemTransaction, type DatabaseTransaction } from '@/db/transactions'
 import { encryptSecret } from '@/lib/crypto'
 import type { WorkspaceAccessState } from '@/lib/entitlements'
-import { lockWorkspaceAccessBoundary } from '@/lib/workspace-transaction-guard'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
 
 export function createWorkspaceExportRequest(input: ActorContext) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:export' }, async (db) => {
+    await requireLifecycle(db, input.workspaceId, 'export')
     await db.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:export`}))`)
     const existing = await db.query.exportJobs.findFirst({
       where: and(eq(exportJobs.workspaceId, input.workspaceId), sql`${exportJobs.status} in ('queued', 'processing')`),
@@ -56,15 +57,15 @@ export function markWorkspaceDeletionPending(input: ActorContext & {
   stripeSubscriptionId?: string | null
   now?: Date
 }) {
-  const now = input.now ?? new Date()
-  const purgeAt = new Date(now.getTime() + 30 * 24 * 60 * 60_000)
   const googleRevocationState = input.googleRevocationState
     ?? (input.googleRevocationConfirmed ? 'confirmed' : 'pending')
   const stripeCancellationState = input.stripeCancellationState
     ?? (input.stripeCancellationQueued ? 'pending' : 'not_required')
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
-    await lockWorkspaceAccessBoundary(transaction, input.workspaceId)
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:delete' }, async (transaction) => {
+    await requireLifecycle(transaction, input.workspaceId, 'delete')
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:deletion`}))`)
+    const now = input.now ?? await databaseClock(transaction)
+    const purgeAt = new Date(now.getTime() + 30 * 24 * 60 * 60_000)
     const [claimed] = await transaction.update(workspaces).set({
       accessState: 'deletion_pending',
       mutationsEnabled: false,
@@ -153,24 +154,47 @@ export function markWorkspaceDeletionPending(input: ActorContext & {
   })
 }
 
+async function databaseClock(db: DatabaseTransaction) {
+  const { rows: [clock] } = await db.execute<{ now: string | Date }>(sql`select clock_timestamp() as now`)
+  if (!clock) throw new Error('L’horloge de la base est indisponible.')
+  return new Date(clock.now)
+}
+
+async function requireLifecycle(db: DatabaseTransaction, workspaceId: string, operation: 'export' | 'delete' | 'cancel') {
+  const workspace = await db.query.workspaces.findFirst({ where: eq(workspaces.id, workspaceId), columns: { accessState: true } })
+  if (!workspace || workspace.accessState === 'deleted') throw new Error('L’espace est indisponible.')
+  if (operation === 'delete' && (workspace.accessState === 'internal' || workspace.accessState === 'deletion_pending')) {
+    throw new Error('Cet espace ne peut pas faire l’objet d’une nouvelle demande de suppression.')
+  }
+  if (operation === 'cancel' && workspace.accessState !== 'deletion_pending') throw new Error('La demande de suppression ne peut plus être annulée.')
+}
+
+async function lockedCancellation(db: DatabaseTransaction, workspaceId: string) {
+  // Lock before reading the deadline: an UPDATE predicate can have been evaluated before a row wait.
+  await db.execute(sql`select id from ${deletionRequests} where ${deletionRequests.workspaceId} = ${workspaceId} for update`)
+  const request = await db.query.deletionRequests.findFirst({ where: eq(deletionRequests.workspaceId, workspaceId) })
+  if (!request || !['pending', 'cancelling'].includes(request.status)) throw new Error('La demande de suppression ne peut plus être annulée.')
+  return request
+}
+
+async function requireCancellationDeadline(db: DatabaseTransaction, purgeAt: Date) {
+  if (new Date(purgeAt) <= await databaseClock(db)) throw new Error('La demande de suppression ne peut plus être annulée.')
+}
+
 export function claimWorkspaceDeletionCancellation(input: ActorContext & { now?: Date }) {
-  const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:delete' }, async (db) => {
+    await requireLifecycle(db, input.workspaceId, 'cancel')
+    const request = await lockedCancellation(db, input.workspaceId)
+    // An accepted cancellation excludes purge and remains resumable after the original deadline.
+    if (request.status === 'cancelling') return request
+    await requireCancellationDeadline(db, request.purgeAt)
     const [claimed] = await db.update(deletionRequests).set({ status: 'cancelling' }).where(and(
-      eq(deletionRequests.workspaceId, input.workspaceId),
+      eq(deletionRequests.id, request.id), eq(deletionRequests.workspaceId, input.workspaceId),
       eq(deletionRequests.status, 'pending'),
-      gt(deletionRequests.purgeAt, now),
     )).returning()
-    if (claimed) return claimed
-    const retry = await db.query.deletionRequests.findFirst({
-      where: and(
-        eq(deletionRequests.workspaceId, input.workspaceId),
-        eq(deletionRequests.status, 'cancelling'),
-        gt(deletionRequests.purgeAt, now),
-      ),
-    })
-    if (!retry) throw new Error('La demande de suppression ne peut plus être annulée.')
-    return retry
+    if (!claimed) throw new Error('La demande de suppression ne peut plus être annulée.')
+    await requireCancellationDeadline(db, request.purgeAt)
+    return claimed
   })
 }
 
@@ -179,10 +203,16 @@ export function finalizeWorkspaceDeletionCancellation(input: ActorContext & {
   previousAccessState: WorkspaceAccessState
   now?: Date
 }) {
-  const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:delete' }, async (transaction) => {
+    await requireLifecycle(transaction, input.workspaceId, 'cancel')
+    const request = await lockedCancellation(transaction, input.workspaceId)
+    if (request.id !== input.requestId || request.status !== 'cancelling') throw new Error('La demande de suppression n’est plus en cours d’annulation.')
+    // A caller cannot restore an internal/active state different from the persisted request.
+    if (!['trial', 'active', 'grace', 'suspended'].includes(request.previousAccessState)
+      || request.previousAccessState !== input.previousAccessState) throw new Error('L’état de restauration de l’espace a changé.')
+    const now = input.now ?? await databaseClock(transaction)
     const [restored] = await transaction.update(workspaces).set({
-      accessState: input.previousAccessState,
+      accessState: request.previousAccessState,
       deletionRequestedAt: null,
       purgeAt: null,
       updatedAt: now,
@@ -194,7 +224,7 @@ export function finalizeWorkspaceDeletionCancellation(input: ActorContext & {
     const [cancelled] = await transaction.update(deletionRequests).set({
       status: 'cancelled', cancelledAt: now,
     }).where(and(
-      eq(deletionRequests.id, input.requestId),
+      eq(deletionRequests.id, request.id),
       eq(deletionRequests.workspaceId, input.workspaceId),
       eq(deletionRequests.status, 'cancelling'),
     )).returning({ id: deletionRequests.id })

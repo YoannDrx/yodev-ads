@@ -11,7 +11,7 @@ vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }
 vi.mock('@/lib/auth-emails', () => ({ sendAuthEmail: mocks.sendAuthEmail }))
 
 import { NonRetryableJobError } from './jobs'
-import { deliverAuthInvitation } from './auth-invitations'
+import { acceptedInvitationOrganization, deliverAuthInvitation } from './auth-invitations'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 const invitationId = '00000000-0000-4000-8000-000000000002'
@@ -43,5 +43,22 @@ describe('durable Better Auth invitation delivery', () => {
     mocks.database = databaseDouble({ statementResults: [[]] }).db
     await expect(deliverAuthInvitation({ invitationId, workspaceId })).rejects.toBeInstanceOf(NonRetryableJobError)
     expect(mocks.sendAuthEmail).not.toHaveBeenCalled()
+  })
+})
+
+describe('accepted invitation recovery', () => {
+  beforeEach(() => vi.clearAllMocks())
+  const identity = { invitationId, userId: 'member', email: 'member@example.test', emailVerified: true }
+  it('refuses malformed identifiers or unverified identities before reading', async () => {
+    for (const change of [{ emailVerified: false }, { invitationId: '../bad' }, { invitationId: 'x'.repeat(129) }]) {
+      expect(await acceptedInvitationOrganization({ ...identity, ...change })).toBeNull()
+    }
+    expect(mocks.transaction).not.toHaveBeenCalled()
+  })
+  it('returns only a matching already acquired organization, otherwise nothing', async () => {
+    mocks.database = databaseDouble({ statementResults: [[{ organizationId: 'agency' }]] }).db
+    expect(await acceptedInvitationOrganization(identity)).toBe('agency')
+    mocks.database = databaseDouble({ statementResults: [[]] }).db
+    expect(await acceptedInvitationOrganization(identity)).toBeNull()
   })
 })

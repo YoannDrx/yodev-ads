@@ -1,0 +1,89 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/task-digest-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 274ms
+✓ Running next.config.ts took 451ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.0s (next.js: 1418ms, proxy.ts: 162ms, application-code: 427ms)
+ GET /sign-in 200 in 2.0s (next.js: 1425ms, proxy.ts: 151ms, application-code: 439ms)
+ GET /icon?a62dacc6b033a714 200 in 327ms (next.js: 52ms, proxy.ts: 9ms, application-code: 266ms)
+ POST /api/auth/sign-in/email 200 in 928ms (next.js: 748ms, proxy.ts: 3ms, application-code: 178ms)
+ POST /api/auth/sign-in/email 200 in 87ms (next.js: 4ms, proxy.ts: 2ms, application-code: 80ms)
+ POST /api/auth/sign-in/email 200 in 83ms (next.js: 3ms, proxy.ts: 2ms, application-code: 77ms)
+ POST /api/auth/sign-in/email 200 in 79ms (next.js: 2ms, proxy.ts: 2ms, application-code: 75ms)
+ POST /api/auth/sign-in/email 200 in 78ms (next.js: 2ms, proxy.ts: 2ms, application-code: 73ms)
+ GET /dashboard 200 in 587ms (next.js: 212ms, proxy.ts: 3ms, application-code: 373ms)
+ GET /settings 200 in 319ms (next.js: 36ms, proxy.ts: 4ms, application-code: 279ms)
+ GET /billing 200 in 198ms (next.js: 16ms, proxy.ts: 3ms, application-code: 179ms)
+ GET /support 200 in 155ms (next.js: 16ms, proxy.ts: 2ms, application-code: 136ms)
+ GET /accounts 200 in 144ms (next.js: 13ms, proxy.ts: 2ms, application-code: 129ms)
+ GET /history 200 in 140ms (next.js: 16ms, proxy.ts: 1.9ms, application-code: 123ms)
+ GET /alerts 200 in 151ms (next.js: 17ms, proxy.ts: 3ms, application-code: 131ms)
+ GET /tasks 200 in 168ms (next.js: 21ms, proxy.ts: 2ms, application-code: 145ms)
+ GET /approvals 200 in 145ms (next.js: 24ms, proxy.ts: 1.9ms, application-code: 119ms)
+ GET /reports 200 in 200ms (next.js: 21ms, proxy.ts: 2ms, application-code: 177ms)
+ GET /audit 200 in 148ms (next.js: 21ms, proxy.ts: 2ms, application-code: 124ms)
+ GET /agents 200 in 204ms (next.js: 20ms, proxy.ts: 3ms, application-code: 182ms)
+ GET / 200 in 113ms (next.js: 20ms, proxy.ts: 2ms, application-code: 90ms)
+ GET /privacy 200 in 57ms (next.js: 13ms, proxy.ts: 2.0ms, application-code: 42ms)
+ GET /terms 200 in 51ms (next.js: 12ms, proxy.ts: 2ms, application-code: 37ms)
+ GET /subprocessors 200 in 121ms (next.js: 41ms, proxy.ts: 2ms, application-code: 78ms)
+ GET /status 200 in 97ms (next.js: 33ms, proxy.ts: 1.9ms, application-code: 62ms)
+ GET /sign-in 200 in 37ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 31ms)
+ GET /sign-up 200 in 362ms (next.js: 325ms, proxy.ts: 2.0ms, application-code: 35ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-nCyg7b
+
+Running 2 tests using 1 worker
+
+(node:24198) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /tasks?workspace=80000000-0000-4000-8000-000000000001&assignee=local-browser-fixture-analyst&status=open 200 in 303ms (next.js: 2ms, proxy.ts: 2ms, application-code: 298ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 6ms, proxy.ts: 4ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 10ms, proxy.ts: 4ms, application-code: 18ms)
+ GET /tasks?workspace=80000000-0000-4000-8000-000000000001&assignee=local-browser-fixture-analyst&status=open&cursor=eyJ2IjoxLCJpdiI6Ik9SMWJqd3p4SVBWOUNWeVIiLCJ0YWciOiI1a1lGTnhaOGxLQzZ5X2ZzZ0licGR3IiwiZGF0YSI6Ii1XNnlhWVlwY25XOFlBQk9lUmlHU3RCQm1lbzRlR01qOE8tV3JIN2NvckdqT2xITFRvelU5QW9WOU9UQnliU0x1aU85Q3VsTkdlU2t3RzBVT3NJcWZHRjhJUzF0MWJoYk9wQzJyUVpxZU1YVHIxd1dBMmx0dGNmd1RzWUt3Q2tsenBNV3N1MS13S2g4SFhlQ1FxZDFZelRuZzE5cUt5N1daSzZRQ1lQbUMtVnpEbktnd1czbkFEa1BGZG81RG5TOGltXzV4czRaNDlQZ0FEaTl1dFE3LThCMWJzc3NJMFRjbEQyTzN3ekwyZmw2TEZjVjNNMDVoUVFsREx1X2hyVDVCWVUwcTdzQkVocHU5bnFkeFZESTBUa1NDSEFsMXRVT216ejhTc0prcVJabUxCaVpnRmlrVlEifQ 200 in 98ms (next.js: 2ms, proxy.ts: 3ms, application-code: 93ms)
+ GET /tasks?workspace=80000000-0000-4000-8000-000000000001&assignee=local-browser-fixture-analyst&status=open&cursor=eyJ2IjoxLCJpdiI6IkJmR0JsUXFUUnZRMGptNlciLCJ0YWciOiJwSEZkMlFpXzVzdWp2UDdsZXZfV2lRIiwiZGF0YSI6IkRsOWNvQ2Y1UUw3eFZudG5XTnNfRGN5YXQ1WkNFTTJ3QklrcjRaMWJTMENGZ2NRR0x6UnYwMjFaMGpfNm5jRGxfTHRKVVp2TmxFcmNKMk5vVGdFd01uVlBXSmxxZjQ4VGkxTkVkR0hJV2p0LWNhVldGeHNwbHZFczFpdWYxYTdzQUd5WHlIU2RGa0tkMWNYQm9tcW8tRk1VT0pXTWNyRjZzSndWaTVzc2xSMmRIc2xfQ0dkbTdld2NpUmVqeEdmd0RSdEhQWG5GWGx1dnZqYnZqQ2luX2hDWWllbm1sQS1lZXZhMDltdzRoRjR0ekFKcko1U2p6M1Zham1UTnJoSzlYOW1rX2lTVEFMb0tnczNid0RRQ0o5Q0QtbjNvTHR5cG9fZndNMjVCZENSZ1Q4c3pkNFQzNmcifQ 200 in 57ms (next.js: 3ms, proxy.ts: 8ms, application-code: 45ms)
+ GET /tasks?workspace=80000000-0000-4000-8000-000000000002 200 in 136ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 130ms)
+ GET /api/auth/get-session 200 in 50ms (next.js: 8ms, proxy.ts: 4ms, application-code: 38ms)
+ GET /api/auth/organization/list 200 in 56ms (next.js: 16ms, proxy.ts: 5ms, application-code: 36ms)
+ GET /tasks 200 in 16ms (next.js: 3ms, proxy.ts: 6ms, application-code: 7ms)
+ GET /tasks 200 in 129ms (next.js: 5ms, proxy.ts: 5ms, application-code: 119ms)
+ GET /tasks 200 in 436ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 431ms)
+ GET /api/auth/get-session 200 in 32ms (next.js: 6ms, proxy.ts: 4ms, application-code: 22ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 18ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /tasks?error=Date+d%E2%80%99%C3%A9ch%C3%A9ance+invalide. 200 in 222ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 218ms)
+ POST /tasks 200 in 250ms (next.js: 4ms, proxy.ts: 3ms, application-code: 244ms)
+  └─ ƒ createWorkspaceTask({}) in 9ms src/app/actions.ts
+  ✓  1 [chromium] › e2e/task-digest-local.spec.ts:5:7 › task digest fr opens the complete assigned collection and rejects impossible deadlines (3.3s)
+ GET /tasks?workspace=80000000-0000-4000-8000-000000000001&assignee=local-browser-fixture-analyst&status=open 200 in 314ms (next.js: 2ms, proxy.ts: 4ms, application-code: 308ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /tasks?workspace=80000000-0000-4000-8000-000000000001&assignee=local-browser-fixture-analyst&status=open&cursor=eyJ2IjoxLCJpdiI6IkRWQVNiTHdlOFJ2ei1JM04iLCJ0YWciOiJwRmhQaDYxNktHOUs2YjRhcFUxRHZBIiwiZGF0YSI6InUxRWtpbm1Eb0E4VURERmlNUnA4bnNzdF8xVzZxVkl0eGhJRTFiS1ptVWhxSjdEZnQ5Wmt1ZkE3OU5OQnB2OFJhQUtIVlBrbzlyVXRhdW1wMDVRNEI0ZUh0eDVLZ1FoMFYwS3lLMXpxNl9VdlFnNEw0RF9xanFZYVJfV3JlUkJjZWRrZFU2X1ZnZi1iU2VCVFREX3hoLWFvSFhmdXhBYWZRaWxqVG00Um51aERzdWdJWERJRVM3aE00T1RheW9XaEdhTm96em9lVmRpNUJKdzhBellVR2hiRHJ0SlJaUXdaOE1yRndPanlTekx6VUMzMGRaTWs4aEoxUnYtbDJBZ0JpRFhPa1JaZFo5eWo5MnoxNFhDemk2NjVUS2ZDRXgyX0c4NnRyRjBVSzRfU3JsTGpJdHE5TEEifQ 200 in 96ms (next.js: 3ms, proxy.ts: 3ms, application-code: 90ms)
+ GET /tasks?workspace=80000000-0000-4000-8000-000000000001&assignee=local-browser-fixture-analyst&status=open&cursor=eyJ2IjoxLCJpdiI6InFLSlpzcTJpQ2Z6QldZRUUiLCJ0YWciOiI1NE5wRUFNSDJfVEQyOGY1WDRiaVJRIiwiZGF0YSI6Ik5rcEI2ZFQ2dnktOHphY1N4eDRObVItcl9UY3FzNEhVLXFkX0hJVEltSV9aenRrMWpJemxlcExvcTB5enM5V0VOYnZoSC1nbl9Qb2F1QmFpREkxT3NoVXY1aHdBc05BUWN5ZmFrVjNZUVlvRHBMOXZIVzVKNm1fX29IZ1NtbzJockJLVWZxMkFxOEE0V3ZaTFZYOExxRHBGWGdxTHZ1eUhRZzVnTEpyT0NKc0JlcU5OX0U4Y3M2aDVaSTlWcENUYkFiSEZ1b2EwcVZScGlURTNKektxYmhUZ3haSk9KNnp5bkdvTHJ4V3RxSkljM25mS2I5d3hfczhFazFUVktNWGV0VGoxXzlLdm9FQUl0eTdZWmVUQWFSOWtIb1lHdVBGQWZpTTlTMzc2RVM4dEgxX1BhaUd6VXcifQ 200 in 52ms (next.js: 2ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /tasks?workspace=80000000-0000-4000-8000-000000000002 200 in 95ms (next.js: 1.9ms, proxy.ts: 4ms, application-code: 89ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 6ms, proxy.ts: 3ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 11ms, proxy.ts: 3ms, application-code: 18ms)
+ GET /tasks 200 in 13ms (next.js: 4ms, proxy.ts: 3ms, application-code: 6ms)
+ GET /tasks 200 in 95ms (next.js: 3ms, proxy.ts: 2ms, application-code: 89ms)
+ GET /tasks 200 in 425ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 421ms)
+ GET /api/auth/get-session 200 in 13ms (next.js: 4ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 16ms, proxy.ts: 8ms, application-code: 10ms)
+ GET /tasks?error=Date+d%E2%80%99%C3%A9ch%C3%A9ance+invalide. 200 in 147ms (next.js: 3ms, proxy.ts: 3ms, application-code: 142ms)
+ POST /tasks 200 in 168ms (next.js: 4ms, proxy.ts: 3ms, application-code: 161ms)
+  └─ ƒ createWorkspaceTask({}) in 6ms src/app/actions.ts
+  ✓  2 [chromium] › e2e/task-digest-local.spec.ts:5:7 › task digest en opens the complete assigned collection and rejects impossible deadlines (3.0s)
+
+  2 passed (7.0s)
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

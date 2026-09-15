@@ -1,0 +1,15 @@
+AssertionError [ERR_ASSERTION]: Trial expiry after actor authorization must reject useful
++ actual - expected
+
++ 'fulfilled'
+- 'rejected'
+
+    at main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-alert-quality.ts:93:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'fulfilled',
+  expected: 'rejected',
+  operator: 'strictEqual',
+  diff: 'simple'
+}

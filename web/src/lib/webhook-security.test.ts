@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({ lookup: vi.fn(), request: vi.fn() }))
 vi.mock('node:dns/promises', () => ({ lookup: mocks.lookup }))
 vi.mock('node:https', () => ({ request: mocks.request }))
 
+import { withWorkDeadline } from './work-deadline'
 import { assertSafeWebhookUrl, isPrivateOrReservedIp, pinnedPublicLookup, postSafeWebhook } from './webhook-security'
 
 describe('isPrivateOrReservedIp', () => {
@@ -20,6 +21,15 @@ describe('isPrivateOrReservedIp', () => {
     '100.64.0.1',
     '224.0.0.1',
     '::1',
+    '0:0:0:0:0:0:0:1',
+    '::ffff:7f00:1',
+    '0:0:0:0:0:ffff:a00:1',
+    '64:ff9b::7f00:1',
+    '2002:7f00:1::',
+    '2001:db8::1',
+    '3fff::1',
+    '198.51.100.1',
+    '203.0.113.1',
     'fc00::1',
     'fd00::1',
     'fe80::1',
@@ -36,7 +46,7 @@ describe('isPrivateOrReservedIp', () => {
     expect(isPrivateOrReservedIp(address)).toBe(true)
   })
 
-  it.each(['8.8.8.8', '1.1.1.1', '2606:4700:4700::1111'])('accepts public address %s', (address) => {
+  it.each(['8.8.8.8', '1.1.1.1', '192.0.78.1', '2606:4700:4700::1111'])('accepts public address %s', (address) => {
     expect(isPrivateOrReservedIp(address)).toBe(false)
   })
 
@@ -64,6 +74,31 @@ describe('isPrivateOrReservedIp', () => {
     await expect(assertSafeWebhookUrl('https://1.1.1.1/hook')).resolves.toMatchObject({ addresses: ['1.1.1.1'] })
   })
 
+  it('stops waiting for DNS at the worker deadline and never submits a late POST', async () => {
+    let resolveLookup!: (addresses: { address: string }[]) => void
+    mocks.lookup.mockReturnValue(new Promise((resolve) => { resolveLookup = resolve }))
+    await expect(withWorkDeadline(Date.now() + 30, () =>
+      postSafeWebhook('https://hooks.example.test/path', {}, { timeoutMs: 8_000 }),
+    )).rejects.toThrow()
+    resolveLookup([{ address: '8.8.8.8' }])
+    await Promise.resolve()
+    expect(mocks.request).not.toHaveBeenCalled()
+  })
+
+  it('passes the remaining total deadline to the socket after DNS', async () => {
+    mocks.lookup.mockResolvedValue([{ address: '8.8.8.8' }])
+    mocks.request.mockImplementation((_url, options) => {
+      const request = new EventEmitter() as EventEmitter & { end: () => void; destroy: (error: Error) => void }
+      request.destroy = (error) => request.emit('error', error)
+      request.end = () => options.signal.addEventListener('abort', () => request.destroy(options.signal.reason), { once: true })
+      return request
+    })
+    await expect(withWorkDeadline(Date.now() + 30, () =>
+      postSafeWebhook('https://hooks.example.test/path', {}),
+    )).rejects.toThrow()
+    expect(mocks.request).toHaveBeenCalledOnce()
+  })
+
   it('pins the HTTPS socket to the validated public address to defeat DNS rebinding', async () => {
     mocks.lookup.mockResolvedValue([{ address: '8.8.8.8' }])
     let requestOptions: Record<string, unknown> | undefined
@@ -89,7 +124,7 @@ describe('isPrivateOrReservedIp', () => {
       })
     })
     expect(result).toEqual({ address: '8.8.8.8', family: 4 })
-    expect(requestOptions).toMatchObject({ servername: 'hooks.example.test', timeout: 8_000 })
+    expect(requestOptions).toMatchObject({ servername: 'hooks.example.test', timeout: 8_000, agent: false, rejectUnauthorized: true })
     expect(mocks.lookup).toHaveBeenCalledOnce()
   })
 

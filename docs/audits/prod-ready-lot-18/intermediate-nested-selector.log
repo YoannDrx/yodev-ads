@@ -1,0 +1,98 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep live navigation state
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 250ms
+✓ Running next.config.ts took 377ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1304ms (next.js: 871ms, proxy.ts: 149ms, application-code: 283ms)
+ POST /api/auth/sign-in/email 200 in 940ms (next.js: 772ms, proxy.ts: 10ms, application-code: 158ms)
+ POST /api/auth/sign-in/email 200 in 83ms (next.js: 3ms, proxy.ts: 3ms, application-code: 77ms)
+ POST /api/auth/sign-in/email 200 in 91ms (next.js: 10ms, proxy.ts: 3ms, application-code: 78ms)
+ POST /api/auth/sign-in/email 200 in 78ms (next.js: 2ms, proxy.ts: 3ms, application-code: 73ms)
+ POST /api/auth/sign-in/email 200 in 75ms (next.js: 2ms, proxy.ts: 2ms, application-code: 71ms)
+ GET /dashboard 200 in 510ms (next.js: 197ms, proxy.ts: 2ms, application-code: 311ms)
+ GET /settings 200 in 231ms (next.js: 29ms, proxy.ts: 12ms, application-code: 190ms)
+ GET /billing 200 in 178ms (next.js: 28ms, proxy.ts: 2ms, application-code: 148ms)
+ GET /support 200 in 167ms (next.js: 32ms, proxy.ts: 4ms, application-code: 130ms)
+ GET /accounts 200 in 113ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 99ms)
+ GET /history 200 in 135ms (next.js: 16ms, proxy.ts: 1.8ms, application-code: 117ms)
+ GET /alerts 200 in 227ms (next.js: 57ms, proxy.ts: 1.8ms, application-code: 168ms)
+ GET /tasks 200 in 364ms (next.js: 70ms, proxy.ts: 5ms, application-code: 289ms)
+ GET /sign-in 200 in 160ms (next.js: 8ms, proxy.ts: 5ms, application-code: 148ms)
+ GET /approvals 200 in 259ms (next.js: 70ms, proxy.ts: 29ms, application-code: 160ms)
+ GET /reports 200 in 267ms (next.js: 76ms, proxy.ts: 5ms, application-code: 186ms)
+ GET /audit 200 in 262ms (next.js: 20ms, proxy.ts: 2ms, application-code: 240ms)
+ GET /icon?a62dacc6b033a714 200 in 162ms (next.js: 45ms, proxy.ts: 8ms, application-code: 110ms)
+ GET /agents 200 in 210ms (next.js: 29ms, proxy.ts: 2ms, application-code: 179ms)
+ GET / 200 in 89ms (next.js: 13ms, proxy.ts: 2ms, application-code: 74ms)
+ GET /privacy 200 in 48ms (next.js: 9ms, proxy.ts: 1.8ms, application-code: 37ms)
+ GET /terms 200 in 50ms (next.js: 9ms, proxy.ts: 1.9ms, application-code: 39ms)
+ GET /subprocessors 200 in 90ms (next.js: 29ms, proxy.ts: 1.9ms, application-code: 59ms)
+ GET /status 200 in 89ms (next.js: 27ms, proxy.ts: 1.8ms, application-code: 60ms)
+ GET /sign-in 200 in 41ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 36ms)
+ GET /sign-up 200 in 309ms (next.js: 279ms, proxy.ts: 1.7ms, application-code: 28ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-Q5QDIv
+
+Running 2 tests using 1 worker
+
+(node:46806) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /insights/devices?client=80000000-0000-4000-8000-000000000094 200 in 546ms (next.js: 418ms, proxy.ts: 3ms, application-code: 125ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 6ms, proxy.ts: 4ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 10ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /tasks 200 in 61ms (next.js: 3ms, proxy.ts: 3ms, application-code: 55ms)
+ GET /discussions/tasks/12e175e3-e13b-4735-91fb-dae4f3bf2726 200 in 1263ms (next.js: 1142ms, proxy.ts: 1.9ms, application-code: 119ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 7ms, proxy.ts: 4ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 28ms (next.js: 14ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /dashboard 200 in 73ms (next.js: 2ms, proxy.ts: 3ms, application-code: 67ms)
+  ✘  1 [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in fr (3.1s)
+  -  2 [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in en
+
+
+  1) [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in fr 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: getByRole('navigation', { name: /Navigation rapide|Quick navigation/ }).locator('a[aria-current="page"]')
+    Expected: "/dashboard"
+    Error: strict mode violation: getByRole('navigation', { name: /Navigation rapide|Quick navigation/ }).locator('a[aria-current="page"]') resolved to 2 elements:
+        1) <a href="/dashboard" aria-current="page" class="flex min-w-14 flex-col items-center gap-1 py-1 text-[10px] text-muted-foreground aria-[current=page]:font-semibold aria-[current=page]:text-slate-950 aria-[current=page]:underline aria-[current=page]:underline-offset-4">…</a> aka getByRole('link', { name: 'Cockpit' })
+        2) <a href="/dashboard" aria-current="page" class="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-100 aria-[current=page]:bg-slate-100 aria-[current=page]:font-semibold aria-[current=page]:ring-1 aria-[current=page]:ring-slate-300">…</a> aka getByLabel('Navigation complète').getByText('Cockpit')
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 15000ms
+      - waiting for getByRole('navigation', { name: /Navigation rapide|Quick navigation/ }).locator('a[aria-current="page"]')
+        3 × locator resolved to <a href="/tasks" aria-current="page" class="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-slate-100 aria-[current=page]:bg-slate-100 aria-[current=page]:font-semibold aria-[current=page]:ring-1 aria-[current=page]:ring-slate-300">…</a>
+          - unexpected value "/tasks"
+
+
+      57 |           await expect(full).toBeHidden()
+      58 |           const quick = page.getByRole('navigation', { name: /Navigation rapide|Quick navigation/ })
+    > 59 |           await expect(quick.locator('a[aria-current="page"]')).toHaveAttribute('href', '/dashboard')
+         |                                                                 ^
+      60 |           await menu.click()
+      61 |           await expect(full.locator('a[aria-current="page"]')).toHaveAttribute('href', '/dashboard')
+      62 |           await full.locator('a[href="/tasks"]').click()
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/navigation-state-local.spec.ts:59:65
+
+    Error Context: test-results/navigation-state-local-liv-5c367--and-invalid-accounts-in-fr-chromium/error-context.md
+
+    Error Context: test-results/navigation-state-local-liv-5c367--and-invalid-accounts-in-fr-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/navigation-state-local.spec.ts:14:53 › live navigation state › follows client navigation, keyboard and invalid accounts in fr 
+  1 did not run
+[?25h
+{"ok":true,"cleaned":"local-browser-fixtures"}

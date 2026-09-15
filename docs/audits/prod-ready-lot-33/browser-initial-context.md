@@ -1,0 +1,198 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: operating-costs-local.spec.ts >> operating costs preserve evidence, corrections, pagination and operator access
+- Location: e2e/operating-costs-local.spec.ts:5:55
+
+# Error details
+
+```
+Test timeout of 120000ms exceeded.
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - link "Aller au contenu" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - complementary [ref=e4]:
+      - link "Ads by Yodev" [ref=e5] [cursor=pointer]:
+        - /url: /dashboard
+      - navigation "Navigation principale" [ref=e15]:
+        - link "Démarrage" [ref=e16] [cursor=pointer]:
+          - /url: /getting-started
+        - link "Cockpit" [ref=e22] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Portefeuille" [ref=e28] [cursor=pointer]:
+          - /url: /portfolio
+        - link "Comptes clients" [ref=e33] [cursor=pointer]:
+          - /url: /accounts
+        - link "Analyse 360" [ref=e38] [cursor=pointer]:
+          - /url: /analysis
+        - link "Insights étendus" [ref=e41] [cursor=pointer]:
+          - /url: /insights
+        - link "Historique" [ref=e44] [cursor=pointer]:
+          - /url: /history
+        - link "Alertes" [ref=e48] [cursor=pointer]:
+          - /url: /alerts
+        - link "Tâches" [ref=e54] [cursor=pointer]:
+          - /url: /tasks
+        - link "Vigies autonomes" [ref=e58] [cursor=pointer]:
+          - /url: /agents
+        - link "Approbations" [ref=e62] [cursor=pointer]:
+          - /url: /approvals
+        - link "Rapports clients" [ref=e67] [cursor=pointer]:
+          - /url: /reports
+        - link "Support" [ref=e74] [cursor=pointer]:
+          - /url: /support
+        - link "Journal d’audit" [ref=e82] [cursor=pointer]:
+          - /url: /audit
+        - link "Abonnement" [ref=e86] [cursor=pointer]:
+          - /url: /billing
+        - link "Réglages" [ref=e89] [cursor=pointer]:
+          - /url: /settings
+        - link "Opérations" [ref=e93] [cursor=pointer]:
+          - /url: /operations
+      - generic [ref=e101]:
+        - paragraph [ref=e102]: Votre vigie
+        - paragraph [ref=e103]: Pilotez chaque compte avec confiance.
+    - generic [ref=e104]:
+      - banner [ref=e105]:
+        - generic "Browser main" [ref=e106]
+        - generic [ref=e107]:
+          - link "État du service non vérifié" [ref=e108] [cursor=pointer]:
+            - /url: /status
+          - generic [ref=e110]:
+            - combobox "Workspace actif" [ref=e111]:
+              - option "Browser foreign"
+              - option "Browser main" [selected]
+            - link "Sécurité du compte" [ref=e112] [cursor=pointer]:
+              - /url: /account
+            - button "Se déconnecter" [ref=e116]
+      - main [ref=e120]:
+        - generic [ref=e122]:
+          - paragraph [ref=e123]: Exploitation Yodev
+          - heading "Coûts par offre" [level=1] [ref=e124]
+          - paragraph [ref=e125]: Contributions documentées, répartitions et estimations. Les données manquantes ne valent pas zéro ; aucun total ne certifie la réception de toutes les factures.
+        - link "Retour aux opérations" [ref=e126] [cursor=pointer]:
+          - /url: /operations
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - text: Mois observé (UTC)
+            - textbox "Mois observé (UTC)" [ref=e129]: 2001-03
+          - button "Afficher" [ref=e130]
+        - paragraph [ref=e131]: Situation au 2026-09-07T09:25:35.175Z · 0 références actives sur 0. Le mois courant est incomplet. Les offres d’essai et internes sont séparées des offres vendues ; les monnaies restent séparées.
+        - generic [ref=e132]:
+          - generic [ref=e133]: Contributions au coût mensuel
+          - generic [ref=e135]:
+            - paragraph [ref=e136]: Les parts réparties proviennent d’un montant justifié, mais leur attribution dépend de la méthode choisie. Une répartition manuelle reste estimée. Les dépenses publicitaires Google ne sont jamais des coûts d’exploitation Yodev. Les postes facturés ensemble doivent être saisis une seule fois pour éviter les doublons entre collectes et fonctions.
+            - region "Coûts par offre et par poste" [ref=e137]:
+              - table [ref=e138]:
+                - rowgroup [ref=e139]:
+                  - row [ref=e140]:
+                    - columnheader "Poste / devise" [ref=e141]
+                    - columnheader "Offre" [ref=e142]
+                    - columnheader "Documenté direct / non réparti" [ref=e143]
+                    - columnheader "Documenté réparti" [ref=e144]
+                    - columnheader "Estimé" [ref=e145]
+                    - columnheader "Minutes documentées / estimées" [ref=e146]
+                    - columnheader "Références" [ref=e147]
+                - rowgroup
+            - paragraph [ref=e148]: Aucune contribution renseignée pour cette période.
+            - paragraph [ref=e149]: "Postes sans observation active : Collectes Google, Base de données, Fonctions, Stockage, Email, Support. Un poste présent peut rester incomplet pour certaines offres."
+        - generic [ref=e150]:
+          - generic [ref=e151]: Usages observés dans les traitements conservés
+          - generic [ref=e153]:
+            - paragraph [ref=e154]: Forfait capturé au démarrage des nouvelles tentatives. L’historique antérieur reste inconnu ; les tâches système restent non réparties. Ces compteurs incluent les reprises et les échecs. Le temps écoulé comprend les attentes réseau et ne représente pas du temps de calcul facturé. Les lectures Google peuvent être bloquées avant tout appel. La rétention ou la suppression d’un workspace peut réduire ces observations ; elles ne constituent pas une archive de facturation.
+            - region "Usages des traitements par forfait" [ref=e155]:
+              - table [ref=e156]:
+                - rowgroup [ref=e157]:
+                  - row [ref=e158]:
+                    - columnheader "Forfait au démarrage" [ref=e159]
+                    - columnheader "Tentatives" [ref=e160]
+                    - columnheader "Dont lectures Google" [ref=e161]
+                    - columnheader "Terminées avec durée valide" [ref=e162]
+                    - columnheader "Durée cumulée (ms)" [ref=e163]
+                - rowgroup
+            - paragraph [ref=e164]: Aucune tentative conservée pour ce mois.
+        - generic [ref=e165]:
+          - generic [ref=e166]: Ajouter une observation
+          - form "Ajouter une observation de coût" [ref=e169]:
+            - generic [ref=e170]:
+              - generic [ref=e171]:
+                - text: Référence opaque du justificatif
+                - textbox "Référence opaque du justificatif" [active] [ref=e172]:
+                  - /placeholder: facture-2026-09-ligne-1
+                  - text: browser-cost-ddaaec71-b001-4366-af8d-b461ec1929f3-00
+              - generic [ref=e173]:
+                - text: Mois du service (UTC)
+                - textbox "Mois du service (UTC)" [ref=e174]: 2001-03
+              - generic [ref=e175]:
+                - text: Poste
+                - combobox "Poste" [ref=e176]:
+                  - option "Collectes Google" [selected]
+                  - option "Base de données"
+                  - option "Fonctions"
+                  - option "Stockage"
+                  - option "Email"
+                  - option "Support"
+              - generic [ref=e177]:
+                - text: Devise ISO
+                - textbox "Devise ISO" [ref=e178]: EUR
+              - generic [ref=e179]:
+                - text: Origine du montant / de la durée
+                - combobox "Origine du montant / de la durée" [ref=e180]:
+                  - option "Justificatif disponible" [selected]
+                  - option "Estimation"
+              - generic [ref=e181]:
+                - text: Montant hors taxes
+                - textbox "Montant hors taxes" [ref=e182]:
+                  - /placeholder: "12.345678"
+              - generic [ref=e183]:
+                - text: Minutes de support, si applicable
+                - spinbutton "Minutes de support, si applicable" [ref=e184]
+              - generic [ref=e185]:
+                - text: Méthode de répartition
+                - combobox "Méthode de répartition" [ref=e186]:
+                  - option "Affectation directe justifiée"
+                  - option "Répartition selon les usages"
+                  - option "Répartition selon les jours par forfait"
+                  - option "Répartition manuelle estimée"
+                  - option "Non réparti" [selected]
+            - group "Répartition par forfait pendant le mois du service — total 100 %" [ref=e187]:
+              - generic [ref=e189]:
+                - generic [ref=e190]:
+                  - text: Essai (%)
+                  - spinbutton "Essai (%)" [ref=e191]: "0"
+                - generic [ref=e192]:
+                  - text: Solo (%)
+                  - spinbutton "Solo (%)" [ref=e193]: "0"
+                - generic [ref=e194]:
+                  - text: Studio (%)
+                  - spinbutton "Studio (%)" [ref=e195]: "0"
+                - generic [ref=e196]:
+                  - text: Agency (%)
+                  - spinbutton "Agency (%)" [ref=e197]: "0"
+                - generic [ref=e198]:
+                  - text: Interne (%)
+                  - spinbutton "Interne (%)" [ref=e199]: "0"
+                - generic [ref=e200]:
+                  - text: Non réparti (%)
+                  - spinbutton "Non réparti (%)" [ref=e201]: "100"
+            - paragraph [ref=e202]: Une référence par ligne de justificatif, réutilisée pour chaque correction. Aucun nom de client, secret, URL privée ni contenu de facture. Conservez le justificatif et le calcul de répartition dans votre dossier comptable. Montants décimaux avec un point, jusqu’à 6 décimales ; avoirs négatifs admis. Pour le support non valorisé, laissez le montant vide. Une valeur 0 signifie un zéro documenté ou estimé, selon l’origine choisie.
+            - button "Enregistrer l’observation" [ref=e203]
+        - generic [ref=e204]:
+          - generic [ref=e205]: Justificatifs et corrections
+          - generic [ref=e207]:
+            - paragraph [ref=e208]: 25 références maximum par page, actives ou retirées. Les contributions ci-dessus couvrent toutes les pages du mois. Corriger une référence conserve son audit ; la retirer l’exclut des calculs sans effacer la preuve.
+            - navigation "Pages des justificatifs"
+  - button "Open Next.js Dev Tools" [ref=e216]
+  - alert [ref=e220]
+```

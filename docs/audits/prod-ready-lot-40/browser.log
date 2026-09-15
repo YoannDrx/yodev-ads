@@ -1,0 +1,132 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/personal-notifications-local.spec.ts e2e/member-preferences-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 415ms
+✓ Running next.config.ts took 493ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.3s (next.js: 1883ms, proxy.ts: 124ms, application-code: 320ms)
+ POST /api/auth/sign-in/email 200 in 982ms (next.js: 790ms, proxy.ts: 4ms, application-code: 188ms)
+ POST /api/auth/sign-in/email 200 in 102ms (next.js: 5ms, proxy.ts: 4ms, application-code: 93ms)
+ POST /api/auth/sign-in/email 200 in 87ms (next.js: 2ms, proxy.ts: 3ms, application-code: 82ms)
+ POST /api/auth/sign-in/email 200 in 82ms (next.js: 2ms, proxy.ts: 3ms, application-code: 76ms)
+ POST /api/auth/sign-in/email 200 in 79ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 75ms)
+ GET /dashboard 200 in 568ms (next.js: 206ms, proxy.ts: 3ms, application-code: 360ms)
+ GET /settings 200 in 281ms (next.js: 30ms, proxy.ts: 2ms, application-code: 248ms)
+ GET /billing 200 in 164ms (next.js: 13ms, proxy.ts: 2ms, application-code: 149ms)
+ GET /support 200 in 141ms (next.js: 14ms, proxy.ts: 2ms, application-code: 125ms)
+ GET /accounts 200 in 132ms (next.js: 16ms, proxy.ts: 1.9ms, application-code: 114ms)
+ GET /history 200 in 133ms (next.js: 19ms, proxy.ts: 1.8ms, application-code: 112ms)
+ GET /alerts 200 in 142ms (next.js: 20ms, proxy.ts: 1.8ms, application-code: 120ms)
+ GET /tasks 200 in 168ms (next.js: 20ms, proxy.ts: 1.9ms, application-code: 146ms)
+ GET /approvals 200 in 134ms (next.js: 25ms, proxy.ts: 2ms, application-code: 107ms)
+ GET /reports 200 in 217ms (next.js: 22ms, proxy.ts: 1.9ms, application-code: 194ms)
+ GET /audit 200 in 144ms (next.js: 23ms, proxy.ts: 2ms, application-code: 118ms)
+ GET /agents 200 in 212ms (next.js: 19ms, proxy.ts: 1.8ms, application-code: 192ms)
+ GET / 200 in 203ms (next.js: 38ms, proxy.ts: 4ms, application-code: 161ms)
+ GET /privacy 200 in 76ms (next.js: 17ms, proxy.ts: 4ms, application-code: 55ms)
+ GET /terms 200 in 57ms (next.js: 13ms, proxy.ts: 2ms, application-code: 42ms)
+ GET /subprocessors 200 in 160ms (next.js: 45ms, proxy.ts: 2ms, application-code: 113ms)
+ GET /status 200 in 209ms (next.js: 57ms, proxy.ts: 3ms, application-code: 149ms)
+ GET /sign-in 200 in 89ms (next.js: 7ms, proxy.ts: 2ms, application-code: 80ms)
+ GET /sign-in 200 in 72ms (next.js: 8ms, proxy.ts: 3ms, application-code: 62ms)
+ GET /icon?a62dacc6b033a714 200 in 202ms (next.js: 78ms, proxy.ts: 11ms, application-code: 113ms)
+ GET /sign-up 200 in 755ms (next.js: 713ms, proxy.ts: 5ms, application-code: 37ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-S3iSbP
+
+Running 4 tests using 1 worker
+
+(node:8280) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /settings 200 in 305ms (next.js: 3ms, proxy.ts: 3ms, application-code: 300ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 8ms, proxy.ts: 6ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 35ms (next.js: 14ms, proxy.ts: 5ms, application-code: 17ms)
+ GET /settings?notice=Pr%C3%A9f%C3%A9rences+personnelles+de+t%C3%A2ches+enregistr%C3%A9es. 200 in 118ms (next.js: 2ms, proxy.ts: 3ms, application-code: 113ms)
+ POST /settings 200 in 179ms (next.js: 11ms, proxy.ts: 4ms, application-code: 164ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 30ms src/app/actions.ts
+ GET /settings?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 217ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 212ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 9ms, proxy.ts: 5ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 14ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /settings?error=Workspace+access+state+does+not+allow%3A+workspace%3Aread 200 in 58ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 54ms)
+ POST /settings?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 78ms (next.js: 2ms, proxy.ts: 3ms, application-code: 73ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 7ms src/app/actions.ts
+ GET /support?notice=Votre+acc%C3%A8s+actuel+est+limit%C3%A9+%C3%A0+la+facturation+et+aux+donn%C3%A9es+stock%C3%A9es. 200 in 62ms (next.js: 2ms, proxy.ts: 2ms, application-code: 57ms)
+ GET /support?notice=Votre+acc%C3%A8s+actuel+est+limit%C3%A9+%C3%A0+la+facturation+et+aux+donn%C3%A9es+stock%C3%A9es. 200 in 51ms (next.js: 5ms, proxy.ts: 7ms, application-code: 39ms)
+  ✓  1 [chromium] › e2e/member-preferences-local.spec.ts:6:7 › member preferences fr persist personal settings and refuse a stale grace form (2.0s)
+ GET /settings 200 in 214ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 209ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 6ms, proxy.ts: 4ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 9ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /settings?notice=Pr%C3%A9f%C3%A9rences+personnelles+de+t%C3%A2ches+enregistr%C3%A9es. 200 in 86ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 82ms)
+ POST /settings 200 in 114ms (next.js: 2ms, proxy.ts: 4ms, application-code: 108ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 15ms src/app/actions.ts
+ GET /settings?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 209ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 205ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /settings?error=Workspace+access+state+does+not+allow%3A+workspace%3Aread 200 in 48ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 43ms)
+ POST /settings?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 71ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 66ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 12ms src/app/actions.ts
+ GET /support?notice=Your+current+access+is+limited+to+billing+and+stored+data. 200 in 65ms (next.js: 2ms, proxy.ts: 3ms, application-code: 60ms)
+ GET /support?notice=Your+current+access+is+limited+to+billing+and+stored+data. 200 in 47ms (next.js: 4ms, proxy.ts: 5ms, application-code: 38ms)
+  ✓  2 [chromium] › e2e/member-preferences-local.spec.ts:6:7 › member preferences en persist personal settings and refuse a stale grace form (1.6s)
+ GET /account 200 in 97ms (next.js: 35ms, proxy.ts: 3ms, application-code: 58ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 7ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 9ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 29ms (next.js: 12ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /account/notifications 200 in 2.7s (next.js: 2.6s, proxy.ts: 4ms, application-code: 82ms)
+ GET /account/notifications?notice=Pr%C3%A9f%C3%A9rences+personnelles+de+t%C3%A2ches+enregistr%C3%A9es. 200 in 264ms (next.js: 13ms, proxy.ts: 8ms, application-code: 243ms)
+ POST /account/notifications 200 in 375ms (next.js: 10ms, proxy.ts: 15ms, application-code: 350ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 60ms src/app/actions.ts
+ GET /account/notifications?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 130ms (next.js: 13ms, proxy.ts: 6ms, application-code: 111ms)
+ GET /api/auth/get-session 200 in 134ms (next.js: 76ms, proxy.ts: 10ms, application-code: 47ms)
+ GET /api/auth/organization/list 200 in 140ms (next.js: 44ms, proxy.ts: 12ms, application-code: 84ms)
+ GET /account/notifications?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 134ms (next.js: 13ms, proxy.ts: 8ms, application-code: 113ms)
+ POST /account/notifications?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 197ms (next.js: 11ms, proxy.ts: 7ms, application-code: 180ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 31ms src/app/actions.ts
+ GET /account/notifications 200 in 151ms (next.js: 11ms, proxy.ts: 12ms, application-code: 128ms)
+ GET /api/auth/get-session 200 in 80ms (next.js: 31ms, proxy.ts: 16ms, application-code: 34ms)
+ GET /api/auth/organization/list 200 in 159ms (next.js: 39ms, proxy.ts: 17ms, application-code: 102ms)
+ GET /account/notifications 307 in 213ms (next.js: 12ms, proxy.ts: 36ms, application-code: 166ms)
+ GET /support?notice=Votre%20acc%C3%A8s%20actuel%20est%20limit%C3%A9%20%C3%A0%20la%20facturation%20et%20aux%20donn%C3%A9es%20stock%C3%A9es. 200 in 254ms (next.js: 13ms, proxy.ts: 9ms, application-code: 232ms)
+ GET /api/auth/get-session 200 in 139ms (next.js: 13ms, proxy.ts: 33ms, application-code: 92ms)
+ GET /api/auth/organization/list 200 in 147ms (next.js: 31ms, proxy.ts: 32ms, application-code: 83ms)
+ GET /account 200 in 163ms (next.js: 19ms, proxy.ts: 32ms, application-code: 112ms)
+  ✓  3 [chromium] › e2e/personal-notifications-local.spec.ts:6:7 › personal notifications fr accessible to analyst, tenant bound, and explicit for client (6.8s)
+ GET /account 200 in 66ms (next.js: 2ms, proxy.ts: 3ms, application-code: 60ms)
+ GET /api/auth/get-session 200 in 55ms (next.js: 12ms, proxy.ts: 8ms, application-code: 35ms)
+ GET /api/auth/organization/list 200 in 62ms (next.js: 15ms, proxy.ts: 9ms, application-code: 38ms)
+ GET /api/auth/passkey/list-user-passkeys 200 in 67ms (next.js: 17ms, proxy.ts: 11ms, application-code: 39ms)
+ GET /account/notifications 200 in 75ms (next.js: 15ms, proxy.ts: 17ms, application-code: 43ms)
+ GET /account/notifications?notice=Pr%C3%A9f%C3%A9rences+personnelles+de+t%C3%A2ches+enregistr%C3%A9es. 200 in 68ms (next.js: 3ms, proxy.ts: 4ms, application-code: 60ms)
+ POST /account/notifications 200 in 117ms (next.js: 4ms, proxy.ts: 4ms, application-code: 110ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 31ms src/app/actions.ts
+ GET /account/notifications?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 59ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 55ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 7ms, proxy.ts: 7ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 10ms, proxy.ts: 6ms, application-code: 15ms)
+ GET /account/notifications?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 79ms (next.js: 12ms, proxy.ts: 3ms, application-code: 65ms)
+ POST /account/notifications?notice=Pr%C3%A9f%C3%A9rences%20personnelles%20de%20t%C3%A2ches%20enregistr%C3%A9es. 200 in 104ms (next.js: 7ms, proxy.ts: 4ms, application-code: 93ms)
+  └─ ƒ updateMyTaskNotificationPreferences({}) in 6ms src/app/actions.ts
+ GET /account/notifications 200 in 70ms (next.js: 3ms, proxy.ts: 2ms, application-code: 65ms)
+ GET /api/auth/get-session 200 in 95ms (next.js: 15ms, proxy.ts: 17ms, application-code: 63ms)
+ GET /api/auth/organization/list 200 in 115ms (next.js: 27ms, proxy.ts: 19ms, application-code: 69ms)
+ GET /account/notifications 307 in 116ms (next.js: 3ms, proxy.ts: 15ms, application-code: 98ms)
+ GET /support?notice=Your%20current%20access%20is%20limited%20to%20billing%20and%20stored%20data. 200 in 162ms (next.js: 4ms, proxy.ts: 4ms, application-code: 154ms)
+ GET /api/auth/get-session 200 in 67ms (next.js: 24ms, proxy.ts: 7ms, application-code: 35ms)
+ GET /api/auth/organization/list 200 in 80ms (next.js: 35ms, proxy.ts: 8ms, application-code: 37ms)
+ GET /account 200 in 85ms (next.js: 5ms, proxy.ts: 6ms, application-code: 74ms)
+ GET /api/auth/get-session 200 in 32ms (next.js: 16ms, proxy.ts: 8ms, application-code: 7ms)
+  ✓  4 [chromium] › e2e/personal-notifications-local.spec.ts:6:7 › personal notifications en accessible to analyst, tenant bound, and explicit for client (2.4s)
+
+  4 passed (13.6s)
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

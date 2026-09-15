@@ -1,0 +1,678 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 261ms
+✓ Running next.config.ts took 367ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 946ms (next.js: 538ms, proxy.ts: 122ms, application-code: 287ms)
+ POST /api/auth/sign-in/email 200 in 863ms (next.js: 701ms, proxy.ts: 4ms, application-code: 158ms)
+ POST /api/auth/sign-in/email 200 in 86ms (next.js: 3ms, proxy.ts: 3ms, application-code: 80ms)
+ POST /api/auth/sign-in/email 200 in 86ms (next.js: 2ms, proxy.ts: 10ms, application-code: 74ms)
+ POST /api/auth/sign-in/email 200 in 75ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 71ms)
+ POST /api/auth/sign-in/email 200 in 74ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /dashboard 200 in 439ms (next.js: 176ms, proxy.ts: 2ms, application-code: 261ms)
+ GET /settings 200 in 233ms (next.js: 28ms, proxy.ts: 4ms, application-code: 201ms)
+ GET /billing 200 in 185ms (next.js: 27ms, proxy.ts: 2ms, application-code: 156ms)
+ GET /support 200 in 161ms (next.js: 31ms, proxy.ts: 3ms, application-code: 127ms)
+ GET /accounts 200 in 119ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 105ms)
+ GET /history 200 in 122ms (next.js: 13ms, proxy.ts: 1.6ms, application-code: 107ms)
+ GET /alerts 200 in 139ms (next.js: 26ms, proxy.ts: 1.7ms, application-code: 111ms)
+ GET /tasks 200 in 172ms (next.js: 41ms, proxy.ts: 1.8ms, application-code: 129ms)
+ GET /approvals 200 in 157ms (next.js: 42ms, proxy.ts: 1.7ms, application-code: 113ms)
+ GET /reports 200 in 228ms (next.js: 44ms, proxy.ts: 2ms, application-code: 181ms)
+ GET /audit 200 in 120ms (next.js: 19ms, proxy.ts: 1.8ms, application-code: 98ms)
+ GET /agents 200 in 204ms (next.js: 41ms, proxy.ts: 1.6ms, application-code: 161ms)
+ GET / 200 in 95ms (next.js: 17ms, proxy.ts: 1.8ms, application-code: 76ms)
+ GET /privacy 200 in 46ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 34ms)
+ GET /terms 200 in 43ms (next.js: 10ms, proxy.ts: 1.7ms, application-code: 31ms)
+ GET /subprocessors 200 in 97ms (next.js: 37ms, proxy.ts: 1.7ms, application-code: 58ms)
+ GET /status 200 in 83ms (next.js: 32ms, proxy.ts: 1.7ms, application-code: 49ms)
+ GET /sign-in 200 in 35ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 28ms)
+ GET /sign-up 200 in 288ms (next.js: 259ms, proxy.ts: 2ms, application-code: 27ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-xUWFc5
+
+Running 33 tests using 1 worker
+
+(node:21840) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /dashboard 200 in 146ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 143ms)
+ GET /api/auth/get-session 200 in 203ms (next.js: 62ms, proxy.ts: 29ms, application-code: 112ms)
+ GET /api/auth/organization/list 200 in 202ms (next.js: 77ms, proxy.ts: 27ms, application-code: 99ms)
+ GET /settings 200 in 241ms (next.js: 2ms, proxy.ts: 2ms, application-code: 237ms)
+ GET /api/auth/get-session 200 in 92ms (next.js: 67ms, proxy.ts: 12ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 140ms (next.js: 70ms, proxy.ts: 12ms, application-code: 58ms)
+ GET /billing 200 in 193ms (next.js: 2ms, proxy.ts: 2ms, application-code: 188ms)
+ GET /api/auth/get-session 200 in 126ms (next.js: 50ms, proxy.ts: 10ms, application-code: 66ms)
+ GET /api/auth/organization/list 200 in 150ms (next.js: 41ms, proxy.ts: 26ms, application-code: 83ms)
+ GET /support 200 in 169ms (next.js: 9ms, proxy.ts: 4ms, application-code: 156ms)
+  ✓   1 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › owner has only its server-authorized product surface (1.7s)
+ GET /dashboard 200 in 123ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 119ms)
+ GET /api/auth/get-session 200 in 124ms (next.js: 31ms, proxy.ts: 26ms, application-code: 67ms)
+ GET /api/auth/organization/list 200 in 192ms (next.js: 33ms, proxy.ts: 26ms, application-code: 133ms)
+ GET /settings 200 in 224ms (next.js: 5ms, proxy.ts: 3ms, application-code: 216ms)
+ GET /api/auth/get-session 200 in 108ms (next.js: 64ms, proxy.ts: 12ms, application-code: 32ms)
+ GET /api/auth/organization/list 200 in 113ms (next.js: 67ms, proxy.ts: 12ms, application-code: 34ms)
+ GET /support 200 in 162ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 158ms)
+⨯ Error [PermissionDeniedError]: Permission required: billing:manage
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async BillingPage (src/app/(app)/billing/page.tsx:23:40)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1137491064'
+}
+ GET /api/auth/get-session 200 in 92ms (next.js: 38ms, proxy.ts: 28ms, application-code: 26ms)
+ GET /api/auth/organization/list 200 in 91ms (next.js: 46ms, proxy.ts: 29ms, application-code: 16ms)
+ GET /billing 307 in 121ms (next.js: 2ms, proxy.ts: 4ms, application-code: 115ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 157ms (next.js: 7ms, proxy.ts: 4ms, application-code: 146ms)
+  ✓   2 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › admin has only its server-authorized product surface (1.4s)
+ GET /dashboard 200 in 369ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 366ms)
+ GET /api/auth/get-session 200 in 125ms (next.js: 17ms, proxy.ts: 24ms, application-code: 84ms)
+ GET /api/auth/organization/list 200 in 123ms (next.js: 51ms, proxy.ts: 22ms, application-code: 51ms)
+ GET /tasks 200 in 158ms (next.js: 2ms, proxy.ts: 2ms, application-code: 154ms)
+ GET /api/auth/get-session 200 in 95ms (next.js: 52ms, proxy.ts: 12ms, application-code: 31ms)
+ GET /api/auth/organization/list 200 in 105ms (next.js: 54ms, proxy.ts: 12ms, application-code: 39ms)
+ GET /support 200 in 155ms (next.js: 2ms, proxy.ts: 2ms, application-code: 150ms)
+ GET /api/auth/get-session 200 in 59ms (next.js: 16ms, proxy.ts: 4ms, application-code: 38ms)
+ GET /api/auth/organization/list 200 in 68ms (next.js: 18ms, proxy.ts: 4ms, application-code: 45ms)
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1612243329'
+}
+ GET /settings 307 in 96ms (next.js: 11ms, proxy.ts: 7ms, application-code: 79ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 123ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 120ms)
+⨯ Error [PermissionDeniedError]: Permission required: billing:manage
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async BillingPage (src/app/(app)/billing/page.tsx:23:40)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1137491064'
+}
+ GET /api/auth/get-session 200 in 69ms (next.js: 19ms, proxy.ts: 24ms, application-code: 26ms)
+ GET /api/auth/organization/list 200 in 70ms (next.js: 22ms, proxy.ts: 22ms, application-code: 26ms)
+ GET /billing 307 in 96ms (next.js: 3ms, proxy.ts: 3ms, application-code: 90ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 125ms (next.js: 4ms, proxy.ts: 3ms, application-code: 118ms)
+  ✓   3 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › strategist has only its server-authorized product surface (2.0s)
+ GET /dashboard 200 in 111ms (next.js: 1.6ms, proxy.ts: 1.8ms, application-code: 107ms)
+ GET /api/auth/get-session 200 in 96ms (next.js: 18ms, proxy.ts: 24ms, application-code: 55ms)
+ GET /api/auth/organization/list 200 in 140ms (next.js: 52ms, proxy.ts: 22ms, application-code: 66ms)
+ GET /reports 200 in 166ms (next.js: 1.8ms, proxy.ts: 2.0ms, application-code: 163ms)
+ GET /api/auth/get-session 200 in 94ms (next.js: 49ms, proxy.ts: 14ms, application-code: 31ms)
+ GET /api/auth/organization/list 200 in 97ms (next.js: 51ms, proxy.ts: 14ms, application-code: 31ms)
+ GET /support 200 in 136ms (next.js: 3ms, proxy.ts: 2ms, application-code: 131ms)
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1612243329'
+}
+ GET /api/auth/get-session 200 in 78ms (next.js: 19ms, proxy.ts: 34ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 67ms (next.js: 23ms, proxy.ts: 23ms, application-code: 21ms)
+ GET /settings 307 in 100ms (next.js: 3ms, proxy.ts: 3ms, application-code: 94ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 121ms (next.js: 1.5ms, proxy.ts: 3ms, application-code: 117ms)
+ GET /sign-in 200 in 51ms (next.js: 4ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /api/auth/get-session 200 in 86ms (next.js: 18ms, proxy.ts: 14ms, application-code: 53ms)
+ GET /api/auth/organization/list 200 in 89ms (next.js: 12ms, proxy.ts: 16ms, application-code: 61ms)
+⨯ Error [PermissionDeniedError]: Permission required: billing:manage
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async BillingPage (src/app/(app)/billing/page.tsx:23:40)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1137491064'
+}
+ GET /billing 307 in 344ms (next.js: 11ms, proxy.ts: 6ms, application-code: 327ms)
+ GET /icon?a62dacc6b033a714 200 in 241ms (next.js: 51ms, proxy.ts: 10ms, application-code: 180ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 321ms (next.js: 101ms, proxy.ts: 98ms, application-code: 121ms)
+  ✓   4 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › analyst has only its server-authorized product surface (1.9s)
+ GET /support 200 in 88ms (next.js: 1.5ms, proxy.ts: 2ms, application-code: 84ms)
+ GET /api/auth/get-session 200 in 67ms (next.js: 38ms, proxy.ts: 3ms, application-code: 26ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:26:54)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '3768582764'
+}
+ GET /api/auth/organization/list 200 in 119ms (next.js: 40ms, proxy.ts: 4ms, application-code: 75ms)
+ GET /dashboard 307 in 132ms (next.js: 4ms, proxy.ts: 4ms, application-code: 124ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 96ms (next.js: 2ms, proxy.ts: 4ms, application-code: 90ms)
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1612243329'
+}
+ GET /api/auth/get-session 200 in 79ms (next.js: 47ms, proxy.ts: 4ms, application-code: 27ms)
+ GET /api/auth/organization/list 200 in 95ms (next.js: 54ms, proxy.ts: 5ms, application-code: 36ms)
+ GET /settings 307 in 103ms (next.js: 4ms, proxy.ts: 5ms, application-code: 94ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 85ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 81ms)
+ GET /api/auth/get-session 200 in 69ms (next.js: 36ms, proxy.ts: 6ms, application-code: 28ms)
+ GET /api/auth/organization/list 200 in 73ms (next.js: 31ms, proxy.ts: 7ms, application-code: 34ms)
+⨯ Error [PermissionDeniedError]: Permission required: billing:manage
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async BillingPage (src/app/(app)/billing/page.tsx:23:40)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1137491064'
+}
+ GET /billing 307 in 101ms (next.js: 11ms, proxy.ts: 5ms, application-code: 85ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 88ms (next.js: 2ms, proxy.ts: 1.7ms, application-code: 84ms)
+  ✓   5 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › client has only its server-authorized product surface (1.3s)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 404 in 1603ms (next.js: 1573ms, proxy.ts: 2ms, application-code: 28ms)
+  ✓   6 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › owner cannot cross the direct export API boundary (2.0s)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 403 in 12ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 7ms)
+  ✓   7 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › admin cannot cross the direct export API boundary (56ms)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 403 in 11ms (next.js: 2ms, proxy.ts: 2ms, application-code: 7ms)
+  ✓   8 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › strategist cannot cross the direct export API boundary (49ms)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 403 in 10ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 7ms)
+  ✓   9 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › analyst cannot cross the direct export API boundary (48ms)
+ GET /api/exports/80000000-0000-4000-8000-000000000003 403 in 11ms (next.js: 2ms, proxy.ts: 2ms, application-code: 7ms)
+  ✓  10 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › client cannot cross the direct export API boundary (48ms)
+ GET /settings 200 in 291ms (next.js: 1.6ms, proxy.ts: 2.0ms, application-code: 287ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /settings 200 in 66ms (next.js: 3ms, proxy.ts: 3ms, application-code: 59ms)
+  └─ ƒ updateWorkspaceLocale({}) in 11ms src/app/actions.ts
+ GET /settings?notice=Langue+de+l%E2%80%99espace+mise+%C3%A0+jour. 200 in 92ms (next.js: 2ms, proxy.ts: 2ms, application-code: 87ms)
+ GET /settings?notice=Langue+de+l%E2%80%99espace+mise+%C3%A0+jour. 200 in 63ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 59ms)
+ POST /settings 200 in 113ms (next.js: 17ms, proxy.ts: 18ms, application-code: 77ms)
+  └─ ƒ updateWorkspaceLocale({}) in 10ms src/app/actions.ts
+ GET /settings?notice=Langue+de+l%E2%80%99espace+mise+%C3%A0+jour. 200 in 75ms (next.js: 1.5ms, proxy.ts: 1.5ms, application-code: 72ms)
+ POST /settings 200 in 91ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 87ms)
+  └─ ƒ updateWorkspaceLocale({}) in 8ms src/app/actions.ts
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1612243329'
+}
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 40ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 37ms)
+ POST /settings 200 in 53ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 49ms)
+  └─ ƒ updateWorkspaceLocale({}) in 5ms src/app/actions.ts
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1612243329'
+}
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 39ms (next.js: 1.6ms, proxy.ts: 1.5ms, application-code: 36ms)
+ POST /settings 200 in 59ms (next.js: 3ms, proxy.ts: 1.8ms, application-code: 55ms)
+  └─ ƒ updateWorkspaceLocale({}) in 5ms src/app/actions.ts
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async SettingsPage (src/app/(app)/settings/page.tsx:51:57)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '1612243329'
+}
+ GET /settings?error=Permission+required%3A+workspace%3Aadmin 200 in 197ms (next.js: 2.0ms, proxy.ts: 1.5ms, application-code: 193ms)
+ POST /settings 200 in 209ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 206ms)
+  └─ ƒ updateWorkspaceLocale({}) in 5ms src/app/actions.ts
+  ✓  11 [chromium] › e2e/authenticated-rbac.spec.ts:93:7 › authenticated Server Action authorization matrix › re-authorizes workspace administration for every session (1.3s)
+ GET /billing 200 in 151ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 147ms)
+ GET /api/auth/get-session 200 in 91ms (next.js: 54ms, proxy.ts: 11ms, application-code: 26ms)
+ GET /api/auth/organization/list 200 in 94ms (next.js: 57ms, proxy.ts: 11ms, application-code: 27ms)
+ GET /accounts 200 in 136ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 131ms)
+ GET /api/auth/get-session 200 in 75ms (next.js: 14ms, proxy.ts: 18ms, application-code: 43ms)
+ GET /api/auth/organization/list 200 in 76ms (next.js: 10ms, proxy.ts: 14ms, application-code: 53ms)
+ POST /accounts 200 in 62ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 58ms)
+  └─ ƒ setCookieConsent({}) in 0ms src/app/preferences-actions.ts
+ GET /accounts?selection=saved 200 in 51ms (next.js: 1.8ms, proxy.ts: 1.6ms, application-code: 48ms)
+ POST /accounts 200 in 71ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 67ms)
+  └─ ƒ updateManagedAccounts({}) in 11ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 54ms (next.js: 8ms, proxy.ts: 1.7ms, application-code: 45ms)
+ POST /accounts?selection=saved 200 in 73ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 68ms)
+  └─ ƒ updateManagedAccounts({}) in 9ms src/app/account-selection-actions.ts
+ GET /accounts?selection=conflict 200 in 51ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 47ms)
+ POST /accounts?selection=saved 200 in 70ms (next.js: 2ms, proxy.ts: 3ms, application-code: 65ms)
+  └─ ƒ updateManagedAccounts({}) in 8ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 53ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 50ms)
+ POST /accounts?selection=conflict 200 in 71ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 67ms)
+  └─ ƒ updateManagedAccounts({}) in 9ms src/app/account-selection-actions.ts
+ GET /accounts 200 in 99ms (next.js: 1.5ms, proxy.ts: 1.7ms, application-code: 96ms)
+  ✓  12 [chromium] › e2e/prod-ready-local.spec.ts:23:44 › local production readiness regression journeys › managed account selection preserves priorities and enforces quota in fr (2.4s)
+ GET /billing 200 in 143ms (next.js: 1.9ms, proxy.ts: 1.8ms, application-code: 140ms)
+ GET /api/auth/get-session 200 in 99ms (next.js: 57ms, proxy.ts: 15ms, application-code: 27ms)
+ GET /api/auth/organization/list 200 in 103ms (next.js: 60ms, proxy.ts: 15ms, application-code: 28ms)
+ GET /accounts 200 in 142ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 139ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 4ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 18ms (next.js: 7ms, proxy.ts: 3ms, application-code: 8ms)
+ POST /accounts 200 in 59ms (next.js: 2.0ms, proxy.ts: 2.0ms, application-code: 55ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /accounts?selection=saved 200 in 56ms (next.js: 1.5ms, proxy.ts: 1.7ms, application-code: 53ms)
+ POST /accounts 200 in 77ms (next.js: 2ms, proxy.ts: 3ms, application-code: 72ms)
+  └─ ƒ updateManagedAccounts({}) in 11ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 47ms (next.js: 1.5ms, proxy.ts: 1.8ms, application-code: 44ms)
+ POST /accounts?selection=saved 200 in 65ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 60ms)
+  └─ ƒ updateManagedAccounts({}) in 8ms src/app/account-selection-actions.ts
+ GET /accounts?selection=conflict 200 in 49ms (next.js: 1.6ms, proxy.ts: 1.9ms, application-code: 46ms)
+ POST /accounts?selection=saved 200 in 70ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 66ms)
+  └─ ƒ updateManagedAccounts({}) in 12ms src/app/account-selection-actions.ts
+ GET /accounts?selection=saved 200 in 47ms (next.js: 1.5ms, proxy.ts: 1.9ms, application-code: 43ms)
+ POST /accounts?selection=conflict 200 in 64ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 60ms)
+  └─ ƒ updateManagedAccounts({}) in 9ms src/app/account-selection-actions.ts
+ GET /accounts 200 in 129ms (next.js: 3ms, proxy.ts: 3ms, application-code: 124ms)
+  ✓  13 [chromium] › e2e/prod-ready-local.spec.ts:23:44 › local production readiness regression journeys › managed account selection preserves priorities and enforces quota in en (2.2s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 169ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 166ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 8ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 93ms (next.js: 3ms, proxy.ts: 2ms, application-code: 88ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 160ms (next.js: 3ms, proxy.ts: 2ms, application-code: 155ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+  ✓  14 [chromium] › e2e/prod-ready-local.spec.ts:88:44 › local production readiness regression journeys › pacing uses covered completed days and hides forecasts with a gap in fr (1.1s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 159ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 156ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 5ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 9ms, proxy.ts: 3ms, application-code: 9ms)
+ POST /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 80ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 76ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /dashboard?client=80000000-0000-4000-8000-000000000004 200 in 163ms (next.js: 2ms, proxy.ts: 2ms, application-code: 159ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 4ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 9ms, proxy.ts: 5ms, application-code: 10ms)
+  ✓  15 [chromium] › e2e/prod-ready-local.spec.ts:88:44 › local production readiness regression journeys › pacing uses covered completed days and hides forecasts with a gap in en (1.0s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 187ms (next.js: 1.8ms, proxy.ts: 1.8ms, application-code: 184ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 8ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 1010ms (next.js: 704ms, proxy.ts: 5ms, application-code: 302ms)
+ GET /api/auth/get-session 200 in 31ms (next.js: 6ms, proxy.ts: 5ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 13ms, proxy.ts: 5ms, application-code: 13ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 724ms (next.js: 361ms, proxy.ts: 10ms, application-code: 353ms)
+ GET /api/auth/get-session 200 in 108ms (next.js: 17ms, proxy.ts: 28ms, application-code: 63ms)
+ GET /api/auth/organization/list 200 in 108ms (next.js: 59ms, proxy.ts: 26ms, application-code: 24ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 232ms (next.js: 7ms, proxy.ts: 3ms, application-code: 222ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 28ms (next.js: 8ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 178ms (next.js: 9ms, proxy.ts: 4ms, application-code: 166ms)
+ GET /api/auth/get-session 200 in 132ms (next.js: 50ms, proxy.ts: 10ms, application-code: 72ms)
+ GET /api/auth/organization/list 200 in 136ms (next.js: 53ms, proxy.ts: 11ms, application-code: 72ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 226ms (next.js: 4ms, proxy.ts: 12ms, application-code: 210ms)
+ GET /api/auth/get-session 200 in 69ms (next.js: 40ms, proxy.ts: 4ms, application-code: 26ms)
+ GET /api/auth/organization/list 200 in 117ms (next.js: 42ms, proxy.ts: 4ms, application-code: 71ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 220ms (next.js: 3ms, proxy.ts: 4ms, application-code: 214ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 5ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 10ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000005 200 in 72ms (next.js: 2ms, proxy.ts: 2ms, application-code: 68ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+  ✓  16 [chromium] › e2e/prod-ready-local.spec.ts:125:44 › local production readiness regression journeys › stored analytics remain available without Google and during grace in fr (4.2s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 187ms (next.js: 2ms, proxy.ts: 2ms, application-code: 183ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 5ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 8ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 185ms (next.js: 4ms, proxy.ts: 6ms, application-code: 176ms)
+ GET /api/auth/get-session 200 in 110ms (next.js: 15ms, proxy.ts: 33ms, application-code: 62ms)
+ GET /api/auth/organization/list 200 in 108ms (next.js: 55ms, proxy.ts: 32ms, application-code: 21ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 238ms (next.js: 9ms, proxy.ts: 4ms, application-code: 225ms)
+ GET /api/auth/get-session 200 in 77ms (next.js: 52ms, proxy.ts: 13ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 88ms (next.js: 55ms, proxy.ts: 13ms, application-code: 21ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 211ms (next.js: 3ms, proxy.ts: 2.0ms, application-code: 206ms)
+ GET /api/auth/get-session 200 in 16ms (next.js: 3ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 17ms (next.js: 7ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 168ms (next.js: 2ms, proxy.ts: 2ms, application-code: 163ms)
+ GET /api/auth/get-session 200 in 101ms (next.js: 50ms, proxy.ts: 29ms, application-code: 22ms)
+ GET /api/auth/organization/list 200 in 99ms (next.js: 57ms, proxy.ts: 29ms, application-code: 13ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 219ms (next.js: 2ms, proxy.ts: 2ms, application-code: 214ms)
+ GET /api/auth/get-session 200 in 76ms (next.js: 51ms, proxy.ts: 14ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 80ms (next.js: 54ms, proxy.ts: 15ms, application-code: 11ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 205ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 201ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 4ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 7ms, proxy.ts: 3ms, application-code: 11ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000005 200 in 72ms (next.js: 2ms, proxy.ts: 3ms, application-code: 67ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+  ✓  17 [chromium] › e2e/prod-ready-local.spec.ts:125:44 › local production readiness regression journeys › stored analytics remain available without Google and during grace in en (2.9s)
+ GET /accounts 200 in 106ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 102ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 9ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /history 200 in 129ms (next.js: 4ms, proxy.ts: 5ms, application-code: 120ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 28ms (next.js: 9ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /alerts 200 in 135ms (next.js: 3ms, proxy.ts: 5ms, application-code: 127ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 6ms, proxy.ts: 5ms, application-code: 22ms)
+ GET /api/auth/organization/list 200 in 45ms (next.js: 11ms, proxy.ts: 4ms, application-code: 30ms)
+ GET /tasks 200 in 153ms (next.js: 17ms, proxy.ts: 7ms, application-code: 130ms)
+ GET /api/auth/get-session 200 in 111ms (next.js: 44ms, proxy.ts: 5ms, application-code: 62ms)
+ GET /api/auth/organization/list 200 in 123ms (next.js: 47ms, proxy.ts: 5ms, application-code: 71ms)
+ GET /approvals 200 in 144ms (next.js: 6ms, proxy.ts: 4ms, application-code: 134ms)
+ GET /api/auth/get-session 200 in 71ms (next.js: 44ms, proxy.ts: 9ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 127ms (next.js: 46ms, proxy.ts: 8ms, application-code: 73ms)
+ GET /reports 200 in 153ms (next.js: 6ms, proxy.ts: 8ms, application-code: 139ms)
+ GET /api/auth/get-session 200 in 139ms (next.js: 41ms, proxy.ts: 10ms, application-code: 88ms)
+ GET /api/auth/organization/list 200 in 285ms (next.js: 61ms, proxy.ts: 8ms, application-code: 215ms)
+ GET /audit 200 in 607ms (next.js: 7ms, proxy.ts: 8ms, application-code: 592ms)
+ GET /accounts 200 in 106ms (next.js: 2ms, proxy.ts: 3ms, application-code: 101ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 7ms, proxy.ts: 3ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 43ms (next.js: 15ms, proxy.ts: 3ms, application-code: 24ms)
+ GET /history 200 in 178ms (next.js: 6ms, proxy.ts: 6ms, application-code: 166ms)
+ GET /api/auth/get-session 200 in 32ms (next.js: 13ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 6ms, proxy.ts: 3ms, application-code: 24ms)
+ GET /alerts 200 in 155ms (next.js: 12ms, proxy.ts: 5ms, application-code: 138ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 11ms, proxy.ts: 4ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 55ms (next.js: 17ms, proxy.ts: 5ms, application-code: 34ms)
+ GET /tasks 200 in 157ms (next.js: 6ms, proxy.ts: 19ms, application-code: 132ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 8ms, proxy.ts: 4ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 14ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /approvals 200 in 136ms (next.js: 5ms, proxy.ts: 4ms, application-code: 127ms)
+ GET /api/auth/get-session 200 in 78ms (next.js: 12ms, proxy.ts: 5ms, application-code: 61ms)
+ GET /api/auth/organization/list 200 in 84ms (next.js: 13ms, proxy.ts: 6ms, application-code: 65ms)
+ GET /reports 200 in 150ms (next.js: 11ms, proxy.ts: 4ms, application-code: 136ms)
+  ✓  18 [chromium] › e2e/prod-ready-local.spec.ts:214:9 › local production readiness regression journeys › grace permits stored views while hiding mutations (4.5s)
+⨯ Error [WorkspaceAccessRestrictedError]: Workspace access state does not allow: portfolio:read
+    at requireWorkspacePermission (src/lib/workspace.ts:166:19)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:26:54)
+  164 |   if (!decision.allowed && decision.reason === 'role') requirePermission(context.role, permission)
+  165 |   if (!decision.allowed) {
+> 166 |     const error = new Error(`Workspace access state does not allow: ${permission}`)
+      |                   ^
+  167 |     error.name = 'WorkspaceAccessRestrictedError'
+  168 |     throw error
+  169 |   } {
+  digest: '1265232194'
+}
+ GET /dashboard 307 in 85ms (next.js: 3ms, proxy.ts: 4ms, application-code: 79ms)
+ GET /billing?notice=Your%20current%20access%20is%20limited%20to%20billing%20and%20stored%20data. 200 in 133ms (next.js: 4ms, proxy.ts: 4ms, application-code: 125ms)
+⨯ Error [WorkspaceAccessRestrictedError]: Workspace access state does not allow: portfolio:read
+    at requireWorkspacePermission (src/lib/workspace.ts:166:19)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:26:54)
+  164 |   if (!decision.allowed && decision.reason === 'role') requirePermission(context.role, permission)
+  165 |   if (!decision.allowed) {
+> 166 |     const error = new Error(`Workspace access state does not allow: ${permission}`)
+      |                   ^
+  167 |     error.name = 'WorkspaceAccessRestrictedError'
+  168 |     throw error
+  169 |   } {
+  digest: '1265232194'
+}
+ GET /dashboard 307 in 85ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 80ms)
+ GET /support?notice=Your%20current%20access%20is%20limited%20to%20billing%20and%20stored%20data. 200 in 123ms (next.js: 4ms, proxy.ts: 3ms, application-code: 117ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:26:54)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '3768582764'
+}
+ GET /dashboard 307 in 79ms (next.js: 2ms, proxy.ts: 2ms, application-code: 74ms)
+ GET /support?notice=Your%20current%20access%20is%20limited%20to%20billing%20and%20stored%20data. 200 in 92ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 88ms)
+  ✓  19 [chromium] › e2e/prod-ready-local.spec.ts:229:9 › local production readiness regression journeys › suspended members have an accessible recovery destination without redirect loops (1.4s)
+ GET /dashboard 200 in 140ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 42ms (next.js: 8ms, proxy.ts: 5ms, application-code: 29ms)
+ GET /api/auth/organization/list 200 in 50ms (next.js: 14ms, proxy.ts: 5ms, application-code: 31ms)
+ POST /dashboard 200 in 96ms (next.js: 7ms, proxy.ts: 9ms, application-code: 80ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /settings 200 in 81ms (next.js: 5ms, proxy.ts: 3ms, application-code: 73ms)
+  ✓  20 [chromium] › e2e/prod-ready-local.spec.ts:241:11 › local production readiness regression journeys › full navigation and workspace selection work at 390px in fr (953ms)
+ GET /dashboard 200 in 190ms (next.js: 28ms, proxy.ts: 5ms, application-code: 157ms)
+ GET /api/auth/get-session 200 in 34ms (next.js: 9ms, proxy.ts: 3ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 63ms (next.js: 17ms, proxy.ts: 4ms, application-code: 43ms)
+ POST /dashboard 200 in 93ms (next.js: 5ms, proxy.ts: 4ms, application-code: 83ms)
+  └─ ƒ setCookieConsent({}) in 7ms src/app/preferences-actions.ts
+ GET /settings 200 in 65ms (next.js: 3ms, proxy.ts: 3ms, application-code: 59ms)
+  ✓  21 [chromium] › e2e/prod-ready-local.spec.ts:241:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in fr (982ms)
+ GET /dashboard 200 in 149ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 144ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 7ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 11ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /dashboard 200 in 74ms (next.js: 2ms, proxy.ts: 3ms, application-code: 69ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /settings 200 in 83ms (next.js: 3ms, proxy.ts: 4ms, application-code: 76ms)
+  ✓  22 [chromium] › e2e/prod-ready-local.spec.ts:241:11 › local production readiness regression journeys › full navigation and workspace selection work at 390px in en (953ms)
+ GET /dashboard 200 in 141ms (next.js: 2ms, proxy.ts: 2ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 8ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 14ms, proxy.ts: 4ms, application-code: 9ms)
+ POST /dashboard 200 in 97ms (next.js: 2ms, proxy.ts: 4ms, application-code: 91ms)
+  └─ ƒ setCookieConsent({}) in 12ms src/app/preferences-actions.ts
+ GET /settings 200 in 85ms (next.js: 2ms, proxy.ts: 4ms, application-code: 80ms)
+  ✓  23 [chromium] › e2e/prod-ready-local.spec.ts:241:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in en (967ms)
+ GET /dashboard 200 in 152ms (next.js: 2ms, proxy.ts: 3ms, application-code: 146ms)
+ GET /api/auth/get-session 200 in 58ms (next.js: 17ms, proxy.ts: 8ms, application-code: 34ms)
+ GET /api/auth/organization/list 200 in 97ms (next.js: 24ms, proxy.ts: 10ms, application-code: 63ms)
+ POST /dashboard 200 in 139ms (next.js: 11ms, proxy.ts: 11ms, application-code: 118ms)
+  └─ ƒ setCookieConsent({}) in 5ms src/app/preferences-actions.ts
+ POST /api/auth/organization/set-active 200 in 16ms (next.js: 3ms, proxy.ts: 3ms, application-code: 10ms)
+⨯ Error [PermissionDeniedError]: Permission required: portfolio:read
+    at requirePermission (src/lib/permissions.ts:78:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async DashboardPage (src/app/(app)/dashboard/page.tsx:26:54)
+  76 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  77 |   if (!rolePermissions[role].has(permission)) {
+> 78 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  79 |     error.name = 'PermissionDeniedError'
+  80 |     throw error
+  81 |   } {
+  digest: '3768582764'
+}
+ GET /api/auth/get-session 200 in 65ms (next.js: 30ms, proxy.ts: 24ms, application-code: 10ms)
+ GET /dashboard 307 in 102ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 99ms)
+ GET /support?error=Acc%C3%A8s%20non%20autoris%C3%A9 200 in 93ms (next.js: 1.9ms, proxy.ts: 5ms, application-code: 87ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 5ms, proxy.ts: 5ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 5ms, application-code: 9ms)
+ POST /api/auth/organization/set-active 200 in 25ms (next.js: 3ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /api/auth/get-session 200 in 93ms (next.js: 73ms, proxy.ts: 11ms, application-code: 9ms)
+ GET /dashboard 200 in 158ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 153ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 4ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 7ms, proxy.ts: 3ms, application-code: 9ms)
+  ✓  24 [chromium] › e2e/prod-ready-local.spec.ts:266:9 › local production readiness regression journeys › workspace selection switches context and permissions on mobile (1.5s)
+ GET /agents 200 in 145ms (next.js: 3ms, proxy.ts: 9ms, application-code: 133ms)
+  ✓  25 [chromium] › e2e/prod-ready-local.spec.ts:284:9 › local production readiness regression journeys › analysts do not see monitoring controls denied by their role (407ms)
+ GET / 200 in 80ms (next.js: 3ms, proxy.ts: 1.9ms, application-code: 76ms)
+  ✓  26 [chromium] › e2e/public.spec.ts:3:5 › public landing exposes the product proposition and account creation (342ms)
+ GET /dashboard 307 in 53ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 49ms)
+ GET /sign-in 200 in 43ms (next.js: 5ms, proxy.ts: 1.8ms, application-code: 36ms)
+  ✓  27 [chromium] › e2e/public.spec.ts:15:5 › authenticated areas redirect anonymous visitors to sign-in (174ms)
+ GET /privacy 200 in 50ms (next.js: 8ms, proxy.ts: 2ms, application-code: 40ms)
+ GET /terms 200 in 49ms (next.js: 4ms, proxy.ts: 3ms, application-code: 43ms)
+  ✓  28 [chromium] › e2e/public.spec.ts:21:5 › privacy and terms pages are public (494ms)
+ GET /subprocessors 200 in 43ms (next.js: 3ms, proxy.ts: 2ms, application-code: 38ms)
+  ✓  29 [chromium] › e2e/public.spec.ts:28:5 › the subprocessor register and change-notice policy are public (289ms)
+ GET / 200 in 87ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 82ms)
+ GET /privacy 200 in 40ms (next.js: 2ms, proxy.ts: 3ms, application-code: 36ms)
+  ✓  30 [chromium] › e2e/public.spec.ts:35:5 › the public product and legal surface honor the English locale (538ms)
+ GET /status 200 in 52ms (next.js: 2ms, proxy.ts: 2ms, application-code: 48ms)
+  ✓  31 [chromium] › e2e/public.spec.ts:46:5 › public status page never claims operational health when status storage is unavailable (307ms)
+ GET /reports 200 in 167ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 162ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 5ms, proxy.ts: 3ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 9ms, proxy.ts: 4ms, application-code: 18ms)
+ POST /reports 200 in 86ms (next.js: 3ms, proxy.ts: 3ms, application-code: 80ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=7a497fbf-7268-412b-bb0b-0466beba73cf 200 in 84ms (next.js: 3ms, proxy.ts: 4ms, application-code: 77ms)
+ POST /reports 200 in 138ms (next.js: 3ms, proxy.ts: 11ms, application-code: 124ms)
+  └─ ƒ createShareLink({}) in 28ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 64ms (next.js: 42ms, proxy.ts: 5ms, application-code: 16ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 200 in 843ms (next.js: 739ms, proxy.ts: 3ms, application-code: 101ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 200 in 575ms (next.js: 557ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 200 in 604ms (next.js: 559ms, proxy.ts: 1.6ms, application-code: 43ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=1a80e794-458a-4047-8db6-69bbb0136ff9 200 in 73ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 69ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=7a497fbf-7268-412b-bb0b-0466beba73cf 200 in 100ms (next.js: 2ms, proxy.ts: 2ms, application-code: 96ms)
+  └─ ƒ createShareLink({}) in 17ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 15ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=c8d227e6-0513-4a20-a192-ffba54d1db68 200 in 72ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 66ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=c8d227e6-0513-4a20-a192-ffba54d1db68 200 in 15ms (next.js: 4ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=c8d227e6-0513-4a20-a192-ffba54d1db68 200 in 17ms (next.js: 3ms, proxy.ts: 1.4ms, application-code: 13ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=e7156a58-d28e-469d-9ecb-691bb03308b5 200 in 92ms (next.js: 4ms, proxy.ts: 4ms, application-code: 83ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=1a80e794-458a-4047-8db6-69bbb0136ff9 200 in 150ms (next.js: 3ms, proxy.ts: 5ms, application-code: 141ms)
+  └─ ƒ createShareLink({}) in 40ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 15ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=2e510b90-952f-4e1d-a8e2-a86cd1df8b91 200 in 92ms (next.js: 9ms, proxy.ts: 2ms, application-code: 81ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=2e510b90-952f-4e1d-a8e2-a86cd1df8b91 200 in 17ms (next.js: 3ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=2e510b90-952f-4e1d-a8e2-a86cd1df8b91 200 in 26ms (next.js: 2ms, proxy.ts: 3ms, application-code: 20ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=e4d7270f-c4f5-45c4-b5cb-2616f068e8a5 200 in 76ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 73ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=e7156a58-d28e-469d-9ecb-691bb03308b5 200 in 107ms (next.js: 4ms, proxy.ts: 4ms, application-code: 100ms)
+  └─ ƒ createShareLink({}) in 16ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 14ms (next.js: 1.4ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=6145226e-79fe-4fb0-9479-56ae14e06f21 200 in 76ms (next.js: 2ms, proxy.ts: 2ms, application-code: 71ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=6145226e-79fe-4fb0-9479-56ae14e06f21 200 in 14ms (next.js: 4ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=6145226e-79fe-4fb0-9479-56ae14e06f21 200 in 15ms (next.js: 3ms, proxy.ts: 1.3ms, application-code: 11ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=d4f7b5da-7574-496d-ba1a-cdbbd025064b 200 in 78ms (next.js: 1.6ms, proxy.ts: 1.6ms, application-code: 75ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=e4d7270f-c4f5-45c4-b5cb-2616f068e8a5 200 in 102ms (next.js: 2ms, proxy.ts: 2ms, application-code: 97ms)
+  └─ ƒ createShareLink({}) in 13ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 15ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=0c30fab7-a99d-48fb-be01-d8754e2bf62c 200 in 77ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 71ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=0c30fab7-a99d-48fb-be01-d8754e2bf62c 200 in 14ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=0c30fab7-a99d-48fb-be01-d8754e2bf62c 200 in 16ms (next.js: 3ms, proxy.ts: 1.5ms, application-code: 12ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 200 in 95ms (next.js: 4ms, proxy.ts: 4ms, application-code: 86ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 200 in 14ms (next.js: 3ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 200 in 14ms (next.js: 1.9ms, proxy.ts: 1.7ms, application-code: 10ms)
+ GET /reports?notice=R%C3%A9vision+publi%C3%A9e.+Les+%C3%A9ditions+pr%C3%A9c%C3%A9dentes+restent+inchang%C3%A9es.&reveal=report-url&revealId=44a9fccc-3684-40a3-90fc-86c543931e0b 200 in 77ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 73ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=d4f7b5da-7574-496d-ba1a-cdbbd025064b 200 in 105ms (next.js: 2ms, proxy.ts: 2ms, application-code: 100ms)
+  └─ ƒ reviseReportEdition({}) in 15ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 20ms (next.js: 3ms, proxy.ts: 5ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=135e05b4-ce31-473a-aa9e-a73580772593 200 in 102ms (next.js: 4ms, proxy.ts: 4ms, application-code: 94ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=135e05b4-ce31-473a-aa9e-a73580772593 200 in 15ms (next.js: 4ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /reports?error=Les+donn%C3%A9es+compl%C3%A8tes+de+cette+p%C3%A9riode+ne+sont+pas+disponibles.+Actualisez+l%E2%80%99historique+du+compte+avant+de+publier+ce+bilan. 200 in 84ms (next.js: 1.9ms, proxy.ts: 1.5ms, application-code: 81ms)
+ POST /reports?notice=R%C3%A9vision%20publi%C3%A9e.%20Les%20%C3%A9ditions%20pr%C3%A9c%C3%A9dentes%20restent%20inchang%C3%A9es.&reveal=report-url&revealId=44a9fccc-3684-40a3-90fc-86c543931e0b 200 in 109ms (next.js: 2ms, proxy.ts: 2ms, application-code: 104ms)
+  └─ ƒ createShareLink({}) in 13ms src/app/actions.ts
+ GET /r/ya_share_REDACTED_FIXTURE?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 200 in 74ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 68ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 429 in 11ms (next.js: 4ms, proxy.ts: 3ms, application-code: 5ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=b2168c6e-3164-4d8a-95e3-0686ab12387d 404 in 9ms (next.js: 3ms, proxy.ts: 1.4ms, application-code: 4ms)
+ GET /reports 200 in 162ms (next.js: 6ms, proxy.ts: 3ms, application-code: 153ms)
+  ✓  32 [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in fr (7.6s)
+ GET /reports 200 in 160ms (next.js: 3ms, proxy.ts: 2ms, application-code: 154ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 9ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /reports 200 in 69ms (next.js: 2ms, proxy.ts: 2ms, application-code: 64ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=3f94e66e-cc85-4ed6-bbf8-3a4b94487c63 200 in 79ms (next.js: 2ms, proxy.ts: 2ms, application-code: 74ms)
+ POST /reports 200 in 109ms (next.js: 2ms, proxy.ts: 3ms, application-code: 105ms)
+  └─ ƒ createShareLink({}) in 18ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 13ms (next.js: 1.4ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 200 in 75ms (next.js: 4ms, proxy.ts: 2ms, application-code: 68ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 200 in 14ms (next.js: 3ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 200 in 16ms (next.js: 3ms, proxy.ts: 1.5ms, application-code: 11ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=e4d9b400-71e9-4f85-bc6c-8df4f5531689 200 in 82ms (next.js: 3ms, proxy.ts: 3ms, application-code: 75ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=3f94e66e-cc85-4ed6-bbf8-3a4b94487c63 200 in 129ms (next.js: 3ms, proxy.ts: 3ms, application-code: 123ms)
+  └─ ƒ createShareLink({}) in 33ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 15ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=8b214952-3989-447f-9d5f-d803be81012a 200 in 88ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 82ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=8b214952-3989-447f-9d5f-d803be81012a 200 in 17ms (next.js: 4ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=8b214952-3989-447f-9d5f-d803be81012a 200 in 22ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 18ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=6039281d-2146-4bd0-a26c-7db7f191b8a8 200 in 74ms (next.js: 3ms, proxy.ts: 3ms, application-code: 68ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=e4d9b400-71e9-4f85-bc6c-8df4f5531689 200 in 103ms (next.js: 2ms, proxy.ts: 3ms, application-code: 97ms)
+  └─ ƒ createShareLink({}) in 18ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 15ms (next.js: 1.6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=cc823c4f-aabd-44bc-b520-fe4358dc5ecf 200 in 83ms (next.js: 4ms, proxy.ts: 1.7ms, application-code: 77ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=cc823c4f-aabd-44bc-b520-fe4358dc5ecf 200 in 17ms (next.js: 3ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=cc823c4f-aabd-44bc-b520-fe4358dc5ecf 200 in 16ms (next.js: 3ms, proxy.ts: 1.5ms, application-code: 11ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=fcbfa9c4-0e7b-4423-84a4-75155c0649e1 200 in 102ms (next.js: 4ms, proxy.ts: 3ms, application-code: 96ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=6039281d-2146-4bd0-a26c-7db7f191b8a8 200 in 146ms (next.js: 2ms, proxy.ts: 3ms, application-code: 141ms)
+  └─ ƒ createShareLink({}) in 32ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 16ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=4b42f749-39cb-4299-94b3-d76d2d457ff4 200 in 101ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 96ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=4b42f749-39cb-4299-94b3-d76d2d457ff4 200 in 15ms (next.js: 3ms, proxy.ts: 2ms, application-code: 9ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=4b42f749-39cb-4299-94b3-d76d2d457ff4 200 in 15ms (next.js: 2ms, proxy.ts: 1.6ms, application-code: 11ms)
+ GET /reports?notice=Rapport+cr%C3%A9%C3%A9.+R%C3%A9v%C3%A9lez+son+URL+dans+les+cinq+prochaines+minutes.&reveal=report-url&revealId=15cf8b38-4973-4b4b-bf83-393f5993c7d8 200 in 82ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 78ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=fcbfa9c4-0e7b-4423-84a4-75155c0649e1 200 in 109ms (next.js: 3ms, proxy.ts: 2ms, application-code: 104ms)
+  └─ ƒ createShareLink({}) in 16ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 13ms (next.js: 1.3ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=62d6d04e-6d04-49c3-8f4d-a7af0af8ef97 200 in 78ms (next.js: 4ms, proxy.ts: 2ms, application-code: 72ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=62d6d04e-6d04-49c3-8f4d-a7af0af8ef97 200 in 29ms (next.js: 5ms, proxy.ts: 4ms, application-code: 20ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=62d6d04e-6d04-49c3-8f4d-a7af0af8ef97 200 in 16ms (next.js: 3ms, proxy.ts: 1.7ms, application-code: 11ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 200 in 93ms (next.js: 5ms, proxy.ts: 4ms, application-code: 83ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 200 in 16ms (next.js: 3ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 200 in 15ms (next.js: 2ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /reports?notice=Revision+published.+Previous+editions+remain+unchanged.&reveal=report-url&revealId=3466cb9b-9ee6-4c95-9c6f-a17b8ba699fd 200 in 129ms (next.js: 5ms, proxy.ts: 2ms, application-code: 122ms)
+ POST /reports?notice=Rapport%20cr%C3%A9%C3%A9.%20R%C3%A9v%C3%A9lez%20son%20URL%20dans%20les%20cinq%20prochaines%20minutes.&reveal=report-url&revealId=15cf8b38-4973-4b4b-bf83-393f5993c7d8 200 in 156ms (next.js: 2ms, proxy.ts: 3ms, application-code: 151ms)
+  └─ ƒ reviseReportEdition({}) in 15ms src/app/actions.ts
+ POST /api/secret-revelation 200 in 18ms (next.js: 1.5ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /r/ya_share_REDACTED_FIXTURE?edition=b0d86433-bba5-4731-8c75-3957c613bad9 200 in 80ms (next.js: 4ms, proxy.ts: 3ms, application-code: 73ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=b0d86433-bba5-4731-8c75-3957c613bad9 200 in 19ms (next.js: 7ms, proxy.ts: 2ms, application-code: 10ms)
+ GET /reports?error=Les+donn%C3%A9es+compl%C3%A8tes+de+cette+p%C3%A9riode+ne+sont+pas+disponibles.+Actualisez+l%E2%80%99historique+du+compte+avant+de+publier+ce+bilan. 200 in 84ms (next.js: 2ms, proxy.ts: 2ms, application-code: 79ms)
+ POST /reports?notice=Revision%20published.%20Previous%20editions%20remain%20unchanged.&reveal=report-url&revealId=3466cb9b-9ee6-4c95-9c6f-a17b8ba699fd 200 in 114ms (next.js: 2ms, proxy.ts: 2ms, application-code: 110ms)
+  └─ ƒ createShareLink({}) in 18ms src/app/actions.ts
+ GET /r/ya_share_REDACTED_FIXTURE?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 200 in 83ms (next.js: 4ms, proxy.ts: 2.0ms, application-code: 77ms)
+ GET /r/ya_share_REDACTED_FIXTURE/pdf?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 429 in 14ms (next.js: 4ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /r/ya_share_REDACTED_FIXTURE/csv?edition=e73311fd-00d2-483d-a0c5-86dc0f41e42f 404 in 10ms (next.js: 4ms, proxy.ts: 1.8ms, application-code: 5ms)
+ GET /reports 200 in 149ms (next.js: 4ms, proxy.ts: 4ms, application-code: 141ms)
+  ✓  33 [chromium] › e2e/report-editions-local.spec.ts:16:53 › published report editions › creates every period and preserves HTML PDF CSV through revision in en (5.4s)
+
+  33 passed (53.3s)
+
+{"ok":true,"cleaned":"local-browser-fixtures"}

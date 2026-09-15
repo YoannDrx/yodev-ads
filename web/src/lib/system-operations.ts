@@ -171,16 +171,17 @@ export async function reviewOperationalEmailDelivery(input: {
 export async function getSystemOperationsSnapshot() {
   return withSystemTransaction(async (db) => {
     const workspaceStates = await db.select({ state: workspaces.accessState, total: count() }).from(workspaces).groupBy(workspaces.accessState)
-    const commercialWorkspaces = await db.select({ id: workspaces.id, createdAt: workspaces.createdAt }).from(workspaces).where(notInArray(workspaces.accessState, ['internal', 'deleted']))
+    const commercialWorkspaces = await db.select({ id: workspaces.id, createdAt: workspaces.createdAt }).from(workspaces).where(and(notInArray(workspaces.accessState, ['internal', 'deleted']), sql`${workspaces.createdAt}<=now()`))
+    const activationWindow = and(notInArray(workspaces.accessState, ['internal', 'deleted']), sql`${activationMilestones.occurredAt}>=${workspaces.createdAt} and ${activationMilestones.occurredAt}<=now()`)
     const milestones = await db.select({ milestone: activationMilestones.milestone, total: sql<number>`count(distinct ${activationMilestones.workspaceId})::int` })
       .from(activationMilestones)
       .innerJoin(workspaces, eq(workspaces.id, activationMilestones.workspaceId))
-      .where(notInArray(workspaces.accessState, ['internal', 'deleted']))
+      .where(activationWindow)
       .groupBy(activationMilestones.milestone)
     const activationEvents = await db.select({ workspaceId: activationMilestones.workspaceId, milestone: activationMilestones.milestone, occurredAt: activationMilestones.occurredAt })
       .from(activationMilestones)
       .innerJoin(workspaces, eq(workspaces.id, activationMilestones.workspaceId))
-      .where(notInArray(workspaces.accessState, ['internal', 'deleted']))
+      .where(activationWindow)
     const supportStatusCounts = await db.select({ status: supportTickets.status, total: count() }).from(supportTickets).groupBy(supportTickets.status)
     const tickets = await db.select({ ticket: supportTickets, workspace: { id: workspaces.id, name: workspaces.name, accessState: workspaces.accessState, plan: workspaces.plan } })
       .from(supportTickets)
@@ -226,6 +227,7 @@ export async function getSystemOperationsSnapshot() {
     for (const update of incidentUpdates) updatesByIncident.set(update.incidentId, [...(updatesByIncident.get(update.incidentId) ?? []), update])
     return {
       workspaceStates: Object.fromEntries(workspaceStates.map((row) => [row.state, row.total])),
+      commercialWorkspaceCount: commercialWorkspaces.length,
       activationFunnel: Object.fromEntries(milestones.map((row) => [row.milestone, row.total])),
       activationCohorts: activationCohorts(commercialWorkspaces, activationEvents),
       supportStatusCounts: Object.fromEntries(supportStatusCounts.map((row) => [row.status, row.total])),

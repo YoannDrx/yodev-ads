@@ -1,12 +1,13 @@
 import 'server-only'
 
 import { and, count, eq, isNull, sql } from 'drizzle-orm'
-import { apiKeys, auditEvents, jobs, notificationChannels, safetyPolicies, secretRevelations, workspaces } from '@/db/schema'
-import { withTenantTransaction } from '@/db/transactions'
+import { apiKeys, auditEvents, clients, jobs, notificationChannels, safetyPolicies, secretRevelations, workspaces } from '@/db/schema'
+import { withWorkspaceActorTransaction } from '@/lib/workspace-actor-guard'
 import { encryptSecret } from '@/lib/crypto'
 import { requireQuota, type EntitlementContext } from '@/lib/entitlements'
 import { hashToken } from '@/lib/tokens'
-import { lockWorkspaceEntitlements } from '@/lib/workspace-transaction-guard'
+import { assertSafetyPolicyScope } from '@/lib/safety-policy-scope'
+import { privateApiWorkspaceAllowed } from '@/lib/feature-flags'
 
 type ActorContext = { workspaceId: string; actorUserId: string }
 
@@ -26,16 +27,19 @@ export function createWorkspaceApiKey(input: ActorContext & {
   entitlements: EntitlementContext
   now?: Date
 }) {
-  const now = input.now ?? new Date()
-  const expiresAt = new Date(now.getTime() + 90 * 24 * 60 * 60_000)
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
-    const entitlements = await lockWorkspaceEntitlements(transaction, input.workspaceId, 'api.read')
+  const allowedScopes = new Set(['portfolio:read', 'performance:read', 'alerts:read', 'approvals:read', 'approvals:propose', 'reports:read', 'reports:write'])
+  if (!input.scopes.length || input.scopes.some((scope) => !allowedScopes.has(scope))) throw new Error('Périmètre de clé API invalide.')
+  const capability = input.scopes.some((scope) => scope === 'approvals:propose' || scope === 'reports:write') ? 'api.propose' : 'api.read'
+  return withWorkspaceActorTransaction({ ...input, permission: 'api_keys:manage', capability }, async (transaction, { entitlements }) => {
+    if (!privateApiWorkspaceAllowed(input.workspaceId, entitlements.state)) throw new Error('La bêta privée de l’API n’est pas activée pour cet espace.')
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:apiKeys`}))`)
     const [usage] = await transaction
       .select({ count: count() })
       .from(apiKeys)
       .where(and(eq(apiKeys.workspaceId, input.workspaceId), isNull(apiKeys.revokedAt)))
     requireQuota(entitlements, 'apiKeys', usage.count)
+    const now = input.now ?? new Date()
+    const expiresAt = new Date(now.getTime() + 90 * 24 * 60 * 60_000)
     const [key] = await transaction.insert(apiKeys).values({
       workspaceId: input.workspaceId,
       createdBy: input.actorUserId,
@@ -68,7 +72,7 @@ export function createWorkspaceApiKey(input: ActorContext & {
 
 export function revokeWorkspaceApiKey(input: ActorContext & { keyId: string; now?: Date }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'api_keys:manage' }, async (db) => {
     const [key] = await db
       .update(apiKeys)
       .set({ revokedAt: now, updatedAt: now })
@@ -94,12 +98,7 @@ export function createWorkspaceNotificationChannel(input: ActorContext & {
   minimumSeverity: 'warning' | 'critical'
   entitlements: EntitlementContext
 }) {
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
-    const entitlements = await lockWorkspaceEntitlements(
-      transaction,
-      input.workspaceId,
-      input.kind === 'email' ? 'monitoring' : 'notifications.webhook',
-    )
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin', capability: input.kind === 'email' ? 'monitoring' : 'notifications.webhook' }, async (transaction, { entitlements }) => {
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`${input.workspaceId}:notificationChannels`}))`)
     const [usage] = await transaction
       .select({ count: count() })
@@ -130,7 +129,7 @@ export function createWorkspaceNotificationChannel(input: ActorContext & {
 
 export function disableWorkspaceNotificationChannel(input: ActorContext & { channelId: string; now?: Date }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin' }, async (db) => {
     const [channel] = await db
       .update(notificationChannels)
       .set({
@@ -160,7 +159,7 @@ export function disableWorkspaceNotificationChannel(input: ActorContext & { chan
 
 export function retryWorkspaceDeadLetterJob(input: ActorContext & { jobId: string; now?: Date }) {
   const now = input.now ?? new Date()
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (db) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin' }, async (db) => {
     const [job] = await db
       .update(jobs)
       .set({
@@ -215,7 +214,18 @@ export function saveWorkspaceSafetyPolicy(input: ActorContext & {
   const now = input.now ?? new Date()
   const maximumDailyBudgetMicros = monetaryMicros(input.maximumDailyBudget)
   const maximumMonthlySpendMicros = monetaryMicros(input.maximumMonthlySpend)
-  return withTenantTransaction({ workspaceId: input.workspaceId, userId: input.actorUserId }, async (transaction) => {
+  return withWorkspaceActorTransaction({ ...input, permission: 'workspace:admin' }, async (transaction, { entitlements }) => {
+    assertSafetyPolicyScope(entitlements.plan, input.scope)
+    if ((input.scope === 'workspace' && (input.clientId || input.campaignId))
+      || (input.scope !== 'workspace' && !input.clientId)
+      || (input.scope === 'client' && input.campaignId)
+      || (input.scope === 'campaign' && !input.campaignId)) throw new Error('Périmètre de règle de sécurité invalide.')
+    if (input.clientId) {
+      const [client] = await transaction.select({ currencyCode: clients.currencyCode, isManager: clients.isManager }).from(clients)
+        .where(and(eq(clients.id, input.clientId), eq(clients.workspaceId, input.workspaceId))).limit(1).for('share')
+      if (!client || client.isManager) throw new Error('Compte client introuvable.')
+      if (client.currencyCode !== input.currencyCode) throw new Error(`La devise de la règle doit être ${client.currencyCode} pour ce client.`)
+    }
     await transaction.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`safety:${input.workspaceId}:${input.clientId ?? 'workspace'}:${input.campaignId ?? 'all'}`}, 0))`)
     await transaction.update(workspaces).set({
       ...(input.scope === 'workspace' ? { maximumDailyBudgetMicros, maximumMonthlySpendMicros } : {}),

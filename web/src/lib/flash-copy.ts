@@ -1,6 +1,11 @@
 import type { Locale } from '@/lib/i18n'
 
 const englishMessages: Record<string, string> = {
+  'Date d’échéance invalide.': 'Invalid due date.',
+  'Date d’échéance inexistante dans ce fuseau.': 'This due date does not exist in the workspace timezone.',
+  'L’état de cette tâche ne permet plus cette action. Rechargez la page pour consulter les actions disponibles.': 'The current task status no longer allows this action. Reload the page to see the available actions.',
+  'Action non autorisée pour cet espace.': 'This action is not available with your current workspace access. Reload the page or contact an administrator.',
+  'Vos droits actuels ne permettent pas cette action. Rechargez la page ou contactez un administrateur.': 'Your current permissions do not allow this action. Reload the page or contact an administrator.',
   'Une erreur inattendue est survenue.': 'An unexpected error occurred.',
   'Connectez d’abord un compte Google Ads.': 'Connect a Google Ads account first.',
   'Compte client introuvable.': 'Client account not found.',
@@ -8,6 +13,7 @@ const englishMessages: Record<string, string> = {
   'Identité de marque enregistrée.': 'Brand identity saved.',
   'Sélectionnez un fichier logo.': 'Select a logo file.',
   'Une adresse Better Auth vérifiée est requise.': 'A verified Better Auth email address is required.',
+  'L’espace actif a changé. Rechargez la page avant d’enregistrer.': 'The active workspace changed. Reload this page before saving.',
   'Préférences personnelles de tâches enregistrées.': 'Personal task preferences saved.',
   'Cette adresse est déjà membre ou invitée.': 'This email address is already a member or has a pending invitation.',
   'Le rôle du propriétaire ne peut être modifié que par un transfert de propriété.': 'The owner role can only be changed through an ownership transfer.',
@@ -77,6 +83,7 @@ const englishMessages: Record<string, string> = {
   'La date d’échéance est requise.': 'A due date is required.',
   'Tâche créée.': 'Task created.',
   'Tâche mise à jour.': 'Task updated.',
+  'Les données complètes de cette période ne sont pas disponibles. Actualisez l’historique du compte avant de publier ce bilan.': 'Complete data for this period is unavailable. Refresh the account history before publishing this report.',
   'Rapport créé. Révélez son URL dans les cinq prochaines minutes.': 'Report created. Reveal its URL within the next five minutes.',
   'Modèle de rapport créé.': 'Report template created.',
   'Le modèle a été modifié ou désactivé. Rechargez la page avant de réessayer.': 'The template was changed or disabled. Reload the page before trying again.',
@@ -84,12 +91,32 @@ const englishMessages: Record<string, string> = {
   'Modèle introuvable ou déjà désactivé.': 'Template not found or already disabled.',
   'Modèle désactivé. Les rapports existants conservent leur snapshot.': 'Template disabled. Existing reports keep their snapshot.',
   'Modèle de rapport introuvable.': 'Report template not found.',
+  'Vérifiez les champs du formulaire et les dates de la période avant de réessayer.': 'Check the form fields and reporting dates before trying again.',
+  'Le quota de rapports de cet espace est atteint. Désactivez un lien avant de réessayer.': 'This workspace has reached its report limit. Deactivate a link before trying again.',
+  'Impossible d’enregistrer cette modification du rapport. Actualisez la page et réessayez.': 'Unable to save this report change. Refresh the page and try again.',
   'Envoi planifié créé.': 'Scheduled delivery created.',
+  'Ce lien historique ne permet pas de révéler une révision. Créez un nouveau rapport.': 'This historical link cannot reveal a revision. Create a new report.',
+  'Le lien a changé. Actualisez la page.': 'The link changed. Refresh the page.',
+  'Fuseau horaire invalide.': 'Invalid timezone.',
   'Planification introuvable.': 'Schedule not found.',
   'Un envoi est en cours. Réessayez dans quelques minutes.': 'A delivery is in progress. Try again in a few minutes.',
   'Envoi planifié activé.': 'Scheduled delivery enabled.',
   'Envoi planifié suspendu et lien révoqué.': 'Scheduled delivery paused and link revoked.',
   'Token du rapport planifié renouvelé. L’ancien lien est immédiatement invalide.': 'Scheduled report token rotated. The previous link is immediately invalid.',
+  "Les domaines personnalisés sont temporairement désactivés.": "Custom domain operations are temporarily disabled.",
+  "Saisissez un nom d’hôte sans protocole, chemin, port ni wildcard.": "Enter a hostname without a protocol, path, port or wildcard.",
+  "Nom de domaine invalide.": "Invalid domain hostname.",
+  "Ce domaine local ou interne ne peut pas être utilisé.": "This local or internal domain cannot be used.",
+  "Ce domaine est réservé à la plateforme.": "This domain is reserved for the platform.",
+  "Ce domaine reste réservé pendant son nettoyage. Contactez le support.": "This domain remains reserved while cleanup is reconciled. Contact support.",
+  "Le domaine a changé. Actualisez la page avant de réessayer.": "The domain changed. Reload the page before trying again.",
+  "Le domaine a été révoqué pendant sa vérification.": "The domain was revoked during verification.",
+  "Le domaine a déjà été révoqué.": "The domain has already been revoked.",
+  "La réponse Vercel ne permet pas de confirmer l’état du domaine.": "The Vercel response does not confirm the domain status. Try again or contact support.",
+  "Opération du domaine non finalisée. Réessayez ou contactez le support.": "The domain operation could not be completed. Try again or contact support.",
+  "Vérifiez le nom du domaine et les champs du formulaire.": "Check the domain hostname and the form fields.",
+  "Votre forfait ne permet pas de configurer un domaine personnalisé. Vous pouvez retirer le domaine existant.": "Your plan does not include custom domain configuration. You can remove the existing domain.",
+  "Le TXT de vérification est absent ou incorrect. Vérifiez le nom et la valeur DNS.": "The verification TXT record is missing or incorrect. Check its DNS name and value.",
   'Révoquez le domaine existant avant d’en configurer un autre.': 'Revoke the existing domain before configuring another one.',
   'Domaine enregistré. Publiez le TXT révélé avant de vérifier.': 'Domain saved. Publish the revealed TXT record before verification.',
   'Domaine introuvable.': 'Domain not found.',
@@ -147,6 +174,12 @@ const englishPatterns: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
 ]
 
 export function localizeFlashMessage(value: string | undefined, locale: Locale) {
+  if (value && /^Transition de tâche interdite : [a-z_]+ → [a-z_]+\.$/.test(value)) {
+    value = 'L’état de cette tâche ne permet plus cette action. Rechargez la page pour consulter les actions disponibles.'
+  }
+  if (value && /^Permission required: [a-z_]+:[a-z_]+$/.test(value)) {
+    value = 'Vos droits actuels ne permettent pas cette action. Rechargez la page ou contactez un administrateur.'
+  }
   if (!value || locale === 'fr') return value
   const exact = englishMessages[value]
   if (exact) return exact

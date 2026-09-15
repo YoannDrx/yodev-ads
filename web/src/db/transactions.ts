@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { Pool as NeonPool, neonConfig } from '@neondatabase/serverless'
+import { Pool as NeonPool, neonConfig, type PoolClient as NeonPoolClient } from '@neondatabase/serverless'
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/neon-serverless'
 import type { NeonDatabase, NeonTransaction } from 'drizzle-orm/neon-serverless'
@@ -10,6 +10,7 @@ import type { ExtractTablesWithRelations } from 'drizzle-orm/relations'
 import { Pool as NodePostgresPool } from 'pg'
 import ws from 'ws'
 import * as schema from './schema'
+import { hasWorkDeadline, remainingWorkMs } from '@/lib/work-deadline'
 
 neonConfig.webSocketConstructor = ws
 
@@ -17,7 +18,9 @@ function databaseForUrl(connectionString: string): {
   pool: NeonPool
   db: NeonDatabase<typeof schema>
 } {
-  const pool = new NeonPool({ connectionString, max: databasePoolMaximum() })
+  const pool = new NeonPool({ connectionString, max: databasePoolMaximum(), connectionTimeoutMillis: 5_000 })
+  pool.on('connect', (client: NeonPoolClient) => client.on('error', logConnectionError))
+  pool.on('error', () => { /* The per-connection listener logs the safe code. */ })
   return { pool, db: drizzle(pool, { schema }) }
 }
 
@@ -29,8 +32,17 @@ function nodeDatabaseForUrl(connectionString: string): {
     connectionString,
     max: databasePoolMaximum(),
     allowExitOnIdle: true,
+    connectionTimeoutMillis: 5_000,
   })
+  pool.on('connect', (client) => client.on('error', logConnectionError))
+  pool.on('error', () => { /* The per-connection listener logs the safe code. */ })
   return { pool, db: drizzleNodePostgres(pool, { schema }) }
+}
+
+function logConnectionError(error: unknown) {
+  const code = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' && /^[A-Z0-9]{5}$/.test(error.code) ? error.code : 'unavailable'
+  // Never log connection strings, query text, parameters or provider messages.
+  console.error(JSON.stringify({ level: 'error', message: 'database.connection_ended', code }))
 }
 
 function databasePoolMaximum() {
@@ -73,11 +85,26 @@ export type DatabaseTransaction = NeonTransaction<
   ExtractTablesWithRelations<typeof schema>
 >
 
+async function boundedTransaction<T>(transaction: DatabaseTransaction, operation: (transaction: DatabaseTransaction) => Promise<T>) {
+  if (hasWorkDeadline()) {
+    const budget = remainingWorkMs(15_000)
+    // PostgreSQL 17+, verified on the configured local and EU Neon databases.
+    // SET LOCAL prevents these limits from leaking into a pooled connection.
+    await transaction.execute(sql`select set_config('statement_timeout', ${`${budget}ms`}, true),
+      set_config('transaction_timeout', ${`${budget}ms`}, true),
+      set_config('lock_timeout', ${`${Math.min(budget, 3_000)}ms`}, true)`)
+  }
+  const result = await operation(transaction)
+  if (hasWorkDeadline()) remainingWorkMs(1)
+  return result
+}
+
 async function withDatabaseTransaction<T>(
   environmentVariable: 'DATABASE_AUTHENTICATED_URL' | 'DATABASE_SYSTEM_URL' | 'DATABASE_PURGE_URL',
   databaseRole: 'yodev_app' | 'yodev_system' | 'yodev_purge',
   operation: (transaction: DatabaseTransaction) => Promise<T>,
 ): Promise<T> {
+  if (hasWorkDeadline()) remainingWorkMs(1)
   const connectionString = process.env[environmentVariable] ??
     (process.env.NODE_ENV === 'production' ? undefined : process.env.DATABASE_URL)
   if (!connectionString) throw new Error(`${environmentVariable} is not configured`)
@@ -88,7 +115,7 @@ async function withDatabaseTransaction<T>(
       transaction: NodePgTransaction<typeof schema, ExtractTablesWithRelations<typeof schema>>,
     ): Promise<T> => {
       await transaction.execute(sql.raw(`set local role ${databaseRole}`))
-      return operation(transaction as unknown as DatabaseTransaction)
+      return boundedTransaction(transaction as unknown as DatabaseTransaction, operation)
     })
   }
 
@@ -100,7 +127,7 @@ async function withDatabaseTransaction<T>(
     // Fixed allow-listed identifiers only. SET LOCAL removes owner/BYPASSRLS
     // privileges even if the connection credential has broader membership.
     await transaction.execute(sql.raw(`set local role ${databaseRole}`))
-    return operation(transaction)
+    return boundedTransaction(transaction, operation)
   })
 }
 

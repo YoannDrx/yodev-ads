@@ -8,18 +8,21 @@ const mocks = vi.hoisted(() => ({
     mocks.contexts.push(context)
     return callback(mocks.databases.shift())
   }),
+  edition: vi.fn(async () => ({ edition: { id: 'edition-1', expiresAt: new Date('2026-11-10T08:00:00Z') } })),
   encrypt: vi.fn((value: string) => `encrypted:${value}`),
   hashToken: vi.fn((value: string) => `hashed:${value}`),
   hashOtp: vi.fn((id: string, otp: string) => `otp:${id}:${otp}`),
 }))
 
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
-vi.mock('@/lib/crypto', () => ({ encryptSecret: mocks.encrypt }))
+vi.mock('@/lib/report-editions', () => ({ createReportEditionInTransaction: mocks.edition }))
+vi.mock('@/lib/crypto', () => ({ encryptSecret: mocks.encrypt, decryptSecret: (value: string) => value.replace(/^encrypted:/, '') }))
 vi.mock('@/lib/tokens', () => ({ hashToken: mocks.hashToken, hashOtp: mocks.hashOtp }))
 
 import { entitlementContext } from './entitlements'
 import {
   createWorkspacePublicReport,
+  reviseWorkspacePublicReport,
   issuePublicReportOtp,
   revokeWorkspacePublicReport,
   submitPublicReportFeedback,
@@ -35,16 +38,21 @@ const actorUserId = 'user-1'
 const now = new Date('2026-08-12T08:00:00.000Z')
 
 function publicReportDatabase(input: {
+  actor?: boolean
+  actorRole?: string
   statementResults?: unknown[]
   domain?: unknown
+  share?: unknown
   schedule?: unknown
   recipient?: unknown
   approval?: unknown
   workspace?: unknown
 } = {}) {
+  const workspace = input.workspace as { accessState?: string; plan?: string } | undefined
   return databaseDouble({
-    statementResults: input.statementResults,
+    statementResults: input.actor ? [{ rows: [{ state: workspace?.accessState ?? 'active', plan: workspace?.plan ?? 'agency', member_role: input.actorRole ?? 'admin', is_owner: false, trial_expired: false }] }, ...(input.statementResults ?? [[]]).slice(1)] : input.statementResults,
     query: {
+      shareLinks: { findFirst: vi.fn(async () => input.share) },
       workspaceDomains: { findFirst: vi.fn(async () => input.domain) },
       reportSchedules: { findFirst: vi.fn(async () => input.schedule) },
       reportRecipients: { findFirst: vi.fn(async () => input.recipient) },
@@ -62,8 +70,8 @@ describe('public report workflows', () => {
   })
 
   it('creates a quota-guarded report with an Agency domain and one-shot URL', async () => {
-    const database = publicReportDatabase({
-      statementResults: [[], [], [{ count: 2 }], [{ id: shareId }], [], [], [{ id: 'revelation-1' }]],
+    const database = publicReportDatabase({ actor: true,
+      statementResults: [[], [], [{ count: 2 }], [{ id: shareId }], [], [{ id: 'revelation-1' }]],
       domain: { hostname: 'reports.example.test' },
     })
     mocks.databases.push(database.db)
@@ -79,18 +87,19 @@ describe('public report workflows', () => {
       encryptedSecret: 'encrypted:https://reports.example.test/r/public-report-token',
     })
     expect(database.capture.values).toContainEqual(expect.objectContaining({ action: 'report.link_created' }))
-    expect(database.capture.values).toContainEqual(expect.objectContaining({ milestone: 'first_report' }))
+    expect(mocks.edition).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ workspaceId, shareId, actorUserId }))
+    expect(database.capture.values).not.toContainEqual(expect.objectContaining({ milestone: 'first_report' }))
   })
 
   it('falls back to the Yodev origin when custom domains are not entitled', async () => {
-    const database = publicReportDatabase({
-      statementResults: [[], [], [{ count: 0 }], [{ id: shareId }], [], [], [{ id: 'revelation-1' }]],
+    const database = publicReportDatabase({ actor: true,
+      statementResults: [[], [], [{ count: 0 }], [{ id: shareId }], [], [{ id: 'revelation-1' }]],
       domain: { hostname: 'ignored.example.test' },
       workspace: { accessState: 'active', plan: 'solo' },
     })
     mocks.databases.push(database.db)
     await createWorkspacePublicReport({
-      workspaceId, actorUserId, clientId, label: 'Rapport', locale: 'en', periodDays: 7,
+      workspaceId, actorUserId, clientId, label: 'Rapport', locale: 'en', periodDays: 30,
       token: 'token', entitlements: entitlementContext('active', 'solo'),
       fallbackOrigin: 'https://ads.yodev.fr', now,
     })
@@ -99,9 +108,9 @@ describe('public report workflows', () => {
 
   it('fails closed on quota, missing share or missing revelation', async () => {
     mocks.databases.push(
-      publicReportDatabase({ statementResults: [[], [], [{ count: 3 }]], workspace: { accessState: 'active', plan: 'solo' } }).db,
-      publicReportDatabase({ statementResults: [[], [], [{ count: 0 }], []], workspace: { accessState: 'active', plan: 'solo' } }).db,
-      publicReportDatabase({ statementResults: [[], [], [{ count: 0 }], [{ id: shareId }], [], [], []], workspace: { accessState: 'active', plan: 'solo' } }).db,
+      publicReportDatabase({ actor: true, statementResults: [[], [], [{ count: 3 }]], workspace: { accessState: 'active', plan: 'solo' } }).db,
+      publicReportDatabase({ actor: true, statementResults: [[], [], [{ count: 0 }], []], workspace: { accessState: 'active', plan: 'solo' } }).db,
+      publicReportDatabase({ actor: true, statementResults: [[], [], [{ count: 0 }], [{ id: shareId }], [], [], []], workspace: { accessState: 'active', plan: 'solo' } }).db,
     )
     const input = {
       workspaceId, actorUserId, clientId, label: 'Rapport', locale: 'fr' as const, periodDays: 30,
@@ -112,9 +121,29 @@ describe('public report workflows', () => {
     await expect(createWorkspacePublicReport(input)).rejects.toThrow('révélation one-shot')
   })
 
+  it.each([false, true])('reveals a revision with a current share or legacy scheduled token (%s)', async (legacy) => {
+    const database = publicReportDatabase({ actor: true, statementResults: [[], [], [], [], [{ id: 'revelation-1' }]],
+      share: { id: shareId, active: true, tokenHash: 'hashed:token', encryptedReportToken: legacy ? null : 'encrypted:token', expiresAt: now },
+      schedule: legacy ? { encryptedReportToken: 'encrypted:token' } : undefined,
+      domain: legacy ? undefined : { hostname: 'reports.example.test' },
+    })
+    mocks.databases.push(database.db)
+    await expect(reviseWorkspacePublicReport({ workspaceId, actorUserId, shareId, previousEditionId: 'previous-edition', fallbackOrigin: 'https://ads.example.test', now })).resolves.toEqual({ id: 'revelation-1' })
+    expect(mocks.edition).toHaveBeenCalledWith(database.db, expect.objectContaining({ kind: 'revision', previousEditionId: 'previous-edition' }))
+    expect(database.capture.values[0]).toMatchObject({ encryptedSecret: `encrypted:https://${legacy ? 'ads' : 'reports'}.example.test/r/token?edition=edition-1` })
+  })
+
+  it('does not rotate a missing historical token or reveal a changed capability', async () => {
+    for (const share of [undefined, { id: shareId }, { id: shareId, tokenHash: 'hashed:changed', encryptedReportToken: 'encrypted:token' }]) {
+      mocks.databases.push(publicReportDatabase({ actor: true, statementResults: [[]], share }).db)
+      await expect(reviseWorkspacePublicReport({ workspaceId, actorUserId, shareId, previousEditionId: 'previous-edition', fallbackOrigin: 'https://ads.example.test', now })).rejects.toThrow()
+    }
+    expect(mocks.edition).not.toHaveBeenCalled()
+  })
+
   it('revokes a report and its schedule atomically', async () => {
-    const database = publicReportDatabase({
-      statementResults: [[{ id: shareId }]], schedule: { id: 'schedule-1', deliveryLeaseUntil: null },
+    const database = publicReportDatabase({ actor: true,
+      statementResults: [[], [], [{ id: shareId }]], schedule: { id: 'schedule-1', deliveryLeaseUntil: null },
     })
     mocks.databases.push(database.db)
     await revokeWorkspacePublicReport({ workspaceId, actorUserId, shareId, now })
@@ -125,11 +154,19 @@ describe('public report workflows', () => {
 
   it('rejects revocation while delivery is leased or when the link is absent', async () => {
     mocks.databases.push(
-      publicReportDatabase({ schedule: { deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') } }).db,
-      publicReportDatabase({ statementResults: [[]] }).db,
+      publicReportDatabase({ actor: true, statementResults: [[], [], { rows: [{ active: true }] }], schedule: { deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') } }).db,
+      publicReportDatabase({ actor: true, statementResults: [[]] }).db,
     )
     await expect(revokeWorkspacePublicReport({ workspaceId, actorUserId, shareId, now })).rejects.toThrow('envoi est en cours')
     await expect(revokeWorkspacePublicReport({ workspaceId, actorUserId, shareId, now })).rejects.toThrow('Lien introuvable')
+  })
+
+  it.each(['publish', 'revise', 'revoke'])('refuses %s for a revoked actor before any business write', async (kind) => {
+    const database = publicReportDatabase({ actor: true, actorRole: 'client' }); mocks.databases.push(database.db)
+    const work = kind === 'publish' ? createWorkspacePublicReport({ workspaceId, actorUserId, clientId, label: 'Report', locale: 'fr', periodDays: 7, token: 'fixture', entitlements: entitlementContext('active', 'agency'), fallbackOrigin: 'https://ads.example.test' })
+      : kind === 'revise' ? reviseWorkspacePublicReport({ workspaceId, actorUserId, shareId, previousEditionId: 'edition', fallbackOrigin: 'https://ads.example.test' })
+        : revokeWorkspacePublicReport({ workspaceId, actorUserId, shareId })
+    await expect(work).rejects.toThrow('non autorisée'); expect(database.capture.values).toEqual([]); expect(database.capture.sets).toEqual([]); expect(mocks.edition).not.toHaveBeenCalled()
   })
 
   it('issues a reset OTP challenge without storing the plaintext code', async () => {

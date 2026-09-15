@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   featureEnabled: vi.fn(),
+  recoverExpiredJobs: vi.fn(),
   seedScheduledJobs: vi.fn(),
   runAvailableJobs: vi.fn(),
   acquireLease: vi.fn(),
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   releaseLease: vi.fn(),
 }))
 
+vi.mock('@/lib/jobs', () => ({ recoverExpiredJobs: mocks.recoverExpiredJobs }))
 vi.mock('@/lib/feature-flags', () => ({ featureEnabled: mocks.featureEnabled }))
 vi.mock('@/lib/job-runner', () => ({
   seedScheduledJobs: mocks.seedScheduledJobs,
@@ -39,6 +41,7 @@ beforeEach(() => {
   process.env.CRON_SECRET = 'cron-secret'
   process.env.MAINTENANCE_MODE = '1'
   mocks.featureEnabled.mockReturnValue(true)
+  mocks.recoverExpiredJobs.mockResolvedValue({ recovered: 0, deadLettered: 0 })
   mocks.acquireLease.mockResolvedValue(true)
   mocks.seedScheduledJobs.mockResolvedValue({ requested: 1, created: 1 })
   mocks.runAvailableJobs.mockResolvedValue({ processed: 1, durationMs: 5, results: [{ status: 'completed' }] })

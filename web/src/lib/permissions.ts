@@ -3,7 +3,9 @@ import 'server-only'
 export type Permission =
   | 'workspace:read'
   | 'portfolio:read'
+  | 'portfolio:save_view'
   | 'workspace:admin'
+  | 'audit:read'
   | 'billing:manage'
   | 'members:manage'
   | 'google:connect'
@@ -24,8 +26,9 @@ export type WorkspaceRole = 'owner' | 'admin' | 'strategist' | 'analyst' | 'clie
 
 const allPermissions: readonly Permission[] = [
   'workspace:read',
-  'portfolio:read',
+  'portfolio:read', 'portfolio:save_view',
   'workspace:admin',
+  'audit:read',
   'billing:manage',
   'members:manage',
   'google:connect',
@@ -47,8 +50,9 @@ const rolePermissions: Record<WorkspaceRole, ReadonlySet<Permission>> = {
   owner: new Set(allPermissions),
   admin: new Set([
     'workspace:read',
-    'portfolio:read',
+    'portfolio:read', 'portfolio:save_view',
     'workspace:admin',
+    'audit:read',
     'members:manage',
     'google:connect',
     'google:propose',
@@ -61,8 +65,8 @@ const rolePermissions: Record<WorkspaceRole, ReadonlySet<Permission>> = {
     'support:contact',
     'reports:manage',
   ]),
-  strategist: new Set(['workspace:read', 'portfolio:read', 'google:propose', 'monitoring:run', 'alerts:manage', 'tasks:manage', 'tasks:comment', 'support:read', 'support:contact']),
-  analyst: new Set(['workspace:read', 'portfolio:read', 'reports:manage', 'tasks:comment', 'support:read', 'support:contact']),
+  strategist: new Set(['workspace:read', 'portfolio:read', 'portfolio:save_view', 'google:propose', 'monitoring:run', 'alerts:manage', 'tasks:manage', 'tasks:comment', 'support:read', 'support:contact']),
+  analyst: new Set(['workspace:read', 'portfolio:read', 'portfolio:save_view', 'reports:manage', 'tasks:comment', 'support:read', 'support:contact']),
   client: new Set(['workspace:read', 'support:read', 'support:contact']),
 }
 

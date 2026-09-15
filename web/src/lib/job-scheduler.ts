@@ -1,10 +1,12 @@
 import 'server-only'
+import { analyticalCollectionJobs } from '@/lib/analytical-collections'
 
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 import {
   approvalRequests,
   auditEvents,
   clients,
+  googleAdsConnections,
   deletionRequests,
   exportJobs,
   memberNotificationPreferences,
@@ -20,6 +22,8 @@ import { enqueueJobs, type EnqueueJobInput } from '@/lib/jobs'
 import { trialLifecycleDue } from '@/lib/lifecycle-email-model'
 import { reportScheduleRunKey } from '@/lib/report-scheduling'
 import { taskDigestRunKey } from '@/lib/task-notification-model'
+import { pendingAlertReminderJobs } from '@/lib/alert-reminders'
+import { recoverNotificationDeliveries } from '@/lib/notification-delivery-recovery'
 
 export function localScheduleParts(date: Date, timezone: string) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -40,6 +44,7 @@ export function localScheduleParts(date: Date, timezone: string) {
 }
 
 export async function seedScheduledJobs(now = new Date()) {
+  await recoverNotificationDeliveries(now)
   const currentKid = currentEncryptionKeyId()
   const { monitoredWorkspaces, billingWorkspaces, ambiguousApprovals, dueDeletions, metricClients, queuedExports, scheduledReports, digestPreferences, trialWorkspaces, rotationWorkspaces, subprocessorNotices } = await withSystemTransaction(async (db) => {
     const monitored = await db
@@ -66,9 +71,10 @@ export async function seedScheduledJobs(now = new Date()) {
           eq(workspaces.accessState, 'deletion_pending'),
         ))
     const accounts = await db
-        .select({ workspaceId: clients.workspaceId, clientId: clients.id, timezone: clients.timezone })
+        .select({ workspaceId: clients.workspaceId, clientId: clients.id, timezone: clients.timezone, currencyCode: clients.currencyCode })
         .from(clients)
         .innerJoin(workspaces, eq(workspaces.id, clients.workspaceId))
+        .innerJoin(googleAdsConnections, and(eq(googleAdsConnections.workspaceId, clients.workspaceId), eq(googleAdsConnections.status, 'active')))
         .where(and(
           eq(clients.active, true),
           eq(clients.isManager, false),
@@ -166,6 +172,7 @@ export async function seedScheduledJobs(now = new Date()) {
   })
 
   const pending: EnqueueJobInput[] = []
+  pending.push(...await pendingAlertReminderJobs(now))
   pending.push({
     workspaceId: null,
     type: 'retention.run',
@@ -197,27 +204,25 @@ export async function seedScheduledJobs(now = new Date()) {
   }
   const googleReadsEnabled = featureEnabled('googleReads')
   const notificationsEnabled = featureEnabled('notifications')
-  if (googleReadsEnabled) {
-    for (const workspace of monitoredWorkspaces) {
-      const local = localScheduleParts(now, workspace.timezone)
-      if (local.hour >= 6) {
-        pending.push({
-          workspaceId: workspace.workspaceId,
-          type: 'monitoring.scan',
-          payload: { workspaceId: workspace.workspaceId },
-          priority: 50,
-          deduplicationKey: `monitoring.scan:${workspace.workspaceId}:${local.date}`,
-        })
-      }
-      if (notificationsEnabled && local.weekday === 'Mon' && local.hour >= 7) {
-        pending.push({
-          workspaceId: workspace.workspaceId,
-          type: 'monitoring.weekly_digest',
-          payload: { workspaceId: workspace.workspaceId },
-          priority: 80,
-          deduplicationKey: `monitoring.weekly_digest:${workspace.workspaceId}:${local.date}`,
-        })
-      }
+  for (const workspace of monitoredWorkspaces) {
+    const local = localScheduleParts(now, workspace.timezone)
+    if (googleReadsEnabled && local.hour >= 6) {
+      pending.push({
+        workspaceId: workspace.workspaceId,
+        type: 'monitoring.scan',
+        payload: { workspaceId: workspace.workspaceId },
+        priority: 50,
+        deduplicationKey: `monitoring.scan:${workspace.workspaceId}:${local.date}`,
+      })
+    }
+    if (notificationsEnabled && local.weekday === 'Mon' && local.hour >= 7) {
+      pending.push({
+        workspaceId: workspace.workspaceId,
+        type: 'monitoring.weekly_digest',
+        payload: { workspaceId: workspace.workspaceId },
+        priority: 80,
+        deduplicationKey: `monitoring.weekly_digest:${workspace.workspaceId}:${local.date}`,
+      })
     }
   }
   if (notificationsEnabled) {
@@ -273,6 +278,7 @@ export async function seedScheduledJobs(now = new Date()) {
   if (googleReadsEnabled) {
     for (const account of metricClients) {
       const local = localScheduleParts(now, account.timezone)
+      if (local.hour >= 5) pending.push(...analyticalCollectionJobs({ ...account, generation: `daily:${local.date}`, now }))
       if (local.hour >= 5) pending.push({
         workspaceId: account.workspaceId,
         type: 'metrics.daily_sync',

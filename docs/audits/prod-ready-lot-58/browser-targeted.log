@@ -1,0 +1,129 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/domain-forms-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 271ms
+✓ Running next.config.ts took 429ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.1s (next.js: 1773ms, proxy.ts: 4ms, application-code: 360ms)
+ GET /sign-in 200 in 2.9s (next.js: 2.4s, proxy.ts: 112ms, application-code: 398ms)
+ GET /sign-in 200 in 208ms (next.js: 7ms, proxy.ts: 4ms, application-code: 197ms)
+ POST /api/auth/sign-in/email 200 in 995ms (next.js: 807ms, proxy.ts: 4ms, application-code: 185ms)
+ POST /api/auth/sign-in/email 200 in 84ms (next.js: 4ms, proxy.ts: 2ms, application-code: 78ms)
+ POST /api/auth/sign-in/email 200 in 81ms (next.js: 3ms, proxy.ts: 2ms, application-code: 76ms)
+ POST /api/auth/sign-in/email 200 in 78ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 74ms)
+ POST /api/auth/sign-in/email 200 in 78ms (next.js: 2ms, proxy.ts: 2ms, application-code: 73ms)
+ GET /dashboard 200 in 548ms (next.js: 212ms, proxy.ts: 3ms, application-code: 334ms)
+ GET /settings 200 in 270ms (next.js: 31ms, proxy.ts: 2ms, application-code: 236ms)
+ GET /billing 200 in 173ms (next.js: 26ms, proxy.ts: 1.8ms, application-code: 145ms)
+ GET /support 200 in 148ms (next.js: 14ms, proxy.ts: 1.6ms, application-code: 133ms)
+ GET /accounts 200 in 134ms (next.js: 19ms, proxy.ts: 1.9ms, application-code: 113ms)
+ GET /history 200 in 131ms (next.js: 20ms, proxy.ts: 1.9ms, application-code: 109ms)
+ GET /alerts 200 in 148ms (next.js: 20ms, proxy.ts: 1.8ms, application-code: 126ms)
+ GET /tasks 200 in 151ms (next.js: 20ms, proxy.ts: 1.7ms, application-code: 129ms)
+ GET /approvals 200 in 127ms (next.js: 22ms, proxy.ts: 1.8ms, application-code: 102ms)
+ GET /reports 200 in 218ms (next.js: 35ms, proxy.ts: 1.7ms, application-code: 181ms)
+ GET /audit 200 in 140ms (next.js: 22ms, proxy.ts: 8ms, application-code: 111ms)
+ GET /agents 200 in 185ms (next.js: 17ms, proxy.ts: 2.0ms, application-code: 166ms)
+ GET / 200 in 101ms (next.js: 17ms, proxy.ts: 1.9ms, application-code: 82ms)
+ GET /privacy 200 in 48ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 36ms)
+ GET /terms 200 in 46ms (next.js: 12ms, proxy.ts: 1.6ms, application-code: 32ms)
+ GET /subprocessors 200 in 100ms (next.js: 40ms, proxy.ts: 3ms, application-code: 57ms)
+ GET /status 200 in 102ms (next.js: 33ms, proxy.ts: 1.6ms, application-code: 68ms)
+ GET /sign-in 200 in 34ms (next.js: 4ms, proxy.ts: 1.7ms, application-code: 28ms)
+ GET /sign-up 200 in 322ms (next.js: 288ms, proxy.ts: 1.8ms, application-code: 33ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-H7cSbZ
+
+Running 2 tests using 1 worker
+
+(node:72414) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ POST /api/auth/organization/set-active 200 in 79ms (next.js: 9ms, proxy.ts: 35ms, application-code: 35ms)
+ GET /sign-in 200 in 130ms (next.js: 9ms, proxy.ts: 5ms, application-code: 116ms)
+ GET /settings 200 in 402ms (next.js: 107ms, proxy.ts: 14ms, application-code: 282ms)
+ GET /icon?a62dacc6b033a714 200 in 192ms (next.js: 86ms, proxy.ts: 10ms, application-code: 96ms)
+ GET /api/auth/get-session 200 in 27ms (next.js: 6ms, proxy.ts: 3ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 10ms, proxy.ts: 3ms, application-code: 17ms)
+ POST /api/auth/organization/set-active 200 in 16ms (next.js: 2ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /settings?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 100ms (next.js: 2ms, proxy.ts: 3ms, application-code: 95ms)
+ POST /settings 200 in 130ms (next.js: 3ms, proxy.ts: 5ms, application-code: 122ms)
+  └─ ƒ createWorkspaceDomain({}) in 9ms src/app/domain-actions.ts
+ GET /settings?notice=Domaine+enregistr%C3%A9.+Publiez+le+TXT+r%C3%A9v%C3%A9l%C3%A9+avant+de+v%C3%A9rifier.&reveal=domain-dns&revealId=b7f3e13c-fdd6-4ec7-98a0-8b16c076cec5 200 in 86ms (next.js: 2ms, proxy.ts: 2.0ms, application-code: 82ms)
+ POST /settings?error=L%E2%80%99espace%20actif%20a%20chang%C3%A9.%20Rechargez%20la%20page%20avant%20d%E2%80%99enregistrer. 200 in 120ms (next.js: 2ms, proxy.ts: 3ms, application-code: 115ms)
+  └─ ƒ createWorkspaceDomain({}) in 23ms src/app/domain-actions.ts
+ POST /api/auth/organization/set-active 200 in 25ms (next.js: 2ms, proxy.ts: 2ms, application-code: 21ms)
+ GET /settings 200 in 192ms (next.js: 2ms, proxy.ts: 2ms, application-code: 187ms)
+ POST /api/auth/organization/set-active 200 in 19ms (next.js: 4ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 13ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 6ms, proxy.ts: 4ms, application-code: 18ms)
+ GET /settings?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 100ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 96ms)
+ POST /settings 200 in 121ms (next.js: 2ms, proxy.ts: 4ms, application-code: 115ms)
+  └─ ƒ verifyWorkspaceDomain({}) in 8ms src/app/domain-actions.ts
+ POST /api/auth/organization/set-active 200 in 18ms (next.js: 1.9ms, proxy.ts: 9ms, application-code: 7ms)
+ GET /settings 200 in 186ms (next.js: 1.6ms, proxy.ts: 1.7ms, application-code: 182ms)
+ POST /api/auth/organization/set-active 200 in 44ms (next.js: 8ms, proxy.ts: 4ms, application-code: 31ms)
+ GET /api/auth/get-session 200 in 55ms (next.js: 22ms, proxy.ts: 17ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 52ms (next.js: 24ms, proxy.ts: 14ms, application-code: 15ms)
+ GET /settings?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 92ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 88ms)
+ POST /settings 200 in 124ms (next.js: 9ms, proxy.ts: 5ms, application-code: 110ms)
+  └─ ƒ revokeWorkspaceDomain({}) in 7ms src/app/domain-actions.ts
+ POST /api/auth/organization/set-active 200 in 20ms (next.js: 10ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /settings 200 in 184ms (next.js: 1.8ms, proxy.ts: 1.9ms, application-code: 180ms)
+ GET /api/auth/get-session 200 in 16ms (next.js: 3ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 19ms (next.js: 6ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /settings?error=Op%C3%A9ration+du+domaine+non+finalis%C3%A9e.+R%C3%A9essayez+ou+contactez+le+support. 200 in 96ms (next.js: 2ms, proxy.ts: 2ms, application-code: 92ms)
+ POST /settings 200 in 121ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 116ms)
+  └─ ƒ revokeWorkspaceDomain({}) in 14ms src/app/domain-actions.ts
+ POST /api/auth/organization/set-active 200 in 13ms (next.js: 3ms, proxy.ts: 2ms, application-code: 8ms)
+  ✓  1 [chromium] › e2e/domain-forms-local.spec.ts:6:7 › custom domain fr binds all forms to their workspace and permits removal after downgrade (4.3s)
+ POST /api/auth/organization/set-active 200 in 18ms (next.js: 2ms, proxy.ts: 2ms, application-code: 13ms)
+ GET /settings 200 in 209ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 205ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 3ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 19ms (next.js: 6ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /api/auth/organization/set-active 200 in 14ms (next.js: 3ms, proxy.ts: 3ms, application-code: 8ms)
+ GET /settings?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 92ms (next.js: 1.9ms, proxy.ts: 1.9ms, application-code: 89ms)
+ POST /settings 200 in 109ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 104ms)
+  └─ ƒ createWorkspaceDomain({}) in 6ms src/app/domain-actions.ts
+ GET /settings?notice=Domaine+enregistr%C3%A9.+Publiez+le+TXT+r%C3%A9v%C3%A9l%C3%A9+avant+de+v%C3%A9rifier.&reveal=domain-dns&revealId=ae6566a3-4b7c-4cf6-bfd5-7ec6c06212bc 200 in 79ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 75ms)
+ POST /settings?error=L%E2%80%99espace%20actif%20a%20chang%C3%A9.%20Rechargez%20la%20page%20avant%20d%E2%80%99enregistrer. 200 in 100ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 96ms)
+  └─ ƒ createWorkspaceDomain({}) in 12ms src/app/domain-actions.ts
+ POST /api/auth/organization/set-active 200 in 14ms (next.js: 4ms, proxy.ts: 2ms, application-code: 8ms)
+ GET /settings 200 in 248ms (next.js: 1.7ms, proxy.ts: 1.6ms, application-code: 245ms)
+ POST /api/auth/organization/set-active 200 in 17ms (next.js: 2ms, proxy.ts: 2ms, application-code: 12ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 5ms, proxy.ts: 4ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 31ms (next.js: 7ms, proxy.ts: 4ms, application-code: 20ms)
+ GET /settings?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 94ms (next.js: 1.7ms, proxy.ts: 1.7ms, application-code: 90ms)
+ POST /settings 200 in 113ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 108ms)
+  └─ ƒ verifyWorkspaceDomain({}) in 9ms src/app/domain-actions.ts
+ POST /api/auth/organization/set-active 200 in 12ms (next.js: 3ms, proxy.ts: 2ms, application-code: 7ms)
+ GET /settings 200 in 188ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 184ms)
+ POST /api/auth/organization/set-active 200 in 25ms (next.js: 2ms, proxy.ts: 2ms, application-code: 20ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 15ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 18ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /settings?error=L%E2%80%99espace+actif+a+chang%C3%A9.+Rechargez+la+page+avant+d%E2%80%99enregistrer. 200 in 102ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 98ms)
+ POST /settings 200 in 124ms (next.js: 4ms, proxy.ts: 3ms, application-code: 118ms)
+  └─ ƒ revokeWorkspaceDomain({}) in 8ms src/app/domain-actions.ts
+ POST /api/auth/organization/set-active 200 in 13ms (next.js: 4ms, proxy.ts: 3ms, application-code: 7ms)
+ GET /settings 200 in 183ms (next.js: 1.5ms, proxy.ts: 1.7ms, application-code: 179ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 3ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 5ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /settings?error=Op%C3%A9ration+du+domaine+non+finalis%C3%A9e.+R%C3%A9essayez+ou+contactez+le+support. 200 in 87ms (next.js: 1.7ms, proxy.ts: 1.9ms, application-code: 84ms)
+ POST /settings 200 in 110ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 105ms)
+  └─ ƒ revokeWorkspaceDomain({}) in 13ms src/app/domain-actions.ts
+ POST /api/auth/organization/set-active 200 in 14ms (next.js: 4ms, proxy.ts: 3ms, application-code: 8ms)
+  ✓  2 [chromium] › e2e/domain-forms-local.spec.ts:6:7 › custom domain en binds all forms to their workspace and permits removal after downgrade (3.2s)
+
+  2 passed (8.2s)
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

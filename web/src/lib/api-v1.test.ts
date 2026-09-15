@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
 import { databaseDouble } from '../../test/fluent-db'
 
 const mocks = vi.hoisted(() => ({
@@ -13,7 +14,7 @@ vi.mock('@/lib/feature-flags', () => ({
   privateApiWorkspaceAllowed: () => mocks.enabled,
 }))
 
-import { apiData, apiError, ApiV1Error, authenticateApiRequest, decodeCursor, encodeCursor, pageResult } from './api-v1'
+import { apiData, apiError, ApiV1Error, authenticateApiRequest } from './api-v1'
 
 const credential = {
   key: { id: 'key-1', workspaceId: 'workspace-1', scopes: ['portfolio:read', 'approvals:propose'] },
@@ -52,21 +53,12 @@ describe('API v1 response contract', () => {
     expect(await unknown.json()).toEqual({ error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred', requestId: 'req-3', details: {} } })
   })
 
-  it('creates opaque stable cursors and rejects malformed ones', () => {
-    const at = new Date('2026-08-12T10:00:00.000Z')
-    const id = '11111111-1111-4111-8111-111111111111'
-    expect(decodeCursor(encodeCursor({ at, id }))).toEqual({ at, id })
-    expect(decodeCursor(null)).toBeNull()
-    expect(() => decodeCursor('not-a-cursor')).toThrowError(expect.objectContaining({ code: 'INVALID_CURSOR' }))
-    expect(() => decodeCursor(Buffer.from(JSON.stringify({ at: at.toISOString(), id: 'invalid' })).toString('base64url'))).toThrowError(expect.objectContaining({ code: 'INVALID_CURSOR' }))
-  })
-
-  it('returns one extra row as a next cursor without exposing cursor metadata', () => {
-    const rows = [1, 2, 3].map((value) => ({ value, at: new Date(`2026-08-0${value}T00:00:00Z`), id: `${value}` }))
-    const page = pageResult(rows, 2, (row) => ({ at: row.at, id: '11111111-1111-4111-8111-111111111111' }))
-    expect(page.data.map((row) => row.value)).toEqual([1, 2])
-    expect(page.nextCursor).toEqual(expect.any(String))
-    expect(pageResult(rows.slice(0, 2), 2, (row) => ({ at: row.at, id: '11111111-1111-4111-8111-111111111111' })).nextCursor).toBeNull()
+  it('returns a safe client error for invalid query parameters', async () => {
+    const parsed = z.number().parseAsync('private-value')
+    const error = await parsed.catch((value) => value)
+    const response = apiError(error, 'req-invalid')
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({ error: { code: 'INVALID_INPUT', message: 'Request parameters are invalid', requestId: 'req-invalid', details: {} } })
   })
 
   it('authenticates an entitled scoped key, updates evidence and writes audit', async () => {

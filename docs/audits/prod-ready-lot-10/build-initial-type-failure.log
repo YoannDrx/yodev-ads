@@ -1,0 +1,21 @@
+
+> @yodev/ads@0.1.0 build
+> next build
+
+▲ Next.js 16.3.0 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 347ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.3s
+  Running next.config.js provided runAfterProductionCompile ...
+✓ Completed runAfterProductionCompile in 186ms
+  Running TypeScript ...
+src/app/account-selection-actions.test.ts(28,45): error TS2345: Argument of type '{ clientIds: string; version?: undefined; mode?: undefined; } | { version: string; clientIds?: undefined; mode?: undefined; } | { mode: string; clientIds?: undefined; version?: undefined; }' is not assignable to parameter of type 'Record<string, string> | undefined'.
+  Type '{ clientIds: string; version?: undefined; mode?: undefined; }' is not assignable to type 'Record<string, string>'.
+    Property 'version' is incompatible with index signature.
+      Type 'undefined' is not assignable to type 'string'.
+Failed to type check.
+

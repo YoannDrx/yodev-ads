@@ -1,0 +1,34 @@
+  ✓   1 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › owner has only its server-authorized product surface (6.0s)
+  ✓   2 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › admin has only its server-authorized product surface (2.8s)
+  ✓   3 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › strategist has only its server-authorized product surface (4.6s)
+  ✓   4 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › analyst has only its server-authorized product surface (3.3s)
+  ✓   5 [chromium] › e2e/authenticated-rbac.spec.ts:55:9 › authenticated five-role route matrix › client has only its server-authorized product surface (2.9s)
+  ✓   6 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › owner cannot cross the direct export API boundary (2.4s)
+  ✓   7 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › admin cannot cross the direct export API boundary (285ms)
+  ✓   8 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › strategist cannot cross the direct export API boundary (280ms)
+  ✓   9 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › analyst cannot cross the direct export API boundary (212ms)
+  ✓  10 [chromium] › e2e/authenticated-rbac.spec.ts:75:9 › authenticated five-role route matrix › client cannot cross the direct export API boundary (240ms)
+  ✓  11 [chromium] › e2e/authenticated-rbac.spec.ts:93:7 › authenticated Server Action authorization matrix › re-authorizes workspace administration for every session (14.1s)
+  ✓  12 [chromium] › e2e/prod-ready-local.spec.ts:22:9 › local production readiness regression journeys › grace permits stored views while hiding mutations (27.6s)
+  ✓  13 [chromium] › e2e/prod-ready-local.spec.ts:37:9 › local production readiness regression journeys › suspended members have an accessible recovery destination without redirect loops (10.1s)
+  ✓  14 [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 390px in fr (6.4s)
+  ✘  15 [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in fr (10.0s)
+  -  16 [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 390px in en
+  -  17 [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in en
+  -  18 [chromium] › e2e/prod-ready-local.spec.ts:74:9 › local production readiness regression journeys › workspace selection switches context and permissions on mobile
+  -  19 [chromium] › e2e/prod-ready-local.spec.ts:92:9 › local production readiness regression journeys › analysts do not see monitoring controls denied by their role
+  ✓  20 [chromium] › e2e/public.spec.ts:3:5 › public landing exposes the product proposition and account creation (10.3s)
+  ✓  21 [chromium] › e2e/public.spec.ts:15:5 › authenticated areas redirect anonymous visitors to sign-in (4.6s)
+  ✓  22 [chromium] › e2e/public.spec.ts:21:5 › privacy and terms pages are public (3.4s)
+  ✓  23 [chromium] › e2e/public.spec.ts:28:5 › the subprocessor register and change-notice policy are public (3.2s)
+  ✓  24 [chromium] › e2e/public.spec.ts:35:5 › the public product and legal surface honor the English locale (10.0s)
+  ✓  25 [chromium] › e2e/public.spec.ts:46:5 › public status page never claims operational health when status storage is unavailable (6.9s)
+  1) [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in fr 
+    Error: expect(page).toHaveURL(expected) failed
+    Expected pattern: /\/settings$/
+    Received string:  "http://localhost:3017/dashboard"
+    Timeout: 5000ms
+  1 failed
+    [chromium] › e2e/prod-ready-local.spec.ts:49:11 › local production readiness regression journeys › full navigation and workspace selection work at 768px in fr 
+  4 did not run
+  20 passed (2.3m)

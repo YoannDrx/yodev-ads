@@ -1,4 +1,9 @@
 import 'server-only'
+import { createHash } from 'node:crypto'
+import { readBoundedResponse, ResponseSizeError } from '@/lib/bounded-response'
+import type { GoogleCollectionCoverage, GoogleQueryCoverage } from '@/lib/google-collection-coverage'
+import { calendarDates } from '@/lib/calendar-window'
+import { remainingWorkMs, workSignal, pauseWithinWorkDeadline, withWorkDeadline } from '@/lib/work-deadline'
 
 import { OAuth2Client } from 'google-auth-library'
 import { decryptSecret } from '@/lib/crypto'
@@ -8,6 +13,10 @@ import { creativeFatigueSignal, type CreativePeriodMetrics } from '@/lib/creativ
 import { requireFeature } from '@/lib/feature-flags'
 
 export const GOOGLE_ADS_API_VERSION = 'v25'
+export const GOOGLE_RESPONSE_MAX_BYTES = 16 * 1024 * 1024
+export const GOOGLE_QUERY_MAX_BYTES = 64 * 1024 * 1024
+export const GOOGLE_QUERY_MAX_ROWS = 100_000
+export const GOOGLE_QUERY_MAX_PAGES = 100
 export const GOOGLE_ADS_SCOPE = 'https://www.googleapis.com/auth/adwords'
 
 export function campaignNegativeKeywordInventoryGaql(campaignId: string) {
@@ -770,6 +779,7 @@ export function createOAuthClient(redirectUri?: string) {
     clientId: env.GOOGLE_OAUTH_CLIENT_ID,
     clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
     redirectUri: redirectUri ?? env.GOOGLE_OAUTH_REDIRECT_URI,
+    transporterOptions: { timeout: 10_000, retry: false },
   })
 }
 
@@ -834,14 +844,19 @@ export class GoogleAdsGateway {
   private readonly managerCustomerId: string
   private readonly oauthClient: OAuth2Client
   private readonly observedRequestIds: string[] = []
+  private readonly queryCoverage: GoogleQueryCoverage[] = []
 
-  constructor(credentials: GoogleAdsConnectionCredentials) {
+  constructor(credentials: GoogleAdsConnectionCredentials, private readonly reportWindow?: { from: string; through: string }) {
+    if (reportWindow) calendarDates(reportWindow)
     this.managerCustomerId = normalizeCustomerId(credentials.managerCustomerId)
     this.oauthClient = createOAuthClient()
     this.oauthClient.setCredentials({ refresh_token: decryptSecret(credentials.encryptedRefreshToken) })
   }
 
   private async accessToken() {
+    // The gateway can outlive one request: create a fresh signal for each refresh.
+    this.oauthClient.transporter.defaults.timeout = remainingWorkMs(10_000)
+    this.oauthClient.transporter.defaults.signal = workSignal(10_000)
     const response = await this.oauthClient.getAccessToken()
     if (!response.token) throw new Error('Impossible de renouveler l’accès Google Ads.')
     return response.token
@@ -858,14 +873,19 @@ export class GoogleAdsGateway {
   }
 
   collectedRequestIds() {
-    return [...this.observedRequestIds]
+    return [...new Set(this.observedRequestIds)]
   }
 
-  private async request<T>(path: string, init: RequestInit = {}, retryable = false): Promise<ApiResult<T>> {
+  collectedCoverage(): GoogleCollectionCoverage {
+    return { version: 1, queries: this.queryCoverage.map((query) => ({ ...query })) }
+  }
+
+  private async request<T>(path: string, init: RequestInit = {}, retryable = false, bodyBudget?: { maximumBytes: number; received: (bytes: number) => void }): Promise<ApiResult<T>> {
     requireFeature('googleReads', 'Les lectures Google Ads sont temporairement désactivées.')
     const env = getServerEnv()
     const delays = [250, 1_000, 4_000]
     for (let attempt = 0; ; attempt += 1) {
+      init.signal?.throwIfAborted()
       let accessToken: string
       try {
         accessToken = await this.accessToken()
@@ -873,11 +893,12 @@ export class GoogleAdsGateway {
         throw googleOAuthRefreshError(error)
       }
       let response: Response
+      const signal = workSignal(25_000, init.signal)
       try {
         response = await fetch(`https://googleads.googleapis.com/${env.GOOGLE_ADS_API_VERSION}${path}`, {
           ...init,
           cache: 'no-store',
-          signal: init.signal ?? AbortSignal.timeout(25_000),
+          signal,
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
@@ -886,8 +907,8 @@ export class GoogleAdsGateway {
           },
         })
       } catch (error) {
-        if (retryable && attempt < delays.length) {
-          await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+        if (retryable && !init.signal?.aborted && attempt < delays.length) {
+          await pauseWithinWorkDeadline(delays[attempt])
           continue
         }
         throw new GoogleAdsError(
@@ -899,7 +920,17 @@ export class GoogleAdsGateway {
         )
       }
       const headerRequestId = response.headers.get('request-id')
-      const responseText = await response.text()
+      if (headerRequestId) this.observedRequestIds.push(headerRequestId)
+      let responseText: string
+      try {
+        const body = await readBoundedResponse(response, Math.min(GOOGLE_RESPONSE_MAX_BYTES, bodyBudget?.maximumBytes ?? GOOGLE_RESPONSE_MAX_BYTES), signal)
+        bodyBudget?.received(body.bytes)
+        responseText = body.text
+      } catch (error) {
+        throw new GoogleAdsError(error instanceof ResponseSizeError
+          ? 'La réponse Google Ads dépasse la taille prise en charge.'
+          : 'La lecture de la réponse Google Ads a été interrompue.', 502, headerRequestId)
+      }
       let data: (T & GoogleAdsFailurePayload) | null = null
       try {
         const parsed = JSON.parse(responseText) as unknown
@@ -909,22 +940,20 @@ export class GoogleAdsGateway {
         // Never leak that body to users or logs because it can contain proxy details.
       }
 
-      // Successful searchStream calls carry their request ID in each response
-      // message rather than in the HTTP header. Keep both REST transports
-      // observable so release drills retain provider evidence.
+      // Preserve header and body request IDs, including IDs from earlier pages.
       const bodyRequestIds = responseBodyRequestIds(data)
       const requestIds = [...new Set([headerRequestId, ...bodyRequestIds].filter((value): value is string => Boolean(value)))]
       this.observedRequestIds.push(...requestIds)
       const requestId = headerRequestId ?? bodyRequestIds[0] ?? null
 
       if (retryable && (response.status === 429 || response.status >= 500) && attempt < delays.length) {
-        await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+        await pauseWithinWorkDeadline(delays[attempt])
         continue
       }
       if (response.ok) {
         if (data) return { data, requestId }
         if (retryable && attempt < delays.length) {
-          await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+          await pauseWithinWorkDeadline(delays[attempt])
           continue
         }
         throw new GoogleAdsError('Google Ads a renvoyé une réponse invalide ou incomplète.', 502, requestId)
@@ -942,13 +971,38 @@ export class GoogleAdsGateway {
   }
 
   private async search<T>(customerId: string, query: string): Promise<T[]> {
+    if (this.reportWindow) query = query.replaceAll('segments.date DURING LAST_30_DAYS', `segments.date BETWEEN '${this.reportWindow.from}' AND '${this.reportWindow.through}'`)
     const normalized = normalizeCustomerId(customerId)
-    const { data } = await this.request<Array<{ results?: T[] }>>(
-      `/customers/${normalized}/googleAds:searchStream`,
-      { method: 'POST', body: JSON.stringify({ query }) },
-      true,
-    )
-    return data.flatMap((batch) => batch.results ?? [])
+    return withWorkDeadline(Date.now() + 25_000, async () => {
+      // REST Search keeps the same GAQL query and follows Google's opaque page token.
+      // The whole traversal shares one deadline; a failed/oversized page never returns a partial inventory.
+      const signal = workSignal(25_000), rows: T[] = [], seenTokens = new Set<string>()
+      let pageToken: string | undefined, bytes = 0, pages = 0
+      do {
+        signal.throwIfAborted()
+        if (pages >= GOOGLE_QUERY_MAX_PAGES || bytes >= GOOGLE_QUERY_MAX_BYTES || rows.length >= GOOGLE_QUERY_MAX_ROWS) throw new GoogleAdsError('La collecte Google Ads dépasse le volume pris en charge.', 502, null)
+        const { data, requestId } = await this.request<{ results?: T[]; nextPageToken?: string; fieldMask?: string }>(
+          `/customers/${normalized}/googleAds:search`,
+          { method: 'POST', body: JSON.stringify({ query, ...(pageToken ? { pageToken } : {}) }), signal },
+          true, { maximumBytes: GOOGLE_QUERY_MAX_BYTES - bytes, received: (size) => { bytes += size; if (bytes > GOOGLE_QUERY_MAX_BYTES) throw new ResponseSizeError() } },
+        )
+        // Empty successful protobuf responses can omit results, but must carry fieldMask.
+        if (Array.isArray(data) || 'error' in data || (data.results === undefined ? typeof data.fieldMask !== 'string' : !Array.isArray(data.results)) || (data.nextPageToken !== undefined && typeof data.nextPageToken !== 'string')) {
+          throw new GoogleAdsError('Incomplete or invalid Google Ads search response', 502, requestId)
+        }
+        const batch = data.results ?? []
+        if (batch.length > 10_000 || rows.length + batch.length > GOOGLE_QUERY_MAX_ROWS) throw new GoogleAdsError('La collecte Google Ads dépasse le volume pris en charge.', 502, requestId)
+        rows.push(...batch)
+        pages += 1
+        pageToken = data.nextPageToken || undefined
+        if (pageToken && (!batch.length || pageToken.length > 16_384 || seenTokens.has(pageToken))) throw new GoogleAdsError('Incomplete or invalid Google Ads search pagination', 502, requestId)
+        if (pageToken) seenTokens.add(pageToken)
+      } while (pageToken)
+      const limitMatch = query.match(/\bLIMIT\s+(\d+)\s*$/i)
+      const limit = limitMatch ? Number(limitMatch[1]) : null
+      this.queryCoverage.push({ queryHash: createHash('sha256').update(query).digest('hex'), rows: rows.length, pages, bytes, limit, state: limit !== null && rows.length >= limit ? 'limit_reached' : 'query_complete' })
+      return rows
+    })
   }
 
   async listManagedCustomers(): Promise<ManagedCustomer[]> {
@@ -1733,10 +1787,27 @@ export class GoogleAdsGateway {
     }
   }
 
-  async dailyAccountMetrics(customerId: string, from: string, through: string): Promise<DailyAccountMetric[]> {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(through) || from > through) {
-      throw new Error('Invalid Google Ads metric date range')
+  async conversionLookbackDays(customerId: string): Promise<number | null> {
+    const rows = await this.search<{ conversionAction?: { resourceName?: string; clickThroughLookbackWindowDays?: string | number; viewThroughLookbackWindowDays?: string | number } }>(customerId,
+      `SELECT conversion_action.resource_name, conversion_action.click_through_lookback_window_days,
+              conversion_action.view_through_lookback_window_days
+       FROM conversion_action WHERE conversion_action.status = 'ENABLED'`)
+    if (rows.length === 0) return null
+    let maximum = 0
+    for (const row of rows) {
+      if (!row.conversionAction?.resourceName) return null
+      for (const value of [row.conversionAction.clickThroughLookbackWindowDays, row.conversionAction.viewThroughLookbackWindowDays]) {
+        if (value === undefined || value === null || value === '') return null
+        const days = Number(value)
+        if (!Number.isInteger(days) || days < 0 || days > 729) return null
+        maximum = Math.max(maximum, days)
+      }
     }
+    return maximum
+  }
+
+  async dailyAccountMetrics(customerId: string, from: string, through: string): Promise<DailyAccountMetric[]> {
+    calendarDates({ from, through })
     type Row = {
       segments?: { date?: string }
       metrics?: { impressions?: string; clicks?: string; costMicros?: string; conversions?: number; conversionsValue?: number }
@@ -1750,20 +1821,21 @@ export class GoogleAdsGateway {
        FROM customer
        WHERE segments.date BETWEEN '${from}' AND '${through}'
        ORDER BY segments.date`)
-    return rows.flatMap(({ segments, metrics }) => segments?.date ? [{
+    return rows.map(({ segments, metrics }) => {
+      if (!segments?.date) throw new Error('Incomplete Google account metric row')
+      return {
       date: segments.date,
       impressions: metrics?.impressions ?? '0',
       clicks: metrics?.clicks ?? '0',
       costMicros: metrics?.costMicros ?? '0',
       conversions: metrics?.conversions ?? 0,
       conversionValue: metrics?.conversionsValue ?? 0,
-    }] : [])
+      }
+    })
   }
 
   async dailyCampaignMetrics(customerId: string, from: string, through: string): Promise<DailyCampaignMetric[]> {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(through) || from > through) {
-      throw new Error('Invalid Google Ads metric date range')
-    }
+    calendarDates({ from, through })
     type Row = {
       campaign?: { id?: string; name?: string; status?: string; advertisingChannelType?: string }
       segments?: { date?: string }
@@ -1780,10 +1852,11 @@ export class GoogleAdsGateway {
               metrics.conversions,
               metrics.conversions_value
        FROM campaign
-       WHERE campaign.status != 'REMOVED'
-         AND segments.date BETWEEN '${from}' AND '${through}'
+       WHERE segments.date BETWEEN '${from}' AND '${through}'
        ORDER BY segments.date, campaign.id`)
-    return rows.flatMap(({ campaign, segments, metrics }) => campaign?.id && segments?.date ? [{
+    return rows.map(({ campaign, segments, metrics }) => {
+      if (!campaign?.id || !segments?.date) throw new Error('Incomplete Google campaign metric row')
+      return {
       campaignId: campaign.id,
       campaignName: campaign.name ?? 'Campagne sans nom',
       campaignType: campaign.advertisingChannelType ?? 'UNKNOWN',
@@ -1794,7 +1867,8 @@ export class GoogleAdsGateway {
       costMicros: metrics?.costMicros ?? '0',
       conversions: metrics?.conversions ?? 0,
       conversionValue: metrics?.conversionsValue ?? 0,
-    }] : [])
+      }
+    })
   }
 
   async searchTermPerformance(customerId: string): Promise<SearchTermPerformance[]> {
@@ -1980,8 +2054,7 @@ export class GoogleAdsGateway {
               customer.conversion_tracking_setting.google_ads_conversion_customer,
               customer.conversion_tracking_setting.accepted_customer_data_terms,
               customer.conversion_tracking_setting.enhanced_conversions_for_leads_enabled
-       FROM customer
-       LIMIT 1`,
+       FROM customer`,
     )
     const setting = row?.customer?.conversionTrackingSetting
     return {

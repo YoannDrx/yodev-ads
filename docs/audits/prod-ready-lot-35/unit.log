@@ -1,0 +1,12 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/lib/alert-quality.test.ts src/lib/workspace-actor-guard.test.ts src/lib/flash-copy.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  3 passed (3)
+      Tests  30 passed (30)
+   Start at  12:09:41
+   Duration  536ms (transform 203ms, setup 0ms, import 775ms, tests 16ms, environment 0ms)

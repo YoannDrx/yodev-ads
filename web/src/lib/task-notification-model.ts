@@ -47,17 +47,20 @@ export function taskMentionEmail(input: { locale: string; displayName: string; t
   }
 }
 
-export function taskDigestEmail(input: { locale: string; displayName: string; taskUrl: string; tasks: Array<{ title: string; status: string; dueAt: Date | null }> }) {
-  const rows = input.tasks.map((task) => `<li style="margin:10px 0"><strong>${escapeHtml(task.title)}</strong> · ${escapeHtml(task.status)}${task.dueAt ? ` · ${escapeHtml(task.dueAt.toISOString().slice(0, 10))}` : ''}</li>`).join('')
-  const name = escapeHtml(input.displayName)
-  const url = escapeHtml(input.taskUrl)
-  if (input.locale === 'en') return {
-    subject: `Your task digest · ${input.tasks.length} open`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#12202b"><h1 style="font-size:22px">Hello ${name}</h1><p>${input.tasks.length} assigned task(s) require your attention.</p><ul>${rows}</ul><a href="${url}">Open tasks</a></div>`,
-  }
+export function taskDigestEmail(input: { locale: string; displayName: string; workspaceName: string; timezone: string; total: number; taskUrl: string; tasks: Array<{ title: string; status: string; dueAt: Date | null }> }) {
+  if (!Number.isSafeInteger(input.total) || input.total < input.tasks.length) throw new Error('Invalid task digest total')
+  const english = input.locale === 'en', locale = english ? 'en-GB' : 'fr-FR'
+  const statusLabels: Record<string, string> = english ? { todo: 'To do', in_progress: 'In progress', blocked: 'Blocked' } : { todo: 'À faire', in_progress: 'En cours', blocked: 'Bloquée' }
+  const formatDate = new Intl.DateTimeFormat(locale, { timeZone: input.timezone, dateStyle: 'medium', timeStyle: 'short' })
+  const rows = input.tasks.map((task) => `<li style="margin:14px 0;overflow-wrap:anywhere"><strong>${escapeHtml(task.title)}</strong> · ${escapeHtml(statusLabels[task.status] ?? task.status)}${task.dueAt ? ` · ${english ? 'Due' : 'Échéance'} ${escapeHtml(formatDate.format(task.dueAt))}` : ''}</li>`).join('')
+  const name = escapeHtml(input.displayName), workspace = escapeHtml(input.workspaceName), url = escapeHtml(input.taskUrl)
+  const total = input.total.toLocaleString(locale), shown = input.tasks.length.toLocaleString(locale)
+  const coverage = input.total > input.tasks.length
+    ? english ? `Preview: ${shown} of ${total} tasks, earliest deadlines first. Open the full list to see the remaining tasks.` : `Aperçu : ${shown} tâches sur ${total}, par échéance la plus proche. Ouvrez la liste complète pour consulter les autres tâches.`
+    : english ? `All ${total} tasks are listed below, earliest deadlines first.` : `Les ${total} tâches figurent ci-dessous, par échéance la plus proche.`
   return {
-    subject: `Votre digest de tâches · ${input.tasks.length} ouverte${input.tasks.length > 1 ? 's' : ''}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:32px;color:#12202b"><h1 style="font-size:22px">Bonjour ${name}</h1><p>${input.tasks.length} tâche(s) assignée(s) demandent votre attention.</p><ul>${rows}</ul><a href="${url}">Ouvrir les tâches</a></div>`,
+    subject: english ? `Your task digest · ${total} open` : `Votre récapitulatif de tâches · ${total} ouverte${input.total > 1 ? 's' : ''}`,
+    html: `<!doctype html><html lang="${english ? 'en' : 'fr'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px;color:#12202b;overflow-wrap:anywhere"><h1 style="font-size:22px">${english ? 'Hello' : 'Bonjour'} ${name}</h1><p>${workspace}</p><p>${english ? `${total} open task(s) are assigned to you.` : `${total} tâche(s) ouverte(s) vous sont assignées.`}</p><p>${coverage}</p><p style="color:#52626f">${english ? 'Deadline timezone' : 'Fuseau des échéances'} : ${escapeHtml(input.timezone)}</p><ul style="padding-left:20px">${rows}</ul><a href="${url}">${english ? 'View all my open tasks' : 'Voir toutes mes tâches ouvertes'}</a><p style="font-size:12px;color:#52626f">${english ? 'Assignments and statuses may have changed since this digest was prepared.' : 'Les assignations et les statuts peuvent avoir changé depuis la préparation de ce récapitulatif.'}</p></div></body></html>`,
   }
 }
 

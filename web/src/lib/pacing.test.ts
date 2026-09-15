@@ -37,6 +37,7 @@ describe('monthly pacing', () => {
   })
 
   it('signals missing data instead of manufacturing a recommendation', () => {
+    expect(computePacing({ monthlyBudgetMicros: 3_100, actualSpendMicros: 500, elapsedDays: 10, daysInMonth: 31, observedDays: 5 })).toMatchObject({ status: 'missing_data', forecastMicros: null, variancePercent: null })
     expect(computePacing({ monthlyBudgetMicros: 3_100, actualSpendMicros: 0, elapsedDays: 10, daysInMonth: 31, observedDays: 0 }).status).toBe('missing_data')
     expect(computePacing({ monthlyBudgetMicros: 0, actualSpendMicros: 0, elapsedDays: 10, daysInMonth: 31, observedDays: 10 }).status).toBe('missing_data')
     expect(computePacing({ monthlyBudgetMicros: 3_100, actualSpendMicros: 0, elapsedDays: 0, daysInMonth: 31, observedDays: 10 }).status).toBe('missing_data')

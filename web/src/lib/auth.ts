@@ -12,6 +12,8 @@ import * as schema from '@/db/schema'
 import { authInvitations, authMembers } from '@/db/schema'
 import { authOrganizationAccess, authOrganizationRoles } from '@/lib/auth-access-control'
 import { sendAuthEmail } from '@/lib/auth-emails'
+import { authRequestLocale } from '@/lib/auth-request-locale'
+import { invitationWorkspaceAdmission } from '@/lib/auth-invitation-admission'
 
 type AdsAuth = ReturnType<typeof createAuth>
 let singleton: AdsAuth | undefined
@@ -121,8 +123,8 @@ function createAuth() {
       requireEmailVerification: true,
       resetPasswordTokenExpiresIn: 60 * 15,
       revokeSessionsOnPasswordReset: true,
-      sendResetPassword: async ({ user, url }) => {
-        await sendAuthEmail({ to: user.email, actionUrl: url, kind: 'password_reset' })
+      sendResetPassword: async ({ user, url }, request) => {
+        await sendAuthEmail({ to: user.email, actionUrl: url, kind: 'password_reset', locale: authRequestLocale(request) })
       },
     },
     emailVerification: {
@@ -130,8 +132,8 @@ function createAuth() {
       sendOnSignUp: emailPasswordEnabled,
       sendOnSignIn: emailPasswordEnabled,
       autoSignInAfterVerification: false,
-      sendVerificationEmail: async ({ user, url }) => {
-        await sendAuthEmail({ to: user.email, actionUrl: url, kind: 'email_verification' })
+      sendVerificationEmail: async ({ user, url }, request) => {
+        await sendAuthEmail({ to: user.email, actionUrl: url, kind: 'email_verification', locale: authRequestLocale(request) })
       },
     },
     databaseHooks: {
@@ -185,8 +187,8 @@ function createAuth() {
         expiresIn: 60 * 15,
         disableSignUp: true,
         storeToken: 'hashed',
-        sendMagicLink: async ({ email, url }) => {
-          await sendAuthEmail({ to: email, actionUrl: url, kind: 'magic_link' })
+        sendMagicLink: async ({ email, url }, context) => {
+          await sendAuthEmail({ to: email, actionUrl: url, kind: 'magic_link', locale: authRequestLocale(context?.request) })
         },
       }),
       organization({
@@ -197,6 +199,15 @@ function createAuth() {
         creatorRole: 'owner',
         membershipLimit: workspaceMemberLimit,
         requireEmailVerificationOnInvitation: true,
+        organizationHooks: {
+          beforeAcceptInvitation: async ({ organization }) => {
+            const admission = await invitationWorkspaceAdmission(organization.id)
+            if (admission !== 'available') throw new APIError('FORBIDDEN', {
+              code: admission === 'full' ? 'ORGANIZATION_MEMBERSHIP_LIMIT_REACHED' : 'WORKSPACE_INVITATION_UNAVAILABLE',
+              message: 'Workspace invitation admission refused',
+            })
+          },
+        },
         schema: {
           organization: { modelName: 'authOrganizations' },
           member: { modelName: 'authMembers' },

@@ -1,4 +1,6 @@
 import 'server-only'
+import { collectAnalyticalFamily } from '@/lib/analytical-collections'
+import { withWorkDeadline } from '@/lib/work-deadline'
 
 import { and, eq, gte, inArray, isNotNull, lt, or } from 'drizzle-orm'
 import { z } from 'zod'
@@ -6,6 +8,7 @@ import {
   alertIncidents,
   approvalRequests,
   auditEvents,
+  reportEditions,
   clients,
   dailyAccountMetrics,
   dailyCampaignMetrics,
@@ -18,6 +21,7 @@ import {
   notificationOAuthSessions,
   offlineConversionDiagnostics,
   performanceSnapshots,
+  analyticalCollections,
   rateLimitBuckets,
   secretRevelations,
   shareLinks,
@@ -38,16 +42,19 @@ import {
   type ClaimedJob,
 } from '@/lib/jobs'
 import { reconcileGoogleMutation } from '@/lib/reconcile-google-mutation'
-import { runWorkspaceMonitoring } from '@/lib/run-monitoring'
+import { executeMetricSyncChunk, fanOutMetricSync } from '@/lib/metrics-sync'
+import { executeMonitoringChunk, fanOutMonitoringScan } from '@/lib/monitoring-scan-jobs'
+import { MONITORING_AGENTS_PER_CHUNK } from '@/lib/monitoring-scan-plan'
+import { deliverAlertReminder } from '@/lib/alert-reminders'
 import {
   purgeWorkspace,
   recordWorkspaceDeletionStripeCancellation,
   revokeWorkspaceGoogleConnection,
   runWorkspaceExternalCleanup,
+  externalCleanupPayload,
 } from '@/lib/workspace-deletion'
-import { accountLimitForPlan, getStripe } from '@/lib/billing'
+import { getStripe } from '@/lib/billing'
 import { GoogleAdsGateway } from '@/lib/google-ads'
-import { pacingCalendar } from '@/lib/pacing'
 import { deleteExpiredExportArtifacts, runWorkspaceExport } from '@/lib/workspace-export'
 import { featureEnabled } from '@/lib/feature-flags'
 import { deliverScheduledReport } from '@/lib/scheduled-reports'
@@ -63,7 +70,7 @@ import { redactSensitiveData } from '@/lib/sentry-redaction'
 import { completeMutationObservation } from '@/lib/mutation-observations'
 import { currentEncryptionKeyId } from '@/lib/crypto'
 import { rotateWorkspaceSecrets } from '@/lib/secret-rotation'
-import { persistSystemGoogleAccountInventory } from '@/lib/google-account-sync'
+import { googleInventoryConnectionIdentity, persistSystemGoogleAccountInventory } from '@/lib/google-account-sync'
 import { deliverAuthInvitation } from '@/lib/auth-invitations'
 import { deliverQueuedAuthEmail } from '@/lib/auth-emails'
 import { reconcileStripeWorkspace } from '@/lib/stripe-reconciliation'
@@ -72,6 +79,13 @@ import { completeOperationalRun, failOperationalRun, startOperationalRun } from 
 import { RETENTION_POLICY, retentionCutoff } from '@/lib/retention-policy'
 
 const workspacePayload = z.object({ workspaceId: z.string().uuid() })
+const monitoringScanPayload = workspacePayload.extend({ agentId: z.string().uuid().optional() })
+const reminderPayload = workspacePayload.extend({ incidentId: z.string().uuid(), dueAt: z.string().datetime() })
+const monitoringChunkPayload = workspacePayload.extend({
+  clientId: z.string().uuid(),
+  parentJobId: z.string().uuid(),
+  agentIds: z.array(z.string().uuid()).min(1).max(MONITORING_AGENTS_PER_CHUNK),
+})
 const authInvitationPayload = z.object({ invitationId: z.string().uuid(), workspaceId: z.string().uuid() })
 const authEmailPayload = z.object({ envelope: z.string().min(1).max(50_000) }).strict()
 const approvalPayload = z.object({ approvalId: z.string().uuid() })
@@ -79,11 +93,6 @@ const mutationObservationPayload = z.object({ observationId: z.string().uuid() }
 const notificationPayload = z.object({ deliveryId: z.string().uuid() })
 const stripeSubscriptionPayload = z.object({ subscriptionId: z.string().min(3) })
 const deletionStripeSubscriptionPayload = stripeSubscriptionPayload.extend({ workspaceId: z.string().uuid().optional() })
-const externalCleanupPayload = z.object({
-  workspaceHash: z.string().regex(/^[a-f0-9]{64}$/),
-  logoUrl: z.string().url().nullable(),
-  hostnames: z.array(z.string().min(1).max(253)).max(100),
-})
 const metricsPayload = z.object({ workspaceId: z.string().uuid(), clientId: z.string().uuid() })
 const exportPayload = z.object({ workspaceId: z.string().uuid(), exportJobId: z.string().uuid() })
 const scheduledReportPayload = z.object({ scheduleId: z.string().uuid(), runKey: z.string().min(10).max(32) })
@@ -126,24 +135,32 @@ async function executeJob(job: ClaimedJob) {
     case 'auth.invitation_deliver':
       return deliverAuthInvitation(authInvitationPayload.parse(job.payload))
     case 'monitoring.scan': {
-      const { workspaceId } = workspacePayload.parse(job.payload)
-      return runWorkspaceMonitoring(workspaceId)
+      return fanOutMonitoringScan({ ...monitoringScanPayload.parse(job.payload), parentJobId: job.id })
+    }
+    case 'monitoring.scan_chunk': {
+      const payload = monitoringChunkPayload.parse(job.payload)
+      if (payload.workspaceId !== job.workspaceId || !job.leaseOwner) throw new NonRetryableJobError('Monitoring job workspace mismatch')
+      return executeMonitoringChunk(payload, { jobId: job.id, attempt: job.attemptCount, workerId: job.leaseOwner })
+    }
+    case 'monitoring.reminder': {
+      return deliverAlertReminder(reminderPayload.parse(job.payload))
     }
     case 'monitoring.weekly_digest': {
       const { workspaceId } = workspacePayload.parse(job.payload)
-      return dispatchWeeklyDigest(workspaceId)
+      if (workspaceId !== job.workspaceId) throw new NonRetryableJobError('Weekly digest workspace mismatch')
+      return dispatchWeeklyDigest(workspaceId, job.createdAt)
     }
     case 'report.schedule_deliver': {
       const { scheduleId, runKey } = scheduledReportPayload.parse(job.payload)
-      return deliverScheduledReport(scheduleId, runKey)
+      return deliverScheduledReport(scheduleId, runKey, job)
     }
     case 'task.mention_deliver': {
       const { commentId, preferenceId } = taskMentionPayload.parse(job.payload)
-      return deliverTaskMention(commentId, preferenceId)
+      return deliverTaskMention(commentId, preferenceId, job)
     }
     case 'task.personal_digest': {
       const { preferenceId, runKey } = taskDigestPayload.parse(job.payload)
-      return deliverPersonalTaskDigest(preferenceId, runKey)
+      return deliverPersonalTaskDigest(preferenceId, runKey, job)
     }
     case 'lifecycle.email': {
       const payload = lifecycleEmailPayload.parse(job.payload)
@@ -180,7 +197,9 @@ async function executeJob(job: ClaimedJob) {
       const { deliveryId } = notificationPayload.parse(job.payload)
       const result = await retryNotificationDelivery(deliveryId)
       if (result === 'dead_letter') throw new NonRetryableJobError('Notification delivery reached dead-letter')
+      if (result === 'ambiguous') throw new NonRetryableJobError('Notification transport acceptance requires reconciliation')
       if (result === 'retrying') throw new Error('Notification delivery failed and is scheduled for retry')
+      if (result === 'not_available' || result === 'disabled' || result === 'lease_lost') throw new Error('Notification delivery is not yet available for completion')
       return result
     }
     case 'workspace.purge': {
@@ -188,7 +207,7 @@ async function executeJob(job: ClaimedJob) {
       return purgeWorkspace(workspaceId)
     }
     case 'workspace.external_cleanup':
-      return runWorkspaceExternalCleanup(externalCleanupPayload.parse(job.payload))
+      return runWorkspaceExternalCleanup(externalCleanupPayload.parse(job.payload), job)
     case 'google.revoke_connection': {
       const { workspaceId } = workspacePayload.parse(job.payload)
       return revokeWorkspaceGoogleConnection(workspaceId)
@@ -228,6 +247,7 @@ async function executeJob(job: ClaimedJob) {
     }
     case 'google.accounts_sync': {
       const { workspaceId } = workspacePayload.parse(job.payload)
+      if (job.workspaceId !== workspaceId) throw new NonRetryableJobError('Google inventory job scope mismatch')
       const context = await withSystemTransaction(async (db) => {
         const [workspace] = await db.select({ plan: workspaces.plan, accessState: workspaces.accessState })
           .from(workspaces)
@@ -236,23 +256,23 @@ async function executeJob(job: ClaimedJob) {
         const [connection] = await db.select().from(googleAdsConnections)
           .where(and(eq(googleAdsConnections.workspaceId, workspaceId), eq(googleAdsConnections.status, 'active')))
           .limit(1)
-        if (!workspace || !connection || !['internal', 'active'].includes(workspace.accessState)) {
+        if (!workspace || !connection || !['internal', 'active', 'trial'].includes(workspace.accessState)) {
           throw new NonRetryableJobError('Google account sync workspace or connection unavailable')
         }
         return { workspace, connection }
       })
+      const observedAt = new Date()
       const managedCustomers = await new GoogleAdsGateway(context.connection).listManagedCustomers()
-      const limit = context.workspace.plan === 'internal' ? null : accountLimitForPlan(context.workspace.plan)
-      const { included, excluded } = await persistSystemGoogleAccountInventory({
+      const { included, excluded, limit } = await persistSystemGoogleAccountInventory({
         workspaceId,
         actorUserId: 'system:billing-account-sync',
         connectionId: context.connection.id,
         managedCustomers,
-        advertiserLimit: limit,
-        plan: context.workspace.plan,
+        observedAt,
+        connectionIdentity: googleInventoryConnectionIdentity(context.connection),
         action: 'google_ads.accounts_synced_after_plan_change',
         recordActivation: false,
-      })
+      }, job)
       return { accessibleCount: managedCustomers.length, activeCount: included.length, excludedCount: excluded.length, limit }
     }
     case 'google.read_drill': {
@@ -287,79 +307,12 @@ async function executeJob(job: ClaimedJob) {
       }))
       return summary
     }
-    case 'metrics.daily_sync': {
-      const payload = metricsPayload.parse(job.payload)
-      const context = await withSystemTransaction(async (db) => {
-        const [client] = await db.select().from(clients).where(and(eq(clients.id, payload.clientId), eq(clients.workspaceId, payload.workspaceId), eq(clients.active, true))).limit(1)
-        const [connection] = await db.select().from(googleAdsConnections).where(and(eq(googleAdsConnections.workspaceId, payload.workspaceId), eq(googleAdsConnections.status, 'active'))).limit(1)
-        if (!client || !connection) throw new NonRetryableJobError('Metrics sync client or connection unavailable')
-        return { client, connection }
-      })
-      const calendar = pacingCalendar(new Date(), context.client.timezone)
-      const gateway = new GoogleAdsGateway(context.connection)
-      const [metrics, campaignMetrics] = await Promise.all([
-        gateway.dailyAccountMetrics(context.client.googleCustomerId, calendar.from, calendar.through),
-        gateway.dailyCampaignMetrics(context.client.googleCustomerId, calendar.from, calendar.through),
-      ])
-      await withSystemTransaction(async (db) => {
-        for (const metric of metrics) {
-          await db.insert(dailyAccountMetrics).values({
-            workspaceId: payload.workspaceId,
-            clientId: payload.clientId,
-            metricDate: metric.date,
-            currencyCode: context.client.currencyCode,
-            costMicros: metric.costMicros,
-            impressions: metric.impressions,
-            clicks: metric.clicks,
-            conversions: String(metric.conversions),
-            conversionValueMicros: String(Math.round(metric.conversionValue * 1_000_000)),
-          }).onConflictDoUpdate({
-            target: [dailyAccountMetrics.clientId, dailyAccountMetrics.metricDate],
-            set: {
-              currencyCode: context.client.currencyCode,
-              costMicros: metric.costMicros,
-              impressions: metric.impressions,
-              clicks: metric.clicks,
-              conversions: String(metric.conversions),
-              conversionValueMicros: String(Math.round(metric.conversionValue * 1_000_000)),
-              collectedAt: new Date(),
-            },
-          })
-        }
-        for (const metric of campaignMetrics) {
-          await db.insert(dailyCampaignMetrics).values({
-            workspaceId: payload.workspaceId,
-            clientId: payload.clientId,
-            campaignId: metric.campaignId,
-            metricDate: metric.date,
-            campaignName: metric.campaignName,
-            campaignType: metric.campaignType,
-            status: metric.status,
-            currencyCode: context.client.currencyCode,
-            costMicros: metric.costMicros,
-            impressions: metric.impressions,
-            clicks: metric.clicks,
-            conversions: String(metric.conversions),
-            conversionValueMicros: String(Math.round(metric.conversionValue * 1_000_000)),
-          }).onConflictDoUpdate({
-            target: [dailyCampaignMetrics.clientId, dailyCampaignMetrics.campaignId, dailyCampaignMetrics.metricDate],
-            set: {
-              campaignName: metric.campaignName,
-              campaignType: metric.campaignType,
-              status: metric.status,
-              currencyCode: context.client.currencyCode,
-              costMicros: metric.costMicros,
-              impressions: metric.impressions,
-              clicks: metric.clicks,
-              conversions: String(metric.conversions),
-              conversionValueMicros: String(Math.round(metric.conversionValue * 1_000_000)),
-              collectedAt: new Date(),
-            },
-          })
-        }
-      })
-      return { accountDays: metrics.length, campaignDays: campaignMetrics.length, period: { from: calendar.from, through: calendar.through } }
-    }
+    case 'analytics.collect':
+      return collectAnalyticalFamily(job)
+    case 'metrics.daily_sync':
+      return fanOutMetricSync(job)
+    case 'metrics.sync_chunk':
+      return executeMetricSyncChunk(job)
     case 'google.change_sync': {
       const payload = metricsPayload.parse(job.payload)
       const context = await googleSyncContext(payload.workspaceId, payload.clientId)
@@ -517,8 +470,9 @@ async function executeJob(job: ClaimedJob) {
           const remove = async (category: string, operation: Promise<Array<{ id: string }>>) => {
             counts[category] = (await operation).length
           }
+          await remove('reportEditions', db.delete(reportEditions).where(lt(reportEditions.expiresAt, now)).returning({ id: reportEditions.id }))
           await remove('notificationDeliveries', db.delete(notificationDeliveries).where(and(
-            inArray(notificationDeliveries.status, ['delivered', 'dead_letter']),
+            inArray(notificationDeliveries.status, ['accepted', 'delivered', 'dead_letter', 'cancelled']),
             isNotNull(notificationDeliveries.terminalAt),
             lt(notificationDeliveries.terminalAt, daysAgo(RETENTION_POLICY.deliveryEvidenceDays)),
           )).returning({ id: notificationDeliveries.id }))
@@ -539,6 +493,7 @@ async function executeJob(job: ClaimedJob) {
           await remove('dailyAccountMetrics', db.delete(dailyAccountMetrics).where(lt(dailyAccountMetrics.metricDate, historyDate)).returning({ id: dailyAccountMetrics.id }))
           await remove('dailyCampaignMetrics', db.delete(dailyCampaignMetrics).where(lt(dailyCampaignMetrics.metricDate, historyDate)).returning({ id: dailyCampaignMetrics.id }))
           await remove('performanceSnapshots', db.delete(performanceSnapshots).where(lt(performanceSnapshots.snapshotDate, historyDate)).returning({ id: performanceSnapshots.id }))
+          await remove('analyticalCollections', db.delete(analyticalCollections).where(lt(analyticalCollections.periodThrough, historyDate)).returning({ id: analyticalCollections.id }))
           await remove('conversionActionSnapshots', db.delete(conversionActionSnapshots).where(lt(conversionActionSnapshots.snapshotDate, historyDate)).returning({ id: conversionActionSnapshots.id }))
           await remove('offlineConversionDiagnostics', db.delete(offlineConversionDiagnostics).where(lt(offlineConversionDiagnostics.snapshotDate, historyDate)).returning({ id: offlineConversionDiagnostics.id }))
           await remove('googleChangeEvents', db.delete(googleChangeEvents).where(lt(googleChangeEvents.changedAt, historyCutoff)).returning({ id: googleChangeEvents.id }))
@@ -592,7 +547,9 @@ export async function runAvailableJobs(options: {
     ...(featureEnabled('notifications') ? [] : NOTIFICATION_JOB_TYPES),
     ...(featureEnabled('googleReads') ? [] : GOOGLE_READ_JOB_TYPES),
   ])
-  while (results.length < maximumJobs && Date.now() - startedAt < maximumRuntimeMs) {
+  const finalizationReserveMs = 2_000
+  const minimumStartBudgetMs = 5_000
+  while (results.length < maximumJobs && Date.now() - startedAt + finalizationReserveMs + minimumStartBudgetMs < maximumRuntimeMs) {
     const job = await claimNextJob(
       options.workerId,
       new Date(),
@@ -601,7 +558,8 @@ export async function runAvailableJobs(options: {
     )
     if (!job) break
     try {
-      const result = await runWithTransactionalEmailRetryGeneration(job.payload, () => executeJob(job))
+      const result = await withWorkDeadline(startedAt + maximumRuntimeMs - finalizationReserveMs, () =>
+        runWithTransactionalEmailRetryGeneration(job.payload, () => executeJob(job)))
       const providerMessageId = result && typeof result === 'object' && 'providerMessageId' in result && typeof result.providerMessageId === 'string'
         ? result.providerMessageId.slice(0, 128)
         : null

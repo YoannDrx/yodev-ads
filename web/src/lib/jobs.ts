@@ -1,8 +1,9 @@
 import 'server-only'
 
 import { and, asc, eq, inArray, isNull, lt, lte, notInArray, or, sql } from 'drizzle-orm'
-import { jobAttempts, jobs } from '@/db/schema'
+import { auditEvents, jobAttempts, jobs } from '@/db/schema'
 import { withSystemTransaction } from '@/db/transactions'
+import { operationsAlertJobForDeadLetter } from '@/lib/operations-alert-model'
 
 export const JOB_BACKOFF_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 60 * 60_000, 12 * 60 * 60_000] as const
 export const DEFAULT_JOB_LEASE_MS = 5 * 60_000
@@ -11,6 +12,8 @@ export type JobType =
   | 'auth.email_deliver'
   | 'auth.invitation_deliver'
   | 'monitoring.scan'
+  | 'monitoring.scan_chunk'
+  | 'monitoring.reminder'
   | 'monitoring.weekly_digest'
   | 'report.schedule_deliver'
   | 'task.mention_deliver'
@@ -24,6 +27,8 @@ export type JobType =
   | 'mutation.observe'
   | 'notification.deliver'
   | 'metrics.daily_sync'
+  | 'metrics.sync_chunk'
+  | 'analytics.collect'
   | 'google.accounts_sync'
   | 'google.read_drill'
   | 'google.change_sync'
@@ -38,6 +43,7 @@ export type JobType =
   | 'secrets.rotate'
 
 export const NOTIFICATION_JOB_TYPES: JobType[] = [
+  'monitoring.reminder',
   'auth.email_deliver',
   'auth.invitation_deliver',
   'monitoring.weekly_digest',
@@ -54,10 +60,12 @@ export const NOTIFICATION_JOB_TYPES: JobType[] = [
 
 export const GOOGLE_READ_JOB_TYPES: JobType[] = [
   'monitoring.scan',
-  'monitoring.weekly_digest',
+  'monitoring.scan_chunk',
   'google.mutation.reconcile',
   'mutation.observe',
   'metrics.daily_sync',
+  'metrics.sync_chunk',
+  'analytics.collect',
   'google.accounts_sync',
   'google.read_drill',
   'google.change_sync',
@@ -136,6 +144,13 @@ export async function claimNextJob(
 ) {
   if (!workerId || workerId.length > 128) throw new Error('Invalid worker ID')
   return withSystemTransaction(async (db) => {
+    // Serialize only the short claim transaction, never job execution. This
+    // makes the last-served ordering effective across concurrent workers.
+    await db.execute(sql`select pg_advisory_xact_lock(hashtextextended('yodev:job-claim-fairness', 0))`)
+    const lastWorkspaceClaim = sql`case when ${jobs.workspaceId} is null then
+      (select started_at from job_attempts where workspace_id is null order by started_at desc limit 1)
+      else (select started_at from job_attempts where workspace_id = ${jobs.workspaceId} order by started_at desc limit 1)
+      end`
     const [candidate] = await db
       .select()
       .from(jobs)
@@ -143,14 +158,12 @@ export async function claimNextJob(
         and(
           lte(jobs.availableAt, now),
           lt(jobs.attemptCount, jobs.maximumAttempts),
-          or(
-            inArray(jobs.status, ['queued', 'retrying']),
-            and(eq(jobs.status, 'running'), or(isNull(jobs.leaseExpiresAt), lte(jobs.leaseExpiresAt, now))),
-          ),
+          // Expired running attempts must pass through audited recovery first.
+          inArray(jobs.status, ['queued', 'retrying']),
           excludedTypes.length > 0 ? notInArray(jobs.type, excludedTypes) : undefined,
         ),
       )
-      .orderBy(asc(jobs.priority), asc(jobs.availableAt), asc(jobs.createdAt))
+      .orderBy(sql`${lastWorkspaceClaim} asc nulls first`, asc(jobs.priority), asc(jobs.availableAt), asc(jobs.createdAt), asc(jobs.id))
       .limit(1)
       .for('update', { skipLocked: true })
 
@@ -174,8 +187,41 @@ export async function claimNextJob(
       attempt: claimed.attemptCount,
       state: 'running',
       workerId,
+      // Use database wall time after acquiring the claim lock (not transaction
+      // start or a caller-provided test/recovery clock).
+      startedAt: sql`clock_timestamp()`,
     })
     return claimed
+  })
+}
+
+/** Recover abandoned attempts in bounded batches, including the final attempt. */
+export async function recoverExpiredJobs(now = new Date(), limit = 50) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new Error('Invalid recovery limit')
+  return withSystemTransaction(async (db) => {
+    const expired = await db.select().from(jobs).where(and(
+      eq(jobs.status, 'running'), or(isNull(jobs.leaseExpiresAt), lte(jobs.leaseExpiresAt, now)),
+    )).orderBy(asc(jobs.leaseExpiresAt), asc(jobs.id)).limit(limit).for('update', { skipLocked: true })
+    for (const job of expired) {
+      const exhausted = job.attemptCount >= job.maximumAttempts
+      const message = 'Worker lease expired before completion was recorded.'
+      await db.update(jobs).set({
+        status: exhausted ? 'dead_letter' : 'retrying', leaseOwner: null, leaseExpiresAt: null,
+        availableAt: now, updatedAt: now, lastError: message, deadLetteredAt: exhausted ? now : null,
+      }).where(eq(jobs.id, job.id))
+      await db.update(jobAttempts).set({
+        state: exhausted ? 'dead_letter' : 'failed', finishedAt: now, errorMessage: message,
+      }).where(and(eq(jobAttempts.jobId, job.id), eq(jobAttempts.attempt, job.attemptCount), eq(jobAttempts.state, 'running')))
+      if (job.workspaceId) await db.insert(auditEvents).values({
+        workspaceId: job.workspaceId, actorUserId: 'system:job-recovery',
+        action: 'job.lease_expired', entityType: 'job', entityId: job.id,
+        metadata: { attempt: job.attemptCount, type: job.type, exhausted },
+      })
+      const alert = exhausted ? operationsAlertJobForDeadLetter({ jobId: job.id, jobType: job.type, description: message }) : null
+      if (alert) await db.insert(jobs).values({ ...alert, availableAt: now })
+        .onConflictDoNothing({ target: jobs.deduplicationKey })
+    }
+    return { recovered: expired.length, deadLettered: expired.filter((job) => job.attemptCount >= job.maximumAttempts).length }
   })
 }
 
@@ -191,7 +237,7 @@ export async function completeJob(job: ClaimedJob, workerId: string, now = new D
         lastError: null,
         updatedAt: now,
       })
-      .where(and(eq(jobs.id, job.id), eq(jobs.status, 'running'), eq(jobs.leaseOwner, workerId)))
+      .where(and(eq(jobs.id, job.id), eq(jobs.status, 'running'), eq(jobs.leaseOwner, workerId), eq(jobs.attemptCount, job.attemptCount)))
       .returning({ id: jobs.id })
     if (!completed) return false
     await db
@@ -226,7 +272,7 @@ export async function failJob(
         deadLetteredAt: deadLettered ? now : null,
         updatedAt: now,
       })
-      .where(and(eq(jobs.id, job.id), eq(jobs.status, 'running'), eq(jobs.leaseOwner, workerId)))
+      .where(and(eq(jobs.id, job.id), eq(jobs.status, 'running'), eq(jobs.leaseOwner, workerId), eq(jobs.attemptCount, job.attemptCount)))
       .returning({ id: jobs.id })
     if (!failed) return { updated: false, deadLettered }
     await db

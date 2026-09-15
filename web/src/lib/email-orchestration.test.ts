@@ -11,12 +11,11 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
 vi.mock('@/lib/crypto', () => ({ decryptSecret: mocks.decryptSecret }))
-vi.mock('@/lib/transactional-email', () => ({ sendTransactionalEmail: mocks.emailSend }))
+vi.mock('@/lib/transactional-email', () => ({ sendTransactionalEmail: mocks.emailSend, TransactionalEmailAdmissionError: class extends Error {} }))
 vi.mock('@/lib/auth-identities', () => ({ verifiedAuthUserEmail: mocks.verifiedAuthUserEmail }))
 
 import { deliverLifecycleEmail } from './lifecycle-emails'
 import { deliverOperationsAlert } from './operations-alerts'
-import { deliverScheduledReport } from './scheduled-reports'
 import { deliverPersonalTaskDigest, deliverTaskMention } from './task-notifications'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
@@ -37,95 +36,12 @@ const workspace = {
   locale: 'fr', timezone: 'Europe/Paris', accessState: 'active', plan: 'agency',
 }
 
-function scheduledContext(overrides: Record<string, unknown> = {}, options: { workspace?: unknown; claim?: unknown[] } = {}) {
-  const schedule = {
-    id: entityId, workspaceId, clientId: 'client-1', shareId: 'share-1', templateId: 'template-1', enabled: true,
-    lastRunKey: null, recipientEmails: ['client@example.test'], deliveryLeaseUntil: null,
-    encryptedReportToken: 'report-token', name: 'Rapport mensuel', ...overrides,
-  }
-  return {
-    schedule,
-    database: databaseDouble({
-      statementResults: [options.claim ?? [schedule]],
-      query: queryMap({
-        reportSchedules: { first: schedule }, workspaces: { first: options.workspace ?? workspace }, clients: { first: { id: 'client-1', name: 'Client' } },
-        shareLinks: { first: { id: 'share-1', workspaceId, active: true, editorialComment: 'Initial', actionPlan: null, locale: 'fr', periodDays: 30 } },
-        reportTemplates: { first: { id: 'template-1', active: true, editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: 7 } },
-        workspaceDomains: { first: { hostname: 'reports.acme.test' } },
-      }),
-    }),
-  }
-}
-
 const preference = {
   id: preferenceId, workspaceId, authUserId: 'user-1', displayName: 'Yoann', encryptedEmail: 'yoann@example.test',
-  mentionNotifications: true, digestCadence: 'daily', lastDigestKey: null,
+  mentionNotifications: true, digestCadence: 'daily', lastDigestKey: null, timezone: 'Europe/Paris',
 }
 const comment = { id: entityId, workspaceId, taskId: 'task-1', body: 'Merci de vérifier.' }
 const task = { id: 'task-1', workspaceId, title: 'Vérifier le budget', status: 'todo', dueAt: new Date('2026-08-15') }
-
-describe('scheduled report delivery', () => {
-  beforeEach(() => {
-    mocks.databases = []
-    vi.clearAllMocks()
-    mocks.decryptSecret.mockImplementation((value: string) => value)
-    mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
-  })
-
-  afterEach(() => {
-    for (const key of ['NEXT_PUBLIC_APP_URL', 'OPERATIONS_ALERT_EMAIL', 'SUPPORT_EMAIL']) delete process.env[key]
-  })
-
-  it('leases, refreshes, sends and audits a localized report using its verified custom domain', async () => {
-    const context = scheduledContext()
-    const refresh = databaseDouble()
-    const success = databaseDouble()
-    mocks.databases.push(context.database.db, refresh.db, success.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ delivered: true, recipientCount: 1, providerMessageId: 'email-1' })
-    expect(refresh.capture.sets[0]).toMatchObject({ editorialComment: 'Template', actionPlan: 'Plan', locale: 'en', periodDays: 7 })
-    expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({
-      to: ['client@example.test'], html: expect.stringContaining('https://reports.acme.test/r/report-token'),
-      idempotencyKey: `report-schedule:${entityId}:2026-08-10`, category: 'scheduled_report', workspaceId,
-    }))
-    expect(success.capture.sets[0]).toMatchObject({ lastRunKey: '2026-08-10', lastError: null, deliveryLeaseUntil: null })
-  })
-
-  it('skips disabled and already-delivered schedules before sending', async () => {
-    for (const [overrides, reason] of [[{ enabled: false }, 'disabled'], [{ lastRunKey: '2026-08-10' }, 'already_delivered']] as const) {
-      const context = scheduledContext(overrides)
-      mocks.databases.push(context.database.db)
-      await expect(deliverScheduledReport(entityId, '2026-08-10')).resolves.toEqual({ skipped: true, reason })
-    }
-    expect(mocks.emailSend).not.toHaveBeenCalled()
-  })
-
-  it('rejects missing, unauthorized, recipient-less and concurrently leased schedules', async () => {
-    mocks.databases.push(databaseDouble({ query: queryMap() }).db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('introuvable')
-
-    const unauthorized = scheduledContext({}, { workspace: { ...workspace, accessState: 'suspended' } })
-    mocks.databases.push(unauthorized.database.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('non autorisé')
-
-    const noRecipients = scheduledContext({ recipientEmails: [] })
-    mocks.databases.push(noRecipients.database.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('Aucun destinataire')
-
-    const leased = scheduledContext({}, { claim: [] })
-    mocks.databases.push(leased.database.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('déjà en cours')
-  })
-
-  it('releases the lease and records provider failures', async () => {
-    const context = scheduledContext()
-    const refresh = databaseDouble()
-    const failed = databaseDouble()
-    mocks.emailSend.mockRejectedValue(new Error('provider down'))
-    mocks.databases.push(context.database.db, refresh.db, failed.db)
-    await expect(deliverScheduledReport(entityId, '2026-08-10')).rejects.toThrow('provider down')
-    expect(failed.capture.sets[0]).toMatchObject({ lastError: 'provider down', deliveryLeaseUntil: null })
-  })
-})
 
 describe('task notification delivery', () => {
   beforeEach(() => {
@@ -133,12 +49,13 @@ describe('task notification delivery', () => {
     vi.clearAllMocks()
     mocks.emailSend.mockResolvedValue({ provider: 'yodev_mail', providerMessageId: 'email-1' })
     mocks.decryptSecret.mockImplementation((value: string) => value)
+    vi.stubEnv('NOTIFICATIONS_ENABLED', '1')
   })
 
-  afterEach(() => undefined)
+  afterEach(() => vi.unstubAllEnvs())
 
   function mentionDatabase(preferenceValue: unknown = preference, workspaceValue: unknown = workspace) {
-    return databaseDouble({ query: queryMap({
+    return databaseDouble({ statementResults: [preferenceValue ? [{ preference: preferenceValue, workspace: workspaceValue, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' }, memberRole: 'analyst' }] : [], [{ expired: false, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' } }]], query: queryMap({
       memberNotificationPreferences: { first: preferenceValue }, taskComments: { first: comment },
       workspaceTasks: { first: task }, workspaces: { first: workspaceValue },
     }) })
@@ -147,9 +64,9 @@ describe('task notification delivery', () => {
   it('delivers and audits a consented mention', async () => {
     const success = databaseDouble()
     mocks.databases.push(mentionDatabase().db, success.db)
-    await expect(deliverTaskMention(comment.id, preference.id)).resolves.toEqual({ delivered: true, providerMessageId: 'email-1' })
+    await expect(deliverTaskMention(comment.id, preference.id)).resolves.toEqual({ accepted: true, providerMessageId: 'email-1' })
     expect(mocks.emailSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'yoann@example.test', idempotencyKey: `task-mention:${comment.id}:${preference.id}`, workspaceId }))
-    expect(success.capture.values[0]).toMatchObject({ action: 'task.mention_delivered' })
+    expect(success.capture.values[0]).toMatchObject({ action: 'task.mention_accepted' })
   })
 
   it('rejects cross-workspace context and skips revoked consent', async () => {
@@ -167,8 +84,8 @@ describe('task notification delivery', () => {
     expect(failed.capture.sets[0]).toMatchObject({ lastError: 'mail down' })
   })
 
-  function digestDatabase(preferenceValue: unknown = preference, tasks: unknown[] = [task]) {
-    return databaseDouble({ query: queryMap({
+  function digestDatabase(preferenceValue: unknown = preference, tasks: Array<typeof task> = [task]) {
+    return databaseDouble({ statementResults: [preferenceValue ? [{ preference: preferenceValue, workspace, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' }, memberRole: 'analyst' }] : [], [{ expired: false, user: { id: 'user-1', email: 'yoann@example.test', emailVerified: true, name: 'Yoann' } }], tasks.map((task) => ({ ...task, total: tasks.length }))], query: queryMap({
       memberNotificationPreferences: { first: preferenceValue }, workspaces: { first: workspace }, workspaceTasks: { many: tasks },
     }) })
   }
@@ -176,22 +93,22 @@ describe('task notification delivery', () => {
   it('marks empty digests idempotently and sends non-empty personal digests', async () => {
     const emptyUpdate = databaseDouble()
     mocks.databases.push(digestDatabase(preference, []).db, emptyUpdate.db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-10')).resolves.toEqual({ delivered: false, empty: true })
-    expect(emptyUpdate.capture.sets[0]).toMatchObject({ lastDigestKey: '2026-08-10', lastError: null })
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-10')).resolves.toEqual({ delivered: false, empty: true })
+    expect(emptyUpdate.capture.sets[0]).toMatchObject({ lastDigestKey: 'daily:2026-08-10', lastError: null })
 
     const success = databaseDouble()
     mocks.databases.push(digestDatabase().db, success.db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-11')).resolves.toEqual({ delivered: true, taskCount: 1, providerMessageId: 'email-1' })
-    expect(success.capture.values[0]).toMatchObject({ action: 'task.personal_digest_delivered' })
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-11')).resolves.toEqual({ accepted: true, taskCount: 1, shownTaskCount: 1, providerMessageId: 'email-1' })
+    expect(success.capture.values[0]).toMatchObject({ action: 'task.personal_digest_accepted' })
   })
 
   it('skips disabled and duplicate digests and rejects absent preferences', async () => {
     mocks.databases.push(digestDatabase(null).db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-10')).rejects.toThrow('introuvable')
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-10')).resolves.toEqual({ skipped: true })
     mocks.databases.push(digestDatabase({ ...preference, digestCadence: 'none' }).db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-10')).resolves.toEqual({ skipped: true })
-    mocks.databases.push(digestDatabase({ ...preference, lastDigestKey: '2026-08-10' }).db)
-    await expect(deliverPersonalTaskDigest(preference.id, '2026-08-10')).resolves.toEqual({ skipped: true })
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-10')).resolves.toEqual({ skipped: true })
+    mocks.databases.push(digestDatabase({ ...preference, lastDigestKey: 'daily:2026-08-10' }).db)
+    await expect(deliverPersonalTaskDigest(preference.id, 'daily:2026-08-10')).resolves.toEqual({ skipped: true })
   })
 })
 

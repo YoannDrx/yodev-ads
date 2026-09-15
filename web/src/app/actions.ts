@@ -4,6 +4,10 @@ import { cookies, headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import { reviewAlertQuality } from '@/lib/alert-quality'
+import { alertQualityReviewSchema, AlertQualityConflict } from '@/lib/alert-quality-model'
+import { preserveCollectionRecord } from '@/lib/collection-navigation'
+import { preserveReportEdition } from '@/lib/report-navigation'
 import { del, put } from '@vercel/blob'
 import {
   billingPortalConfigurationId,
@@ -40,11 +44,10 @@ import { LEGAL_VERSIONS, legalRequestFingerprint, requireCommercialLegalReadines
 import { LOCALE_COOKIE } from '@/lib/locale'
 import { enqueueJob } from '@/lib/jobs'
 import { agentTemplatesForLocale } from '@/lib/monitoring'
-import { runWorkspaceMonitoring } from '@/lib/run-monitoring'
 import { assertSafeWebhookUrl } from '@/lib/webhook-security'
 import { consumeRateLimit, requestIp } from '@/lib/rate-limit'
 import { sendReportOtpEmail } from '@/lib/report-otp'
-import { assertTimeZone, normalizeReportRecipients } from '@/lib/report-scheduling'
+import { assertTimeZone } from '@/lib/report-scheduling'
 import {
   SUPPORT_CATEGORIES,
   SUPPORT_PRIORITIES,
@@ -53,14 +56,9 @@ import {
 import { PLATFORM_COMPONENTS, PLATFORM_IMPACTS, PLATFORM_INCIDENT_STATUSES } from '@/lib/platform-status'
 import {
   createApiToken,
-  createDomainVerificationToken,
   createOtp,
   createReportFeedbackSessionToken,
-  createShareToken,
 } from '@/lib/tokens'
-import {
-  normalizeCustomHostname,
-} from '@/lib/vercel-domains'
 import { requireWorkspacePermission } from '@/lib/workspace'
 import { expectedWorkspaceDeletionConfirmation } from '@/lib/workspace-deletion'
 import {
@@ -76,7 +74,7 @@ import {
 import { isControlledBrandLogoUrl, validatedBrandLogo } from '@/lib/branding-assets'
 import { approvalPolicyForPlan } from '@/lib/approval-policy'
 import { assertSafetyPolicyScope } from '@/lib/safety-policy-scope'
-import { persistTenantGoogleAccountInventory } from '@/lib/google-account-sync'
+import { googleInventoryConnectionIdentity, persistTenantGoogleAccountInventory } from '@/lib/google-account-sync'
 import {
   saveClientGoal,
   saveWorkspaceApprovalPolicy,
@@ -87,7 +85,7 @@ import {
 import {
   acknowledgeWorkspaceAlert,
   createWorkspaceMonitoringAgent,
-  recordWorkspaceMonitoringScan,
+  requestWorkspaceMonitoringScan,
   setWorkspaceMonitoringAgentEnabled,
   updateWorkspaceAlertWorkflow,
 } from '@/lib/monitoring-workflows'
@@ -105,25 +103,10 @@ import {
   saveWorkspaceSafetyPolicy,
 } from '@/lib/workspace-security-resources'
 import {
-  createWorkspaceReportSchedule,
-  createWorkspaceReportTemplate,
-  deactivateWorkspaceReportTemplate,
-  rotateWorkspaceScheduledReportToken,
-  setWorkspaceReportScheduleEnabled,
-  updateWorkspaceReportTemplate,
-} from '@/lib/report-management'
-import {
-  createWorkspacePublicReport,
   issuePublicReportOtp,
-  revokeWorkspacePublicReport,
   submitPublicReportFeedback,
   verifyPublicReportOtp,
 } from '@/lib/public-report-workflows'
-import {
-  createWorkspaceCustomDomain,
-  revokeWorkspaceCustomDomain,
-  verifyWorkspaceCustomDomain,
-} from '@/lib/workspace-domain-management'
 import {
   claimWorkspaceDeletionCancellation,
   createWorkspaceExportRequest,
@@ -158,9 +141,7 @@ import {
   reviewOperationalEmailDelivery,
   scheduleStripeReconciliation,
 } from '@/lib/system-operations'
-import { accessTeamsOAuthSession, completeTeamsOAuthSession } from '@/lib/notification-oauth-management'
-import { openOAuthState } from '@/lib/oauth-state'
-import { hasTeamsOAuthConfiguration, resolveTeamsDestination } from '@/lib/teams-oauth'
+import { hasTeamsOAuthConfiguration } from '@/lib/teams-oauth'
 import { hasSlackOAuthConfiguration } from '@/lib/slack-oauth'
 import {
   addGoogleApprovalComment,
@@ -205,14 +186,15 @@ export async function syncGoogleAdsAccounts() {
     if (!connection) throw new Error('Connectez d’abord un compte Google Ads.')
 
     const gateway = new GoogleAdsGateway(connection)
+    const observedAt = new Date()
     const managedCustomers = await gateway.listManagedCustomers()
     const { included, excluded, limit } = await persistTenantGoogleAccountInventory({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       connectionId: connection.id,
       managedCustomers,
-      advertiserLimit: entitlements.limits.advertiserAccounts,
-      plan: workspace.plan,
+      observedAt,
+      connectionIdentity: googleInventoryConnectionIdentity(connection),
       action: 'google_ads.accounts_synced',
       recordActivation: true,
     })
@@ -221,7 +203,7 @@ export async function syncGoogleAdsAccounts() {
       'notice',
       excluded.length
         ? `${included.length} comptes synchronisés. ${excluded.length} compte annonceur hors quota (${limit ?? 'illimité'}) reste inactif.`
-        : `${included.length} comptes synchronisés.`,
+        : `${managedCustomers.length} comptes accessibles, ${included.filter((account) => !account.isManager).length} annonceurs gérés. Choisissez les comptes à gérer ci-dessous.`,
     )
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))
@@ -359,14 +341,14 @@ export async function uploadWorkspaceLogo(formData: FormData) {
       cacheControlMaxAge: 31_536_000,
     })
     uploadedUrl = uploaded.url
-    await saveWorkspaceLogo({
+    const { previousLogoUrl } = await saveWorkspaceLogo({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       logoUrl: uploaded.url,
       contentType: image.contentType,
       size: file.size,
     })
-    if (workspace.logoUrl && isControlledBrandLogoUrl(workspace.logoUrl)) await del(workspace.logoUrl).catch(() => undefined)
+    if (previousLogoUrl && isControlledBrandLogoUrl(previousLogoUrl)) await del(previousLogoUrl).catch(() => undefined)
     target = toUrl('/settings', 'notice', workspace.locale === 'en' ? 'Logo uploaded.' : 'Logo importé.')
   } catch (error) {
     if (uploadedUrl) await del(uploadedUrl).catch(() => undefined)
@@ -381,12 +363,12 @@ export async function removeWorkspaceLogo() {
   try {
     const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
     requireCapability(entitlements, 'reports.white_label')
-    await saveWorkspaceLogo({
+    const { previousLogoUrl } = await saveWorkspaceLogo({
       workspaceId: workspace.id,
       actorUserId: session.userId,
       logoUrl: null,
     })
-    if (workspace.logoUrl && isControlledBrandLogoUrl(workspace.logoUrl)) await del(workspace.logoUrl).catch(() => undefined)
+    if (previousLogoUrl && isControlledBrandLogoUrl(previousLogoUrl)) await del(previousLogoUrl).catch(() => undefined)
     target = toUrl('/settings', 'notice', workspace.locale === 'en' ? 'Logo removed.' : 'Logo supprimé.')
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))
@@ -396,10 +378,12 @@ export async function removeWorkspaceLogo() {
 }
 
 export async function updateMyTaskNotificationPreferences(formData: FormData) {
+  const returnTo = formData.get('returnTo') === '/account/notifications' ? '/account/notifications' : '/settings'
   let target: string
   try {
     requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
     const { workspace, session } = await requireWorkspacePermission('workspace:read')
+    if (formData.get('workspaceId') !== workspace.id) throw new Error('L’espace actif a changé. Rechargez la page avant d’enregistrer.')
     const input = z.object({
       mentionHandle: z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9_-]{1,31}$/, 'Identifiant de mention invalide.'),
       mentionNotifications: z.preprocess((value) => value === 'on' || value === 'true', z.boolean()),
@@ -422,11 +406,12 @@ export async function updateMyTaskNotificationPreferences(formData: FormData) {
       digestHour: input.digestHour,
       timezone,
     })
-    target = toUrl('/settings', 'notice', 'Préférences personnelles de tâches enregistrées.')
+    target = toUrl(returnTo, 'notice', 'Préférences personnelles de tâches enregistrées.')
   } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
+    target = toUrl(returnTo, 'error', message(error))
   }
   revalidatePath('/settings')
+  revalidatePath('/account/notifications')
   revalidatePath('/tasks')
   redirect(target)
 }
@@ -1261,7 +1246,7 @@ export async function approveGoogleAdsChange(formData: FormData) {
       : toUrl('/approvals', 'error', message(error))
   }
   revalidatePath('/dashboard', 'layout')
-  redirect(target)
+  redirect(preserveCollectionRecord(target, formData.get('approvalId')))
 }
 
 export async function rejectGoogleAdsChange(formData: FormData) {
@@ -1275,7 +1260,9 @@ export async function rejectGoogleAdsChange(formData: FormData) {
     target = toUrl('/approvals', 'error', message(error))
   }
   revalidatePath('/approvals')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('approvalId'))
+  if (discussionId.success) revalidatePath(`/discussions/approvals/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('approvalId')))
 }
 
 export async function addApprovalComment(formData: FormData) {
@@ -1290,7 +1277,9 @@ export async function addApprovalComment(formData: FormData) {
     target = toUrl('/approvals', 'error', message(error))
   }
   revalidatePath('/approvals')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('approvalId'))
+  if (discussionId.success) revalidatePath(`/discussions/approvals/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('approvalId')))
 }
 
 export async function disconnectGoogleAds() {
@@ -1390,9 +1379,10 @@ export async function runMonitoringScan(formData: FormData) {
     requireCapability(entitlements, 'monitoring')
     const rawId = formData.get('agentId')
     const agentId = rawId ? z.string().uuid().parse(rawId) : undefined
-    const result = await runWorkspaceMonitoring(workspace.id, agentId)
-    await recordWorkspaceMonitoringScan({ workspaceId: workspace.id, actorUserId: session.userId, result })
-    target = toUrl('/alerts', 'notice', `${result.detected} signalement(s) détecté(s), ${result.resolved} résolu(s).`)
+    const result = await requestWorkspaceMonitoringScan({ workspaceId: workspace.id, actorUserId: session.userId, agentId })
+    target = toUrl('/alerts', 'notice', result.created
+      ? 'Analyse planifiée. Les signalements seront actualisés après son traitement.'
+      : 'Une analyse est déjà planifiée ou a été demandée récemment.')
   } catch (error) {
     target = toUrl('/agents', 'error', message(error))
   }
@@ -1439,7 +1429,27 @@ export async function updateAlertWorkflow(formData: FormData) {
     target = toUrl('/alerts', 'error', message(error))
   }
   revalidatePath('/alerts')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('incidentId'))
+  if (discussionId.success) revalidatePath(`/discussions/alerts/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('incidentId')))
+}
+
+export async function reviewWorkspaceAlertQuality(formData: FormData) {
+  let target: string
+  let english = false
+  try {
+    const { workspace, session } = await requireWorkspacePermission('alerts:manage')
+    english = workspace.locale === 'en'
+    const input = alertQualityReviewSchema.parse(Object.fromEntries(formData))
+    await reviewAlertQuality({ ...input, workspaceId: workspace.id, actorUserId: session.userId })
+    target = toUrl('/alerts', 'notice', english ? 'Alert quality review saved.' : 'Avis sur la qualité de l’alerte enregistré.')
+  } catch (error) {
+    target = toUrl('/alerts', 'error', error instanceof AlertQualityConflict
+      ? english ? 'This observation or review has changed. Refresh the page before reviewing it again.' : 'Cette observation ou cet avis a changé. Actualisez la page avant de l’évaluer à nouveau.'
+      : english ? 'Unable to save this review. Refresh the page and check your access.' : 'Impossible d’enregistrer cet avis. Actualisez la page et vérifiez vos droits.')
+  }
+  revalidatePath('/alerts')
+  redirect(preserveCollectionRecord(target, formData.get('incidentId')))
 }
 
 const optionalTaskUuid = z.preprocess((value) => value === '' || value === null ? undefined : value, z.string().uuid().optional())
@@ -1516,7 +1526,9 @@ export async function updateWorkspaceTask(formData: FormData) {
     target = toUrl('/tasks', 'error', message(error))
   }
   revalidatePath('/tasks')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('taskId'))
+  if (discussionId.success) revalidatePath(`/discussions/tasks/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('taskId')))
 }
 
 export async function addWorkspaceTaskComment(formData: FormData) {
@@ -1537,278 +1549,9 @@ export async function addWorkspaceTaskComment(formData: FormData) {
     target = toUrl('/tasks', 'error', message(error))
   }
   revalidatePath('/tasks')
-  redirect(target)
-}
-
-export async function createShareLink(formData: FormData) {
-  let target: string
-  try {
-    const { workspace, session, entitlements } = await requireWorkspacePermission('reports:manage')
-    const clientId = z.string().uuid().parse(formData.get('clientId'))
-    const label = z.string().trim().min(2).max(160).parse(formData.get('label'))
-    const editorialComment = z.string().trim().max(5000).optional().parse(formData.get('editorialComment') || undefined)
-    const actionPlan = z.string().trim().max(5000).optional().parse(formData.get('actionPlan') || undefined)
-    const locale = z.enum(['fr', 'en']).default('fr').parse(formData.get('locale') || 'fr')
-    const periodDays = z.coerce.number().int().refine((value) => [7, 30, 90].includes(value), 'Période invalide.').parse(formData.get('periodDays') || 30)
-    const client = await getWorkspaceClient(workspace.id, clientId)
-    if (!client || client.id !== clientId) throw new Error('Compte client introuvable.')
-    const token = createShareToken()
-    const revelation = await createWorkspacePublicReport({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      clientId,
-      label,
-      editorialComment,
-      actionPlan,
-      locale,
-      periodDays,
-      token,
-      entitlements,
-      fallbackOrigin: process.env.NEXT_PUBLIC_APP_URL ?? 'https://ads.yodev.fr',
-    })
-    const cookieStore = await cookies()
-    cookieStore.set('yodev_secret_revelation', revelation.id, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 5 * 60,
-      path: '/api/secret-revelation',
-    })
-    target = `/reports?notice=${encodeURIComponent('Rapport créé. Révélez son URL dans les cinq prochaines minutes.')}&reveal=report-url`
-  } catch (error) {
-    target = toUrl('/reports', 'error', message(error))
-  }
-  revalidatePath('/reports')
-  redirect(target)
-}
-
-export async function createReportTemplate(formData: FormData) {
-  let target: string
-  try {
-    const { workspace, session } = await requireWorkspacePermission('reports:manage')
-    const input = reportTemplateInputSchema.parse(Object.fromEntries(formData))
-    await createWorkspaceReportTemplate({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      ...input,
-    })
-    target = toUrl('/reports', 'notice', 'Modèle de rapport créé.')
-  } catch (error) {
-    target = toUrl('/reports', 'error', message(error))
-  }
-  revalidatePath('/reports')
-  redirect(target)
-}
-
-const reportTemplateInputSchema = z.object({
-  name: z.string().trim().min(2).max(160),
-  locale: z.enum(['fr', 'en']).default('fr'),
-  periodDays: z.coerce.number().int().refine((value) => [7, 30, 90].includes(value), 'Période invalide.'),
-  editorialComment: z.string().trim().max(5000).optional(),
-  actionPlan: z.string().trim().max(5000).optional(),
-})
-
-export async function updateReportTemplate(formData: FormData) {
-  let target: string
-  try {
-    const { workspace, session } = await requireWorkspacePermission('reports:manage')
-    const { templateId, expectedVersion, ...input } = reportTemplateInputSchema.extend({
-      templateId: z.string().uuid(),
-      expectedVersion: z.coerce.number().int().positive(),
-    }).parse(Object.fromEntries(formData))
-    await updateWorkspaceReportTemplate({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      templateId,
-      expectedVersion,
-      ...input,
-    })
-    target = toUrl('/reports', 'notice', 'Nouvelle version du modèle enregistrée.')
-  } catch (error) {
-    target = toUrl('/reports', 'error', message(error))
-  }
-  revalidatePath('/reports')
-  redirect(target)
-}
-
-export async function deactivateReportTemplate(formData: FormData) {
-  let target: string
-  try {
-    const { workspace, session } = await requireWorkspacePermission('reports:manage')
-    const templateId = z.string().uuid().parse(formData.get('templateId'))
-    await deactivateWorkspaceReportTemplate({ workspaceId: workspace.id, actorUserId: session.userId, templateId })
-    target = toUrl('/reports', 'notice', 'Modèle désactivé. Les rapports existants conservent leur snapshot.')
-  } catch (error) {
-    target = toUrl('/reports', 'error', message(error))
-  }
-  revalidatePath('/reports')
-  redirect(target)
-}
-
-export async function createReportSchedule(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('scheduler', 'Les rapports programmés sont temporairement désactivés.')
-    requireFeature('notifications', 'La livraison des rapports programmés est temporairement désactivée.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('reports:manage')
-    const input = z.object({
-      name: z.string().trim().min(2).max(160),
-      clientId: z.string().uuid(),
-      templateId: z.preprocess((value) => value === '' ? undefined : value, z.string().uuid().optional()),
-      cadence: z.enum(['weekly', 'monthly']),
-      scheduleWeekday: z.coerce.number().int().min(1).max(7).default(1),
-      scheduleMonthday: z.coerce.number().int().min(1).max(28).default(1),
-      sendHour: z.coerce.number().int().min(0).max(23).default(8),
-      timezone: z.string().trim().min(1).max(64),
-      recipients: z.string().trim().min(3).max(5000),
-    }).parse(Object.fromEntries(formData))
-    const timezone = assertTimeZone(input.timezone)
-    const recipientEmails = z.array(z.email()).min(1).max(20).parse(normalizeReportRecipients(input.recipients))
-    const token = createShareToken()
-    await createWorkspaceReportSchedule({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      workspaceLocale: workspace.locale,
-      name: input.name,
-      clientId: input.clientId,
-      templateId: input.templateId,
-      cadence: input.cadence,
-      scheduleWeekday: input.scheduleWeekday,
-      scheduleMonthday: input.scheduleMonthday,
-      sendHour: input.sendHour,
-      timezone,
-      recipientEmails,
-      token,
-      entitlements,
-    })
-    target = toUrl('/reports', 'notice', 'Envoi planifié créé.')
-  } catch (error) {
-    target = toUrl('/reports', 'error', message(error))
-  }
-  revalidatePath('/reports')
-  redirect(target)
-}
-
-export async function toggleReportSchedule(formData: FormData) {
-  let target: string
-  try {
-    const { workspace, session, entitlements } = await requireWorkspacePermission('reports:manage')
-    const scheduleId = z.string().uuid().parse(formData.get('scheduleId'))
-    const enabled = z.enum(['enable', 'disable']).parse(formData.get('operation')) === 'enable'
-    if (enabled) {
-      requireFeature('scheduler', 'Les rapports programmés sont temporairement désactivés.')
-      requireFeature('notifications', 'La livraison des rapports programmés est temporairement désactivée.')
-    }
-    const replacementToken = enabled ? createShareToken() : null
-    await setWorkspaceReportScheduleEnabled({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      scheduleId,
-      enabled,
-      replacementToken,
-      entitlements,
-    })
-    target = toUrl('/reports', 'notice', enabled ? 'Envoi planifié activé.' : 'Envoi planifié suspendu et lien révoqué.')
-  } catch (error) {
-    target = toUrl('/reports', 'error', message(error))
-  }
-  revalidatePath('/reports')
-  redirect(target)
-}
-
-export async function rotateScheduledReportToken(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('scheduler', 'Les rapports programmés sont temporairement désactivés.')
-    requireFeature('notifications', 'La livraison des rapports programmés est temporairement désactivée.')
-    const { workspace, session } = await requireWorkspacePermission('reports:manage')
-    const scheduleId = z.string().uuid().parse(formData.get('scheduleId'))
-    const token = createShareToken()
-    await rotateWorkspaceScheduledReportToken({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      scheduleId,
-      token,
-    })
-    target = toUrl('/reports', 'notice', 'Token du rapport planifié renouvelé. L’ancien lien est immédiatement invalide.')
-  } catch (error) {
-    target = toUrl('/reports', 'error', message(error))
-  }
-  revalidatePath('/reports')
-  redirect(target)
-}
-
-export async function createWorkspaceDomain(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('customDomains', 'Les domaines personnalisés sont temporairement désactivés.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-    requireCapability(entitlements, 'custom_domain')
-    const hostname = normalizeCustomHostname(z.string().trim().min(4).max(253).parse(formData.get('hostname')))
-    const token = createDomainVerificationToken()
-    const revelation = await createWorkspaceCustomDomain({ workspaceId: workspace.id, actorUserId: session.userId, hostname, token })
-    const cookieStore = await cookies()
-    cookieStore.set('yodev_secret_revelation', revelation.id, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 10 * 60,
-      path: '/api/secret-revelation',
-    })
-    target = `/settings?notice=${encodeURIComponent('Domaine enregistré. Publiez le TXT révélé avant de vérifier.')}&reveal=domain-dns`
-  } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
-  }
-  revalidatePath('/settings')
-  redirect(target)
-}
-
-export async function verifyWorkspaceDomain(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('customDomains', 'Les domaines personnalisés sont temporairement désactivés.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-    requireCapability(entitlements, 'custom_domain')
-    const domainId = z.string().uuid().parse(formData.get('domainId'))
-    const result = await verifyWorkspaceCustomDomain({ workspaceId: workspace.id, actorUserId: session.userId, domainId })
-    target = result.active
-      ? toUrl('/settings', 'notice', 'Domaine vérifié, routé et actif pour les nouveaux liens de rapport.')
-      : toUrl('/settings', 'notice', 'Propriété confirmée. Configurez les enregistrements indiqués puis relancez la vérification.')
-  } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
-  }
-  revalidatePath('/settings')
-  redirect(target)
-}
-
-export async function revokeWorkspaceDomain(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('customDomains', 'Les domaines personnalisés sont temporairement désactivés.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-    requireCapability(entitlements, 'custom_domain')
-    const domainId = z.string().uuid().parse(formData.get('domainId'))
-    await revokeWorkspaceCustomDomain({ workspaceId: workspace.id, actorUserId: session.userId, domainId })
-    target = toUrl('/settings', 'notice', 'Domaine retiré de Vercel et révoqué. Le domaine Yodev reste disponible.')
-  } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
-  }
-  revalidatePath('/settings')
-  redirect(target)
-}
-
-export async function revokeShareLink(formData: FormData) {
-  let target: string
-  try {
-    const { workspace, session } = await requireWorkspacePermission('reports:manage')
-    const shareId = z.string().uuid().parse(formData.get('shareId'))
-    await revokeWorkspacePublicReport({ workspaceId: workspace.id, actorUserId: session.userId, shareId })
-    target = toUrl('/reports', 'notice', 'Lien public révoqué immédiatement.')
-  } catch (error) {
-    target = toUrl('/reports', 'error', message(error))
-  }
-  revalidatePath('/reports')
-  redirect(target)
+  const discussionId = z.string().uuid().safeParse(formData.get('taskId'))
+  if (discussionId.success) revalidatePath(`/discussions/tasks/${discussionId.data}`)
+  redirect(preserveCollectionRecord(target, formData.get('taskId')))
 }
 
 export async function requestReportFeedbackOtp(formData: FormData) {
@@ -1853,7 +1596,7 @@ export async function requestReportFeedbackOtp(formData: FormData) {
     const errorMessage = message(error)
     target += `?error=${encodeURIComponent(english && errorMessage === 'Ce rapport n’accepte pas de retours.' ? 'This report does not accept feedback.' : errorMessage)}`
   }
-  redirect(target)
+  redirect(preserveReportEdition(target, formData.get('edition')))
 }
 
 export async function verifyReportFeedbackOtp(formData: FormData) {
@@ -1891,7 +1634,7 @@ export async function verifyReportFeedbackOtp(formData: FormData) {
     const errorMessage = message(error)
     target += `?error=${encodeURIComponent(english && errorMessage === 'Rapport introuvable.' ? 'Report not found.' : errorMessage)}&otp=1`
   }
-  redirect(target)
+  redirect(preserveReportEdition(target, formData.get('edition')))
 }
 
 export async function submitClientApprovalFeedback(formData: FormData) {
@@ -1933,7 +1676,7 @@ export async function submitClientApprovalFeedback(formData: FormData) {
     target += `?error=${encodeURIComponent(english && errorMessage === 'Ce rapport n’accepte pas de retours.' ? 'This report does not accept feedback.' : errorMessage)}`
   }
   revalidatePath(`/r/${token}`)
-  redirect(target)
+  redirect(preserveReportEdition(target, formData.get('edition')))
 }
 
 export async function createAgencyApiKey(formData: FormData) {
@@ -1963,7 +1706,7 @@ export async function createAgencyApiKey(formData: FormData) {
       maxAge: 5 * 60,
       path: '/api/secret-revelation',
     })
-    target = `/settings?notice=${encodeURIComponent('Clé créée. Révélez-la une seule fois dans les cinq prochaines minutes.')}&reveal=api-key`
+    target = `/settings?notice=${encodeURIComponent('Clé créée. Révélez-la une seule fois dans les cinq prochaines minutes.')}&reveal=api-key&revealId=${revelation.id}`
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))
   }
@@ -2087,54 +1830,6 @@ export async function disableNotificationChannel(formData: FormData) {
     const channelId = z.string().uuid().parse(formData.get('channelId'))
     await disableWorkspaceNotificationChannel({ workspaceId: workspace.id, actorUserId: session.userId, channelId })
     target = toUrl('/settings', 'notice', 'Canal désactivé.')
-  } catch (error) {
-    target = toUrl('/settings', 'error', message(error))
-  }
-  revalidatePath('/settings')
-  redirect(target)
-}
-
-export async function completeTeamsNotificationConnection(formData: FormData) {
-  let target: string
-  try {
-    requireFeature('notifications', 'Les notifications sont temporairement désactivées.')
-    requireFeature('teamsConnector', 'Le connecteur Microsoft Teams est temporairement désactivé.')
-    const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-    requireCapability(entitlements, 'notifications.webhook')
-    const input = z.object({
-      teamId: z.string().trim().min(1).max(128),
-      channelId: z.string().trim().min(1).max(256),
-    }).parse(Object.fromEntries(formData))
-    const cookieStore = await cookies()
-    const cookieName = 'yodev_ads_teams_session'
-    const sealed = cookieStore.get(cookieName)?.value
-    cookieStore.set(cookieName, '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/settings/teams',
-      expires: new Date(0),
-    })
-    if (!sealed) throw new Error('La session OAuth Teams a expiré. Relancez la connexion.')
-    const state = openOAuthState(sealed, 'teams')
-    const sessionId = state.payload.sessionId
-    if (state.workspaceId !== workspace.id || state.userId !== session.userId || !sessionId) {
-      throw new Error('La vérification de sécurité OAuth Teams a échoué.')
-    }
-    const { accessToken } = await accessTeamsOAuthSession({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      sessionId,
-    })
-    const destination = await resolveTeamsDestination({ accessToken, ...input })
-    await completeTeamsOAuthSession({
-      workspaceId: workspace.id,
-      actorUserId: session.userId,
-      sessionId,
-      entitlements,
-      ...destination,
-    })
-    target = toUrl('/settings', 'notice', 'Microsoft Teams est connecté au canal sélectionné.')
   } catch (error) {
     target = toUrl('/settings', 'error', message(error))
   }
@@ -2702,8 +2397,10 @@ export async function addSupportMessage(formData: FormData) {
     target = toUrl('/support', 'error', message(error))
   }
   revalidatePath('/support')
+  const discussionId = z.string().uuid().safeParse(formData.get('ticketId'))
+  if (discussionId.success) revalidatePath(`/discussions/support/${discussionId.data}`)
   revalidatePath('/operations')
-  redirect(target)
+  redirect(preserveCollectionRecord(target, formData.get('ticketId')))
 }
 
 async function requireInternalOperations() {

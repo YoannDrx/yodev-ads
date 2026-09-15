@@ -1,0 +1,17 @@
+
+> @yodev/ads@0.1.0 test:release-verification
+> node --test scripts/lib/release-verification.node-test.mjs
+
+✔ each release target verifies the exact candidate and fresh evidence (0.669125ms)
+✔ refuses wrong or incomplete identity before accepting evidence (0.195208ms)
+✔ never sends a secret to an origin supplied only by a workflow input (1.505792ms)
+✔ sends identity guards and rejects redirects or non-success evidence (21.32875ms)
+✔ reports actionable issue codes without dumping provider messages or credential fields (0.615666ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 154.956958

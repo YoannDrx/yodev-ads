@@ -1,0 +1,149 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep analysis evidence|operations counts|stored analytics remain
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 261ms
+✓ Running next.config.ts took 486ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.3s (next.js: 1892ms, proxy.ts: 127ms, application-code: 315ms)
+ POST /api/auth/sign-in/email 200 in 988ms (next.js: 800ms, proxy.ts: 6ms, application-code: 182ms)
+ POST /api/auth/sign-in/email 200 in 89ms (next.js: 4ms, proxy.ts: 3ms, application-code: 82ms)
+ POST /api/auth/sign-in/email 200 in 88ms (next.js: 4ms, proxy.ts: 2ms, application-code: 81ms)
+ POST /api/auth/sign-in/email 200 in 84ms (next.js: 2ms, proxy.ts: 2ms, application-code: 79ms)
+ POST /api/auth/sign-in/email 200 in 95ms (next.js: 16ms, proxy.ts: 3ms, application-code: 77ms)
+ GET /dashboard 200 in 709ms (next.js: 231ms, proxy.ts: 3ms, application-code: 475ms)
+ GET /settings 200 in 545ms (next.js: 63ms, proxy.ts: 3ms, application-code: 478ms)
+ GET / 200 in 108ms (next.js: 19ms, proxy.ts: 5ms, application-code: 84ms)
+ GET /billing 200 in 223ms (next.js: 24ms, proxy.ts: 4ms, application-code: 194ms)
+ GET /support 200 in 175ms (next.js: 21ms, proxy.ts: 4ms, application-code: 149ms)
+ GET /icon?a62dacc6b033a714 200 in 141ms (next.js: 32ms, proxy.ts: 26ms, application-code: 83ms)
+ GET /accounts 200 in 278ms (next.js: 54ms, proxy.ts: 3ms, application-code: 221ms)
+ GET /history 200 in 135ms (next.js: 14ms, proxy.ts: 2ms, application-code: 118ms)
+ GET /alerts 200 in 124ms (next.js: 14ms, proxy.ts: 1.8ms, application-code: 109ms)
+ GET /tasks 200 in 143ms (next.js: 15ms, proxy.ts: 2ms, application-code: 127ms)
+ GET /approvals 200 in 132ms (next.js: 16ms, proxy.ts: 2ms, application-code: 114ms)
+ GET /reports 200 in 198ms (next.js: 23ms, proxy.ts: 3ms, application-code: 171ms)
+ GET /audit 200 in 120ms (next.js: 15ms, proxy.ts: 1.9ms, application-code: 103ms)
+ GET /agents 200 in 176ms (next.js: 15ms, proxy.ts: 1.9ms, application-code: 159ms)
+ GET / 200 in 69ms (next.js: 1.4ms, proxy.ts: 1.8ms, application-code: 65ms)
+ GET /privacy 200 in 47ms (next.js: 11ms, proxy.ts: 1.8ms, application-code: 34ms)
+ GET /terms 200 in 46ms (next.js: 11ms, proxy.ts: 1.7ms, application-code: 33ms)
+ GET /subprocessors 200 in 99ms (next.js: 29ms, proxy.ts: 8ms, application-code: 62ms)
+ GET /status 200 in 87ms (next.js: 26ms, proxy.ts: 1.7ms, application-code: 60ms)
+ GET /sign-in 200 in 35ms (next.js: 6ms, proxy.ts: 1.7ms, application-code: 28ms)
+ GET /sign-up 200 in 398ms (next.js: 358ms, proxy.ts: 2ms, application-code: 39ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-9kXgsF
+
+Running 5 tests using 1 worker
+
+(node:8236) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /operations 200 in 303ms (next.js: 26ms, proxy.ts: 1.9ms, application-code: 275ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 5ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 12ms, proxy.ts: 3ms, application-code: 15ms)
+  ✓  1 [chromium] › e2e/activation-local.spec.ts:6:7 › operations counts published reports and excludes legacy or future activation (921ms)
+  ✘  2 [chromium] › e2e/analysis-evidence-local.spec.ts:7:7 › analysis evidence fr excludes empty and unqualified sources before first activation (30ms)
+(node:8260) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chromium] › e2e/analysis-evidence-local.spec.ts:7:7 › analysis evidence en excludes empty and unqualified sources before first activation (44ms)
+(node:8265) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 189ms (next.js: 3ms, proxy.ts: 2ms, application-code: 183ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 5ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 30ms (next.js: 11ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 230ms (next.js: 29ms, proxy.ts: 6ms, application-code: 194ms)
+ GET /api/auth/get-session 200 in 107ms (next.js: 18ms, proxy.ts: 27ms, application-code: 62ms)
+ GET /api/auth/organization/list 200 in 108ms (next.js: 28ms, proxy.ts: 25ms, application-code: 54ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 318ms (next.js: 58ms, proxy.ts: 3ms, application-code: 257ms)
+ GET /api/auth/get-session 200 in 78ms (next.js: 40ms, proxy.ts: 13ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 83ms (next.js: 42ms, proxy.ts: 13ms, application-code: 28ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 205ms (next.js: 2ms, proxy.ts: 2ms, application-code: 200ms)
+ GET /api/auth/get-session 200 in 16ms (next.js: 3ms, proxy.ts: 2ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 19ms (next.js: 6ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 176ms (next.js: 2.0ms, proxy.ts: 4ms, application-code: 171ms)
+ GET /api/auth/get-session 200 in 80ms (next.js: 40ms, proxy.ts: 22ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 83ms (next.js: 42ms, proxy.ts: 21ms, application-code: 20ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 223ms (next.js: 3ms, proxy.ts: 3ms, application-code: 217ms)
+ GET /api/auth/get-session 200 in 93ms (next.js: 26ms, proxy.ts: 29ms, application-code: 39ms)
+ GET /api/auth/organization/list 200 in 93ms (next.js: 43ms, proxy.ts: 29ms, application-code: 21ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 227ms (next.js: 3ms, proxy.ts: 4ms, application-code: 220ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 4ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 19ms (next.js: 7ms, proxy.ts: 4ms, application-code: 8ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000005 200 in 86ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 82ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+  ✓  4 [chromium] › e2e/prod-ready-local.spec.ts:128:44 › local production readiness regression journeys › stored analytics remain available without Google and during grace in fr (3.1s)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 174ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 170ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 5ms, proxy.ts: 4ms, application-code: 21ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 9ms, proxy.ts: 3ms, application-code: 21ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 173ms (next.js: 4ms, proxy.ts: 5ms, application-code: 164ms)
+ GET /api/auth/get-session 200 in 83ms (next.js: 45ms, proxy.ts: 15ms, application-code: 24ms)
+ GET /api/auth/organization/list 200 in 85ms (next.js: 47ms, proxy.ts: 14ms, application-code: 24ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 243ms (next.js: 2ms, proxy.ts: 3ms, application-code: 238ms)
+ GET /api/auth/get-session 200 in 75ms (next.js: 44ms, proxy.ts: 13ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 81ms (next.js: 46ms, proxy.ts: 13ms, application-code: 22ms)
+ GET /dashboard?client=80000000-0000-4000-8000-000000000005 200 in 212ms (next.js: 3ms, proxy.ts: 2ms, application-code: 207ms)
+ GET /api/auth/get-session 200 in 18ms (next.js: 4ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 7ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /analysis?client=80000000-0000-4000-8000-000000000005 200 in 173ms (next.js: 2ms, proxy.ts: 3ms, application-code: 167ms)
+ GET /api/auth/get-session 200 in 77ms (next.js: 42ms, proxy.ts: 14ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 80ms (next.js: 45ms, proxy.ts: 14ms, application-code: 21ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 234ms (next.js: 2ms, proxy.ts: 3ms, application-code: 229ms)
+ GET /api/auth/get-session 200 in 71ms (next.js: 41ms, proxy.ts: 13ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 74ms (next.js: 43ms, proxy.ts: 13ms, application-code: 18ms)
+ GET /insights?client=80000000-0000-4000-8000-000000000005 200 in 210ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 206ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 8ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 3ms, proxy.ts: 3ms, application-code: 15ms)
+ POST /insights?client=80000000-0000-4000-8000-000000000005 200 in 87ms (next.js: 1.7ms, proxy.ts: 3ms, application-code: 83ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+  ✓  5 [chromium] › e2e/prod-ready-local.spec.ts:128:44 › local production readiness regression journeys › stored analytics remain available without Google and during grace in en (2.9s)
+
+
+  1) [chromium] › e2e/analysis-evidence-local.spec.ts:7:7 › analysis evidence fr excludes empty and unqualified sources before first activation
+
+    error: invalid input syntax for type uuid: "evidence-campaigns"
+
+      22 |       const coverage = { version: 1, queries: [{ queryHash: 'a'.repeat(64), rows: 1, pages: 1, bytes: 100, limit: 500, state: 'query_complete' }] }
+      23 |       const datasets = { campaigns: [], searchTerms: [], keywords: [], ads: [], tracking: { status: 'MANAGED_BY_THIS_CUSTOMER', managerCustomer: null, acceptedCustomerDataTerms: true, enhancedConversionsForLeadsEnabled: true } }
+    > 24 |       for (const [family, payload] of Object.entries(datasets)) await db.query('insert into analytical_collections(workspace_id,client_id,family,contract_version,period_from,period_through,timezone,currency_code,source_version,observed_at,payload,coverage) values($1,$2,$3,1,$4,$5,$6,$7,$8,now(),$9,$10)', [workspaceId, clientId, family, period.from, period.through, 'Europe/Paris', 'EUR', `evidence-${family}`, JSON.stringify(payload), JSON.stringify(coverage)])
+         |                                                                 ^
+      25 |       const page = await context.newPage(), errors: string[] = []
+      26 |       page.on('pageerror', (error) => errors.push(error.message))
+      27 |       await page.goto(`/analysis?client=${clientId}`)
+        at /Users/yoannandrieux/Projets/yodev-ads/web/node_modules/pg/lib/client.js:694:17
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/analysis-evidence-local.spec.ts:24:65
+
+    Error Context: test-results/analysis-evidence-local-an-0b40e-ces-before-first-activation-chromium/error-context.md
+
+  2) [chromium] › e2e/analysis-evidence-local.spec.ts:7:7 › analysis evidence en excludes empty and unqualified sources before first activation
+
+    error: invalid input syntax for type uuid: "evidence-campaigns"
+
+      22 |       const coverage = { version: 1, queries: [{ queryHash: 'a'.repeat(64), rows: 1, pages: 1, bytes: 100, limit: 500, state: 'query_complete' }] }
+      23 |       const datasets = { campaigns: [], searchTerms: [], keywords: [], ads: [], tracking: { status: 'MANAGED_BY_THIS_CUSTOMER', managerCustomer: null, acceptedCustomerDataTerms: true, enhancedConversionsForLeadsEnabled: true } }
+    > 24 |       for (const [family, payload] of Object.entries(datasets)) await db.query('insert into analytical_collections(workspace_id,client_id,family,contract_version,period_from,period_through,timezone,currency_code,source_version,observed_at,payload,coverage) values($1,$2,$3,1,$4,$5,$6,$7,$8,now(),$9,$10)', [workspaceId, clientId, family, period.from, period.through, 'Europe/Paris', 'EUR', `evidence-${family}`, JSON.stringify(payload), JSON.stringify(coverage)])
+         |                                                                 ^
+      25 |       const page = await context.newPage(), errors: string[] = []
+      26 |       page.on('pageerror', (error) => errors.push(error.message))
+      27 |       await page.goto(`/analysis?client=${clientId}`)
+        at /Users/yoannandrieux/Projets/yodev-ads/web/node_modules/pg/lib/client.js:694:17
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/analysis-evidence-local.spec.ts:24:65
+
+    Error Context: test-results/analysis-evidence-local-an-edd0d-ces-before-first-activation-chromium/error-context.md
+
+  2 failed
+    [chromium] › e2e/analysis-evidence-local.spec.ts:7:7 › analysis evidence fr excludes empty and unqualified sources before first activation
+    [chromium] › e2e/analysis-evidence-local.spec.ts:7:7 › analysis evidence en excludes empty and unqualified sources before first activation
+  3 passed (8.3s)
+{"ok":true,"cleaned":"local-browser-fixtures"}
+[?25h

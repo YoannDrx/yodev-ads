@@ -7,12 +7,13 @@ const mocks = vi.hoisted(() => ({
   jobs: [] as Array<Record<string, unknown>>,
   claimNextJob: vi.fn(), completeJob: vi.fn(), enqueueJob: vi.fn(), enqueueJobs: vi.fn(), failJob: vi.fn(),
   runMonitoring: vi.fn(), weeklyDigest: vi.fn(), retryNotification: vi.fn(), dispatchNotifications: vi.fn(),
+  fanOutMetrics: vi.fn(), metricsChunk: vi.fn(), fanOutMonitoring: vi.fn(), reminder: vi.fn(), pendingReminders: vi.fn(),
   reconcile: vi.fn(), observeMutation: vi.fn(), purgeWorkspace: vi.fn(), runExport: vi.fn(), deleteExports: vi.fn(),
   externalCleanup: vi.fn(), revokeGoogleConnection: vi.fn(), recordStripeCancellation: vi.fn(),
   scheduledReport: vi.fn(), taskMention: vi.fn(), taskDigest: vi.fn(), lifecycleEmail: vi.fn(), supportEmail: vi.fn(), operationsAlert: vi.fn(),
   subprocessorFanout: vi.fn(), subprocessorDelivery: vi.fn(),
   authInvitation: vi.fn(),
-  stripeReconciliation: vi.fn(),
+  stripeReconciliation: vi.fn(), persistInventory: vi.fn(),
   startOperationalRun: vi.fn(), completeOperationalRun: vi.fn(), failOperationalRun: vi.fn(),
   rotateSecrets: vi.fn(), currentKid: vi.fn(),
   stripeUpdate: vi.fn(), featureEnabled: vi.fn(), reportRunKey: vi.fn(), digestRunKey: vi.fn(), trialDue: vi.fn(),
@@ -21,6 +22,10 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/db/transactions', () => ({ withSystemTransaction: mocks.transaction }))
+vi.mock('@/lib/google-account-sync', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/google-account-sync')>(),
+  persistSystemGoogleAccountInventory: mocks.persistInventory,
+}))
 vi.mock('@/lib/jobs', async (importOriginal) => ({
   ...await importOriginal<typeof import('@/lib/jobs')>(),
   claimNextJob: mocks.claimNextJob, completeJob: mocks.completeJob, enqueueJob: mocks.enqueueJob,
@@ -32,8 +37,12 @@ vi.mock('@/lib/notifications', () => ({
   retryNotificationDelivery: mocks.retryNotification,
 }))
 vi.mock('@/lib/reconcile-google-mutation', () => ({ reconcileGoogleMutation: mocks.reconcile }))
-vi.mock('@/lib/run-monitoring', () => ({ runWorkspaceMonitoring: mocks.runMonitoring }))
-vi.mock('@/lib/workspace-deletion', () => ({
+vi.mock('@/lib/alert-reminders', () => ({ deliverAlertReminder: mocks.reminder, pendingAlertReminderJobs: mocks.pendingReminders }))
+vi.mock('@/lib/notification-delivery-recovery', () => ({ recoverNotificationDeliveries: vi.fn(async () => ({ recovered: 0 })) }))
+vi.mock('@/lib/metrics-sync', () => ({ fanOutMetricSync: mocks.fanOutMetrics, executeMetricSyncChunk: mocks.metricsChunk }))
+vi.mock('@/lib/monitoring-scan-jobs', () => ({ executeMonitoringChunk: mocks.runMonitoring, fanOutMonitoringScan: mocks.fanOutMonitoring }))
+vi.mock('@/lib/workspace-deletion', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/workspace-deletion')>(),
   purgeWorkspace: mocks.purgeWorkspace,
   runWorkspaceExternalCleanup: mocks.externalCleanup,
   revokeWorkspaceGoogleConnection: mocks.revokeGoogleConnection,
@@ -117,7 +126,7 @@ function googleQueryDouble(input: { client?: unknown; connection?: unknown; appr
 const client = {
   id: clientId, workspaceId, googleCustomerId: '1234567890', timezone: 'Europe/Paris', currencyCode: 'EUR', active: true,
 }
-const connection = { id: 'connection', workspaceId, status: 'active', encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999' }
+const connection = { id: 'connection', workspaceId, status: 'active', encryptedRefreshToken: 'cipher', managerCustomerId: '9999999999', scopes: [] }
 
 describe('durable job runner orchestration', () => {
   beforeEach(() => {
@@ -127,6 +136,8 @@ describe('durable job runner orchestration', () => {
     job.sequence = 100
     mocks.featureEnabled.mockReturnValue(true)
     mocks.currentKid.mockReturnValue(null)
+    mocks.pendingReminders.mockResolvedValue([])
+    mocks.reminder.mockResolvedValue({ accepted: true })
     mocks.claimNextJob.mockImplementation(async () => mocks.jobs.shift() ?? null)
     mocks.completeJob.mockResolvedValue(true)
     mocks.failJob.mockResolvedValue({ updated: true, deadLettered: false, nextAttemptAt: new Date() })
@@ -138,7 +149,7 @@ describe('durable job runner orchestration', () => {
     mocks.trialDue.mockReturnValue([])
     mocks.deadLetterAlert.mockReturnValue(null)
     for (const method of [
-      mocks.runMonitoring, mocks.weeklyDigest, mocks.reconcile, mocks.observeMutation, mocks.purgeWorkspace,
+      mocks.runMonitoring, mocks.fanOutMonitoring, mocks.weeklyDigest, mocks.reconcile, mocks.observeMutation, mocks.purgeWorkspace,
       mocks.runExport, mocks.scheduledReport, mocks.taskMention, mocks.taskDigest, mocks.lifecycleEmail,
       mocks.supportEmail, mocks.operationsAlert, mocks.dispatchNotifications, mocks.stripeUpdate,
       mocks.rotateSecrets, mocks.subprocessorFanout, mocks.subprocessorDelivery, mocks.authInvitation,
@@ -154,12 +165,18 @@ describe('durable job runner orchestration', () => {
     mocks.offlineDiagnostics.mockResolvedValue([])
   })
 
+  it('does not consume an attempt when the remaining budget cannot start useful work', async () => {
+    await expect(runAvailableJobs({ workerId: 'worker', maximumRuntimeMs: 6_000 })).resolves.toMatchObject({ processed: 0 })
+    expect(mocks.claimNextJob).not.toHaveBeenCalled()
+  })
+
   it('dispatches every non-sync job contract and records completion', async () => {
     const jobs = [
       job('auth.invitation_deliver', { invitationId: entityId, workspaceId }),
       job('monitoring.scan', { workspaceId }),
+      job('monitoring.scan_chunk', { workspaceId, clientId, parentJobId: entityId, agentIds: [entityId] }),
       job('monitoring.weekly_digest', { workspaceId }),
-      job('report.schedule_deliver', { scheduleId: entityId, runKey: '2026-08-10' }),
+      job('report.schedule_deliver', { scheduleId: entityId, runKey: 'weekly:2026-08-10' }),
       job('task.mention_deliver', { commentId: entityId, preferenceId: clientId }),
       job('task.personal_digest', { preferenceId: entityId, runKey: '2026-08-10' }),
       job('lifecycle.email', { workspaceId, kind: 'welcome', referenceKey: 'trial-1', effectiveAt: '2026-08-12T10:00:00.000Z' }),
@@ -184,14 +201,16 @@ describe('durable job runner orchestration', () => {
     expect(result.processed).toBe(jobs.length)
     expect(result.results.every((item) => item.status === 'completed')).toBe(true)
     expect(mocks.completeJob).toHaveBeenCalledTimes(jobs.length)
-    expect(mocks.runMonitoring).toHaveBeenCalledWith(workspaceId)
+    expect(mocks.fanOutMonitoring).toHaveBeenCalledWith(expect.objectContaining({ workspaceId, parentJobId: expect.any(String) }))
+    expect(mocks.runMonitoring).toHaveBeenCalledWith({ workspaceId, clientId, parentJobId: entityId, agentIds: [entityId] }, expect.objectContaining({ attempt: 1, workerId: 'worker', jobId: expect.any(String) }))
     expect(mocks.authInvitation).toHaveBeenCalledWith({ invitationId: entityId, workspaceId })
+    expect(mocks.weeklyDigest).toHaveBeenCalledWith(workspaceId, jobs.find((item) => item.type === 'monitoring.weekly_digest')!.createdAt)
     expect(mocks.lifecycleEmail).toHaveBeenCalledWith(expect.objectContaining({ effectiveAt: new Date('2026-08-12T10:00:00.000Z') }))
     expect(mocks.stripeUpdate).toHaveBeenCalledWith('sub_123', { cancel_at_period_end: true })
     expect(mocks.recordStripeCancellation).toHaveBeenCalledWith(expect.objectContaining({
       workspaceId, subscriptionId: 'sub_123', state: 'confirmed',
     }))
-    expect(mocks.externalCleanup).toHaveBeenCalledOnce()
+    expect(mocks.externalCleanup).toHaveBeenCalledWith({ workspaceHash: 'a'.repeat(64), logoUrl: null, hostnames: [] }, expect.objectContaining({ type: 'workspace.external_cleanup', workspaceId: null, leaseOwner: 'worker', attemptCount: 1 }))
     expect(mocks.revokeGoogleConnection).toHaveBeenCalledWith(workspaceId)
     expect(mocks.stripeReconciliation).toHaveBeenCalledWith(workspaceId, expect.any(Object))
     expect(mocks.rotateSecrets).toHaveBeenCalledWith(workspaceId)
@@ -200,7 +219,7 @@ describe('durable job runner orchestration', () => {
   it('excludes notification jobs when the notification kill switch is off', async () => {
     mocks.featureEnabled.mockImplementation((flag) => flag !== 'notifications')
     await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
-    expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining(['notification.deliver']))
+    expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining(['notification.deliver', 'monitoring.weekly_digest']))
   })
 
   it('excludes every Google read job when its independent kill switch is off', async () => {
@@ -208,7 +227,6 @@ describe('durable job runner orchestration', () => {
     await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
     expect(mocks.claimNextJob).toHaveBeenCalledWith('worker', expect.any(Date), undefined, expect.arrayContaining([
       'monitoring.scan',
-      'monitoring.weekly_digest',
       'google.mutation.reconcile',
       'mutation.observe',
       'metrics.daily_sync',
@@ -217,6 +235,25 @@ describe('durable job runner orchestration', () => {
       'google.change_sync',
       'conversion.actions_sync',
     ]))
+  })
+
+  it('executes stored weekly digests while Google reads are disabled', async () => {
+    mocks.featureEnabled.mockImplementation((flag) => flag !== 'googleReads')
+    const digest = job('monitoring.weekly_digest', { workspaceId })
+    mocks.jobs.push(digest)
+    await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
+    expect(mocks.claimNextJob.mock.calls[0][3]).not.toContain('monitoring.weekly_digest')
+    expect(mocks.weeklyDigest).toHaveBeenCalledWith(workspaceId, digest.createdAt)
+    expect(mocks.listManagedCustomers).not.toHaveBeenCalled()
+    expect(mocks.dailyAccountMetrics).not.toHaveBeenCalled()
+  })
+
+  it.each(['not_available', 'disabled'])('keeps a notification job retryable when transport is %s', async (status) => {
+    mocks.retryNotification.mockResolvedValueOnce(status)
+    mocks.jobs.push(job('notification.deliver', { deliveryId: entityId }))
+    mocks.failJob.mockResolvedValueOnce({ updated: true, deadLettered: false })
+    expect(await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })).toMatchObject({ results: [{ status: 'retrying' }] })
+    expect(mocks.completeJob).not.toHaveBeenCalled()
   })
 
   it('applies notification retry semantics and non-retryable dead-letter semantics', async () => {
@@ -250,7 +287,7 @@ describe('durable job runner orchestration', () => {
   it('alerts operations and the tenant when a critical tenant job dead-letters', async () => {
     const failed = job('monitoring.scan', { workspaceId }, { attemptCount: 5 })
     mocks.jobs.push(failed)
-    mocks.runMonitoring.mockRejectedValue(new Error('refresh_token=secret'))
+    mocks.fanOutMonitoring.mockRejectedValue(new Error('refresh_token=secret'))
     mocks.failJob.mockResolvedValue({ updated: true, deadLettered: true })
     mocks.redact.mockReturnValue('refresh_token=[REDACTED]')
     mocks.deadLetterAlert.mockReturnValue({ type: 'operations.alert', deduplicationKey: 'ops:1' })
@@ -261,29 +298,25 @@ describe('durable job runner orchestration', () => {
     }))
   })
 
-  it('syncs account and campaign daily metrics with idempotent persistence', async () => {
-    const metricJob = job('metrics.daily_sync', { workspaceId, clientId })
-    mocks.jobs.push(metricJob)
-    const contextDb = databaseDouble({ statementResults: [[client], [connection]] })
-    const persistence = databaseDouble()
-    mocks.databases.push(contextDb.db, persistence.db)
-    mocks.dailyAccountMetrics.mockResolvedValue([{ date: '2026-08-12', costMicros: '100', impressions: '10', clicks: '2', conversions: 1.5, conversionValue: 12.5 }])
-    mocks.dailyCampaignMetrics.mockResolvedValue([{ campaignId: '1', date: '2026-08-12', campaignName: 'Brand', campaignType: 'SEARCH', status: 'ENABLED', costMicros: '100', impressions: '10', clicks: '2', conversions: 1.5, conversionValue: 12.5 }])
-    const result = await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
-    expect(result.results[0].status).toBe('completed')
-    expect(mocks.dailyAccountMetrics).toHaveBeenCalledWith(client.googleCustomerId, '2026-08-01', '2026-08-12')
-    expect(persistence.capture.values).toHaveLength(2)
-    expect(persistence.capture.values[0]).toMatchObject({ conversionValueMicros: '12500000', currencyCode: 'EUR' })
+  it('routes legacy daily jobs to the coordinator and date chunks to their worker', async () => {
+    const parent = job('metrics.daily_sync', { workspaceId, clientId })
+    const chunk = job('metrics.sync_chunk', { workspaceId, clientId })
+    mocks.jobs.push(parent, chunk)
+    await runAvailableJobs({ workerId: 'worker', maximumJobs: 2 })
+    expect(mocks.fanOutMetrics).toHaveBeenCalledWith(parent)
+    expect(mocks.metricsChunk).toHaveBeenCalledWith(chunk)
+    expect(mocks.completeJob).toHaveBeenCalledTimes(2)
   })
 
   it('refreshes the complete Google account inventory after a billing plan change', async () => {
-    mocks.jobs.push(job('google.accounts_sync', { workspaceId }))
+    const inventoryJob = job('google.accounts_sync', { workspaceId })
+    mocks.jobs.push(inventoryJob)
     const contextDb = databaseDouble({ statementResults: [
       [{ plan: 'solo', accessState: 'active' }],
       [connection],
     ] })
-    const persistence = databaseDouble()
-    mocks.databases.push(contextDb.db, persistence.db)
+    mocks.persistInventory.mockResolvedValue({ included: [], excluded: [], limit: 3 })
+    mocks.databases.push(contextDb.db)
     mocks.listManagedCustomers.mockResolvedValue([
       { customerId: '1000000000', name: 'Manager', currencyCode: 'EUR', timezone: 'Europe/Paris', isManager: true },
       { customerId: '2000000000', name: 'A', currencyCode: 'EUR', timezone: 'Europe/Paris', isManager: false },
@@ -294,21 +327,18 @@ describe('durable job runner orchestration', () => {
     const result = await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
     expect(result.results[0].status).toBe('completed')
     expect(mocks.listManagedCustomers).toHaveBeenCalledOnce()
-    expect(persistence.capture.values.slice(0, 5)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ googleCustomerId: '1000000000', active: true }),
-      expect.objectContaining({ googleCustomerId: '4000000000', active: true }),
-      expect.objectContaining({ googleCustomerId: '5000000000', active: false }),
-    ]))
-    expect(persistence.capture.values.at(-1)).toMatchObject({
+    expect(mocks.persistInventory).toHaveBeenCalledWith(expect.objectContaining({
+      workspaceId, connectionId: connection.id, managedCustomers: expect.any(Array),
+      observedAt: expect.any(Date), connectionIdentity: expect.stringMatching(/^[a-f0-9]{64}$/),
       action: 'google_ads.accounts_synced_after_plan_change',
-      metadata: expect.objectContaining({ advertiserLimit: 3, excludedCount: 1 }),
-    })
+    }), inventoryJob)
   })
 
   it('dead-letters metric sync when its tenant context no longer exists', async () => {
     const metricJob = job('metrics.daily_sync', { workspaceId, clientId })
     mocks.jobs.push(metricJob)
-    mocks.databases.push(databaseDouble({ statementResults: [[], [connection]] }).db)
+    const { NonRetryableJobError } = await import('./jobs')
+    mocks.fanOutMetrics.mockRejectedValueOnce(new NonRetryableJobError('Metrics context unavailable'))
     mocks.failJob.mockResolvedValue({ updated: true, deadLettered: true })
     await runAvailableJobs({ workerId: 'worker', maximumJobs: 1 })
     expect(mocks.failJob).toHaveBeenCalledWith(metricJob, 'worker', expect.any(Error), expect.objectContaining({ forceDeadLetter: true }))
@@ -373,7 +403,7 @@ describe('durable job runner orchestration', () => {
       [{ workspaceId, timezone: 'Europe/Paris' }, { workspaceId, timezone: 'Europe/Paris' }],
       [{ approvalId: entityId, workspaceId }],
       [{ workspaceId, purgeAt: new Date('2026-08-09T00:00:00Z') }],
-      [{ workspaceId, clientId, timezone: 'Europe/Paris' }],
+      [{ workspaceId, clientId, timezone: 'Europe/Paris', currencyCode: 'EUR' }],
       [{ exportJobId: entityId, workspaceId }],
       [{ id: entityId, workspaceId, cadence: 'weekly', scheduleWeekday: 1, scheduleMonthday: null, sendHour: 8, timezone: 'Europe/Paris', lastRunKey: null }],
       [{ id: clientId, workspaceId, cadence: 'daily', digestHour: 8, timezone: 'Europe/Paris', lastDigestKey: null }],
@@ -387,7 +417,7 @@ describe('durable job runner orchestration', () => {
     const [pending] = mocks.enqueueJobs.mock.calls[0] as [Array<{ type: string; deduplicationKey: string }>]
     expect(new Set(pending.map((item) => item.type))).toEqual(new Set([
       'retention.run', 'lifecycle.email', 'monitoring.scan', 'monitoring.weekly_digest', 'report.schedule_deliver',
-      'task.personal_digest', 'metrics.daily_sync', 'google.change_sync', 'conversion.actions_sync',
+      'task.personal_digest', 'analytics.collect', 'metrics.daily_sync', 'google.change_sync', 'conversion.actions_sync',
       'google.mutation.reconcile', 'workspace.purge', 'workspace.export',
       'secrets.rotate', 'subprocessor.notice_fanout', 'stripe.reconcile',
     ]))
@@ -395,7 +425,17 @@ describe('durable job runner orchestration', () => {
       type: 'secrets.rotate',
       deduplicationKey: `secrets.rotate:${workspaceId}:kid-2`,
     }))
+    expect(pending.filter((item) => item.type === 'analytics.collect')).toHaveLength(17)
     expect(pending.every((item) => item.deduplicationKey.length > 5)).toBe(true)
+  })
+
+  it('schedules stored Monday digests independently of Google reads', async () => {
+    mocks.featureEnabled.mockImplementation((flag) => flag !== 'googleReads')
+    mocks.databases.push(databaseDouble({ statementResults: [[{ workspaceId, timezone: 'Europe/Paris' }]] }).db)
+    await seedScheduledJobs(new Date('2026-08-10T08:00:00Z'))
+    const [pending] = mocks.enqueueJobs.mock.calls[0] as [Array<{ type: string; deduplicationKey: string }>]
+    expect(new Set(pending.map((item) => item.type))).toEqual(new Set(['retention.run', 'monitoring.weekly_digest']))
+    expect(pending).toContainEqual(expect.objectContaining({ deduplicationKey: `monitoring.weekly_digest:${workspaceId}:2026-08-10` }))
   })
 
   it('seeds only provider-independent work while Google reads and notifications are disabled', async () => {
@@ -408,7 +448,7 @@ describe('durable job runner orchestration', () => {
       [{ workspaceId, timezone: 'Europe/Paris' }],
       [{ approvalId: entityId, workspaceId }],
       [{ workspaceId, purgeAt: new Date('2026-08-09T00:00:00Z') }],
-      [{ workspaceId, clientId, timezone: 'Europe/Paris' }],
+      [{ workspaceId, clientId, timezone: 'Europe/Paris', currencyCode: 'EUR' }],
       [{ exportJobId: entityId, workspaceId }],
       [{ id: entityId, workspaceId, cadence: 'weekly', scheduleWeekday: 1, scheduleMonthday: null, sendHour: 8, timezone: 'Europe/Paris', lastRunKey: null }],
       [{ id: clientId, workspaceId, cadence: 'daily', digestHour: 8, timezone: 'Europe/Paris', lastDigestKey: null }],

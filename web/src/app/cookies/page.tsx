@@ -10,8 +10,8 @@ export default async function CookiesPage() {
   return (
     <LegalDocument locale={locale} title={fr ? 'Politique relative aux cookies' : 'Cookie policy'}>
       <p>{fr
-        ? 'Ads by Yodev utilise des cookies essentiels et, seulement avec votre accord, des cookies ou technologies comparables de mesure d’audience. Le refus n’empêche pas l’accès au service.'
-        : 'Ads by Yodev uses essential cookies and, only with your consent, cookies or similar audience-measurement technologies. Refusal does not prevent access to the service.'}</p>
+        ? 'Yodev Ads utilise des cookies essentiels et, seulement avec votre accord, des cookies ou technologies comparables de mesure d’audience. Le refus n’empêche pas l’accès au service.'
+        : 'Yodev Ads uses essential cookies and, only with your consent, cookies or similar audience-measurement technologies. Refusal does not prevent access to the service.'}</p>
       <section><h2>{fr ? 'Cookies essentiels' : 'Essential cookies'}</h2><ul>
         <li>{fr ? 'Better Auth : session, authentification, sécurité et organisation ; durée déterminée par notre configuration de session.' : 'Better Auth: session, authentication, security and organisation; duration follows our session configuration.'}</li>
         <li><code>yodev_locale</code> : {fr ? 'langue choisie, 12 mois.' : 'selected language, 12 months.'}</li>
@@ -27,8 +27,8 @@ export default async function CookiesPage() {
           ? (fr ? 'La mesure d’audience est actuellement refusée sur ce navigateur.' : 'Audience measurement is currently rejected in this browser.')
           : (fr ? 'Aucun choix n’a encore été enregistré.' : 'No choice has been recorded yet.')}</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <form action={setCookieConsent}><button name="consent" value="rejected" className="rounded-full border px-4 py-2 text-sm text-foreground">{fr ? 'Refuser la mesure' : 'Reject measurement'}</button></form>
-          <form action={setCookieConsent}><button name="consent" value="accepted" className="rounded-full bg-[#19A58F] px-4 py-2 text-sm font-semibold text-[#0d1722]">{fr ? 'Autoriser la mesure' : 'Allow measurement'}</button></form>
+          <form action={setCookieConsent}><button name="consent" value="rejected" className="rounded-md border px-4 py-2 text-sm text-foreground">{fr ? 'Refuser la mesure' : 'Reject measurement'}</button></form>
+          <form action={setCookieConsent}><button name="consent" value="accepted" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">{fr ? 'Autoriser la mesure' : 'Allow measurement'}</button></form>
         </div>
       </section>
     </LegalDocument>

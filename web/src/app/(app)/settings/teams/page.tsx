@@ -1,47 +1,48 @@
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { completeTeamsNotificationConnection } from '@/app/actions'
+import Link from 'next/link'
+import { completeTeamsNotificationConnection } from '@/app/teams-connection-actions'
 import { PageHeading } from '@/components/page-heading'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireCapability } from '@/lib/entitlements'
 import { featureEnabled } from '@/lib/feature-flags'
 import { accessTeamsOAuthSession } from '@/lib/notification-oauth-management'
-import { openOAuthState } from '@/lib/oauth-state'
+import { requireTeamsSessionContext, teamsConnectionError, teamsSessionCookieName } from '@/lib/teams-session-context'
 import { listJoinedTeams, listTeamChannels } from '@/lib/teams-oauth'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 
-const SESSION_COOKIE_NAME = 'yodev_ads_teams_session'
 
 export default async function TeamsDestinationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ teamId?: string }>
+  searchParams: Promise<{ teamId?: string; sessionId?: string; workspaceId?: string }>
 }) {
-  const { workspace, session, entitlements } = await requireWorkspacePermission('workspace:admin')
-  if (!featureEnabled('teamsConnector')) redirect('/settings?error=Le%20connecteur%20Microsoft%20Teams%20est%20temporairement%20désactivé.')
-  requireCapability(entitlements, 'notifications.webhook')
+  const { workspace, session, entitlements } = await requireWorkspacePagePermission('workspace:admin', '/settings/teams')
   const english = workspace.locale === 'en'
-  const sealed = (await cookies()).get(SESSION_COOKIE_NAME)?.value
-  if (!sealed) redirect(`/settings?error=${encodeURIComponent(english ? 'The Teams OAuth session has expired.' : 'La session OAuth Teams a expiré.')}`)
-  let state
-  try {
-    state = openOAuthState(sealed, 'teams')
-  } catch (error) {
-    redirect(`/settings?error=${encodeURIComponent(error instanceof Error ? error.message : 'Session OAuth Teams invalide.')}`)
-  }
-  if (state.workspaceId !== workspace.id || state.userId !== session.userId || !state.payload.sessionId) {
-    redirect(`/settings?error=${encodeURIComponent(english ? 'Teams OAuth security verification failed.' : 'La vérification de sécurité OAuth Teams a échoué.')}`)
-  }
-  const { accessToken, expiresAt } = await accessTeamsOAuthSession({
-    workspaceId: workspace.id,
-    actorUserId: session.userId,
-    sessionId: state.payload.sessionId,
-  })
-  const teams = await listJoinedTeams(accessToken)
   const query = await searchParams
-  const selectedTeam = teams.find((team) => team.id === query.teamId)
-  const channels = selectedTeam ? await listTeamChannels(accessToken, selectedTeam.id) : []
+  let selection
+  try {
+    if (!featureEnabled('teamsConnector') || !featureEnabled('notifications')) throw new Error('Connector disabled')
+    requireCapability(entitlements, 'notifications.webhook')
+    const sessionId = query.sessionId ?? ''
+    const sealed = (await cookies()).get(teamsSessionCookieName(sessionId))?.value
+    requireTeamsSessionContext({ workspaceId: workspace.id, userId: session.userId, sessionId,
+      displayedWorkspaceId: query.workspaceId ?? '', sealed })
+    const { accessToken, expiresAt } = await accessTeamsOAuthSession({ workspaceId: workspace.id, actorUserId: session.userId, sessionId })
+    const teams = await listJoinedTeams(accessToken)
+    const selectedTeam = teams.find((team) => team.id === query.teamId)
+    const channels = selectedTeam ? await listTeamChannels(accessToken, selectedTeam.id) : []
+    selection = { teams, selectedTeam, channels, expiresAt, sessionId }
+  } catch (error) {
+    return <>
+      <PageHeading eyebrow="Microsoft Teams" title={english ? 'Connection unavailable' : 'Connexion indisponible'} description={english ? 'Check your session before selecting a channel.' : 'Vérifiez votre session avant de choisir un canal.'} />
+      <Card className="max-w-3xl"><CardContent className="space-y-4 pt-6">
+        <p role="alert">{teamsConnectionError(error, english)}</p>
+        <Link href="/settings" className="underline">{english ? 'Back to Settings' : 'Retour aux paramètres'}</Link>
+      </CardContent></Card>
+    </>
+  }
+  const { teams, selectedTeam, channels, expiresAt, sessionId } = selection
 
   return (
     <>
@@ -50,12 +51,14 @@ export default async function TeamsDestinationPage({
         title={english ? 'Choose a destination' : 'Choisir une destination'}
         description={english ? 'Messages are sent through Microsoft Graph on behalf of the account that granted access.' : 'Les messages sont envoyés via Microsoft Graph au nom du compte ayant accordé l’accès.'}
       />
-      <Card className="max-w-3xl border-[#e8e5ef] shadow-sm">
+      <Card className="max-w-3xl border-border ">
         <CardHeader><CardTitle>{english ? 'Team and channel' : 'Équipe et canal'}</CardTitle></CardHeader>
         <CardContent className="space-y-5">
           <p className="text-xs text-muted-foreground">{english ? `This selection session expires at ${expiresAt.toLocaleTimeString('en-GB')}.` : `Cette session de sélection expire à ${expiresAt.toLocaleTimeString('fr-FR')}.`}</p>
           <form method="get" className="flex flex-col gap-3 sm:flex-row">
-            <select name="teamId" defaultValue={selectedTeam?.id ?? ''} required className="h-10 flex-1 rounded-lg border bg-white px-3 text-sm">
+            <input type="hidden" name="workspaceId" value={workspace.id} />
+            <input type="hidden" name="sessionId" value={sessionId} />
+            <select aria-label={english ? 'Team' : 'Équipe'} name="teamId" defaultValue={selectedTeam?.id ?? ''} required className="h-10 flex-1 rounded-lg border bg-card px-3 text-sm">
               <option value="">{english ? 'Choose a team' : 'Choisir une équipe'}</option>
               {teams.map((team) => <option key={team.id} value={team.id}>{team.displayName}</option>)}
             </select>
@@ -63,15 +66,18 @@ export default async function TeamsDestinationPage({
           </form>
           {selectedTeam && (
             <form action={completeTeamsNotificationConnection} className="space-y-3 border-t pt-5">
+              <input type="hidden" name="workspaceId" value={workspace.id} />
+              <input type="hidden" name="sessionId" value={sessionId} />
               <input type="hidden" name="teamId" value={selectedTeam.id} />
-              <select name="channelId" required className="h-10 w-full rounded-lg border bg-white px-3 text-sm">
+              <select aria-label={english ? 'Channel' : 'Canal'} name="channelId" required className="h-10 w-full rounded-lg border bg-card px-3 text-sm">
                 <option value="">{english ? 'Choose a channel' : 'Choisir un canal'}</option>
                 {channels.map((channel) => <option key={channel.id} value={channel.id}>{channel.displayName}{channel.membershipType ? ` · ${channel.membershipType}` : ''}</option>)}
               </select>
-              <Button type="submit">{english ? 'Connect this channel' : 'Connecter ce canal'}</Button>
+              {channels.length === 0 && <p>{english ? 'No accessible channel is available in this team.' : 'Aucun canal accessible n’est disponible dans cette équipe.'}</p>}
+              <Button type="submit" disabled={channels.length === 0}>{english ? 'Connect this channel' : 'Connecter ce canal'}</Button>
             </form>
           )}
-          {teams.length === 0 && <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">{english ? 'No directly joined Microsoft Teams team is available for this account.' : 'Aucune équipe Microsoft Teams dont ce compte est membre direct n’est disponible.'}</p>}
+          {teams.length === 0 && <p className="rounded-md y-status-warning p-4 text-sm text-[var(--y-warning)]">{english ? 'No directly joined Microsoft Teams team is available for this account.' : 'Aucune équipe Microsoft Teams dont ce compte est membre direct n’est disponible.'}</p>}
         </CardContent>
       </Card>
     </>

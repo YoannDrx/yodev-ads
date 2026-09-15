@@ -1,0 +1,103 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs operating-costs-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 485ms
+✓ Running next.config.ts took 1292ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET / 200 in 5.1s (next.js: 3.0s, proxy.ts: 177ms, application-code: 1871ms)
+ GET /sign-in 200 in 2.9s (next.js: 2.6s, proxy.ts: 32ms, application-code: 285ms)
+ GET /icon?a62dacc6b033a714 200 in 378ms (next.js: 50ms, proxy.ts: 7ms, application-code: 322ms)
+ POST /api/auth/sign-in/email 200 in 2.0s (next.js: 1740ms, proxy.ts: 32ms, application-code: 247ms)
+ POST /api/auth/sign-in/email 200 in 122ms (next.js: 10ms, proxy.ts: 4ms, application-code: 109ms)
+ POST /api/auth/sign-in/email 200 in 174ms (next.js: 10ms, proxy.ts: 4ms, application-code: 159ms)
+ POST /api/auth/sign-in/email 200 in 214ms (next.js: 6ms, proxy.ts: 5ms, application-code: 203ms)
+ POST /api/auth/sign-in/email 200 in 457ms (next.js: 297ms, proxy.ts: 4ms, application-code: 156ms)
+ GET /dashboard 200 in 1271ms (next.js: 292ms, proxy.ts: 16ms, application-code: 963ms)
+ GET /settings 200 in 657ms (next.js: 49ms, proxy.ts: 6ms, application-code: 602ms)
+ GET /billing 200 in 301ms (next.js: 41ms, proxy.ts: 4ms, application-code: 255ms)
+ GET /support 200 in 283ms (next.js: 48ms, proxy.ts: 8ms, application-code: 228ms)
+ GET /accounts 200 in 342ms (next.js: 23ms, proxy.ts: 2ms, application-code: 316ms)
+ GET /history 200 in 259ms (next.js: 31ms, proxy.ts: 3ms, application-code: 225ms)
+ GET /alerts 200 in 204ms (next.js: 43ms, proxy.ts: 6ms, application-code: 155ms)
+ GET /tasks 200 in 239ms (next.js: 33ms, proxy.ts: 2ms, application-code: 203ms)
+ GET /approvals 200 in 162ms (next.js: 34ms, proxy.ts: 4ms, application-code: 125ms)
+ GET /reports 200 in 402ms (next.js: 42ms, proxy.ts: 6ms, application-code: 353ms)
+ GET /audit 200 in 155ms (next.js: 34ms, proxy.ts: 3ms, application-code: 118ms)
+ GET /agents 200 in 233ms (next.js: 27ms, proxy.ts: 3ms, application-code: 203ms)
+ GET / 200 in 87ms (next.js: 2ms, proxy.ts: 2ms, application-code: 83ms)
+ GET /privacy 200 in 65ms (next.js: 18ms, proxy.ts: 2.0ms, application-code: 45ms)
+ GET /terms 200 in 84ms (next.js: 21ms, proxy.ts: 2ms, application-code: 60ms)
+ GET /subprocessors 200 in 124ms (next.js: 52ms, proxy.ts: 2ms, application-code: 70ms)
+ GET /status 200 in 123ms (next.js: 42ms, proxy.ts: 1.9ms, application-code: 79ms)
+ GET /sign-in 200 in 39ms (next.js: 6ms, proxy.ts: 2ms, application-code: 31ms)
+ GET /sign-up 200 in 961ms (next.js: 898ms, proxy.ts: 1.8ms, application-code: 61ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-M9VdXv
+
+Running 1 test using 1 worker
+
+(node:84611) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /operations/costs?month=2001-03 200 in 436ms (next.js: 56ms, proxy.ts: 13ms, application-code: 368ms)
+ GET /api/auth/get-session 200 in 89ms (next.js: 17ms, proxy.ts: 20ms, application-code: 52ms)
+ GET /api/auth/organization/list 200 in 96ms (next.js: 35ms, proxy.ts: 22ms, application-code: 39ms)
+ GET /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 187ms (next.js: 10ms, proxy.ts: 3ms, application-code: 173ms)
+ POST /operations/costs?month=2001-03 200 in 259ms (next.js: 3ms, proxy.ts: 10ms, application-code: 245ms)
+  └─ ƒ recordOperatingCost({}) in 35ms src/app/(app)/operations/costs/actions.ts
+ GET /operations/costs?month=2001-03&error=Cette+r%C3%A9f%C3%A9rence+a+%C3%A9t%C3%A9+modifi%C3%A9e.+Rechargez+sa+version+courante. 200 in 1395ms (next.js: 6ms, proxy.ts: 10ms, application-code: 1378ms)
+ POST /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 1970ms (next.js: 49ms, proxy.ts: 51ms, application-code: 1870ms)
+  └─ ƒ recordOperatingCost({}) in 104ms src/app/(app)/operations/costs/actions.ts
+ GET /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 258ms (next.js: 1.9ms, proxy.ts: 5ms, application-code: 252ms)
+ POST /operations/costs?month=2001-03&error=Cette+r%C3%A9f%C3%A9rence+a+%C3%A9t%C3%A9+modifi%C3%A9e.+Rechargez+sa+version+courante. 200 in 332ms (next.js: 7ms, proxy.ts: 17ms, application-code: 307ms)
+  └─ ƒ recordOperatingCost({}) in 32ms src/app/(app)/operations/costs/actions.ts
+ GET /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 1172ms (next.js: 179ms, proxy.ts: 5ms, application-code: 988ms)
+ GET /api/auth/get-session 200 in 125ms (next.js: 57ms, proxy.ts: 17ms, application-code: 51ms)
+ GET /api/auth/organization/list 200 in 157ms (next.js: 41ms, proxy.ts: 16ms, application-code: 100ms)
+ GET /operations/costs?month=2001-03&after=browser-cost-0c6aaba8-a1f9-4f28-b412-2a33f2106eeb-24 200 in 131ms (next.js: 8ms, proxy.ts: 20ms, application-code: 103ms)
+ GET /operations/costs?month=2001-03 200 in 757ms (next.js: 3ms, proxy.ts: 4ms, application-code: 749ms)
+ GET /operations/costs?month=2001-03&notice=Observation+enregistr%C3%A9e+avec+sa+version+et+son+audit. 200 in 327ms (next.js: 3ms, proxy.ts: 3ms, application-code: 321ms)
+ POST /operations/costs?month=2001-03 200 in 404ms (next.js: 5ms, proxy.ts: 22ms, application-code: 378ms)
+  └─ ƒ recordOperatingCost({}) in 23ms src/app/(app)/operations/costs/actions.ts
+⨯ Error [PermissionDeniedError]: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at async OperatingCostsPage (src/app/(app)/operations/costs/page.tsx:14:34)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   } {
+  digest: '4286497972'
+}
+ GET /operations/costs?month=2001-03 500 in 164ms (next.js: 2ms, proxy.ts: 4ms, application-code: 157ms)
+ GET /api/auth/get-session 200 in 396ms (next.js: 38ms, proxy.ts: 69ms, application-code: 289ms)
+ GET /api/auth/organization/list 200 in 392ms (next.js: 38ms, proxy.ts: 71ms, application-code: 283ms)
+[browser] Uncaught PermissionDeniedError: Permission required: workspace:admin
+    at requirePermission (src/lib/permissions.ts:79:19)
+    at requireWorkspacePermission (src/lib/workspace.ts:164:73)
+    at  OperatingCostsPage (src/app/(app)/operations/costs/page.tsx:14:34)
+  77 | export function requirePermission(role: WorkspaceRole, permission: Permission) {
+  78 |   if (!rolePermissions[role].has(permission)) {
+> 79 |     const error = new Error(`Permission required: ${permission}`)
+     |                   ^
+  80 |     error.name = 'PermissionDeniedError'
+  81 |     throw error
+  82 |   }
+ GET /operations/costs?month=2001-03 404 in 765ms (next.js: 41ms, proxy.ts: 13ms, application-code: 711ms)
+  ✓  1 [chromium] › e2e/operating-costs-local.spec.ts:5:55 › operating costs preserve evidence, corrections, pagination and operator access (11.2s)
+
+  1 passed (12.3s)
+{"ok":true,"cleaned":"local-browser-fixtures"}

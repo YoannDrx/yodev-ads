@@ -1,0 +1,13 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run --run src/lib/job-runner-orchestration.test.ts src/lib/notifications-orchestration.test.ts src/lib/alert-reminder-plan.test.ts src/lib/alert-reminders.test.ts --maxWorkers=1
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  4 passed (4)
+      Tests  57 passed (57)
+   Start at  00:56:59
+   Duration  15.69s (transform 2.43s, setup 0ms, import 10.59s, tests 784ms, environment 1ms)
+

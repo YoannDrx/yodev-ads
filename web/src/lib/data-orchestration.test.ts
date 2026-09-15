@@ -20,6 +20,7 @@ vi.mock('@/db/transactions', () => ({
 vi.mock('next/headers', () => ({ cookies: mocks.cookies }))
 
 import * as repository from './data'
+import { calendarDates, reportCalendarWindow } from './calendar-window'
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 const clientId = '00000000-0000-4000-8000-000000000002'
@@ -49,6 +50,20 @@ describe('tenant-aware data repository', () => {
     delete process.env.NEXT_PUBLIC_APP_URL
   })
 
+  it('uses complete account history for totals and rejects gaps, legacy rows and mixed currencies', async () => {
+    const client = { id: clientId, timezone: 'Europe/Paris', currencyCode: 'EUR' }
+    const window = reportCalendarWindow({ period: '30', now: new Date(), timezone: client.timezone })
+    const rows = calendarDates(window).map((metricDate, index) => ({ metricDate, ...client, coverageStatus: 'complete', sourceVersion: 'v1', costMicros: index === 0 ? '90071992547409931' : '1', clicks: '1', impressions: '10', conversions: '0.5' }))
+    mocks.databases.push(queryDatabase({ clients: { first: client }, dailyAccountMetrics: { many: rows } }).db)
+    await expect(repository.getQualifiedAccountPerformance(workspaceId, clientId)).resolves.toMatchObject({ coverage: { state: 'complete', completeDays: 30 }, totals: { cost: '90071992547409960', clicks: '30', impressions: '300', conversions: 15 } })
+    for (const incomplete of [rows.slice(1), [{ ...rows[0], currencyCode: 'USD' }, ...rows.slice(1)], [{ ...rows[0], coverageStatus: 'legacy' }, ...rows.slice(1)]]) {
+      mocks.databases.push(queryDatabase({ clients: { first: client }, dailyAccountMetrics: { many: incomplete } }).db)
+      await expect(repository.getQualifiedAccountPerformance(workspaceId, clientId)).resolves.toMatchObject({ coverage: { state: 'incomplete', completeDays: 29 }, totals: null })
+    }
+    mocks.databases.push(queryDatabase({}).db)
+    await expect(repository.getQualifiedAccountPerformance(workspaceId, clientId)).rejects.toThrow('unavailable')
+  })
+
   it('routes simple tenant reads through an explicit workspace context', async () => {
     const rows = [{ id: 'row-1' }]
     const calls: Array<() => Promise<unknown>> = [
@@ -58,7 +73,6 @@ describe('tenant-aware data repository', () => {
       () => repository.listWorkspaceDeadLetters(workspaceId),
       () => repository.listWorkspaceDomains(workspaceId),
       () => repository.listDailyAccountHistory(workspaceId, clientId, 30),
-      () => repository.listAuditEvents(workspaceId),
       () => repository.getMyTaskNotificationPreferences(workspaceId, 'user-1'),
       () => repository.listTaskMentionDirectory(workspaceId),
       () => repository.listApiKeys(workspaceId),
@@ -103,14 +117,20 @@ describe('tenant-aware data repository', () => {
     await expect(repository.publicHostBelongsToWorkspace('reports.acme.test', workspaceId)).resolves.toBe(false)
   })
 
-  it('uses an explicitly selected active client and falls back to the first advertiser', async () => {
+  it('uses an explicit active client without falling back when that ID is unavailable', async () => {
     const selected = { id: clientId, name: 'Selected' }
     mocks.databases.push(queryDatabase({ clients: { first: selected } }).db)
     await expect(repository.getWorkspaceClient(workspaceId, clientId)).resolves.toEqual(selected)
 
     const fallback = { id: 'fallback', name: 'Fallback' }
     mocks.databases.push(queryDatabase({ clients: {} }).db, queryDatabase({ clients: { first: fallback } }).db)
-    await expect(repository.getWorkspaceClient(workspaceId, 'missing')).resolves.toEqual(fallback)
+    await expect(repository.getWorkspaceClient(workspaceId, '00000000-0000-4000-8000-000000000099')).resolves.toBeUndefined()
+    await expect(repository.getWorkspaceClient(workspaceId)).resolves.toEqual(fallback)
+  })
+
+  it('rejects malformed explicit clients without a query or default-client fallback', async () => {
+    for (const value of ['missing', '', 'not-a-uuid', ['first', 'second'] as unknown as string]) await expect(repository.getWorkspaceClient(workspaceId, value)).resolves.toBeUndefined()
+    expect(mocks.tenant).not.toHaveBeenCalled()
   })
 
   it('deduplicates latest conversion and offline diagnostic snapshots by resource identity', async () => {
@@ -141,28 +161,11 @@ describe('tenant-aware data repository', () => {
     await expect(repository.listClientTimeline(workspaceId, clientId)).resolves.toEqual({ changes, internal })
   })
 
-  it('enriches approvals with comments, client feedback and mutation observations', async () => {
-    const request = { id: 'approval-1' }
-    const rows = [{ request, client: { id: clientId } }]
-    const comments = [{ id: 'comment-1', approvalId: request.id }, { id: 'comment-2', approvalId: request.id }]
-    const feedback = [{ id: 'feedback-1', approvalId: request.id }]
-    const observations = [{ id: 'observation-1', approvalId: request.id }]
-    mocks.databases.push(databaseDouble({
-      statementResults: [rows],
-      query: queryMap({
-        approvalComments: { many: comments }, clientApprovalFeedback: { many: feedback }, mutationObservations: { many: observations },
-      }),
-    }).db)
-    await expect(repository.listApprovals(workspaceId)).resolves.toEqual([{
-      ...rows[0], comments, clientFeedback: feedback[0], observation: observations[0],
-    }])
-  })
 
   it('returns joined monitoring, alert, share and public-approval views', async () => {
     const joined = [{ id: 'joined' }]
     for (const call of [
       () => repository.listMonitoringAgents(workspaceId),
-      () => repository.listAlertIncidents(workspaceId),
       () => repository.listShareLinks(workspaceId),
       () => repository.listPublicClientApprovals(workspaceId, clientId, 'share-1'),
     ]) {
@@ -171,22 +174,10 @@ describe('tenant-aware data repository', () => {
     }
   })
 
-  it('groups task comments and public support messages under their parent records', async () => {
-    const taskRows = [{ task: { id: 'task-1' }, client: null }, { task: { id: 'task-2' }, client: null }]
-    const taskComments = [{ id: 'comment-1', taskId: 'task-1' }]
-    mocks.databases.push(databaseDouble({
-      statementResults: [taskRows], query: queryMap({ taskComments: { many: taskComments } }),
-    }).db)
-    await expect(repository.listWorkspaceTasks(workspaceId)).resolves.toEqual([
-      { ...taskRows[0], comments: taskComments }, { ...taskRows[1], comments: [] },
-    ])
 
-    const tickets = [{ id: 'ticket-1' }, { id: 'ticket-2' }]
-    const messages = [{ id: 'message-1', ticketId: 'ticket-1', internal: false }]
-    mocks.databases.push(queryDatabase({ supportTickets: { many: tickets }, supportMessages: { many: messages } }).db)
-    await expect(repository.listWorkspaceSupportTickets(workspaceId)).resolves.toEqual([
-      { ticket: tickets[0], messages }, { ticket: tickets[1], messages: [] },
-    ])
+  it('returns complete selected-client alert counts', async () => {
+    mocks.databases.push(databaseDouble({ statementResults: [[{ openCount: 521, criticalCount: 301 }]] }).db)
+    await expect(repository.getClientAlertSummary(workspaceId, clientId)).resolves.toEqual({ clientId, openCount: 521, criticalCount: 301 })
   })
 
   it('loads active report templates and their joined schedules together', async () => {

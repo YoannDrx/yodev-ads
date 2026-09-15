@@ -1,4 +1,7 @@
+import { workspaceDecision } from '@/lib/workspace-decision'
+import { googleMutationKindEnabled } from '@/lib/feature-flags'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import {
   BadgeAlert,
   ChartNoAxesCombined,
@@ -22,15 +25,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { analyzeAccount, type AnalysisCategory, type AnalysisFinding } from '@/lib/analysis'
 import { getWorkspaceClient, getWorkspaceConnection, listWorkspaceClients } from '@/lib/data'
 import { formatInteger, formatMoneyFromMicros } from '@/lib/format'
-import { GoogleAdsGateway, type AccountAnalysisData } from '@/lib/google-ads'
-import { requireWorkspacePermission } from '@/lib/workspace'
+import { getAnalyticalCollections } from '@/lib/analytical-collections'
+import { analyticalSnapshotData } from '@/lib/analytical-model'
+import { CollectionStatus } from '@/components/collection-status'
+import { requireWorkspacePagePermission } from '@/lib/workspace'
 import { recordActivationMilestone } from '@/lib/activation'
+import { qualifiedAnalysisEvidence } from '@/lib/analysis-evidence'
 
-type AnalysisPageProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string }> }
+type AnalysisPageProps = { searchParams: Promise<{ client?: string; notice?: string; error?: string; sync?: string }> }
 
 export default async function AnalysisPage({ searchParams }: AnalysisPageProps) {
   const query = await searchParams
-  const { workspace, entitlements, session } = await requireWorkspacePermission('portfolio:read')
+  const { workspace, entitlements, session, role } = await requireWorkspacePagePermission('portfolio:read', '/analysis')
   const english = workspace.locale === 'en'
   const locale = english ? 'en' : 'fr'
   const categories: Array<{ value: AnalysisCategory | 'all'; label: string; icon: typeof SearchCheck }> = [
@@ -40,34 +46,26 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
     { value: 'ads', label: english ? 'Ads' : 'Annonces', icon: FileSearch },
     { value: 'tracking', label: 'Tracking', icon: ShieldCheck },
   ]
-  const canProposeAdvanced = entitlements.capabilities.has('google.mutate.advanced')
+  const canProposeAdvanced = workspaceDecision({ role, state: workspace.accessState, permission: 'google:propose', entitlements, capability: 'google.mutate.advanced', features: ['googleReads'] }).allowed
   const [connection, clients] = await Promise.all([
     getWorkspaceConnection(workspace.id),
     listWorkspaceClients(workspace.id),
   ])
   const client = await getWorkspaceClient(workspace.id, query.client)
-  let data: AccountAnalysisData | undefined
-  let apiError: string | undefined
-
-  if (connection && client) {
-    try {
-      data = await new GoogleAdsGateway(connection).accountAnalysis(client.googleCustomerId)
-      await recordActivationMilestone({
-        workspaceId: workspace.id,
-        milestone: 'first_analysis',
-        actorUserId: session.userId,
-        sourceEntityId: client.id,
-      }).catch((error) => console.error(JSON.stringify({
-        level: 'error',
-        message: 'activation.first_analysis.failed',
-        error: error instanceof Error ? error.message : String(error),
-      })))
-    } catch (error) {
-      apiError = error instanceof Error ? error.message : english ? 'Unable to run the Google Ads analysis.' : 'Impossible d’exécuter l’analyse Google Ads.'
-    }
-  }
-
-  const analysis = data ? analyzeAccount(data, locale) : undefined
+  if (query.client !== undefined && !client) notFound()
+  const collection = client ? await getAnalyticalCollections(workspace.id, client.id, ['campaigns', 'searchTerms', 'keywords', 'ads', 'tracking']) : { snapshots: [], attempts: [] }
+  const campaigns = client ? analyticalSnapshotData(collection.snapshots, 'campaigns', client) : undefined
+  const searchTerms = client ? analyticalSnapshotData(collection.snapshots, 'searchTerms', client) : undefined
+  const keywords = client ? analyticalSnapshotData(collection.snapshots, 'keywords', client) : undefined
+  const ads = client ? analyticalSnapshotData(collection.snapshots, 'ads', client) : undefined
+  const conversionTracking = client ? analyticalSnapshotData(collection.snapshots, 'tracking', client) : undefined
+  const periods = new Set(collection.snapshots.filter((row) => ['campaigns', 'searchTerms', 'keywords', 'ads', 'tracking'].includes(row.family)).map((row) => `${row.periodFrom}/${row.periodThrough}`))
+  const data = campaigns && searchTerms && keywords && ads && conversionTracking && periods.size === 1 ? { campaigns, searchTerms, keywords, ads, conversionTracking } : undefined
+  const canConnect = workspaceDecision({ role, state: workspace.accessState, permission: 'google:connect' }).allowed
+  const canRefresh = connection?.status === 'active' && workspaceDecision({ role, state: workspace.accessState, permission: 'monitoring:run', entitlements, capability: 'google.read', features: ['googleReads', 'scheduler'] }).allowed
+  const analysis = data?.campaigns.length ? analyzeAccount(data, locale) : undefined
+  const evidence = analysis && Number.isFinite(analysis.score) && client ? qualifiedAnalysisEvidence(collection.snapshots, client) : null
+  if (evidence && client && entitlements.capabilities.has('google.read')) await recordActivationMilestone({ workspaceId: workspace.id, milestone: 'first_qualified_analysis', actorUserId: session.userId, sourceEntityId: client.id, metadata: evidence }).catch(() => undefined)
   const currency = client?.currencyCode ?? 'EUR'
 
   return (
@@ -75,14 +73,14 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
       <PageHeading
         eyebrow={english ? 'Google Ads intelligence · 30 days' : 'Intelligence Google Ads · 30 jours'}
         title={english ? '360 analysis' : 'Analyse 360'}
-        description={english ? 'Ads by Yodev combines search terms, Quality Score, responsive ads and tracking to prioritize the actions that matter.' : 'Ads by Yodev croise les requêtes, le Quality Score, les annonces responsives et le tracking pour prioriser les actions qui comptent.'}
+        description={english ? 'Yodev Ads combines search terms, Quality Score, responsive ads and tracking to prioritize the actions that matter.' : 'Yodev Ads croise les requêtes, le Quality Score, les annonces responsives et le tracking pour prioriser les actions qui comptent.'}
         actions={
           clients.length ? (
             <form className="flex gap-2">
               <select
                 name="client"
                 defaultValue={client?.id}
-                className="h-10 min-w-56 rounded-lg border bg-white px-3 text-sm"
+                className="h-10 min-w-56 rounded-lg border bg-card px-3 text-sm"
                 aria-label={english ? 'Client account' : 'Compte client'}
               >
                 {clients
@@ -93,36 +91,37 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
                     </option>
                   ))}
               </select>
-              <Button type="submit">{english ? 'Refresh' : 'Actualiser'}</Button>
+              <Button type="submit">{english ? 'Show' : 'Afficher'}</Button>
             </form>
           ) : undefined
         }
       />
-      <FlashMessage notice={query.notice} error={query.error ?? apiError} locale={locale} />
+      <FlashMessage notice={query.notice} error={query.error} locale={locale} />
 
-      {!connection || !client || !data || !analysis ? (
-        <EmptyState
-          title={connection ? (english ? 'No account available for analysis' : 'Aucun compte analysable') : (english ? 'Connect Google Ads to start the analysis' : 'Connectez Google Ads pour lancer l’analyse')}
+      {client && <CollectionStatus client={client} {...collection} locale={locale} canRefresh={canRefresh} canConnect={canConnect} destination="/analysis" feedback={query.sync} />}
+      {!client || !data || !analysis ? (
+        <EmptyState locale={locale} showConnectionAction={canConnect}
+          title={english ? 'Analysis not yet available' : 'Analyse pas encore disponible'}
           description={
             connection
-              ? (english ? 'Sync at least one client account from settings.' : 'Synchronisez au moins un compte client depuis les réglages.')
+              ? (english ? 'Request a collection and wait for all analysis sections to cover the same dates.' : 'Demandez une collecte et attendez que les sections de l’analyse couvrent les mêmes dates.')
               : (english ? 'The analysis uses only the official Google Ads API and remains read-only.' : 'L’analyse utilise uniquement l’API officielle Google Ads et reste en lecture seule.')
           }
         />
       ) : (
         <>
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <Card className="border-0 bg-[#0d1722] text-white shadow-none sm:col-span-2 xl:col-span-1">
+            <Card className="border-0 bg-card text-foreground shadow-none sm:col-span-2 xl:col-span-1">
               <CardContent className="p-5">
-                <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">{english ? 'Opportunity score' : 'Score d’opportunité'}</p>
+                <p className="text-xs font-semibold uppercase tracking-[.16em] text-primary">{english ? 'Opportunity score' : 'Score d’opportunité'}</p>
                 <div className="mt-5 flex items-end gap-2">
-                  <span className="text-5xl font-semibold tracking-[-.06em]">{analysis.score}</span>
-                  <span className="mb-1 text-sm text-white/45">/ 100</span>
+                  <span data-analysis-score className="text-5xl font-semibold tracking-[-.06em]">{evidence ? analysis.score : '—'}</span>
+                  <span className="mb-1 text-sm text-muted-foreground">/ 100</span>
                 </div>
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full rounded-full bg-[#19A58F]" style={{ width: `${analysis.score}%` }} />
-                </div>
-                <p className="mt-3 text-xs leading-5 text-white/50">{english ? 'Explainable score calculated from the anomalies shown below.' : 'Score explicable, calculé à partir des anomalies visibles ci-dessous.'}</p>
+                {evidence ? <progress aria-label={english ? 'Opportunity score' : 'Score d’opportunité'} value={analysis.score} max={100} className="mt-4 h-1.5 w-full accent-emerald-500" /> : <div aria-hidden="true" className="mt-4 h-1.5 rounded-md bg-card" />}
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">{evidence
+                  ? (english ? 'Explainable score based on the findings below and the received query data.' : 'Score explicable fondé sur les constats ci-dessous et les données des requêtes reçues.')
+                  : (english ? 'Score unavailable: all five sections must be recent, versioned and have verified query coverage. Stored findings remain available below.' : 'Score indisponible : les cinq sections doivent être récentes, versionnées et de couverture vérifiée. Les constats enregistrés restent consultables ci-dessous.')}</p>
               </CardContent>
             </Card>
             <SummaryCard
@@ -151,10 +150,10 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
             />
           </section>
 
-          <section className="mt-6 rounded-3xl border border-[#dce5e8] bg-white p-5 sm:p-7">
+          <section className="mt-6 rounded-md border border-border bg-card p-5 sm:p-7">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">{english ? 'Prioritized action plan' : 'Plan d’action priorisé'}</p>
+                <p className="text-xs font-semibold uppercase tracking-[.16em] text-primary">{english ? 'Prioritized action plan' : 'Plan d’action priorisé'}</p>
                 <h2 className="mt-2 text-xl font-semibold tracking-tight">
                   {analysis.findings.length
                     ? (english ? `${analysis.findings.length} opportunit${analysis.findings.length === 1 ? 'y' : 'ies'} detected` : `${analysis.findings.length} opportunité${analysis.findings.length > 1 ? 's' : ''} détectée${analysis.findings.length > 1 ? 's' : ''}`)
@@ -218,8 +217,8 @@ function FindingList({ findings, currency, clientId, canProposeAdvanced, locale 
   const english = locale === 'en'
   if (!findings.length) {
     return (
-      <div className="rounded-2xl border border-dashed bg-[#f7faf9] p-10 text-center">
-        <ShieldCheck className="mx-auto size-7 text-emerald-600" />
+      <div className="rounded-md border border-dashed bg-card p-10 text-center">
+        <ShieldCheck className="mx-auto size-7 text-[var(--y-success)]" />
         <p className="mt-3 font-medium">{english ? 'Nothing to report in this category' : 'Rien à signaler dans cette catégorie'}</p>
         <p className="mt-1 text-sm text-muted-foreground">{english ? 'Data from the last 30 days does not exceed any threshold.' : 'Les données des 30 derniers jours ne dépassent aucun seuil.'}</p>
       </div>
@@ -228,10 +227,10 @@ function FindingList({ findings, currency, clientId, canProposeAdvanced, locale 
   return (
     <div className="space-y-3">
       {findings.map((finding) => (
-        <article key={finding.id} className="rounded-2xl border border-[#e1e7e9] p-4 sm:p-5">
+        <article key={finding.id} className="rounded-md border border-border p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 gap-3">
-              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[#eef7f3] text-[#19A58F]">
+              <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-md bg-card text-primary">
                 <Lightbulb className="size-4" />
               </span>
               <div>
@@ -239,11 +238,11 @@ function FindingList({ findings, currency, clientId, canProposeAdvanced, locale 
                   <h3 className="font-semibold">{finding.title}</h3>
                   <PriorityBadge priority={finding.priority} locale={locale} />
                 </div>
-                <p className="mt-1 text-xs font-medium text-[#7b858c]">
+                <p className="mt-1 text-xs font-medium text-muted-foreground">
                   {finding.campaignName ? `${finding.campaignName} · ` : ''}{finding.entityLabel}
                 </p>
-                <p className="mt-3 text-sm leading-6 text-[#5e6971]">{finding.description}</p>
-                <p className="mt-3 rounded-xl bg-[#f5f8f8] px-3 py-2.5 text-sm leading-5 text-[#334149]">
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">{finding.description}</p>
+                <p className="mt-3 rounded-md bg-card px-3 py-2.5 text-sm leading-5 text-muted-foreground">
                   <span className="font-semibold">{english ? 'Recommended action' : 'Action recommandée'} :</span> {finding.recommendation}
                 </p>
                 {canProposeAdvanced && <WorkflowForm finding={finding} clientId={clientId} locale={locale} />}
@@ -265,10 +264,10 @@ function FindingList({ findings, currency, clientId, canProposeAdvanced, locale 
 
 function WorkflowForm({ finding, clientId, locale }: { finding: AnalysisFinding; clientId: string; locale: 'fr' | 'en' }) {
   const english = locale === 'en'
-  if (!finding.suggestedWorkflow || !finding.campaignId || !finding.campaignName || !finding.adGroupId) return null
+  if (!finding.suggestedWorkflow || !googleMutationKindEnabled(finding.suggestedWorkflow) || !finding.campaignId || !finding.campaignName || !finding.adGroupId) return null
   if (finding.suggestedWorkflow === 'keyword_create_negative' || finding.suggestedWorkflow === 'keyword_create_positive') {
     return (
-      <form action={requestGoogleAdsChange} className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+      <form action={requestGoogleAdsChange} className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-emerald-100 bg-emerald-50/50 p-3">
         <input type="hidden" name="kind" value={finding.suggestedWorkflow} />
         <input type="hidden" name="clientId" value={clientId} />
         <input type="hidden" name="campaignId" value={finding.campaignId} />
@@ -277,9 +276,9 @@ function WorkflowForm({ finding, clientId, locale }: { finding: AnalysisFinding;
         <input type="hidden" name="adGroupName" value={finding.adGroupName ?? (english ? 'Ad group' : 'Groupe d’annonces')} />
         <input type="hidden" name="keywordText" value={finding.entityLabel} />
         {finding.suggestedWorkflow === 'keyword_create_negative' ? (
-          <label className="text-xs font-medium">{english ? 'Scope' : 'Portée'} <select name="scope" defaultValue="ad_group" className="ml-1 h-8 rounded-lg border bg-white px-2" aria-label={english ? 'Negative keyword scope' : 'Portée du mot-clé négatif'}><option value="ad_group">{english ? 'Ad group' : 'Groupe d’annonces'}</option><option value="campaign">{english ? 'Whole campaign' : 'Campagne entière'}</option><option value="account">{english ? 'Whole account' : 'Compte entier'}</option></select></label>
+          <label className="text-xs font-medium">{english ? 'Scope' : 'Portée'} <select name="scope" defaultValue="ad_group" className="ml-1 h-8 rounded-lg border bg-card px-2" aria-label={english ? 'Negative keyword scope' : 'Portée du mot-clé négatif'}><option value="ad_group">{english ? 'Ad group' : 'Groupe d’annonces'}</option><option value="campaign">{english ? 'Whole campaign' : 'Campagne entière'}</option><option value="account">{english ? 'Whole account' : 'Compte entier'}</option></select></label>
         ) : <input type="hidden" name="scope" value="ad_group" />}
-        <label className="text-xs font-medium">{english ? 'Match' : 'Correspondance'} <select name="matchType" defaultValue="PHRASE" className="ml-1 h-8 rounded-lg border bg-white px-2" aria-label={english ? 'Match type' : 'Type de correspondance'}><option value="EXACT">{english ? 'Exact' : 'Exacte'}</option><option value="PHRASE">{english ? 'Phrase' : 'Expression'}</option><option value="BROAD">{english ? 'Broad' : 'Large'}</option></select></label>
+        <label className="text-xs font-medium">{english ? 'Match' : 'Correspondance'} <select name="matchType" defaultValue="PHRASE" className="ml-1 h-8 rounded-lg border bg-card px-2" aria-label={english ? 'Match type' : 'Type de correspondance'}><option value="EXACT">{english ? 'Exact' : 'Exacte'}</option><option value="PHRASE">{english ? 'Phrase' : 'Expression'}</option><option value="BROAD">{english ? 'Broad' : 'Large'}</option></select></label>
         <Button type="submit" size="sm" variant="outline">
           {finding.suggestedWorkflow === 'keyword_create_negative' ? (english ? 'Propose as negative' : 'Proposer en négatif') : (english ? 'Propose as keyword' : 'Proposer comme mot-clé')}
         </Button>
@@ -307,7 +306,7 @@ function WorkflowForm({ finding, clientId, locale }: { finding: AnalysisFinding;
           <input type="hidden" name="status" value="PAUSED" />
           <Button type="submit" size="sm" variant="outline">{english ? 'Propose pause' : 'Proposer une suspension'}</Button>
         </form>
-        <details className="rounded-xl border bg-white p-3 text-sm">
+        <details className="rounded-md border bg-card p-3 text-sm">
           <summary className="cursor-pointer font-medium">{english ? 'Prepare a new paused RSA draft' : 'Préparer un nouveau draft RSA en pause'}</summary>
           <form action={requestGoogleAdsChange} className="mt-3 grid gap-2">
             <input type="hidden" name="kind" value="rsa_create_draft" /><input type="hidden" name="clientId" value={clientId} />
@@ -346,11 +345,11 @@ function SummaryCard({
   icon: typeof Target
 }) {
   return (
-    <Card className="border-[#dce5e8] shadow-none">
+    <Card className="border-border shadow-none">
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <Icon className="size-4 text-[#19A58F]" />
+          <Icon className="size-4 text-primary" />
         </div>
         <p className="mt-4 text-2xl font-semibold tracking-tight">{value}</p>
         <p className="mt-1 truncate text-xs text-muted-foreground">{note}</p>
@@ -361,9 +360,9 @@ function SummaryCard({
 
 function InventoryCard({ title, value, description, icon: Icon }: { title: string; value: number; description: string; icon: typeof Target }) {
   return (
-    <Card className="border-[#dce5e8] shadow-none">
+    <Card className="border-border shadow-none">
       <CardContent className="flex gap-4 p-5">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e9fbf3] text-[#176646]">
+        <span className="grid size-10 shrink-0 place-items-center rounded-md bg-card text-muted-foreground">
           <Icon className="size-5" />
         </span>
         <div>

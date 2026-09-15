@@ -11,14 +11,15 @@ export async function validatedBrandLogo(file: File) {
   const bytes = new Uint8Array(await file.arrayBuffer())
   const format = formats.find((candidate) => candidate.matches(bytes))
   if (!format) throw new Error('Le logo doit être un fichier PNG, JPEG ou WebP valide.')
-  return { bytes, contentType: format.contentType, extension: format.extension }
+  const { normalizeBrandLogo } = await import('@/lib/branding-image')
+  return normalizeBrandLogo(bytes)
 }
 
 export function isControlledBrandLogoUrl(value: string | null | undefined) {
   if (!value) return false
   try {
     const url = new URL(value)
-    return url.protocol === 'https:' &&
+    return url.protocol === 'https:' && !url.username && !url.password && !url.port && !url.search && !url.hash &&
       /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(url.hostname) &&
       url.pathname.startsWith('/workspace-branding/')
   } catch {

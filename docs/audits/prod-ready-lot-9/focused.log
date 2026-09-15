@@ -1,0 +1,13 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/lib/analytical-model.test.ts src/lib/api-v1-repository.test.ts src/lib/job-runner-orchestration.test.ts src/lib/workspace-export-orchestration.test.ts src/lib/workspace-access.test.ts --maxWorkers=2
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  5 passed (5)
+      Tests  35 passed (35)
+   Start at  02:55:56
+   Duration  1.16s (transform 408ms, setup 0ms, import 1.62s, tests 117ms, environment 0ms)
+

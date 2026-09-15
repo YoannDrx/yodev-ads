@@ -1,0 +1,4 @@
+
+> @yodev/ads@0.1.0 lint
+> eslint e2e/report-management-actors-local.spec.ts
+

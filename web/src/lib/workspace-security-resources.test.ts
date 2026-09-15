@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { databaseDouble } from '../../test/fluent-db'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { databaseDouble as rawDatabaseDouble } from '../../test/fluent-db'
 
 const mocks = vi.hoisted(() => ({
   databases: [] as unknown[],
@@ -32,11 +32,13 @@ const resourceId = '00000000-0000-4000-8000-000000000002'
 const actorUserId = 'user-1'
 const now = new Date('2026-08-12T08:00:00.000Z')
 
-function securityDatabase(input: { statementResults?: unknown[]; workspace?: unknown } = {}) {
-  return databaseDouble({
-    statementResults: input.statementResults,
-    query: { workspaces: { findFirst: vi.fn(async () => input.workspace ?? { accessState: 'active', plan: 'studio' }) } },
-  })
+const access = (plan = 'agency', role = 'owner') => ({ rows: [{ state: 'active', plan, member_role: role, is_owner: role === 'owner', trial_expired: false }] })
+function databaseDouble(input: { statementResults?: unknown[]; role?: string; plan?: string } = {}) {
+  return rawDatabaseDouble({ statementResults: [access(input.plan, input.role), ...(input.statementResults ?? [])] })
+}
+function securityDatabase(input: { statementResults?: unknown[] } = {}) {
+  // Replace the previous entitlement-lock response with the current actor-lock response.
+  return databaseDouble({ plan: 'studio', statementResults: input.statementResults?.slice(1) })
 }
 
 describe('workspace security resources', () => {
@@ -44,6 +46,30 @@ describe('workspace security resources', () => {
     mocks.databases = []
     mocks.contexts = []
     vi.clearAllMocks()
+    vi.stubEnv('PUBLIC_API_ENABLED', '1'); vi.stubEnv('PRIVATE_API_WORKSPACE_IDS', workspaceId)
+  })
+
+  afterEach(() => vi.unstubAllEnvs())
+
+  it.each(['key_create', 'key_revoke', 'channel_create', 'channel_disable', 'retry', 'safety'])('denies %s after actor revocation without writes', async (operation) => {
+    const database = databaseDouble({ role: 'client' }); mocks.databases.push(database.db)
+    const actor = { workspaceId, actorUserId }, entitlements = entitlementContext('active', 'agency')
+    const run = operation === 'key_create' ? () => createWorkspaceApiKey({ ...actor, name: 'Key', token: 'token', scopes: ['portfolio:read'], entitlements })
+      : operation === 'key_revoke' ? () => revokeWorkspaceApiKey({ ...actor, keyId: resourceId })
+        : operation === 'channel_create' ? () => createWorkspaceNotificationChannel({ ...actor, kind: 'email', label: 'Ops', destination: 'ops@example.test', minimumSeverity: 'warning', entitlements })
+          : operation === 'channel_disable' ? () => disableWorkspaceNotificationChannel({ ...actor, channelId: resourceId })
+            : operation === 'retry' ? () => retryWorkspaceDeadLetterJob({ ...actor, jobId: resourceId })
+              : () => saveWorkspaceSafetyPolicy({ ...actor, scope: 'workspace', clientId: null, campaignId: null, currencyCode: 'EUR', maximumDailyBudget: 10, maximumMonthlySpend: '', maximumVariationPercent: '', notificationEmail: '' })
+    await expect(run()).rejects.toThrow('non autorisée')
+    expect(database.capture.values).toEqual([]); expect(database.capture.sets).toEqual([])
+  })
+
+  it('rejects write scopes after downgrade and unknown scopes before issuing a key', async () => {
+    const database = databaseDouble({ plan: 'studio' }); mocks.databases.push(database.db)
+    const input = { workspaceId, actorUserId, name: 'Key', token: 'token', scopes: ['reports:write'], entitlements: entitlementContext('active', 'agency') }
+    await expect(createWorkspaceApiKey(input)).rejects.toThrow('non autorisée')
+    expect(() => createWorkspaceApiKey({ ...input, scopes: ['google:execute'] })).toThrow('Périmètre')
+    expect(database.capture.values).toEqual([])
   })
 
   it('serializes API-key quota, stores only a hash and creates a one-shot revelation', async () => {
@@ -213,7 +239,7 @@ describe('workspace security resources', () => {
   })
 
   it('stores a campaign-scoped safety policy without changing legacy workspace limits', async () => {
-    const database = databaseDouble()
+    const database = databaseDouble({ statementResults: [[{ currencyCode: 'EUR', isManager: false }]] })
     mocks.databases.push(database.db)
     await saveWorkspaceSafetyPolicy({
       workspaceId,
@@ -236,7 +262,7 @@ describe('workspace security resources', () => {
   })
 
   it('supports deleting a scoped policy while still auditing the cleared values', async () => {
-    const database = databaseDouble()
+    const database = databaseDouble({ statementResults: [[{ currencyCode: 'EUR', isManager: false }]] })
     mocks.databases.push(database.db)
     await saveWorkspaceSafetyPolicy({
       workspaceId,

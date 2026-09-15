@@ -1,0 +1,5 @@
+Error: Approval cursor pagination skipped or duplicated rows
+    at invariant (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-database-load.ts:53:25)
+    at verifyApprovalBurstAndPagination (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-database-load.ts:298:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/yoannandrieux/Projets/yodev-ads/web/scripts/verify-database-load.ts:355:23)

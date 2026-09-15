@@ -1,0 +1,309 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs --grep workspace collection navigation
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 258ms
+✓ Running next.config.ts took 434ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 1655ms (next.js: 1190ms, proxy.ts: 149ms, application-code: 316ms)
+ POST /api/auth/sign-in/email 200 in 928ms (next.js: 750ms, proxy.ts: 4ms, application-code: 173ms)
+ POST /api/auth/sign-in/email 200 in 87ms (next.js: 4ms, proxy.ts: 2ms, application-code: 80ms)
+ POST /api/auth/sign-in/email 200 in 93ms (next.js: 3ms, proxy.ts: 2ms, application-code: 87ms)
+ POST /api/auth/sign-in/email 200 in 103ms (next.js: 3ms, proxy.ts: 4ms, application-code: 95ms)
+ POST /api/auth/sign-in/email 200 in 108ms (next.js: 21ms, proxy.ts: 3ms, application-code: 83ms)
+ GET /dashboard 200 in 870ms (next.js: 252ms, proxy.ts: 3ms, application-code: 616ms)
+ GET /sign-in 200 in 97ms (next.js: 39ms, proxy.ts: 6ms, application-code: 52ms)
+ GET /settings 200 in 329ms (next.js: 40ms, proxy.ts: 19ms, application-code: 270ms)
+ GET /billing 200 in 307ms (next.js: 30ms, proxy.ts: 6ms, application-code: 271ms)
+ GET /icon?a62dacc6b033a714 200 in 119ms (next.js: 18ms, proxy.ts: 6ms, application-code: 95ms)
+ GET /support 200 in 174ms (next.js: 28ms, proxy.ts: 1.9ms, application-code: 144ms)
+ GET /accounts 200 in 133ms (next.js: 12ms, proxy.ts: 1.8ms, application-code: 119ms)
+ GET /history 200 in 128ms (next.js: 14ms, proxy.ts: 2ms, application-code: 112ms)
+ GET /alerts 200 in 159ms (next.js: 30ms, proxy.ts: 1.9ms, application-code: 127ms)
+ GET /tasks 200 in 176ms (next.js: 29ms, proxy.ts: 1.9ms, application-code: 145ms)
+ GET /approvals 200 in 146ms (next.js: 29ms, proxy.ts: 1.9ms, application-code: 115ms)
+ GET /reports 200 in 195ms (next.js: 31ms, proxy.ts: 1.9ms, application-code: 162ms)
+ GET /audit 200 in 128ms (next.js: 18ms, proxy.ts: 1.9ms, application-code: 108ms)
+ GET /agents 200 in 192ms (next.js: 26ms, proxy.ts: 2.0ms, application-code: 164ms)
+ GET / 200 in 91ms (next.js: 12ms, proxy.ts: 1.9ms, application-code: 77ms)
+ GET /privacy 200 in 49ms (next.js: 9ms, proxy.ts: 1.8ms, application-code: 38ms)
+ GET /terms 200 in 45ms (next.js: 9ms, proxy.ts: 1.8ms, application-code: 34ms)
+ GET /subprocessors 200 in 89ms (next.js: 27ms, proxy.ts: 1.9ms, application-code: 60ms)
+ GET /status 200 in 84ms (next.js: 33ms, proxy.ts: 1.7ms, application-code: 50ms)
+ GET /sign-in 200 in 31ms (next.js: 4ms, proxy.ts: 1.9ms, application-code: 26ms)
+ GET /sign-up 200 in 317ms (next.js: 288ms, proxy.ts: 1.9ms, application-code: 27ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-ggWd6U
+
+Running 2 tests using 1 worker
+
+(node:71501) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /audit?q=COLL_AUDIT_ 200 in 222ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 218ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 6ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /api/auth/organization/list 200 in 28ms (next.js: 11ms, proxy.ts: 3ms, application-code: 14ms)
+ POST /audit?q=COLL_AUDIT_ 200 in 90ms (next.js: 3ms, proxy.ts: 3ms, application-code: 84ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /audit?q=COLL_AUDIT_&cursor=eyJ2IjoxLCJpdiI6Ijk5RjFudlZFQ3QzQUp0cUwiLCJ0YWciOiJ6RjkwTWRlcElkNGdZTW11a0hJaGVnIiwiZGF0YSI6Inh4UGZaeFRZUS02UmMxb3otd1Y2aUlORGR4bW9hTFVjOFhwWHl5b2JYLUJLSDh2VjdVMFQzUWZVVnN0NzVoSXMxRXVWWWQ3cGRpczN0N1NXQ0owR0VPVDdTSWRsLUpBbENCQjREY3NpMHpQNmFaNWdjQU12UVE1N0tsYUIySFNocEV6OVVyX215VExTY1dvOE1DWmJrV2VhYVdBNnIxWHhTQ0JDdS11c2Z5RDR2Zlo0X0l3dXBYekFndTZjbjV6SFBpdDhJci10aEp2cmlzUFo1dEs2RG5CYW56OHBmOHVBeEVwMERVV3BvY1hVLWpwcF9kUVBnRW9LbmJhM2JaUTR3dEQ3TG1XRXF1dkNJVlhIbEpRTmFmQUlRdzhYMG9JX3NpZG5OMWFfcXJtTUVrWDNUMklrM0EifQ 200 in 47ms (next.js: 2ms, proxy.ts: 3ms, application-code: 42ms)
+ GET /audit?q=COLL_AUDIT_001 200 in 120ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 117ms)
+ GET /api/auth/get-session 200 in 379ms (next.js: 70ms, proxy.ts: 12ms, application-code: 297ms)
+ GET /api/auth/organization/list 200 in 392ms (next.js: 73ms, proxy.ts: 13ms, application-code: 307ms)
+ GET /tasks?q=COLL_TASK_ 200 in 453ms (next.js: 3ms, proxy.ts: 3ms, application-code: 447ms)
+ GET /api/auth/get-session 200 in 17ms (next.js: 4ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 6ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /tasks?q=COLL_TASK_&status=open&cursor=eyJ2IjoxLCJpdiI6ImxyOTROcTFBdHN2WmUwMmMiLCJ0YWciOiIycFIzc0VkaTA4VHU1WmNMZFdZLVl3IiwiZGF0YSI6InQzeDRGeDIyQjdQWXpPTklvOU13bmVUajJDamJDM2RJRW1kbHBkQ1M3My1KYXBnV3J4N2NQdWs5R3piZHZJaF9TT1c5MWwxdWZ4YWp2WlJfUVMxUDBfYmpzYXBsTEFHdkhpUlFrYmYyMnF6eFJvb05SbVBTYzFsY3dhWkdvaElubWRRUTBOYi1IRzJYZ0ZSMTRqMEpHWnBoS0ZxU2xHNUJ0anpGaXQzVERHc19sd09QWnB4U2Roc3NpSEczVV9MY1FadGFvZzBLcE5aZEdJTkJZRFRmRTlYOXJrc3lTcGsxekNPWjJqMS1RbFVBS0Y4X2RGUUxteWprZ3ZxS3BZV0hQZ3pEeXBtZlc2eTBybDVhVUJ2cmZ2Q2ZnZWdpdlBMVGY1dW9DTzBzbXBTVml4SkhqeXFZdWcifQ 200 in 103ms (next.js: 2ms, proxy.ts: 2ms, application-code: 98ms)
+ GET /tasks?q=COLL_TASK_001&status=open 200 in 147ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 143ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 5ms, proxy.ts: 5ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 13ms (next.js: 3ms, proxy.ts: 3ms, application-code: 6ms)
+ GET /tasks?notice=Commentaire+ajout%C3%A9.&id=f44c5d6d-5f15-4fc8-96a0-f5038559bd80 200 in 68ms (next.js: 2ms, proxy.ts: 1.8ms, application-code: 65ms)
+ POST /tasks?q=COLL_TASK_001&status=open 200 in 93ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 88ms)
+  └─ ƒ addWorkspaceTaskComment({}) in 10ms src/app/actions.ts
+ GET /discussions/tasks/f44c5d6d-5f15-4fc8-96a0-f5038559bd80 200 in 1181ms (next.js: 1134ms, proxy.ts: 2ms, application-code: 44ms)
+ GET /discussions/tasks/f44c5d6d-5f15-4fc8-96a0-f5038559bd80?cursor=eyJ2IjoxLCJpdiI6Ik5ZelRIMnBIMHZocnJfTGkiLCJ0YWciOiI4LXpTTVQ5cmUzeVQtdUo4RHJybm5BIiwiZGF0YSI6InNFT3Z1TTNXcVdmbG9Id0piV3dpSWpOVHU1MmxCU2VCTXVzS2w0V1J6eERBWnQxYXlUMndrc1FYeFA1ZzhueUY0RzFJR3A5eG9KaVhSUllQTmdabEtkRnAtTUNwQjQtY2JMcHpXV3VQQVFlcEs5M2tkdWI4WGZBRXFyVjRiUkRpVFF2NEhCRmdKODJfUktQcFBUdU1TVU8zeXF4VUNMcXZFVVBhT1Y5YzVRbU5aQ3d4eVE5cThldU9WU1R1MWlTWTNQWnNCUFNPTjVwRVNURFhGcVBwMkhPZDJpa0RCMDRHckZKT3hhZC1WNnB5di1qR3JxcWQ4YlJoQ3JNWnowWUs3NFN6bVUzM3B1YVpJTC1zMkliNzRTYlNqbWxOY05VeGxxcEFkajBMeXYzSlBOa3lkaVRfRXcifQ 200 in 64ms (next.js: 12ms, proxy.ts: 4ms, application-code: 48ms)
+ GET /discussions/tasks/f44c5d6d-5f15-4fc8-96a0-f5038559bd80?q=COLL_MESSAGE_001 200 in 133ms (next.js: 3ms, proxy.ts: 3ms, application-code: 127ms)
+ GET /api/auth/get-session 200 in 99ms (next.js: 68ms, proxy.ts: 9ms, application-code: 22ms)
+ GET /api/auth/organization/list 200 in 327ms (next.js: 71ms, proxy.ts: 9ms, application-code: 246ms)
+ GET /alerts?q=COLL_ALERT_ 200 in 403ms (next.js: 9ms, proxy.ts: 4ms, application-code: 390ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 5ms, proxy.ts: 5ms, application-code: 23ms)
+ GET /api/auth/organization/list 200 in 35ms (next.js: 9ms, proxy.ts: 5ms, application-code: 21ms)
+ GET /alerts?q=COLL_ALERT_&cursor=eyJ2IjoxLCJpdiI6Il9lTTczOVlheDA1WHlvRHAiLCJ0YWciOiJMX1hNWHRLc25zTC04SDR0TG9qNVVRIiwiZGF0YSI6IkFTNDNPYmlTNUcxeXQ0Z3FCZEprSmJkTWNOQXpXR1ROOVhDRDdWbUhDRklTd1IwNFFuMXFqdXZPSlphb0xzQmFwcWE0dU9QZk1Qam1RQUJiQWdNOHExNjIxWlF0LVEyRDJsUEVqaWNNMmhpcm9qeE9vOVdPTEJxRjN4WDhfNGloQ3ZqS2NvRU1oS1htNlVYTDZYeDhET2RuOHVVNVB0NEhQVk93TGw4S3NkU09QWEpUM1VLTG1mR2FDeDFpSklLSzB3ZjVpNEFzWG5jY2ZzdmlhcGtqUWZjYWR2ZjkxWlltNnZoZGJobmltU3J5SnVtclNNS1BPUTJiVXMtSE51eEFCMmJfcGJaaDE0bDVVa196Y1lyRVpFQy1hcEhUSm8zUk5xLWd2MzREeTVKdlNVcVZ4YVA5TGcifQ 200 in 88ms (next.js: 3ms, proxy.ts: 3ms, application-code: 82ms)
+ GET /alerts?q=COLL_ALERT_001&status= 200 in 131ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 127ms)
+ GET /api/auth/get-session 200 in 89ms (next.js: 58ms, proxy.ts: 10ms, application-code: 20ms)
+ GET /api/auth/organization/list 200 in 115ms (next.js: 61ms, proxy.ts: 10ms, application-code: 44ms)
+ GET /approvals?q=COLL_APPROVAL_ 200 in 426ms (next.js: 2ms, proxy.ts: 2ms, application-code: 422ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 5ms, proxy.ts: 8ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 27ms (next.js: 7ms, proxy.ts: 8ms, application-code: 11ms)
+ GET /approvals?q=COLL_APPROVAL_&cursor=eyJ2IjoxLCJpdiI6InhnR1FPb0FWRnE3a3hGWTAiLCJ0YWciOiJSZ0xkOU5QX3VjVGVkaGpKUmQ1RnlRIiwiZGF0YSI6ImlTbFRHYllENGpzSXNpbFFsTFd6THl2YXROZDZvc0RqZjk0X1BWeDU3a21ZSkFXOGpsVUdrWDlaa05xV0JhQjE5YXB6c0ljRU12OGRMMU1Hb0FoLUMzTnFWeWI0MzlYZmlZLXN0ZVBlVVlqZWV4ZUNiMzRZRlkyUS1KLXpsekd5dWoyTlF6LUQxREU3YmxJRzNRVHJRUHZhMGQwZjN0YXV3M2JHV0NXY1N1Q0xRZ0NGS25BVmNZOGxZLUd5R294eGM5UWZYbzZFQjRDaEVQYk1PNXFWcTVDd3J5RjJoXzAyMXdjaGtwbDdvNkxZNWdGdVQ4WUpEUjJ5dkxvS0J6TXBtYUdSR0FmNDdvMTBINUtNMnFkcDRhQXo0czRDb3laR1QwcGJsczlnY1o1a1dJQzhFYXd4S3cifQ 200 in 233ms (next.js: 2.0ms, proxy.ts: 3ms, application-code: 228ms)
+ GET /approvals?q=COLL_APPROVAL_001&status= 200 in 498ms (next.js: 9ms, proxy.ts: 8ms, application-code: 481ms)
+ GET /api/auth/get-session 200 in 237ms (next.js: 8ms, proxy.ts: 7ms, application-code: 222ms)
+ GET /api/auth/organization/list 200 in 243ms (next.js: 12ms, proxy.ts: 7ms, application-code: 224ms)
+ GET /support?q=COLL_SUPPORT_ 200 in 452ms (next.js: 5ms, proxy.ts: 7ms, application-code: 440ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 5ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 9ms, proxy.ts: 3ms, application-code: 15ms)
+ GET /support?q=COLL_SUPPORT_&cursor=eyJ2IjoxLCJpdiI6IkV4NnRhLVZvVy1ybU1Rc00iLCJ0YWciOiJoNm9qM1kyNWNDSFJVRU5QLUdSRVVRIiwiZGF0YSI6ImFSZzFBc3MxVEZ6elFzdFNheTlpOUs1TzhORGlJR0haaTFfM0VySHREVktZTDhYd3J4Yk81Ml9GVlRJVVJDSWwyOEk3WlJnZG5jTFZKOEVSbTJ5YmQybmtKekRPYnJPQjFyTWdKWVFac0NabTR6S3lXZzZlZlpLVnNsV3ZfMURHaGlDUEJfWEs5TDV5YXJBNVVhOUJDWTBGblk3cGJQMFhMa01oc3RIWWJpTEhfT0w2SGp1V2RPa1RiYXZ1U1BhX0VxMFZzZllGcU90TS13dThRVldGYmczSzljcWN1Wlh5dy14c0ZkWkFKZUg0aXdYUWw0bXIyeE5TNzJEQ0F4X2NjaF9PRkNSVW9oTjY2MnFFRmlCSi1rcV9UN2EtM1RoeFFpbDdDVlNVUnRwY1JZZFZIM3pGNlEifQ 200 in 134ms (next.js: 4ms, proxy.ts: 4ms, application-code: 126ms)
+ GET /support?q=COLL_SUPPORT_001&status= 200 in 132ms (next.js: 1.7ms, proxy.ts: 2.0ms, application-code: 129ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 13ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 7ms, proxy.ts: 3ms, application-code: 22ms)
+ GET /tasks?cursor=forged 200 in 141ms (next.js: 10ms, proxy.ts: 2ms, application-code: 129ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 4ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 8ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /support?q=COLL_SUPPORT_ 200 in 116ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 113ms)
+ GET /api/auth/get-session 200 in 93ms (next.js: 27ms, proxy.ts: 30ms, application-code: 36ms)
+ GET /api/auth/organization/list 200 in 87ms (next.js: 29ms, proxy.ts: 21ms, application-code: 37ms)
+ GET /discussions/support/a8ff4469-3fb0-4677-bbc6-2355d44e297b 404 in 127ms (next.js: 6ms, proxy.ts: 2ms, application-code: 119ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 5ms, proxy.ts: 5ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 20ms (next.js: 13ms, proxy.ts: 3ms, application-code: 3ms)
+  ✓  1 [chromium] › e2e/workspace-collections-local.spec.ts:14:53 › workspace collection navigation › searches older records and conversations in fr (9.9s)
+ GET /audit?q=COLL_AUDIT_ 200 in 179ms (next.js: 3ms, proxy.ts: 3ms, application-code: 172ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 11ms, proxy.ts: 3ms, application-code: 10ms)
+ POST /audit?q=COLL_AUDIT_ 200 in 100ms (next.js: 2ms, proxy.ts: 3ms, application-code: 96ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /audit?q=COLL_AUDIT_&cursor=eyJ2IjoxLCJpdiI6ImRqOExxMlVXdXg2YlNDd0MiLCJ0YWciOiI3SEJaVDVkTWxwajJTYzRBT041Xy13IiwiZGF0YSI6ImM4ZVNkNlROalkxaXU3QWNmTjFrOFFnU0x0MXVKbTVESW1NU2Ewc0VhUlFGMnUxcG1HaXdlRTBlTThadWhaVjZqa2pPTnVHSlo0V2liOXQ2T05TSGt4a3BQTF80UG5Ed0Z1djJ5MXVTTnlVN1RsZ1dCeFF4UTdfRmUyMkhIbUlTclhmbjlpSF9qQ3dOMGd4aG5NNmpkUGlJVG1kT1BEczhlZFNOd2F6MlRtNnJTQU0xZzdVOWtyREM4am1fVjR2UC10dmQxc2VRclNDZEFnamtSVWppZlBmQXByZXdmaUdXOURwLTFoRXB5UUMzRlRxeU9oeFVCREVQek9rNVFUcUlaZ3ZUT0p3bTlUM2hpY1dLZVpJNUtCMWtQS0t2S1pjd0U5OE5Kblh2eWs3UVI2a1kwT283dkEifQ 200 in 53ms (next.js: 4ms, proxy.ts: 3ms, application-code: 47ms)
+ GET /audit?q=COLL_AUDIT_001 200 in 106ms (next.js: 1.4ms, proxy.ts: 1.8ms, application-code: 102ms)
+ GET /api/auth/get-session 200 in 95ms (next.js: 69ms, proxy.ts: 12ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 382ms (next.js: 71ms, proxy.ts: 12ms, application-code: 298ms)
+ GET /tasks?q=COLL_TASK_ 200 in 448ms (next.js: 3ms, proxy.ts: 4ms, application-code: 442ms)
+ GET /api/auth/get-session 200 in 39ms (next.js: 14ms, proxy.ts: 7ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 41ms (next.js: 18ms, proxy.ts: 11ms, application-code: 11ms)
+ GET /tasks?q=COLL_TASK_&status=open&cursor=eyJ2IjoxLCJpdiI6InRCSk1pcmozVkVmRmdJRGMiLCJ0YWciOiI4czg5TkNoUlY1QWI0OFF6WFFCbDVnIiwiZGF0YSI6Ill6WjY3WlJjdnhmVDJISThmY205bThTNVNLZE9Zd3dDREl2ZG9NSjdlMjBDMi1HZE85TzkzS0szeUlGS2I0M0Q2b0dhVk91N0RzT3Q2VUNtZUpCSzA5dmkzYm9hanFrekhoTU9WelR6OVdJZ0dtcjFvRUhycE5uNDZnNENpYWJlQll2Z0FsV2pZNWJ1bF9JZUpxOGlYeDB5WXJvTWRNRlQ5Um43amdRVThVUzk3cXlMajZfTFlPVnAzZWZvT2Z2ZmdjdkJCTHNBV1lieUlXaUhmVURMZF92ZE9CVzB6YU9PaUhWS0EzX0Rvbllxb0swekZ5ajhoaExnQU1oOHFfbUdyZlRZVjRRMENuYkMwcVNlZFBXRW9xOGFoYWxQWS1MMTc5RGp6UHNZTUY1S1cwY1JfOGthR2cifQ 200 in 255ms (next.js: 8ms, proxy.ts: 8ms, application-code: 239ms)
+ GET /tasks?q=COLL_TASK_001&status=open 200 in 164ms (next.js: 2ms, proxy.ts: 3ms, application-code: 159ms)
+ GET /api/auth/get-session 200 in 30ms (next.js: 10ms, proxy.ts: 10ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 33ms (next.js: 12ms, proxy.ts: 11ms, application-code: 11ms)
+ GET /tasks?notice=Commentaire+ajout%C3%A9.&id=b6a82e67-4d60-46a9-a556-3657e9e7db93 200 in 77ms (next.js: 2ms, proxy.ts: 9ms, application-code: 65ms)
+ POST /tasks?q=COLL_TASK_001&status=open 200 in 97ms (next.js: 2ms, proxy.ts: 3ms, application-code: 93ms)
+  └─ ƒ addWorkspaceTaskComment({}) in 7ms src/app/actions.ts
+ GET /discussions/tasks/b6a82e67-4d60-46a9-a556-3657e9e7db93 200 in 44ms (next.js: 4ms, proxy.ts: 2ms, application-code: 38ms)
+ GET /discussions/tasks/b6a82e67-4d60-46a9-a556-3657e9e7db93?cursor=eyJ2IjoxLCJpdiI6IkxXSFZXVUtlTW9uLWJVd2UiLCJ0YWciOiJZUmZKU094WUtqMldoUEUxWUxnRUp3IiwiZGF0YSI6ImhhN21sUHFCU2pMTnR0V1R6U0RVdTRqUnlScFkwLW55ZFlBRDFPN25aS2t4a2kyOG1tUG9JWjNENmpZMklHRElLN1BsNVFFNXlwSklNQ3ByWHRFd1c3Q3NDMEFneThHZk1VVW1YNjlOMjhQWmxnVE5OV2Y0bnpsUVJhNDctUGFKNm1YUmNwaldLM0lrZzhRRTdycHRtM0JiNW1MeFZiSzJiUGZKM2hVcW1JNTBsMWpSSzJjZUh3WXFzV2lDTTZieTFzcXk1bTlXaVBvRlByUlpzM3c3QzZsMTMwMXAySDV0M0x6eDNoMU5nS1hjaElMWkI5RElic3hZSm1Vdm1FNHdwMVRGRVRVZllKdXdEUjFZZkVJZ0FsNDhNejdDc21TQTA4OU1Bc1RieTg4ZzdHV2xud2F1bFEifQ 200 in 46ms (next.js: 4ms, proxy.ts: 4ms, application-code: 38ms)
+ GET /discussions/tasks/b6a82e67-4d60-46a9-a556-3657e9e7db93?q=COLL_MESSAGE_001 200 in 142ms (next.js: 2ms, proxy.ts: 2ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 35ms (next.js: 5ms, proxy.ts: 3ms, application-code: 27ms)
+ GET /api/auth/organization/list 200 in 47ms (next.js: 10ms, proxy.ts: 3ms, application-code: 34ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <InnerScrollHandlerNew focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+        <LoadingBoundary name="b6a82e67-4..." loading={null}>
+          <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url="/discussio..." tree={[...]} params={{kind:"tasks", ...}} ...>
+                  <SegmentViewNode type="page" pagePath="(app)/disc...">
+                    <SegmentTrieNode>
+                    <DiscussionPage>
+                      <div>
+                      <LinkComponent>
+                      <CollectionControls>
+                        <div className="my-5 space..." data-collection-controls={true}>
+                          <form action="/discussio..." className="flex flex-...">
+                            <label className="grid gap-1...">
+                              <span>
+                              <input
+                                type="search"
+                                name="q"
+                                defaultValue="COLL_MESSAGE_001"
+                                maxLength={120}
+                                className="h-10 rounded-lg border bg-white px-3 text-sm"
+-                               style={{caret-color:"transparent"}}
+                              >
+                            ...
+                          ...
+                      ...
+                  ...
+                ...
+      ...
+
+ GET /alerts?q=COLL_ALERT_ 200 in 371ms (next.js: 8ms, proxy.ts: 6ms, application-code: 357ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 4ms, proxy.ts: 5ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 9ms, proxy.ts: 5ms, application-code: 12ms)
+ GET /alerts?q=COLL_ALERT_&cursor=eyJ2IjoxLCJpdiI6IkZDMUtNdGtKQ1p2VHkzTWQiLCJ0YWciOiJnUjI4aklxNjNxN2d1SkpNeWlZSDJRIiwiZGF0YSI6ImtCT1RsVkFPb3pZa0JrdTRxU2ZLd0RIS2Q1bmlxQUw2RFNnUzI4TFQ3TWh3OTJyeGdUVnJBb0Z6MGpFaVdUT0xGdDY2UFBPT1pvd29UQWluNnRsa24xVzlrbTlCaFJIZjZzWG9LVmpNODY3N0xIblRuNW4zWnFYX1lQdWVOZVo5MVdpVldDX2lBR3ByX0dqNGFhU3FfM1dNalJta0lIQmQzdU5Pa1B0RS1MSFg0eWJtYWlZTF9wMWhiNm5pN2VwajlvQTBSQTJ0MnNOajFXdXg1dVhLTkV0RzVvVGlQODZ5dnJIa3R1MTBMU0laT0IzYXFJb09sMXV1XzNEM1ZIeE5yMHhmeWdtdGRRRW1xQXpaOGYyNklUcW1obWZjVTlMbExkUjlmYWxFM1F0UkVmZUN6c1luZVEifQ 200 in 93ms (next.js: 2ms, proxy.ts: 3ms, application-code: 88ms)
+ GET /alerts?q=COLL_ALERT_001&status= 200 in 134ms (next.js: 2ms, proxy.ts: 11ms, application-code: 121ms)
+ GET /api/auth/get-session 200 in 87ms (next.js: 59ms, proxy.ts: 18ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 89ms (next.js: 61ms, proxy.ts: 18ms, application-code: 10ms)
+ GET /approvals?q=COLL_APPROVAL_ 200 in 409ms (next.js: 4ms, proxy.ts: 3ms, application-code: 402ms)
+ GET /api/auth/get-session 200 in 20ms (next.js: 8ms, proxy.ts: 4ms, application-code: 8ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 3ms, proxy.ts: 4ms, application-code: 14ms)
+ GET /approvals?q=COLL_APPROVAL_&cursor=eyJ2IjoxLCJpdiI6InN4Yzg3OE4wTld1T1ZWYWsiLCJ0YWciOiJCcnJFdWpiMFZ1T0VMQVk4Wk5sY2VBIiwiZGF0YSI6ImVfakhyN1dfSFBScHI3X0dpZVVsQkYtX1pRYlVfbERWVDlyQV9pRUFPYnRmZzdHRy1nQV94RFlTMXF5VE1zQUJXeVpYUFdTcm4wZS1IbXgyUXk0RmxtaUJiVWdnakxwZFYxdXBBdlZVWjV2YXJtUTJ2RkE5WFlvYjZna0E2REQ5NTBoNHRZSGUxOVRtaEJicFJtRC13cHR2b3ByY2V3dHRoS0phRVNRa0pNUnNGWVZONk05STRIRUNtSDhMUU44V2l1WVZYNVk1UzRianhhV09sVkNCNVRsQ3lhZ3QxRVc0TlVYYmY3blRhY3J0emhoZkx6OWVhMS0xSjhXRndyT2p0ZTlSX3ZTZzR5a1dYTmlPWG0xSEhJNVVGQk5oMlMxVVRhNW56eE5NQm1wNFQxV3p5WXJleXcifQ 200 in 98ms (next.js: 2ms, proxy.ts: 3ms, application-code: 93ms)
+ GET /approvals?q=COLL_APPROVAL_001&status= 200 in 135ms (next.js: 1.9ms, proxy.ts: 2.0ms, application-code: 131ms)
+ GET /api/auth/get-session 200 in 257ms (next.js: 65ms, proxy.ts: 12ms, application-code: 179ms)
+ GET /api/auth/organization/list 200 in 269ms (next.js: 67ms, proxy.ts: 12ms, application-code: 190ms)
+ GET /support?q=COLL_SUPPORT_ 200 in 320ms (next.js: 3ms, proxy.ts: 3ms, application-code: 315ms)
+ GET /api/auth/get-session 200 in 19ms (next.js: 4ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 21ms (next.js: 7ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /support?q=COLL_SUPPORT_&cursor=eyJ2IjoxLCJpdiI6ImVhQ0F4eW1EMUgyNkJuN3ciLCJ0YWciOiJ1aFJuZE9SOTRaZlJBdzdrbHREd0FnIiwiZGF0YSI6ImVPcVlFM281SmRaVzB1Zzc1ZkFrYkxBemtDQmdXVDRhQ3VpbGhJR3hRdHA5N254S2lSRS1DSVFFMWFMYzlGTkpvWlhLZnAtWG5LUmJGM2JWcnhaaWpfQTNGQ0VzeTRKQnJwSDNXWUxkRGIybERoS2NtUXVGZ2F6UmlPSzB3YXphQUxQZ2kyOFhaUzMyeGpRb1dJSHY5ZWdtRUt4QXVUc0dVTjZGM21xWGpBUW45bnoxMmxHNkFnaGJpV0JieTR3cjU0eWF1eE55WTI0dDNlaXM4ZG0tVjQxNDlIR2QxU0JRLVNSa1pxc0RCcDJhZTBGTHJ6cVNFbFN6UTBnbW5xOFQ4cUtFSUZQTEw2QjdtOGRsdGVIVGQzbmt6V2J3Z0x5MUI2ZU1GanUzdDBJT3kxaUgwbV9adHcifQ 200 in 67ms (next.js: 3ms, proxy.ts: 2ms, application-code: 61ms)
+ GET /support?q=COLL_SUPPORT_001&status= 200 in 148ms (next.js: 3ms, proxy.ts: 2ms, application-code: 143ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <InnerScrollHandlerNew focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+        <LoadingBoundary name="support/" loading={null}>
+          <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url={"/support..."} tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                  <SegmentViewNode type="page" pagePath="(app)/supp...">
+                    <SegmentTrieNode>
+                    <SupportPage>
+                      <div>
+                      <section>
+                      <Card>
+                        <div data-slot="card" data-size="default" className={"group/ca..."}>
+                          <div>
+                          <CardContent>
+                            <div data-slot="card-content" className="px-(--card...">
+                              <form action={function createSupportTicket} className="grid gap-3...">
+                                <Input>
+                                  <input
+                                    data-slot="input"
+                                    className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5..."
+                                    name="subject"
+                                    minLength={4}
+                                    maxLength={220}
+                                    required={true}
+                                    placeholder="Short, precise subject"
+-                                   style={{caret-color:"transparent"}}
+                                  >
+                                <select>
+                                <select>
+                                <Textarea>
+                                  <textarea
+                                    data-slot="textarea"
+                                    className="flex field-sizing-content w-full rounded-lg border border-input bg-tran..."
+                                    name="body"
+                                    minLength={10}
+                                    maxLength={8000}
+                                    required={true}
+                                    placeholder="Context, steps to reproduce, expected and observed result. Never incl..."
+-                                   style={{caret-color:"transparent"}}
+                                  >
+                                ...
+                      <CollectionControls>
+                        <div className="my-5 space..." data-collection-controls={true}>
+                          <form action="/support" className="flex flex-...">
+                            <label className="grid gap-1...">
+                              <span>
+                              <input
+                                type="search"
+                                name="q"
+                                defaultValue="COLL_SUPPORT_001"
+                                maxLength={120}
+                                className="h-10 rounded-lg border bg-white px-3 text-sm"
+-                               style={{caret-color:"transparent"}}
+                              >
+                            ...
+                          ...
+                      <div className="space-y-4">
+                        <Card>
+                          <div data-slot="card" data-size="default" className={"group/ca..."}>
+                            <CardContent>
+                              <div data-slot="card-content" className="p-5">
+                                <div>
+                                <LinkComponent>
+                                <div>
+                                <form action={function addSupportMessage} className="mt-4 flex ...">
+                                  <input
+                                    type="hidden"
+                                    name="ticketId"
+                                    value="82a3a4b8-6fab-430d-a8dd-2a5b919579c4"
+-                                   style={{caret-color:"transparent"}}
+                                  >
+                                  <Textarea>
+                                    <textarea
+                                      data-slot="textarea"
+                                      className="flex field-sizing-content w-full rounded-lg border border-input bg-tr..."
+                                      name="body"
+                                      maxLength={8000}
+                                      required={true}
+                                      placeholder="Add context or reply to support"
+-                                     style={{caret-color:"transparent"}}
+                                    >
+                                  ...
+                  ...
+                ...
+      ...
+
+ GET /api/auth/get-session 200 in 23ms (next.js: 8ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 12ms, proxy.ts: 3ms, application-code: 10ms)
+ GET /tasks?cursor=forged 200 in 134ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 130ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 6ms, proxy.ts: 3ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 11ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /support?q=COLL_SUPPORT_ 200 in 100ms (next.js: 2ms, proxy.ts: 1.9ms, application-code: 96ms)
+ GET /api/auth/get-session 200 in 105ms (next.js: 30ms, proxy.ts: 35ms, application-code: 40ms)
+ GET /api/auth/organization/list 200 in 99ms (next.js: 32ms, proxy.ts: 25ms, application-code: 42ms)
+ GET /discussions/support/82a3a4b8-6fab-430d-a8dd-2a5b919579c4 404 in 142ms (next.js: 5ms, proxy.ts: 2ms, application-code: 135ms)
+  ✓  2 [chromium] › e2e/workspace-collections-local.spec.ts:14:53 › workspace collection navigation › searches older records and conversations in en (7.7s)
+
+  2 passed (18.3s)
+
+{"ok":true,"cleaned":"local-browser-fixtures"}

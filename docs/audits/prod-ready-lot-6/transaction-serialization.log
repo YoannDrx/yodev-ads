@@ -1,0 +1,5 @@
+
+> @yodev/ads@0.1.0 verify:transaction-serialization
+> tsx scripts/verify-transaction-query-serialization.ts
+
+Database transaction query serialization verified.

@@ -111,7 +111,7 @@ describe('Stripe webhook durable service', () => {
       id: `00000000-0000-4000-8000-00000000000${index + 2}`,
       googleCustomerId,
       isManager: false,
-      active: true,
+      active: true, googleAccessible: true, managedSelected: true, managementPriority: index,
     }))
     const processing = databaseDouble({
       statementResults: [[{ id: workspaceId }]],

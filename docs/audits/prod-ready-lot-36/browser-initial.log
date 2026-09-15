@@ -1,0 +1,256 @@
+
+> @yodev/ads@0.1.0 test:e2e:local
+> node scripts/verify-local-browser.mjs e2e/task-actors-local.spec.ts e2e/workspace-collections-local.spec.ts
+
+{"ok":true,"fixtureRoles":["owner","admin","strategist","analyst","client"],"foreignExportId":"80000000-0000-4000-8000-000000000003"}
+
+> @yodev/ads@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3017
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://127.0.0.1:3017
+- Network:       http://127.0.0.1:3017
+- Environments: .env.local
+✓ Ready in 270ms
+✓ Running next.config.ts took 467ms
+- Experiments (use with caution):
+  · clientTraceMetadata
+
+ GET /sign-in 200 in 2.8s (next.js: 1983ms, proxy.ts: 223ms, application-code: 598ms)
+ GET / 200 in 303ms (next.js: 59ms, proxy.ts: 13ms, application-code: 231ms)
+ POST /api/auth/sign-in/email 200 in 1868ms (next.js: 1547ms, proxy.ts: 10ms, application-code: 311ms)
+ POST /api/auth/sign-in/email 200 in 311ms (next.js: 5ms, proxy.ts: 3ms, application-code: 303ms)
+ GET /icon?a62dacc6b033a714 200 in 227ms (next.js: 43ms, proxy.ts: 7ms, application-code: 177ms)
+ POST /api/auth/sign-in/email 200 in 92ms (next.js: 2ms, proxy.ts: 3ms, application-code: 87ms)
+ POST /api/auth/sign-in/email 200 in 88ms (next.js: 2ms, proxy.ts: 2ms, application-code: 83ms)
+ POST /api/auth/sign-in/email 200 in 94ms (next.js: 3ms, proxy.ts: 3ms, application-code: 88ms)
+ GET /dashboard 200 in 489ms (next.js: 195ms, proxy.ts: 3ms, application-code: 291ms)
+ GET /settings 200 in 246ms (next.js: 34ms, proxy.ts: 3ms, application-code: 210ms)
+ GET /billing 200 in 177ms (next.js: 14ms, proxy.ts: 2ms, application-code: 161ms)
+ GET /support 200 in 177ms (next.js: 17ms, proxy.ts: 2ms, application-code: 157ms)
+ GET /accounts 200 in 126ms (next.js: 13ms, proxy.ts: 2.0ms, application-code: 111ms)
+ GET /history 200 in 194ms (next.js: 15ms, proxy.ts: 2.0ms, application-code: 177ms)
+ GET /alerts 200 in 147ms (next.js: 16ms, proxy.ts: 2ms, application-code: 129ms)
+ GET /tasks 200 in 160ms (next.js: 19ms, proxy.ts: 2ms, application-code: 139ms)
+ GET /approvals 200 in 135ms (next.js: 25ms, proxy.ts: 2ms, application-code: 108ms)
+ GET /reports 200 in 215ms (next.js: 22ms, proxy.ts: 1.9ms, application-code: 191ms)
+ GET /audit 200 in 160ms (next.js: 26ms, proxy.ts: 2ms, application-code: 132ms)
+ GET /agents 200 in 225ms (next.js: 25ms, proxy.ts: 2ms, application-code: 198ms)
+ GET / 200 in 73ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 69ms)
+ GET /privacy 200 in 62ms (next.js: 15ms, proxy.ts: 2.0ms, application-code: 45ms)
+ GET /terms 200 in 53ms (next.js: 17ms, proxy.ts: 2ms, application-code: 34ms)
+ GET /subprocessors 200 in 109ms (next.js: 45ms, proxy.ts: 1.9ms, application-code: 62ms)
+ GET /status 200 in 118ms (next.js: 39ms, proxy.ts: 1.7ms, application-code: 78ms)
+ GET /sign-in 200 in 41ms (next.js: 6ms, proxy.ts: 2.0ms, application-code: 33ms)
+ GET /sign-up 200 in 347ms (next.js: 308ms, proxy.ts: 2ms, application-code: 37ms)
+Local browser states ready in /var/folders/9h/sbxl7zl90j9_wc743xft5j8h0000gn/T/yodev-ads-browser-lk81XK
+
+Running 4 tests using 1 worker
+
+(node:33859) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /tasks 200 in 142ms (next.js: 3ms, proxy.ts: 2ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 45ms (next.js: 9ms, proxy.ts: 8ms, application-code: 28ms)
+ GET /api/auth/organization/list 200 in 54ms (next.js: 19ms, proxy.ts: 9ms, application-code: 26ms)
+ GET /tasks?notice=T%C3%A2che+cr%C3%A9%C3%A9e. 200 in 101ms (next.js: 2ms, proxy.ts: 2ms, application-code: 96ms)
+ POST /tasks 200 in 152ms (next.js: 7ms, proxy.ts: 5ms, application-code: 141ms)
+  └─ ƒ createWorkspaceTask({}) in 24ms src/app/actions.ts
+ GET /tasks?id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 191ms (next.js: 1.8ms, proxy.ts: 4ms, application-code: 185ms)
+ GET /api/auth/get-session 200 in 38ms (next.js: 6ms, proxy.ts: 4ms, application-code: 27ms)
+ GET /api/auth/organization/list 200 in 40ms (next.js: 10ms, proxy.ts: 4ms, application-code: 26ms)
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 87ms (next.js: 3ms, proxy.ts: 4ms, application-code: 81ms)
+ POST /tasks?id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 118ms (next.js: 3ms, proxy.ts: 2ms, application-code: 113ms)
+  └─ ƒ updateWorkspaceTask({}) in 18ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 66ms (next.js: 1.9ms, proxy.ts: 2ms, application-code: 62ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 87ms (next.js: 2ms, proxy.ts: 3ms, application-code: 82ms)
+  └─ ƒ updateWorkspaceTask({}) in 11ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 71ms (next.js: 1.7ms, proxy.ts: 1.8ms, application-code: 68ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 90ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 85ms)
+  └─ ƒ updateWorkspaceTask({}) in 9ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 65ms (next.js: 1.9ms, proxy.ts: 2.0ms, application-code: 61ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 86ms (next.js: 2.0ms, proxy.ts: 6ms, application-code: 78ms)
+  └─ ƒ updateWorkspaceTask({}) in 8ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 99ms (next.js: 2ms, proxy.ts: 3ms, application-code: 94ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 128ms (next.js: 3ms, proxy.ts: 4ms, application-code: 122ms)
+  └─ ƒ updateWorkspaceTask({}) in 8ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 63ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 59ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 83ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 79ms)
+  └─ ƒ updateWorkspaceTask({}) in 11ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 71ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 67ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 91ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 87ms)
+  └─ ƒ updateWorkspaceTask({}) in 11ms src/app/actions.ts
+ GET /tasks?error=Transition+de+t%C3%A2che+interdite+%3A+done+%E2%86%92+start.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 68ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 64ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 87ms (next.js: 2ms, proxy.ts: 2ms, application-code: 82ms)
+  └─ ƒ updateWorkspaceTask({}) in 9ms src/app/actions.ts
+ GET /tasks?error=Permission+required%3A+tasks%3Amanage&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 68ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 65ms)
+ POST /tasks?error=Transition%20de%20t%C3%A2che%20interdite%20%3A%20done%20%E2%86%92%20start.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 85ms (next.js: 2ms, proxy.ts: 2ms, application-code: 80ms)
+  └─ ƒ updateWorkspaceTask({}) in 6ms src/app/actions.ts
+ GET /tasks?notice=Commentaire+ajout%C3%A9.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 64ms (next.js: 2ms, proxy.ts: 2ms, application-code: 60ms)
+ POST /tasks?error=Permission%20required%3A%20tasks%3Amanage&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 85ms (next.js: 2ms, proxy.ts: 3ms, application-code: 80ms)
+  └─ ƒ addWorkspaceTaskComment({}) in 10ms src/app/actions.ts
+ GET /tasks?error=Workspace+access+state+does+not+allow%3A+tasks%3Acomment&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 69ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 65ms)
+ POST /tasks?notice=Commentaire%20ajout%C3%A9.&id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 89ms (next.js: 3ms, proxy.ts: 3ms, application-code: 83ms)
+  └─ ƒ addWorkspaceTaskComment({}) in 8ms src/app/actions.ts
+ GET /tasks?id=252f7454-4c63-4b25-a9aa-fc82bb5bc3a0 200 in 141ms (next.js: 2ms, proxy.ts: 2ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 6ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 28ms (next.js: 10ms, proxy.ts: 3ms, application-code: 16ms)
+  ✓  1 [chromium] › e2e/task-actors-local.spec.ts:6:7 › task actor fr creates, transitions, comments and rejects stale controls (4.1s)
+ GET /tasks 200 in 132ms (next.js: 3ms, proxy.ts: 4ms, application-code: 125ms)
+ GET /api/auth/get-session 200 in 33ms (next.js: 5ms, proxy.ts: 3ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 38ms (next.js: 10ms, proxy.ts: 3ms, application-code: 25ms)
+ GET /tasks?notice=T%C3%A2che+cr%C3%A9%C3%A9e. 200 in 86ms (next.js: 2ms, proxy.ts: 3ms, application-code: 80ms)
+ POST /tasks 200 in 108ms (next.js: 3ms, proxy.ts: 3ms, application-code: 103ms)
+  └─ ƒ createWorkspaceTask({}) in 9ms src/app/actions.ts
+ GET /tasks?id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 144ms (next.js: 1.6ms, proxy.ts: 2ms, application-code: 140ms)
+ GET /api/auth/get-session 200 in 41ms (next.js: 17ms, proxy.ts: 6ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 42ms (next.js: 7ms, proxy.ts: 7ms, application-code: 28ms)
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 139ms (next.js: 8ms, proxy.ts: 7ms, application-code: 125ms)
+ POST /tasks?id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 178ms (next.js: 7ms, proxy.ts: 5ms, application-code: 166ms)
+  └─ ƒ updateWorkspaceTask({}) in 17ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 70ms (next.js: 1.6ms, proxy.ts: 2.0ms, application-code: 67ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 103ms (next.js: 3ms, proxy.ts: 3ms, application-code: 98ms)
+  └─ ƒ updateWorkspaceTask({}) in 20ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 126ms (next.js: 2ms, proxy.ts: 3ms, application-code: 120ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 147ms (next.js: 1.9ms, proxy.ts: 3ms, application-code: 143ms)
+  └─ ƒ updateWorkspaceTask({}) in 10ms src/app/actions.ts
+ GET /tasks?notice=T%C3%A2che+mise+%C3%A0+jour.&id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 90ms (next.js: 2ms, proxy.ts: 4ms, application-code: 84ms)
+ POST /tasks?notice=T%C3%A2che%20mise%20%C3%A0%20jour.&id=6ab7d6b2-1e40-40b1-8dab-665f7efdaf48 200 in 137ms (next.js: 4ms, proxy.ts: 6ms, application-code: 127ms)
+  └─ ƒ updateWorkspaceTask({}) in 23ms src/app/actions.ts
+  ✘  2 [chromium] › e2e/task-actors-local.spec.ts:6:7 › task actor en creates, transitions, comments and rejects stale controls (16.7s)
+(node:34090) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET /audit?q=COLL_AUDIT_ 200 in 241ms (next.js: 54ms, proxy.ts: 4ms, application-code: 183ms)
+ GET /api/auth/get-session 200 in 54ms (next.js: 33ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 80ms (next.js: 23ms, proxy.ts: 3ms, application-code: 54ms)
+ POST /audit?q=COLL_AUDIT_ 200 in 149ms (next.js: 9ms, proxy.ts: 4ms, application-code: 135ms)
+  └─ ƒ setCookieConsent({}) in 3ms src/app/preferences-actions.ts
+ GET /audit?q=COLL_AUDIT_&cursor=eyJ2IjoxLCJpdiI6ImhCdmx0NmZNR1B5cEMxZk8iLCJ0YWciOiJHUjB0UmpVYzFld2w0MFZMbU1hSnZBIiwiZGF0YSI6InRBZlVnS0hBTnRYcUI1QUkyM3N1NHB2TzlZbTBpb0lVX0NOTkpQQWFteU80M09la284aEtkVHNqb082RUwwaTU1OXRoc1NQVDZTRjUtLVFaRVlSbHhIcTZKR01lR3NXZEl1MGJSaWlhRmpuRGt4WEh6ZmFTODZOREVEMzdIYzk4eTlESTBOSm1IOUtzazRwTmNDRXNuMlBTa1Y1SjI5QjBGc3YtMF80RkxXM2UxdzB5b2t5M0kwbl9UNjBnRHZaWFZZcGE2VjVVci1hOEhHU1NvWG94VG43cE9nU2ZsbE1ZMllOUFBOYnJIS3FqSm1kRnNzZExaLUdpS3NBVmJuQ0o0Y0tQU1ZURVZBbkZjemRXUEpDNUVCVFAybzdqd3FKTnNuZy1NM2N3NHUtN1R6SkRWdTJNcncifQ 200 in 74ms (next.js: 3ms, proxy.ts: 7ms, application-code: 64ms)
+ GET /audit?q=COLL_AUDIT_001 200 in 132ms (next.js: 4ms, proxy.ts: 2ms, application-code: 126ms)
+ GET /api/auth/get-session 200 in 28ms (next.js: 7ms, proxy.ts: 5ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 32ms (next.js: 13ms, proxy.ts: 5ms, application-code: 14ms)
+ GET /tasks?q=COLL_TASK_ 200 in 548ms (next.js: 56ms, proxy.ts: 3ms, application-code: 489ms)
+ GET /api/auth/get-session 200 in 26ms (next.js: 6ms, proxy.ts: 3ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 29ms (next.js: 13ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /tasks?q=COLL_TASK_&status=open&cursor=eyJ2IjoxLCJpdiI6ImFDbzJXSXJaRnMwNmR3Sk8iLCJ0YWciOiJvNXlNYkItSkllSWd6dnNZYUNjVGt3IiwiZGF0YSI6InFJQm03VG51ZzJqU0s4MFQ5OWc2Zzl0XzlHaXFubmRRTTV0WnJoVXFiUG50eVJWb2xfYzZvSHl4SDByZERwOHdWc3Bwekh1QXJxYzRfUWJ2U1hlVHBKcE5SeFRqVzU3YXJLXzdqOWU2bEllOU1TaU9LOHU4V1h3Nl9pMklzdjdtaFJCTnZpVk9pZmJncWdnRTN0UzNIdDBWZUdaZHV3UGJnQVMxTVA1UHJwTTRZRlZMeFdDSHlhUzBmUmFLeXF0bWxGNWZsMzNNOVRBRjJxTmJ6alRKYlczLV9sUmFpZmZoRXpVN1lyV1VmUEtzdzZoU0hwNWNhRFdkcXlBcTBNRW1ORFFQZy1ONTVCVWhGOE9XZEtIQ1poLW5xNk9fRGdjbDZhT0xpb3VZNVVTWEdiQnlTNlNTbWcifQ 200 in 160ms (next.js: 4ms, proxy.ts: 3ms, application-code: 153ms)
+ GET /tasks?q=COLL_TASK_001&status=open 200 in 168ms (next.js: 1.8ms, proxy.ts: 3ms, application-code: 164ms)
+ GET /api/auth/get-session 200 in 24ms (next.js: 6ms, proxy.ts: 6ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 24ms (next.js: 9ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /tasks?notice=Commentaire+ajout%C3%A9.&id=2f808c0b-b4ba-4a26-8462-6d92fd85e172 200 in 90ms (next.js: 2ms, proxy.ts: 3ms, application-code: 85ms)
+ POST /tasks?q=COLL_TASK_001&status=open 200 in 115ms (next.js: 2ms, proxy.ts: 3ms, application-code: 109ms)
+  └─ ƒ addWorkspaceTaskComment({}) in 11ms src/app/actions.ts
+ GET /discussions/tasks/2f808c0b-b4ba-4a26-8462-6d92fd85e172 200 in 708ms (next.js: 660ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /discussions/tasks/2f808c0b-b4ba-4a26-8462-6d92fd85e172?cursor=eyJ2IjoxLCJpdiI6IjkxQzk3Q05GQ1QwNVdKLVciLCJ0YWciOiJZQUc1XzR2MHpLdmNPR2Utd0c1Z2ZBIiwiZGF0YSI6IjhHUmVCR3k0ZkpRdjhNRXBCMnViVjBuRmVic0p6U0x2Q0dVMmR3Sno0WE1mX2Y2MG5HYTZJYURINnB5dVoydEY2cU5oX2JPUzFDRjhkYVktcnhjRV81MXFJTE84bkh0SXprSXBNamo5N1ROWEprbjRkU2dBZ3h6WlVlcmJoYXhCMUFET1RFY0M2RTlKQVQ2SmVVeGo4S3RsSWFvT1U5YTJlOGF1ZGlkM2xobkNpcFFQS1FCVUluNWRTQXU2Z3NCeXlBejRwTFE2b3VRRlV4YlRMeldOb0VDbHNyQm5EMGZvdVA3MlROSUFBWG0tbV9UZEg2cU5VYmNhOVU0VmxQLXVjbWhSY1VrelBlYlRfUWUtM0tFYWd2TWxZTDltR3QxTHdRZG14ODViUFMwOE04b3NPUDhhalEifQ 200 in 51ms (next.js: 6ms, proxy.ts: 2ms, application-code: 43ms)
+ GET /discussions/tasks/2f808c0b-b4ba-4a26-8462-6d92fd85e172?q=COLL_MESSAGE_001 200 in 143ms (next.js: 3ms, proxy.ts: 2ms, application-code: 139ms)
+ GET /api/auth/get-session 200 in 69ms (next.js: 8ms, proxy.ts: 5ms, application-code: 56ms)
+ GET /api/auth/organization/list 200 in 82ms (next.js: 32ms, proxy.ts: 6ms, application-code: 45ms)
+ GET /alerts?q=COLL_ALERT_ 200 in 590ms (next.js: 59ms, proxy.ts: 3ms, application-code: 528ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 6ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 9ms, proxy.ts: 3ms, application-code: 11ms)
+ GET /alerts?q=COLL_ALERT_&cursor=eyJ2IjoxLCJpdiI6IlRIaTg0Zmw5MjIyZmtMSGEiLCJ0YWciOiIwOGdvdFl6VWNEWXBuMzhpaXZwY0R3IiwiZGF0YSI6IjdBVzFJbXFULXRQTkEzLUo5SldZc18za29HdHZJSHpfX1ZMaG56UXFWX2stVjVMVUlwVFQ4Zmh5cTllb2ZPTWhtUHVBTUtnTG1QR042ZVdNN1A5cjItN3FiZE8wOHRVeTRhRjhHTHgwem5IVFVhOXo5ZGFpenBERmc2eUVpVEtjZEJRY1RPOTc1cHVPLU02c0ZXcnJqN3dYTTljZGhUREpsNzJyU212OE1jM0R1cC1xRVN3NURQZ2o0a196NmtlLThKdFEzd3J3QlRXY0xOV3N2V1M3YU1NZXM1UzFDclROZXh0YXBXTzRaenBMclZiNGVpUGRRZVFsU1dESFpFNlBvWE1DM0l2RTF3d2o4c2V3Y0RDbHBDMkZIWVF3dmtWMEdxU1NkamFWc3JweGpUOHVLWHNkOWcifQ 200 in 139ms (next.js: 3ms, proxy.ts: 7ms, application-code: 129ms)
+ GET /alerts?q=COLL_ALERT_001&status= 200 in 140ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 135ms)
+ GET /api/auth/get-session 200 in 53ms (next.js: 6ms, proxy.ts: 4ms, application-code: 44ms)
+ GET /api/auth/organization/list 200 in 86ms (next.js: 10ms, proxy.ts: 4ms, application-code: 72ms)
+ GET /approvals?q=COLL_APPROVAL_ 200 in 482ms (next.js: 62ms, proxy.ts: 3ms, application-code: 417ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 7ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 11ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /approvals?q=COLL_APPROVAL_&cursor=eyJ2IjoxLCJpdiI6IlZ1amMxd1U3dkhNRzJuYUMiLCJ0YWciOiJEZGlEaUZPeF9zdnBkdWdxTUIyV3lBIiwiZGF0YSI6InFJYkxMUXhJOUdUVjdITGdYalVjSmNXT21FZWpaZ1oxWW01V1FvTE9UcnhLNlVmWHp2aXczclh1cWxoUlVkUEt0RzZMMzR6NlZmODZUR3lnelFhdnhGa2Zqc21jcmpvbnFhZ2UxY0dNcWoxeGRpcDBVa3NLRnd2bEFITGpDMFN0NVhBOWlmQThvdmdCbUVuNEZScEwtSTZuSEhTWm1fRmdsVVl4bUNPRVpySVZ6VnhtekNXNUNxak9PX1dJbk1pVWFnVk9Uenp5SE83VFRjU2kyOWxHbUlHUkVONGE0dUZDcElYWFJzUktPaXI0Z1h3anpHRVdJamtxSHYwS0liRnluQXlhT01NYXF5Y2NVX1kwWjVyWm5OaExRcW9kOVJaNEhFWHFPSEI2QlNDOHlKaGN6ck1JbUEifQ 200 in 108ms (next.js: 3ms, proxy.ts: 3ms, application-code: 102ms)
+ GET /approvals?q=COLL_APPROVAL_001&status= 200 in 135ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 131ms)
+ GET /api/auth/get-session 200 in 39ms (next.js: 13ms, proxy.ts: 8ms, application-code: 19ms)
+ GET /api/auth/organization/list 200 in 64ms (next.js: 19ms, proxy.ts: 8ms, application-code: 37ms)
+ GET /support?q=COLL_SUPPORT_ 200 in 387ms (next.js: 55ms, proxy.ts: 5ms, application-code: 327ms)
+ GET /api/auth/get-session 200 in 25ms (next.js: 8ms, proxy.ts: 3ms, application-code: 14ms)
+ GET /api/auth/organization/list 200 in 38ms (next.js: 12ms, proxy.ts: 3ms, application-code: 22ms)
+ GET /support?q=COLL_SUPPORT_&cursor=eyJ2IjoxLCJpdiI6ImtMLWJiME9Hd3ZWWk9UaVIiLCJ0YWciOiJJSTA4NG1BeFF4d0kySmNaNUNyTUZBIiwiZGF0YSI6Iml3NnNwa0p4SzZ1VHo4YWJxSGhENFRNeFRUZzVNMWpIeS1RdWVSdTA4Z1pqSTJoY1hDVmpvY05vOHlBVnVFQ0RXU0ZkUzJQNk1uZjVkaWQ4eTR1RVRjTm1DVHR4UlN5THU4LTI2aDhtMVlaNm9WalNIRTdNRVdsM21IVV9ibkljS1VubTY3Wm5DX3RQb1pvWkFxYUtMdGpMa1ItTWJURzlkMW9Ud24wdENnSUE2ak1iQk5JeHdIV0J3bFJEazFHSXNxSnhxS0l1RjBnUlVzR1QydGZWWlhuSnR3UkZYa0FVcmNuRmFCOC1idmlCekwxSGctTEE5Z0RxSEsxalJKMks3UlJTQmlURFYxMUNNR2JJYXJyOWNlZVByVG5JT3RIOEJ2Zy1vVWdJU2ZhaEVNc05FazBxTHcifQ 200 in 87ms (next.js: 3ms, proxy.ts: 3ms, application-code: 80ms)
+ GET /support?q=COLL_SUPPORT_001&status= 200 in 142ms (next.js: 1.8ms, proxy.ts: 2ms, application-code: 138ms)
+ GET /api/auth/get-session 200 in 29ms (next.js: 6ms, proxy.ts: 4ms, application-code: 18ms)
+ GET /api/auth/organization/list 200 in 34ms (next.js: 13ms, proxy.ts: 5ms, application-code: 16ms)
+ GET /tasks?cursor=forged 200 in 141ms (next.js: 1.8ms, proxy.ts: 2.0ms, application-code: 137ms)
+ GET /api/auth/get-session 200 in 39ms (next.js: 7ms, proxy.ts: 4ms, application-code: 28ms)
+ GET /api/auth/organization/list 200 in 43ms (next.js: 26ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /support?q=COLL_SUPPORT_ 200 in 107ms (next.js: 3ms, proxy.ts: 2ms, application-code: 101ms)
+ GET /api/auth/get-session 200 in 118ms (next.js: 39ms, proxy.ts: 40ms, application-code: 39ms)
+ GET /api/auth/organization/list 200 in 114ms (next.js: 43ms, proxy.ts: 27ms, application-code: 44ms)
+ GET /discussions/support/e993a20a-9f04-41f4-810e-9972d852c63a 404 in 160ms (next.js: 5ms, proxy.ts: 2ms, application-code: 152ms)
+ GET /api/auth/get-session 200 in 43ms (next.js: 11ms, proxy.ts: 5ms, application-code: 27ms)
+ GET /api/auth/organization/list 200 in 42ms (next.js: 23ms, proxy.ts: 5ms, application-code: 14ms)
+  ✓  3 [chromium] › e2e/workspace-collections-local.spec.ts:14:53 › workspace collection navigation › searches older records and conversations in fr (9.5s)
+ GET /audit?q=COLL_AUDIT_ 200 in 200ms (next.js: 2ms, proxy.ts: 4ms, application-code: 194ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 7ms, proxy.ts: 3ms, application-code: 12ms)
+ GET /api/auth/organization/list 200 in 25ms (next.js: 10ms, proxy.ts: 3ms, application-code: 12ms)
+ POST /audit?q=COLL_AUDIT_ 200 in 152ms (next.js: 2ms, proxy.ts: 3ms, application-code: 147ms)
+  └─ ƒ setCookieConsent({}) in 2ms src/app/preferences-actions.ts
+ GET /audit?q=COLL_AUDIT_&cursor=eyJ2IjoxLCJpdiI6Imo4SmhmZkM0eFBJck5vN1oiLCJ0YWciOiI0cE9oZ1oxVGhZeFh6WjBpSkRqQmFnIiwiZGF0YSI6Im13MjlOZWRJMnpOUnhORFY2Vk0xYUpHQzhRbm9zY09pN1d1QnY1RXZ1VEN1TmtHeVVrWDc5VGQzZ1VpdG5PTjBNZ1BHVUF0WTVzcURER05FNl8xWVVvRFBJR1dvTnZTUklpS2p3bWk5T0xld2dESU1RaG96dzFTLTF3cW1ELW8wdXhycU15aWMxQnZ6Mjc1ejBNNUtEUmhqOTJqQ0ZCV2tZQUlsMEIzZDFhUjl5NFhaajlzY1FxVE5WSWY2T0o1blM4WGdlV0cwRXE1RjhsSk1XT3poekp6Zm9yM2ZjZXlJcUxUUGluNjMyMGJuTERUNjQ0cTc5R0pBb2I4VHFvLTdvMDl6bkUteEpCTjZMTTBYYU5WQ2N2SUFvTnhZSXFLbWxwSmdfRl8zRldWZS1ReTluMkZ0QlEifQ 200 in 91ms (next.js: 11ms, proxy.ts: 14ms, application-code: 66ms)
+ GET /audit?q=COLL_AUDIT_001 200 in 114ms (next.js: 2.0ms, proxy.ts: 2ms, application-code: 110ms)
+ GET /api/auth/get-session 200 in 106ms (next.js: 59ms, proxy.ts: 21ms, application-code: 26ms)
+ GET /api/auth/organization/list 200 in 129ms (next.js: 61ms, proxy.ts: 21ms, application-code: 46ms)
+ GET /tasks?q=COLL_TASK_ 200 in 497ms (next.js: 2ms, proxy.ts: 4ms, application-code: 490ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 5ms, proxy.ts: 3ms, application-code: 13ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 10ms, proxy.ts: 3ms, application-code: 9ms)
+ GET /tasks?q=COLL_TASK_&status=open&cursor=eyJ2IjoxLCJpdiI6IjBSTlYtWVJvTzF6SS0tdjUiLCJ0YWciOiIydVBDeEJuLTVsTE1iNE5Wams1TzBnIiwiZGF0YSI6Ik1sVFpfMkFjdU1HeTFTc05TNlFYZWhmbTVfY3BPZ0hoZnNYeHJfRGhhc2NMOWp2N2NaQ3laNVE2RGtkbzlLTURseXNWdV9rMmpGQWpQMGxCTTZSTUEyTGpLdXVobjZYdUd5ZTg3OGtKbnI3N183VzlFaUR0Q2RmQm9zZUo4cFpzc0psZjVGZUdmRDNHR3lMWno3aVZQaTFWZ3ppT1UyZ3MtdjdJdmQ3S1lGUmtIb1B0bG84NzlqNzlCSnNEZnBxemlBdzhQdjJtVXc0VmpwZnN5dEpNZE1CNFpVV2tKQmJrU19oTURqVHR6d1RqbExKWVZQOUZYTmdFR3hUOTJON3U3SkVOc2FqR2s3eGlMaGhVY1NzLWd6bzMza1pDdUd5SHhPcnZtODM4OF9VSWI3bHhJSDRZWVEifQ 200 in 137ms (next.js: 4ms, proxy.ts: 4ms, application-code: 130ms)
+ GET /tasks?q=COLL_TASK_001&status=open 200 in 162ms (next.js: 1.7ms, proxy.ts: 2ms, application-code: 158ms)
+ GET /api/auth/get-session 200 in 22ms (next.js: 7ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /api/auth/organization/list 200 in 23ms (next.js: 9ms, proxy.ts: 5ms, application-code: 10ms)
+ GET /tasks?notice=Commentaire+ajout%C3%A9.&id=4730617f-4f05-49fd-800e-06f853ec0bb6 200 in 104ms (next.js: 12ms, proxy.ts: 3ms, application-code: 90ms)
+ POST /tasks?q=COLL_TASK_001&status=open 200 in 134ms (next.js: 7ms, proxy.ts: 4ms, application-code: 124ms)
+  └─ ƒ addWorkspaceTaskComment({}) in 10ms src/app/actions.ts
+ GET /discussions/tasks/4730617f-4f05-49fd-800e-06f853ec0bb6 200 in 55ms (next.js: 5ms, proxy.ts: 2ms, application-code: 47ms)
+ GET /discussions/tasks/4730617f-4f05-49fd-800e-06f853ec0bb6?cursor=eyJ2IjoxLCJpdiI6ImVNRjI1ekNXYktNLWR2ZnEiLCJ0YWciOiJ5NjBWZk1neHlHS2ctS3BtSWZ6ZF9BIiwiZGF0YSI6Im1yZ1Q3U1hqTnJHaktCcEp1clZkLWxMbHlkejVybjVCTFNtaGVTZ2dNZWpQODQ0QXkxbXJLeEdZbnltSnRHWjVFYnRpN2F3YWNpa3I1Nk1oZXV3Q1h6TGJYMkN4X24zamR1NkNXN2lxaV9zbmZFbkxDLS1CVU9XakFiUDF0UEctSWQxZUhGeElyUlFEcFJud0Y0bVZnSlo3dFhFVzVFOEJyc3A5eGUzNHpVU0RfX1VCMEZ1NEdac2NXN2dQQ2RIeVRXSWxYWWRvaHZkSVRic09kdU5jWjFPMXBPRnV2TFJFSzBVWkZsdDZiSW1iVGZma2NJODdEakFhdFAteDZOazdCdE5MYzdYaE83X3lEazEwdFNvT09hSFV4ZnF0dTJXdklHa0szOWZPWlFNRWlQVnN2TFROaVEifQ 200 in 55ms (next.js: 3ms, proxy.ts: 3ms, application-code: 48ms)
+ GET /discussions/tasks/4730617f-4f05-49fd-800e-06f853ec0bb6?q=COLL_MESSAGE_001 200 in 151ms (next.js: 4ms, proxy.ts: 4ms, application-code: 143ms)
+ GET /api/auth/get-session 200 in 32ms (next.js: 11ms, proxy.ts: 4ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 36ms (next.js: 17ms, proxy.ts: 4ms, application-code: 15ms)
+ GET /alerts?q=COLL_ALERT_ 200 in 651ms (next.js: 2.0ms, proxy.ts: 4ms, application-code: 646ms)
+ GET /api/auth/get-session 200 in 21ms (next.js: 6ms, proxy.ts: 4ms, application-code: 11ms)
+ GET /api/auth/organization/list 200 in 22ms (next.js: 8ms, proxy.ts: 4ms, application-code: 10ms)
+ GET /alerts?q=COLL_ALERT_&cursor=eyJ2IjoxLCJpdiI6IjNYTkllYVhLcDRsR0pRalciLCJ0YWciOiJia3FlNTlCMTJCMVRNYWlzMjdja3hRIiwiZGF0YSI6IlRybHJVT3pTVndmNWRES1VEMmVKQ1NXWENaMWhWUl91S2stZjU2RktiMzNIMjd6ZGFLOG9YVlVHLVNObGs4MmJidmYzU2VzaU9BMmlub0Z1M0J4RXFMUGNiZm1OTERZTHQ0ZVBxRnUwdUpISXF1RTI5cHhtUXBwQVNrWXBhT2VrNlNlSlNsV1J2WjVyMEpYY0dIdFdkVW51TG9GNTM1dU82RFZfZmdGYk1FV2lkcHBhYnpZQ1otdjlEbVB5V1RLSG9zOWpWZUhHcENYbWVXc2Y3di1jeHkzVFdGamdONUs2QUtoRDYzVGNEZi1iRjJBV0EwbGxLd2FxQU53RkgxMEhOWTQ3RThyNHZkMEpnSTV3VWgyUmVaZlhaeWFabk1CVHlxdzRWeElhSzhxQUkxZXd6MjBCZVEifQ 200 in 134ms (next.js: 3ms, proxy.ts: 3ms, application-code: 128ms)
+ GET /alerts?q=COLL_ALERT_001&status= 200 in 146ms (next.js: 2ms, proxy.ts: 2ms, application-code: 142ms)
+ GET /api/auth/get-session 200 in 118ms (next.js: 63ms, proxy.ts: 25ms, application-code: 31ms)
+ GET /api/auth/organization/list 200 in 125ms (next.js: 66ms, proxy.ts: 24ms, application-code: 35ms)
+ GET /approvals?q=COLL_APPROVAL_ 200 in 840ms (next.js: 2ms, proxy.ts: 5ms, application-code: 833ms)
+ GET /api/auth/get-session 200 in 23ms (next.js: 4ms, proxy.ts: 4ms, application-code: 16ms)
+ GET /api/auth/organization/list 200 in 26ms (next.js: 8ms, proxy.ts: 4ms, application-code: 13ms)
+ GET /approvals?q=COLL_APPROVAL_&cursor=eyJ2IjoxLCJpdiI6IkQzbzlTbE1UdDAzZHh6SW8iLCJ0YWciOiJpNE4zWjJzZUtwRFMzZ094dlJKMF9nIiwiZGF0YSI6IjV1WkU5aTFiNEhHZ1lZVV85M2hJbXIzRGlRZ09DaWNUOXpmUlRObDZrNHotdWIzTmpNMmo3WlVwMHk0RXVGbk5nUHFHd1hvMk9paVRTVV9hc0lwUGRqVjlzVzRvbU5vMXphVlFSenZLSTRhTm5aa3VDaTVyREI4anlMUGRSUVhUYnhKS2xRRlc1R1dvRzhHLVhJam40TS1tSV9DVkFDSFNCcVplQmRWMXVOc3E1S0JiR2tYWTR1YV85ZVRFTXMwR1RZUXA4emtKdm5PbElUbEdoUHVUemsxaDVQSWpUVXlNMXZwQkI4cUprdGU4NV9aWlNlMkRabm45cWlGaEVXUjJUS3BMVjhTTDZwT2lUYVMzT0E5LS1mSVJOQm45SmJMZHUxU2s2WWVaY3ZTQldlSDhRWVI1SHcifQ 200 in 181ms (next.js: 6ms, proxy.ts: 7ms, application-code: 168ms)
+ GET /approvals?q=COLL_APPROVAL_001&status= 200 in 167ms (next.js: 2ms, proxy.ts: 3ms, application-code: 163ms)
+ GET /api/auth/get-session 200 in 107ms (next.js: 59ms, proxy.ts: 15ms, application-code: 33ms)
+ GET /api/auth/organization/list 200 in 330ms (next.js: 54ms, proxy.ts: 15ms, application-code: 261ms)
+ GET /support?q=COLL_SUPPORT_ 200 in 421ms (next.js: 3ms, proxy.ts: 6ms, application-code: 411ms)
+ GET /api/auth/get-session 200 in 40ms (next.js: 7ms, proxy.ts: 7ms, application-code: 25ms)
+ GET /api/auth/organization/list 200 in 43ms (next.js: 12ms, proxy.ts: 6ms, application-code: 25ms)
+ GET /support?q=COLL_SUPPORT_&cursor=eyJ2IjoxLCJpdiI6Ik5IeTJrM3JFd2JkUlRuRjkiLCJ0YWciOiIwczVDRnNKSExSNUlQZjROSm9kSktRIiwiZGF0YSI6IkxvSzBkS0Z3Wk0xTzNXcmVUcHNVWTg0QVhLZzY1ekhPRmJUUFVxZWl0VDRzVm5uRGlGVERJTmlWZjUtbEJGOTR1TGZseFc5bzN3MVp6QUwtZGcydkdxY1JCdUlWSzg1SUhHUWFNOXpQbXdiaEhGYWZIVHJDSU9DX0k3YnRLLThTMlNiMEdtNFpFY1hYa1FaZ25taFBPamZEekkxd1lkb0RYWGpUYXdyMTNjX09ndUpGME9FRmNUM19Cd1RncVVhQUMwTVdTRzBqOEtScUtKZ0kwV0gyaFU3dGFWdUFad1hMTlpmM2Q3VW1vbFRLSVdQMWlsMTFFelRET1pXX3VYcDQxTE9Rcml2TnhGZEtpa3F3YmFPRHVuUUtHeWl1ajAzX1JFS1BUZlgydm1icG1fSE9tTXBFVncifQ 200 in 142ms (next.js: 8ms, proxy.ts: 4ms, application-code: 131ms)
+ GET /support?q=COLL_SUPPORT_001&status= 200 in 195ms (next.js: 4ms, proxy.ts: 4ms, application-code: 188ms)
+ GET /api/auth/get-session 200 in 40ms (next.js: 18ms, proxy.ts: 4ms, application-code: 17ms)
+ GET /api/auth/organization/list 200 in 43ms (next.js: 8ms, proxy.ts: 6ms, application-code: 29ms)
+ GET /tasks?cursor=forged 200 in 199ms (next.js: 3ms, proxy.ts: 4ms, application-code: 192ms)
+ GET /api/auth/get-session 200 in 46ms (next.js: 10ms, proxy.ts: 6ms, application-code: 30ms)
+ GET /api/auth/organization/list 200 in 57ms (next.js: 17ms, proxy.ts: 7ms, application-code: 33ms)
+ GET /support?q=COLL_SUPPORT_ 200 in 194ms (next.js: 6ms, proxy.ts: 6ms, application-code: 182ms)
+ GET /api/auth/get-session 200 in 117ms (next.js: 36ms, proxy.ts: 11ms, application-code: 70ms)
+ GET /api/auth/organization/list 200 in 192ms (next.js: 68ms, proxy.ts: 11ms, application-code: 114ms)
+ GET /discussions/support/f22cf625-514f-4bd0-a6c9-bbbb8c007a80 404 in 209ms (next.js: 17ms, proxy.ts: 16ms, application-code: 177ms)
+  ✓  4 [chromium] › e2e/workspace-collections-local.spec.ts:14:53 › workspace collection navigation › searches older records and conversations in en (9.9s)
+
+
+  1) [chromium] › e2e/task-actors-local.spec.ts:6:7 › task actor en creates, transitions, comments and rejects stale controls
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "done"
+    Received: "blocked"
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      34 |       for (const [operation, status] of [['start', 'in_progress'], ['block', 'blocked'], ['start', 'in_progress'], ['complete', 'done'], ['reopen', 'todo'], ['cancel', 'cancelled'], ['reopen', 'todo']]) {
+      35 |         await transition.getByRole('combobox').selectOption(operation); await transition.getByRole('button').click()
+    > 36 |         await expect.poll(state).toBe(status)
+         |                                  ^
+      37 |       }
+      38 |       // The visible form predates a concurrent completion; the server must retain the completed task.
+      39 |       await transition.getByRole('combobox').selectOption('start')
+        at /Users/yoannandrieux/Projets/yodev-ads/web/e2e/task-actors-local.spec.ts:36:34
+
+    Error Context: test-results/task-actors-local-task-act-55059--and-rejects-stale-controls-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e/task-actors-local.spec.ts:6:7 › task actor en creates, transitions, comments and rejects stale controls
+  3 passed (41.3s)
+{"ok":true,"cleaned":"local-browser-fixtures"}

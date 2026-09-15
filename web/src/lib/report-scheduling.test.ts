@@ -10,6 +10,10 @@ describe('scheduled reports', () => {
     expect(reportScheduleRunKey({ cadence: 'monthly', scheduleWeekday: null, scheduleMonthday: 12, sendHour: 8, timezone: 'Europe/Paris' }, now)).toBe('monthly:2026-08-12')
   })
 
+  it.each(['2026-02-28', '2028-02-29', '2026-04-30', '2026-05-31'])('sends a day-31 report on month end %s', (date) => {
+    expect(reportScheduleRunKey({ cadence: 'monthly', scheduleWeekday: null, scheduleMonthday: 31, sendHour: 8, timezone: 'Europe/Paris' }, new Date(`${date}T10:00:00Z`))).toBe(`monthly:${date}`)
+  })
+
   it('normalizes recipients and rejects invalid timezones', () => {
     expect(normalizeReportRecipients('Alice@Example.com, bob@example.com\nalice@example.com')).toEqual(['alice@example.com', 'bob@example.com'])
     expect(assertTimeZone('Europe/Paris')).toBe('Europe/Paris')

@@ -1,4 +1,4 @@
-export const OPERATIONS_ALERT_KINDS = ['job_dead_letter', 'stripe_webhook_failed', 'mutation_ambiguous'] as const
+export const OPERATIONS_ALERT_KINDS = ['job_dead_letter', 'stripe_webhook_failed', 'mutation_ambiguous', 'notification_delivery_failed'] as const
 export type OperationsAlertKind = (typeof OPERATIONS_ALERT_KINDS)[number]
 
 export function operationsAlertLabel(kind: OperationsAlertKind) {
@@ -6,7 +6,7 @@ export function operationsAlertLabel(kind: OperationsAlertKind) {
     ? 'Job critique en dead-letter'
     : kind === 'stripe_webhook_failed'
       ? 'Webhook Stripe en échec'
-      : 'Mutation Google Ads ambiguë'
+      : kind === 'notification_delivery_failed' ? 'Notification à réconcilier' : 'Mutation Google Ads ambiguë'
 }
 
 export function operationsAlertJob(input: {

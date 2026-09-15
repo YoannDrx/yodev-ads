@@ -52,6 +52,18 @@ describe('YoDevMail transactional transport', () => {
     }))
   })
 
+  it.each(['submitting', 'ambiguous', 'pending', 'failed', 'suppressed', 'hard_bounced', 'reviewed'])('does not report an unclaimed %s delivery as accepted', async (status) => {
+    mocks.claim.mockResolvedValue({ claimed: false, delivery: { id: 'delivery-1', providerMessageId: null, status } })
+    await expect(sendTransactionalEmail({ from: 'a@example.test', to: 'b@example.test', subject: 'Report', html: '<p>Report</p>', idempotencyKey: 'report:1', category: 'scheduled_report' })).rejects.toThrow()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('reconciles a previously accepted delivery without resubmitting', async () => {
+    mocks.claim.mockResolvedValue({ claimed: false, delivery: { id: 'delivery-1', providerMessageId: messageId, status: 'accepted' } })
+    await expect(sendTransactionalEmail({ from: 'a@example.test', to: 'b@example.test', subject: 'Report', html: '<p>Report</p>', idempotencyKey: 'report:1', category: 'scheduled_report' })).resolves.toMatchObject({ providerMessageId: messageId })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('fans out recipients without exposing one recipient to another', async () => {
     vi.mocked(fetch).mockImplementation(async () => new Response(JSON.stringify({ data: { id: messageId, status: 'queued' } }), { status: 202 }))
     await sendTransactionalEmail({
@@ -63,6 +75,19 @@ describe('YoDevMail transactional transport', () => {
     expect(bodies.map((body) => body.to.email)).toEqual(['a@example.test', 'b@example.test'])
     const keys = vi.mocked(fetch).mock.calls.map(([, init]) => new Headers(init?.headers).get('idempotency-key'))
     expect(new Set(keys).size).toBe(2)
+  })
+
+  it.each([false, true])('refuses revoked admission after claiming without losing prior ambiguity (%s)', async (mayHaveBeenSubmitted) => {
+    mocks.claim.mockResolvedValue({ claimed: true, mayHaveBeenSubmitted, delivery: { id: 'delivery-1' } })
+    const beforeSubmit = vi.fn(async () => false)
+    await expect(sendTransactionalEmail({ from: 'a@example.test', to: 'b@example.test', subject: 'Task', html: '<p>Task</p>', idempotencyKey: 'task:1', category: 'task_mention', beforeSubmit })).rejects.toThrow('no longer authorized')
+    expect(beforeSubmit).toHaveBeenCalledOnce(); expect(fetch).not.toHaveBeenCalled()
+    expect(mocks.failed).toHaveBeenCalledWith('delivery-1', mayHaveBeenSubmitted ? 'ambiguous' : 'failed', 'recipient_no_longer_authorized')
+  })
+
+  it('leaves a retryable claim when the admission check fails technically', async () => {
+    await expect(sendTransactionalEmail({ from: 'a@example.test', to: 'b@example.test', subject: 'Task', html: '<p>Task</p>', idempotencyKey: 'task:1', category: 'task_mention', beforeSubmit: async () => { throw new Error('database unavailable') } })).rejects.toThrow('database unavailable')
+    expect(fetch).not.toHaveBeenCalled(); expect(mocks.failed).toHaveBeenCalledWith('delivery-1', 'pending', 'recipient_check_unavailable')
   })
 
   it('uses a new audited generation only for an explicit manual retry', async () => {

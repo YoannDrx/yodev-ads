@@ -1,0 +1,2 @@
+  ✓  1 [chromium] › e2e/prod-ready-local.spec.ts:74:9 › local production readiness regression journeys › workspace selection switches context and permissions on mobile (13.4s)
+  1 passed (17.9s)

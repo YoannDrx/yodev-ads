@@ -8,7 +8,9 @@ import { createTeamsPkce, hasTeamsOAuthConfiguration, teamsAuthorizationUrl } fr
 import { requireWorkspacePermission } from '@/lib/workspace'
 import { requireFeature } from '@/lib/feature-flags'
 
-const COOKIE_NAME = 'yodev_ads_teams_oauth'
+import { beginTeamsOAuthSession } from '@/lib/notification-oauth-management'
+
+import { teamsAuthorizationCookieName } from '@/lib/teams-session-context'
 
 export async function GET(request: Request) {
   try {
@@ -29,22 +31,25 @@ export async function GET(request: Request) {
     const state = randomBytes(32).toString('base64url')
     const pkce = createTeamsPkce()
     const redirectUri = oauthCallbackUrl('teams', url)
+    const authorizationUrl = teamsAuthorizationUrl({ state, redirectUri, codeChallenge: pkce.challenge })
+    const pending = await beginTeamsOAuthSession({ workspaceId: workspace.id, actorUserId: session.userId })
     const sealed = sealOAuthState({
       provider: 'teams',
       state,
       workspaceId: workspace.id,
       userId: session.userId,
-      payload: { codeVerifier: pkce.verifier },
+      expiresAt: pending.expiresAt.getTime(),
+      payload: { codeVerifier: pkce.verifier, authorizationId: pending.id },
     })
     const cookieStore = await cookies()
-    cookieStore.set(COOKIE_NAME, sealed, {
+    cookieStore.set(teamsAuthorizationCookieName(state), sealed, {
       httpOnly: true,
       secure: url.protocol === 'https:',
       sameSite: 'lax',
       path: '/api/connectors/teams',
       maxAge: 600,
     })
-    return NextResponse.redirect(teamsAuthorizationUrl({ state, redirectUri, codeChallenge: pkce.challenge }))
+    return NextResponse.redirect(authorizationUrl)
   } catch (error) {
     const url = new URL('/settings', request.url)
     url.searchParams.set('error', error instanceof Error ? error.message : 'Connexion Microsoft Teams impossible.')

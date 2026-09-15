@@ -1,0 +1,20 @@
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+ ✓ src/app/api/internal/google-ads-read-drill/route.test.ts > deployed Google Ads read drill route > rejects unauthorized requests and refuses non-staging targets 14ms
+ ✓ src/app/api/internal/google-ads-read-drill/route.test.ts > deployed Google Ads read drill route > refuses to run unless every read-only guard is active 2ms
+ ✓ src/app/api/internal/google-ads-read-drill/route.test.ts > deployed Google Ads read drill route > returns timestamped, uncached evidence without account identifiers 1ms
+ ✓ src/app/api/internal/google-ads-read-drill/route.test.ts > deployed Google Ads read drill route > returns only safe provider diagnostics when the drill fails 1ms
+ ✓ test/readiness-audit.probe.test.ts > Temporary audit reproductions: assertions document existing defects, not desired behavior > rejects the 7-day period accepted by the report form and action 2ms
+ ✓ test/readiness-audit.probe.test.ts > Temporary audit reproductions: assertions document existing defects, not desired behavior > rejects the 90-day period accepted by the report form and action 0ms
+ ✓ test/readiness-audit.probe.test.ts > Temporary audit reproductions: assertions document existing defects, not desired behavior > allows a grace history route but denies the permission required by that page 0ms
+ ✓ test/readiness-audit.probe.test.ts > Temporary audit reproductions: assertions document existing defects, not desired behavior > rejects a legitimate campaign/client name containing an emoji when exporting PDF 17ms
+ ✓ test/readiness-audit.probe.test.ts > Temporary audit reproductions: assertions document existing defects, not desired behavior > preserves a spreadsheet formula in a user-controlled CSV text field 1ms
+ ✓ test/readiness-audit.probe.test.ts > Temporary audit reproductions: assertions document existing defects, not desired behavior > ignores English locale in PDF labels 38ms
+ ✓ test/readiness-audit.probe.test.ts > Temporary audit reproductions: assertions document existing defects, not desired behavior > allows one provider job to run beyond both the worker budget and the 60s route ceiling 3ms
+
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+   Start at  22:06:04
+   Duration  1.27s (transform 333ms, setup 0ms, import 1.15s, tests 81ms, environment 0ms)
+

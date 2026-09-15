@@ -35,6 +35,7 @@ export function apiData<T>(data: T, requestId: string, nextCursor: string | null
 }
 
 export function apiError(error: unknown, requestId: string) {
+  if (error instanceof z.ZodError) return apiError(new ApiV1Error('INVALID_INPUT', 'Request parameters are invalid', 400), requestId)
   const known = error instanceof ApiV1Error
   const code = known ? error.code : 'INTERNAL_ERROR'
   const message = known ? error.message : 'An unexpected error occurred'
@@ -44,34 +45,6 @@ export function apiError(error: unknown, requestId: string) {
     { error: { code, message, requestId, details } },
     { status, headers: { 'X-Request-Id': requestId } },
   )
-}
-
-const cursorSchema = z.object({ at: z.string().datetime(), id: z.string().uuid() })
-
-export type CursorValue = { at: Date; id: string }
-
-export function encodeCursor(value: { at: Date; id: string }) {
-  return Buffer.from(JSON.stringify({ at: value.at.toISOString(), id: value.id }), 'utf8').toString('base64url')
-}
-
-export function decodeCursor(value: string | null) {
-  if (!value) return null
-  try {
-    const decoded = cursorSchema.parse(JSON.parse(Buffer.from(value, 'base64url').toString('utf8')))
-    return { at: new Date(decoded.at), id: decoded.id }
-  } catch {
-    throw new ApiV1Error('INVALID_CURSOR', 'Cursor is invalid', 400)
-  }
-}
-
-export function pageResult<T>(rows: T[], limit: number, cursorOf: (value: T) => { at: Date; id: string }) {
-  const hasMore = rows.length > limit
-  const page = rows.slice(0, limit)
-  const last = page.at(-1)
-  return {
-    data: page,
-    nextCursor: hasMore && last ? encodeCursor(cursorOf(last)) : null,
-  }
 }
 
 function minuteWindow(date: Date) {

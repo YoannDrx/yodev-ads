@@ -31,14 +31,12 @@ import {
 
 const workspaceId = '00000000-0000-4000-8000-000000000001'
 
-function memberDatabase(input: { statementResults?: unknown[]; workspace?: unknown; member?: unknown; organization?: unknown } = {}) {
+function memberDatabase(input: { statementResults?: unknown[]; workspace?: unknown; member?: unknown; actor?: unknown; organization?: unknown } = {}) {
+  const workspace = input.workspace === null ? null : { accessState: 'active', plan: 'studio', ownerUserId: 'owner-1', authOrganizationId: 'org-1', ...(input.workspace as object ?? {}) }
   return databaseDouble({
-    statementResults: input.statementResults,
-    query: {
-      workspaces: { findFirst: vi.fn(async () => input.workspace ?? { accessState: 'active', plan: 'studio' }) },
-      authMembers: { findFirst: vi.fn(async () => input.member) },
-      authOrganizations: { findFirst: vi.fn(async () => input.organization ?? { id: 'org-1', name: 'Agency' }) },
-    },
+    statementResults: [[], workspace ? [workspace] : [], input.actor === null ? [] : [input.actor ?? { role: 'owner' }],
+      ...(input.member ? [[input.member]] : []), ...(input.statementResults?.slice(1) ?? [])],
+    query: { authOrganizations: { findFirst: vi.fn(async () => input.organization ?? { id: 'org-1', name: 'Agency' }) } },
   })
 }
 
@@ -50,7 +48,7 @@ describe('Better Auth workspace member orchestration', () => {
   })
 
   it('persists encrypted task preferences and a count-only audit in one tenant transaction', async () => {
-    const database = memberDatabase({ statementResults: [[], [{ id: 'preference-1' }]] })
+    const database = databaseDouble({ statementResults: [{ rows: [{ state: 'active', plan: 'studio', member_role: 'analyst', is_owner: false, trial_expired: false }] }, [{ id: 'preference-1' }]] })
     mocks.databases.push(database.db)
     await saveMemberTaskNotificationPreferences({
       workspaceId, userId: 'user-1', mentionHandle: 'yoann', displayName: 'Yoann',
@@ -63,7 +61,7 @@ describe('Better Auth workspace member orchestration', () => {
   })
 
   it('reads the Better Auth roster and fails unknown roles closed to client', async () => {
-    const database = memberDatabase({ statementResults: [[
+    const database = databaseDouble({ statementResults: [[
       { id: 'membership-owner', userId: 'owner-1', email: 'owner@example.test', name: 'Owner One', role: 'admin', createdAt: new Date() },
       { id: 'membership-2', userId: 'user-2', email: 'analyst@example.test', name: '', role: 'analyst', createdAt: new Date() },
     ], [{ id: 'invite-1', email: 'guest@example.test', role: 'custom', expiresAt: new Date() }]] })
@@ -137,5 +135,57 @@ describe('Better Auth workspace member orchestration', () => {
       workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', targetUserId: 'user-2', role: 'client',
     })).rejects.toThrow('Capability required: collaboration')
     expect(database.capture.sets).toEqual([])
+  })
+
+  it.each([true, false])('refuses trial expiry before or after the member write (initial=%s)', async (initial) => {
+    const database = databaseDouble({ statementResults: [[], [{ accessState: 'trial', plan: 'agency', ownerUserId: 'owner-1', authOrganizationId: 'org-1' }], [{ role: 'owner' }], [{ expired: initial }],
+      ...(!initial ? [[{ id: 'membership-2' }], [], [{ expired: true }]] : [])] })
+    mocks.databases.push(database.db)
+    await expect(updateWorkspaceMemberRoleWithAudit({ workspaceId, organizationId: 'org-1', actorUserId: 'owner-1', targetUserId: 'user-2', role: 'client' })).rejects.toThrow('essai')
+    if (initial) expect(database.capture.sets).toEqual([])
+  })
+
+  it('allows intentional self-demotion during a valid trial without reauthorizing the relinquished role', async () => {
+    const database = databaseDouble({ statementResults: [[], [{ accessState: 'trial', plan: 'agency', ownerUserId: 'another-owner', authOrganizationId: 'org-1' }], [{ role: 'admin' }], [{ expired: false }], [{ id: 'membership-1' }], [], [{ expired: false }]] })
+    mocks.databases.push(database.db)
+    await expect(updateWorkspaceMemberRoleWithAudit({ workspaceId, organizationId: 'org-1', actorUserId: 'user-1', targetUserId: 'user-1', role: 'client' })).resolves.toEqual({ id: 'membership-1' })
+  })
+})
+
+describe('membership authorization under the workspace lock', () => {
+  beforeEach(() => { mocks.databases = []; vi.clearAllMocks() })
+  const input = { workspaceId, organizationId: 'org-1', actorUserId: 'owner-1' }
+  const operations = [
+    () => updateWorkspaceMemberRoleWithAudit({ ...input, targetUserId: 'target', role: 'analyst' }),
+    () => removeWorkspaceMemberWithAudit({ ...input, targetUserId: 'target' }),
+    () => revokeWorkspaceInvitationWithAudit({ ...input, invitationId: 'invitation' }),
+    () => transferWorkspaceOwnershipWithAudit({ ...input, newOwnerUserId: 'target' }),
+    () => inviteWorkspaceMemberWithQuota({ ...input, ownerUserId: 'stale-owner', emailAddress: 'target@example.test', role: 'analyst', entitlements: entitlementContext('internal', 'internal') }),
+  ]
+  it('refuses a removed or demoted actor and mismatched organizations before mutation', async () => {
+    for (const state of [
+      { actor: null },
+      { actor: { role: 'analyst' }, workspace: { ownerUserId: 'new-owner' } },
+      { workspace: { authOrganizationId: 'different-organization' } },
+    ]) for (const operation of operations) {
+      const database = memberDatabase(state)
+      mocks.databases.push(database.db)
+      await expect(operation()).rejects.toThrow()
+      expect(database.capture.sets).toHaveLength(0)
+      expect(database.capture.values).toHaveLength(0)
+    }
+  })
+  it('protects the current owner after a concurrent transfer', async () => {
+    for (const operation of [
+      () => updateWorkspaceMemberRoleWithAudit({ ...input, targetUserId: 'new-owner', role: 'client' }),
+      () => removeWorkspaceMemberWithAudit({ ...input, targetUserId: 'new-owner' }),
+      () => transferWorkspaceOwnershipWithAudit({ ...input, newOwnerUserId: 'someone-else' }),
+    ]) {
+      const database = memberDatabase({ workspace: { ownerUserId: 'new-owner' }, actor: { role: 'admin' } })
+      mocks.databases.push(database.db)
+      await expect(operation()).rejects.toThrow()
+      expect(database.capture.sets).toHaveLength(0)
+      expect(database.capture.values).toHaveLength(0)
+    }
   })
 })

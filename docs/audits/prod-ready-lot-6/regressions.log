@@ -1,0 +1,13 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/lib/jobs-orchestration.test.ts src/lib/job-runner-orchestration.test.ts src/lib/work-deadline.test.ts src/lib/webhook-security.test.ts src/lib/teams-oauth.test.ts src/lib/transactional-email.test.ts src/app/api/cron/scheduler/route.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  7 passed (7)
+      Tests  72 passed (72)
+   Start at  01:49:07
+   Duration  6.71s (transform 3.62s, setup 0ms, import 15.15s, tests 1.31s, environment 1ms)
+

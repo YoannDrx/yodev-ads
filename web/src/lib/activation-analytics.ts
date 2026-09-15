@@ -1,3 +1,5 @@
+import { ACTIVATION_STAGES, type ActivationStageField } from '@/lib/activation-stages'
+
 export type ActivationWorkspace = { id: string; createdAt: Date }
 export type ActivationEvent = { workspaceId: string; milestone: string; occurredAt: Date }
 
@@ -22,10 +24,14 @@ export function activationCohorts(
   weekCount = 12,
 ) {
   if (!Number.isInteger(weekCount) || weekCount < 1 || weekCount > 52) throw new Error('Invalid activation cohort range')
+  if (!Number.isFinite(now.getTime())) throw new Error('Invalid activation reference date')
   const latestWeek = mondayUtc(now)
   const firstWeek = new Date(latestWeek.getTime() - (weekCount - 1) * 7 * 24 * 60 * 60_000)
   const eventsByWorkspace = new Map<string, Map<string, Date>>()
+  const createdByWorkspace = new Map(workspaces.map((workspace) => [workspace.id, workspace.createdAt]))
   for (const event of events) {
+    const createdAt = createdByWorkspace.get(event.workspaceId)
+    if (!createdAt || !Number.isFinite(createdAt.getTime()) || !Number.isFinite(event.occurredAt.getTime()) || event.occurredAt > now || event.occurredAt < createdAt) continue
     const milestones = eventsByWorkspace.get(event.workspaceId) ?? new Map<string, Date>()
     const existing = milestones.get(event.milestone)
     if (!existing || event.occurredAt < existing) milestones.set(event.milestone, event.occurredAt)
@@ -36,35 +42,30 @@ export function activationCohorts(
     return {
       weekStart: weekStart.toISOString().slice(0, 10),
       workspaces: 0,
-      googleConnected: 0,
-      firstReport: 0,
-      paid: 0,
+      ...Object.fromEntries(ACTIVATION_STAGES.map(({ field }) => [field, 0])) as Record<ActivationStageField, number>,
     }
   })
-  const reportDurations: number[] = []
-  const paidDurations: number[] = []
+  const durations = Object.fromEntries(ACTIVATION_STAGES.map(({ field }) => [field, [] as number[]])) as Record<ActivationStageField, number[]>
   for (const workspace of workspaces) {
+    if (!Number.isFinite(workspace.createdAt.getTime()) || workspace.createdAt > now) continue
     const week = mondayUtc(workspace.createdAt)
     const index = Math.floor((week.getTime() - firstWeek.getTime()) / (7 * 24 * 60 * 60_000))
     if (index < 0 || index >= cohorts.length) continue
     const cohort = cohorts[index]
     cohort.workspaces += 1
     const milestones = eventsByWorkspace.get(workspace.id)
-    if (milestones?.has('google_connected')) cohort.googleConnected += 1
-    const reportAt = milestones?.get('first_report')
-    if (reportAt) {
-      cohort.firstReport += 1
-      if (reportAt >= workspace.createdAt) reportDurations.push((reportAt.getTime() - workspace.createdAt.getTime()) / 86_400_000)
-    }
-    const paidAt = milestones?.get('paid_conversion')
-    if (paidAt) {
-      cohort.paid += 1
-      if (paidAt >= workspace.createdAt) paidDurations.push((paidAt.getTime() - workspace.createdAt.getTime()) / 86_400_000)
+    for (const { milestone, field } of ACTIVATION_STAGES) {
+      const occurredAt = milestones?.get(milestone)
+      if (!occurredAt) continue
+      cohort[field] += 1
+      durations[field].push((occurredAt.getTime() - workspace.createdAt.getTime()) / 86_400_000)
     }
   }
   return {
     cohorts,
-    medianDaysToFirstReport: median(reportDurations),
-    medianDaysToPaid: median(paidDurations),
+    asOf: now.toISOString(),
+    medianDaysByStage: Object.fromEntries(ACTIVATION_STAGES.map(({ field }) => [field, median(durations[field])])) as Record<ActivationStageField, number | null>,
+    medianDaysToFirstReport: median(durations.firstReport),
+    medianDaysToPaid: median(durations.paid),
   }
 }

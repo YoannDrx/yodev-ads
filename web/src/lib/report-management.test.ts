@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/db/transactions', () => ({ withTenantTransaction: mocks.transaction }))
 vi.mock('@/lib/crypto', () => ({ encryptSecret: mocks.encrypt }))
 vi.mock('@/lib/tokens', () => ({ hashToken: mocks.hash }))
+vi.mock('@/lib/workspace-actor-guard', () => ({ withWorkspaceActorTransaction: (context: unknown, callback: (db: unknown, access: unknown) => unknown) => mocks.transaction(context, (db) => callback(db, { entitlements: entitlementContext('active', 'solo') })) }))
 
 import { entitlementContext } from './entitlements'
 import {
@@ -39,6 +40,7 @@ function reportDatabase(input: {
   return databaseDouble({
     statementResults: input.statementResults,
     query: {
+      workspaces: { findFirst: vi.fn(async () => ({ accessState: 'active', plan: 'solo' })) },
       clients: { findFirst: vi.fn(async () => input.client) },
       reportTemplates: { findFirst: vi.fn(async () => input.template) },
       reportSchedules: { findFirst: vi.fn(async () => input.schedule) },
@@ -54,16 +56,16 @@ describe('report management repository', () => {
 
   it('creates an immutable first template version and audit', async () => {
     const template = {
-      id: templateId, name: 'Hebdo', locale: 'fr', periodDays: 7,
+      id: templateId, name: 'Hebdo', locale: 'fr', periodDays: 30,
       editorialComment: 'Bilan', actionPlan: null, currentVersion: 1,
     }
     const database = reportDatabase({ statementResults: [[template]] })
     mocks.databases.push(database.db)
     await createWorkspaceReportTemplate({
-      workspaceId, actorUserId, name: 'Hebdo', locale: 'fr', periodDays: 7, editorialComment: 'Bilan',
+      workspaceId, actorUserId, name: 'Hebdo', locale: 'fr', periodDays: 30, editorialComment: 'Bilan',
     })
     expect(database.capture.values[1]).toMatchObject({
-      templateId, version: 1, snapshot: expect.objectContaining({ name: 'Hebdo', locale: 'fr', periodDays: 7 }),
+      templateId, version: 1, snapshot: expect.objectContaining({ name: 'Hebdo', locale: 'fr', periodDays: 30 }),
     })
     expect(database.capture.values[2]).toMatchObject({ action: 'report.template_created', entityId: templateId })
   })
@@ -71,7 +73,7 @@ describe('report management repository', () => {
   it('fails closed when template insertion returns no row', async () => {
     mocks.databases.push(reportDatabase({ statementResults: [[]] }).db)
     await expect(createWorkspaceReportTemplate({
-      workspaceId, actorUserId, name: 'Hebdo', locale: 'fr', periodDays: 7,
+      workspaceId, actorUserId, name: 'Hebdo', locale: 'fr', periodDays: 30,
     })).rejects.toThrow('création du modèle')
   })
 
@@ -116,12 +118,12 @@ describe('report management repository', () => {
   it.each([
     { cadence: 'weekly' as const, weekday: 2, monthday: null },
     { cadence: 'monthly' as const, weekday: null, monthday: 15 },
-  ])('creates a $cadence schedule, report snapshot, audit and activation', async ({ cadence, weekday, monthday }) => {
+  ])('creates a $cadence schedule and audit without claiming report publication', async ({ cadence, weekday, monthday }) => {
     const database = reportDatabase({
       statementResults: [[], [{ count: 1 }], [{ id: shareId }], [{ id: scheduleId }]],
       client: { id: clientId, isManager: false },
       template: {
-        id: templateId, editorialComment: 'Comment', actionPlan: 'Plan', locale: 'en', periodDays: 7,
+        id: templateId, editorialComment: 'Comment', actionPlan: 'Plan', locale: 'en', periodDays: 30,
       },
     })
     mocks.databases.push(database.db)
@@ -132,14 +134,14 @@ describe('report management repository', () => {
       entitlements: entitlementContext('active', 'studio'), now,
     })
     expect(database.capture.values[0]).toMatchObject({
-      tokenHash: 'hashed:report-token-value', locale: 'en', periodDays: 7,
+      tokenHash: 'hashed:report-token-value', locale: 'en', periodDays: 30,
     })
     expect(database.capture.values[1]).toMatchObject({
       cadence, scheduleWeekday: weekday, scheduleMonthday: monthday,
       encryptedReportToken: 'encrypted:report-token-value',
     })
     expect(database.capture.values[2]).toMatchObject({ action: 'report.schedule_created' })
-    expect(database.capture.values[3]).toMatchObject({ milestone: 'first_report', sourceEntityId: shareId })
+    expect(database.capture.values).not.toContainEqual(expect.objectContaining({ milestone: expect.any(String) }))
   })
 
   it('uses workspace defaults when no template is selected', async () => {
@@ -191,7 +193,7 @@ describe('report management repository', () => {
 
   it('enables a disabled schedule under quota and rotates its bearer token', async () => {
     const database = reportDatabase({
-      statementResults: [[], [{ count: 1 }]],
+      statementResults: [[], [], [{ count: 1 }]],
       schedule: { id: scheduleId, shareId, enabled: false, encryptedReportToken: 'old', deliveryLeaseUntil: null },
     })
     mocks.databases.push(database.db)
@@ -224,10 +226,10 @@ describe('report management repository', () => {
     mocks.databases.push(
       reportDatabase({ statementResults: [[]] }).db,
       reportDatabase({
-        statementResults: [[]], schedule: { id: scheduleId, deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') },
+        statementResults: [[], [], { rows: [{ active: true }] }], schedule: { id: scheduleId, deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') },
       }).db,
       reportDatabase({
-        statementResults: [[], [{ count: 3 }]],
+        statementResults: [[], [], [{ count: 3 }]],
         schedule: { id: scheduleId, shareId, enabled: false, encryptedReportToken: 'old', deliveryLeaseUntil: null },
       }).db,
     )
@@ -255,11 +257,23 @@ describe('report management repository', () => {
   it('rejects token rotation for absent or leased schedules', async () => {
     mocks.databases.push(
       reportDatabase().db,
-      reportDatabase({ schedule: { id: scheduleId, deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') } }).db,
+      reportDatabase({ statementResults: [[], { rows: [{ active: true }] }], schedule: { id: scheduleId, deliveryLeaseUntil: new Date('2026-08-12T08:01:00Z') } }).db,
     )
     await expect(rotateWorkspaceScheduledReportToken({ workspaceId, actorUserId, scheduleId, token: 'x', now }))
       .rejects.toThrow('Planification introuvable')
     await expect(rotateWorkspaceScheduledReportToken({ workspaceId, actorUserId, scheduleId, token: 'x', now }))
       .rejects.toThrow('Un envoi est en cours')
   })
+  it.each(['toggle', 'rotate'] as const)('uses the post-lock clock for an expired %s lease despite an older caller timestamp', async (operation) => {
+    const database = reportDatabase({
+      statementResults: [...(operation === 'toggle' ? [[]] : []), [], { rows: [{ active: false }] }],
+      schedule: { id: scheduleId, shareId, enabled: true, encryptedReportToken: 'old', deliveryLeaseUntil: new Date(now.getTime() + 60_000) },
+    })
+    mocks.databases.push(database.db)
+    if (operation === 'toggle') await setWorkspaceReportScheduleEnabled({ workspaceId, actorUserId, scheduleId, enabled: false, replacementToken: null, entitlements: entitlementContext('active', 'solo'), now })
+    else await rotateWorkspaceScheduledReportToken({ workspaceId, actorUserId, scheduleId, token: 'renewed', now })
+    expect(database.capture.values).toHaveLength(1)
+    expect(database.capture.sets).toHaveLength(2)
+  })
+
 })

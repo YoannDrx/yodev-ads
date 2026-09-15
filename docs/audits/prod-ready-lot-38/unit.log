@@ -1,0 +1,12 @@
+
+> @yodev/ads@0.1.0 test
+> vitest run src/lib/workspace-security-resources.test.ts
+
+
+ RUN  v4.1.10 /Users/yoannandrieux/Projets/yodev-ads/web
+
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  13:00:45
+   Duration  523ms (transform 98ms, setup 0ms, import 415ms, tests 10ms, environment 0ms)

@@ -1,0 +1,80 @@
+{"seededWorkspaces":["10000000-0000-4000-8000-000000000001","20000000-0000-4000-8000-000000000002"]}
+{"ok":true,"tenantA":"10000000-0000-4000-8000-000000000001","tenantB":"20000000-0000-4000-8000-000000000002","visibleClientRows":1,"rlsTables":48,"runtimeRoles":["yodev_app","yodev_system","yodev_purge","yodev_auth"],"oauthSessionIsolation":true}
+{"validated":37}
+{
+  "ok": true,
+  "invariants": [
+    {
+      "invariant": "report_edition_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "report_edition_share_scope",
+      "violations": 0
+    },
+    {
+      "invariant": "report_edition_content_identity",
+      "violations": 0
+    },
+    {
+      "invariant": "workspace_state",
+      "violations": 0
+    },
+    {
+      "invariant": "duplicate_stripe_subscription",
+      "violations": 0
+    },
+    {
+      "invariant": "approval_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "agent_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "incident_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "share_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "performance_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "support_message_ticket_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "mutation_observation_approval_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "mutation_observation_client_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "report_template_version_tenant",
+      "violations": 0
+    },
+    {
+      "invariant": "legacy_workspace_auth_mapping",
+      "violations": 0
+    },
+    {
+      "invariant": "workspace_owner_membership",
+      "violations": 0
+    },
+    {
+      "invariant": "trial_grant_auth_mapping",
+      "violations": 0
+    },
+    {
+      "invariant": "auth_organization_workspace_uniqueness",
+      "violations": 0
+    }
+  ]
+}

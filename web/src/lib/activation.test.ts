@@ -16,10 +16,10 @@ describe('activation milestone persistence', () => {
   it('writes an idempotent milestone with explicit defaults', async () => {
     const database = databaseDouble({ statementResults: [[]] })
     await insertActivationMilestone(database.db as never, {
-      workspaceId: 'workspace-1', milestone: 'first_report', actorUserId: 'user-1',
+      workspaceId: 'workspace-1', milestone: 'first_report_published', actorUserId: 'user-1',
     })
     expect(database.capture.values).toContainEqual(expect.objectContaining({
-      workspaceId: 'workspace-1', milestone: 'first_report', actorUserId: 'user-1',
+      workspaceId: 'workspace-1', milestone: 'first_report_published', actorUserId: 'user-1',
       sourceEntityId: null, metadata: {},
     }))
   })
