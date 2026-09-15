@@ -185,7 +185,7 @@ if (process.env.PLAYWRIGHT_LOCAL_FIXTURE === '1') {
         await page.waitForURL('**/dashboard')
         expect((await session(original)).user.id).toBe(user.id)
         await page.goto('/account')
-        await page.getByRole('button', { name: /^(Remove|Supprimer) (Ads by Yodev passkey|Passkey Ads by Yodev)$/ }).click()
+        await page.getByRole('button', { name: /^(Remove|Supprimer) (Yodev Ads passkey|Passkey Yodev Ads)$/ }).click()
         await page.getByRole('button', { name: /^(Confirm removal|Confirmer la suppression)$/ }).click()
         await expect(page.getByRole('status').filter({ hasText: /Passkey removed|Passkey supprimée/ })).toBeVisible()
         expect((await db.query('select count(*)::int as count from auth_passkeys where user_id=$1', [user.id])).rows[0].count).toBe(0)
