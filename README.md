@@ -78,7 +78,8 @@ Secrets are provisioned through Vercel and must never be committed.
 ## Operator CLI
 
 The Python CLI uses Google's official client, Application Default Credentials for
-OAuth, and the macOS Keychain for the developer token.
+OAuth, and the Google Cloud project owning the OAuth client for API access.
+Google Ads SDK 32+ supports this flow without a developer token.
 
 The `yads` command is read-only by default. Mutations are first sent with
 `validate_only`; an actual change requires both `--apply` and `--yes`.
@@ -86,7 +87,7 @@ The `yads` command is read-only by default. Mutations are first sent with
 ### What is included
 
 - a multi-client profile registry;
-- OAuth and developer-token diagnostics;
+- OAuth and local-configuration diagnostics;
 - accessible-account discovery;
 - campaign inventory and 30-day performance reports;
 - a compact account dashboard;
@@ -132,10 +133,13 @@ yads campaigns list
 yads dashboard --days 30
 ```
 
-`yads setup` reuses the developer token from the system keychain, or asks for
-it using hidden input when none exists. As an alternative, set
-`GOOGLE_ADS_DEVELOPER_TOKEN` in the process environment. Do not commit a token
-or OAuth credentials.
+`yads setup` configures account profiles without prompting for an API token.
+Enable the Google Ads API on the Cloud project owning your OAuth client and check
+that this project has the required API access level. Existing migrated projects
+retain their access level. `GOOGLE_ADS_DEVELOPER_TOKEN`, `--developer-token`, and
+`yads auth token-set` are no longer used; remove obsolete options from scripts.
+OAuth credentials remain required and must never be committed.
+See [Google's migration guide](https://developers.google.com/google-ads/api/docs/api-policy/developer-token).
 
 ### Multi-client profiles
 
@@ -170,7 +174,7 @@ yads brand set \
 yads brand show
 ```
 
-Brand settings never contain OAuth credentials or developer tokens, so they can
+Brand settings never contain OAuth credentials, so they can
 later be reused by a hosted web interface, desktop app or customer portal.
 
 ### Architecture and security
@@ -206,14 +210,13 @@ yads campaigns budget 987654321 25.00 --apply --yes
 ### CLI configuration and secrets
 
 - non-secret profiles: platform-specific user configuration directory;
-- developer token: macOS Keychain through `keyring`, or environment variable;
 - OAuth credentials: Google Cloud Application Default Credentials;
 - no secret is stored inside this repository.
 
 Use `yads config path` to display the exact profile file location.
 
 The rebrand is a hard cutover: existing local configuration and Keychain entries are
-not imported automatically. Run `yads setup` and `yads auth token-set` once after
+not imported automatically. Run `yads setup` once after
 installing the renamed package.
 
 During the production cutover, rotate legacy API and share credentials with an

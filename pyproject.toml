@@ -11,9 +11,8 @@ requires-python = ">=3.11,<3.15"
 license = { text = "Proprietary" }
 authors = [{ name = "Yoann Andrieux" }]
 dependencies = [
-  "google-ads>=31.2,<32",
+  "google-ads>=32,<33",
   "google-auth-oauthlib>=1.2,<2",
-  "keyring>=25,<26",
   "platformdirs>=4.3,<5",
   "rich>=14,<15",
   "typer>=0.16,<1",

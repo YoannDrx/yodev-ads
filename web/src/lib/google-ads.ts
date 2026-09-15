@@ -902,7 +902,6 @@ export class GoogleAdsGateway {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
-            'developer-token': env.GOOGLE_ADS_DEVELOPER_TOKEN,
             'login-customer-id': this.managerCustomerId,
             ...init.headers,
           },

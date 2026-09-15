@@ -14,7 +14,7 @@ Organization
   ├── Members (owner, admin, strategist, analyst, client)
   ├── Google Ads connections
   │     ├── OAuth authorization
-  │     ├── developer-token reference
+  │     ├── OAuth client Cloud project
   │     └── MCC customer ID
   ├── Client accounts
   │     ├── Google Ads customer ID
@@ -33,10 +33,9 @@ mutation reaches Google Ads.
 
 - Encrypt OAuth refresh tokens with an envelope-encryption key outside the
   database.
-- Keep developer tokens in a managed secret store and reference them by opaque ID.
-- Use only the Yodev-owned developer token for the hosted product; it remains in the
-  deployment secret store and is never persisted in tenant data.
-- Never return refresh tokens, client secrets or developer tokens to the browser.
+- Google Ads API access and quotas belong to the Cloud project owning the hosted
+  OAuth client. Do not request or persist tenant developer tokens.
+- Never return refresh tokens or client secrets to the browser.
 - Record token creation, rotation, revocation and last successful use.
 
 ## Approval and safety
