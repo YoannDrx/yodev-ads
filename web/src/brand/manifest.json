@@ -1,0 +1,80 @@
+{
+  "version": "2.0.0",
+  "source": "yodev/brand",
+  "defaultTheme": "dark",
+  "fonts": {
+    "body": "DM Sans",
+    "display": "DM Sans",
+    "mono": "Fira Code"
+  },
+  "colors": {
+    "background": "#141716",
+    "surface": "#1B201E",
+    "text": "#EBEFEB"
+  },
+  "products": {
+    "yodev": {
+      "name": "Yodev",
+      "accent": "#B6D68B",
+      "accentLight": "#426026",
+      "assets": {
+        "symbol": "/brand/yodev-symbol.svg",
+        "logo": "/brand/yodev-logo.svg",
+        "logoLight": "/brand/yodev-logo-light.svg"
+      }
+    },
+    "mail": {
+      "name": "Yodev Mail",
+      "accent": "#A7CFE8",
+      "accentLight": "#276181",
+      "assets": {
+        "symbol": "/brand/mail-symbol.svg",
+        "logo": "/brand/mail-logo.svg",
+        "logoLight": "/brand/mail-logo-light.svg"
+      }
+    },
+    "ads": {
+      "name": "Yodev Ads",
+      "accent": "#B6D68B",
+      "accentLight": "#426026",
+      "assets": {
+        "symbol": "/brand/ads-symbol.svg",
+        "logo": "/brand/ads-logo.svg",
+        "logoLight": "/brand/ads-logo-light.svg"
+      }
+    },
+    "spend": {
+      "name": "Yodev Spend",
+      "accent": "#F0C66E",
+      "accentLight": "#81580C",
+      "assets": {
+        "symbol": "/brand/spend-symbol.svg",
+        "logo": "/brand/spend-logo.svg",
+        "logoLight": "/brand/spend-logo-light.svg"
+      }
+    }
+  },
+  "lightColors": {
+    "background": "#F7F8F5",
+    "surface": "#FFFFFF",
+    "text": "#18201B"
+  },
+  "hashes": {
+    "src/brand/tokens.css": "c120efec524e6aea71875872e2c0a2cb6b66f3636c310cd668076692583d95fb",
+    "src/brand/brand.tsx": "cc2e7f87b99002233ddbdf4e585bdf5fd99758b724e259d0cf987a7aa3b885d9",
+    "src/brand/social-image.tsx": "dffc1e7191b87e573f876c72e4ea07c2654a88764e58ccc751e664d73cd4abc4",
+    "src/brand/navigation-disclosure.tsx": "e7c46e3e75e6740bb69a7df4860da429d64338f33e7fbd271e4c50190064acd9",
+    "public/brand/yodev-symbol.svg": "beea8375bc8856f2b1fbc5032411e759cb1a800a8ca864a3fe84427a5094c9f4",
+    "public/brand/yodev-logo.svg": "ff2f8c1801886f44e289d7f16c0aeaedfb8d88bfbe80974c23cdaf3f87a24237",
+    "public/brand/yodev-logo-light.svg": "6a03e66bc747b78110780ac60794b0d36c698471bfe91d39cc9e0c2420aade8e",
+    "public/brand/mail-symbol.svg": "b8acad7ab99248a923b3dd580a3a818b7c767afb373c96103e7bdaa48e2f4555",
+    "public/brand/mail-logo.svg": "b329b1af77030c70a80e6a214cb932b4f4f453f4ca2e29a20da2ac591b4f8704",
+    "public/brand/mail-logo-light.svg": "f4c97c66ab6d85d57ec053d617a372791e4fdc8104b6ac59a5e412bc3f128978",
+    "public/brand/ads-symbol.svg": "beea8375bc8856f2b1fbc5032411e759cb1a800a8ca864a3fe84427a5094c9f4",
+    "public/brand/ads-logo.svg": "4e8946df3ca3b80f7f2b2a3c69b30dc79a8201df1eba13be5e763472cfedf1b9",
+    "public/brand/ads-logo-light.svg": "983ce78c5d3e0b70018a185acc3d90b4c2147348dd55b4db8294c8d49d1e27fd",
+    "public/brand/spend-symbol.svg": "1a1e2224af0c927cb8729796e509a6a0e354e9754eb828c4cccda5c6ea8af92f",
+    "public/brand/spend-logo.svg": "b552817aa6fea4522c42ebb915aac2dd3b2a59efc6c06066281e533e6022cd81",
+    "public/brand/spend-logo-light.svg": "f7ffc3a54db600d69abb884b5124f0ef89170c408081bdee8a1c3a0cd4968f07"
+  }
+}

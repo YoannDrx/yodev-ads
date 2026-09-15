@@ -58,7 +58,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
     ...timeline.internal.map(({ audit, approval }) => ({
       id: `internal:${audit.id}`,
       occurredAt: audit.createdAt,
-      source: 'Ads by Yodev',
+      source: 'Yodev Ads',
       title: approval.title,
       description: audit.action,
       linked: true,
@@ -73,10 +73,10 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         description={english ? `Daily metrics, conversion configuration and factual timeline. Display retention: ${historyDays} days.` : `Métriques journalières, configuration des conversions et timeline factuelle. Rétention affichable : ${historyDays} jours.`}
         actions={clients.length ? (
           <form>
-            <select name="client" defaultValue={client?.id} aria-label={english ? 'Client account' : 'Compte client'} className="h-10 rounded-lg border bg-white px-3 text-sm">
+            <select name="client" defaultValue={client?.id} aria-label={english ? 'Client account' : 'Compte client'} className="h-10 rounded-lg border bg-card px-3 text-sm">
               {clients.filter((item) => !item.isManager).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
-            <button className="ml-2 h-10 rounded-lg border bg-white px-4 text-sm">{english ? 'Show' : 'Afficher'}</button>
+            <button className="ml-2 h-10 rounded-lg border bg-card px-4 text-sm">{english ? 'Show' : 'Afficher'}</button>
           </form>
         ) : undefined}
       />
@@ -89,22 +89,22 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
             <HistoryMetric icon={MousePointerClick} label={english ? 'Clicks' : 'Clics'} value={formatInteger(totals.clicks)} />
             <HistoryMetric icon={Activity} label={english ? 'Conversion value' : 'Valeur de conversion'} value={formatMoneyFromMicros(totals.conversionValueMicros, client.currencyCode)} />
           </section>
-          <Card className="mt-6 border-[#dde4e7] shadow-none"><CardContent className="p-0"><div className="overflow-x-auto"><table className="w-full text-sm">
-            <thead className="bg-[#f7f9fa] text-left text-xs uppercase tracking-wider text-muted-foreground"><tr><th className="px-5 py-3">Date</th><th className="px-4 py-3 text-right">{english ? 'Daily cost' : 'Coût du jour'}</th><th className="px-4 py-3 text-right">Impressions</th><th className="px-4 py-3 text-right">{english ? 'Clicks' : 'Clics'}</th><th className="px-5 py-3 text-right">Conversions</th></tr></thead>
-            <tbody className="divide-y">{[...history].reverse().map((point) => <tr key={point.id} className="bg-white"><td className="px-5 py-3 font-medium">{new Date(`${point.metricDate}T12:00:00Z`).toLocaleDateString(english ? 'en-GB' : 'fr-FR')}</td><td className="px-4 py-3 text-right">{formatMoneyFromMicros(point.costMicros, point.currencyCode)}</td><td className="px-4 py-3 text-right">{formatInteger(point.impressions)}</td><td className="px-4 py-3 text-right">{formatInteger(point.clicks)}</td><td className="px-5 py-3 text-right">{Number(point.conversions).toLocaleString(english ? 'en-GB' : 'fr-FR', { maximumFractionDigits: 1 })}</td></tr>)}</tbody>
+          <Card className="mt-6 border-border shadow-none"><CardContent className="p-0"><div className="overflow-x-auto"><table className="w-full text-sm">
+            <thead className="bg-card text-left text-xs uppercase tracking-wider text-muted-foreground"><tr><th className="px-5 py-3">Date</th><th className="px-4 py-3 text-right">{english ? 'Daily cost' : 'Coût du jour'}</th><th className="px-4 py-3 text-right">Impressions</th><th className="px-4 py-3 text-right">{english ? 'Clicks' : 'Clics'}</th><th className="px-5 py-3 text-right">Conversions</th></tr></thead>
+            <tbody className="divide-y">{[...history].reverse().map((point) => <tr key={point.id} className="bg-card"><td className="px-5 py-3 font-medium">{new Date(`${point.metricDate}T12:00:00Z`).toLocaleDateString(english ? 'en-GB' : 'fr-FR')}</td><td className="px-4 py-3 text-right">{formatMoneyFromMicros(point.costMicros, point.currencyCode)}</td><td className="px-4 py-3 text-right">{formatInteger(point.impressions)}</td><td className="px-4 py-3 text-right">{formatInteger(point.clicks)}</td><td className="px-5 py-3 text-right">{Number(point.conversions).toLocaleString(english ? 'en-GB' : 'fr-FR', { maximumFractionDigits: 1 })}</td></tr>)}</tbody>
           </table></div></CardContent></Card>
         </>
       ) : (
-        <div className="rounded-3xl border border-dashed bg-white p-14 text-center text-muted-foreground"><CalendarDays className="mx-auto mb-4 size-8" />{english ? 'Daily metrics will be available after the next synchronization job. Legacy rolling 30-day snapshots are no longer presented as daily data.' : 'Les métriques journalières seront disponibles après le prochain job de synchronisation. Les anciens snapshots glissants de 30 jours ne sont plus présentés comme des données quotidiennes.'}</div>
+        <div className="rounded-md border border-dashed bg-card p-14 text-center text-muted-foreground"><CalendarDays className="mx-auto mb-4 size-8" />{english ? 'Daily metrics will be available after the next synchronization job. Legacy rolling 30-day snapshots are no longer presented as daily data.' : 'Les métriques journalières seront disponibles après le prochain job de synchronisation. Les anciens snapshots glissants de 30 jours ne sont plus présentés comme des données quotidiennes.'}</div>
       )}
 
-      <Card className="mt-6 border-[#dde4e7] shadow-none"><CardContent className="p-6">
+      <Card className="mt-6 border-border shadow-none"><CardContent className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><h2 className="font-semibold">{english ? 'Significant changes' : 'Variations significatives'}</h2><p className="mt-1 text-sm text-muted-foreground">{english ? 'Deterministic windows and comparable days. Temporal correlation is never presented as causation.' : 'Fenêtres déterministes et jours comparables. Une corrélation temporelle n’est jamais présentée comme une cause.'}</p></div>
           {performanceDiagnostics.asOf && <Badge variant="outline">{english ? 'Data through' : 'Données au'} {new Date(`${performanceDiagnostics.asOf}T12:00:00Z`).toLocaleDateString(english ? 'en-GB' : 'fr-FR')}</Badge>}
         </div>
         {performanceDiagnostics.comparisons.length === 0 ? (
-          <p className="mt-5 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">{english ? 'No daily series available.' : 'Aucune série journalière disponible.'}</p>
+          <p className="mt-5 rounded-md border border-dashed p-4 text-sm text-muted-foreground">{english ? 'No daily series available.' : 'Aucune série journalière disponible.'}</p>
         ) : (
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {performanceDiagnostics.comparisons.map((comparison) => <ComparisonCard key={comparison.kind} comparison={comparison} currency={client?.currencyCode ?? 'EUR'} locale={locale} />)}
@@ -113,7 +113,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         {performanceDiagnostics.findings.length > 0 && (
           <div className="mt-5 space-y-2">
             {performanceDiagnostics.findings.map((finding) => (
-              <article key={finding.id} className="rounded-xl border p-4">
+              <article key={finding.id} className="rounded-md border p-4">
                 <div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">{finding.title}</h3><Badge variant="outline">{english ? 'confidence' : 'confiance'} {finding.confidence}</Badge></div>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{finding.description}</p>
               </article>
@@ -123,15 +123,15 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
       </CardContent></Card>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-2">
-        <Card className="border-[#dde4e7] shadow-none"><CardContent className="p-6">
+        <Card className="border-border shadow-none"><CardContent className="p-6">
           <div className="flex items-center gap-3"><ShieldCheck className="size-5 text-[var(--brand-accent)]" /><div><h2 className="font-semibold">{english ? 'Conversion diagnostics' : 'Diagnostic des conversions'}</h2><p className="text-sm text-muted-foreground">{english ? 'API configuration and activity received by Google, distinct from a real on-site test.' : 'Configuration API et activité reçue par Google, distinctes d’un test réel sur le site.'}</p></div></div>
-          {diagnostics.length === 0 ? <p className="mt-5 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">{conversions.length ? (english ? 'No deterministic signal in the latest snapshot.' : 'Aucun signal déterministe sur le dernier snapshot.') : (english ? 'The conversion-action snapshot will be collected by the scheduler.' : 'Le snapshot des actions de conversion sera collecté par le scheduler.')}</p> : <div className="mt-5 space-y-3">{diagnostics.map((finding) => <article key={finding.id} className="rounded-xl border p-4"><div className="flex flex-wrap items-center gap-2"><CircleAlert className="size-4" /><h3 className="text-sm font-semibold">{finding.title}</h3><Badge variant={finding.severity === 'critical' ? 'destructive' : 'outline'}>{finding.confidence === 'high' ? (english ? 'API evidence' : 'preuve API') : (english ? 'probable' : 'probable')}</Badge></div><p className="mt-2 text-sm leading-6 text-muted-foreground">{finding.description}</p></article>)}</div>}
-          <div className="mt-5 rounded-xl bg-[#f7f9fa] p-4 text-xs leading-5 text-muted-foreground"><strong>{english ? 'On-site checklist' : 'Checklist terrain'} :</strong> {english ? 'open Tag Assistant, trigger a test conversion, verify consent/cookies, duplicate tags and receipt in Google Ads/GA4. The API alone cannot certify browser firing.' : 'ouvrir Tag Assistant, déclencher une conversion de test, vérifier consentement/cookies, doublons de balise et réception dans Google Ads/GA4. L’API seule ne certifie pas le déclenchement navigateur.'}</div>
+          {diagnostics.length === 0 ? <p className="mt-5 rounded-md border border-dashed p-4 text-sm text-muted-foreground">{conversions.length ? (english ? 'No deterministic signal in the latest snapshot.' : 'Aucun signal déterministe sur le dernier snapshot.') : (english ? 'The conversion-action snapshot will be collected by the scheduler.' : 'Le snapshot des actions de conversion sera collecté par le scheduler.')}</p> : <div className="mt-5 space-y-3">{diagnostics.map((finding) => <article key={finding.id} className="rounded-md border p-4"><div className="flex flex-wrap items-center gap-2"><CircleAlert className="size-4" /><h3 className="text-sm font-semibold">{finding.title}</h3><Badge variant={finding.severity === 'critical' ? 'destructive' : 'outline'}>{finding.confidence === 'high' ? (english ? 'API evidence' : 'preuve API') : (english ? 'probable' : 'probable')}</Badge></div><p className="mt-2 text-sm leading-6 text-muted-foreground">{finding.description}</p></article>)}</div>}
+          <div className="mt-5 rounded-md bg-card p-4 text-xs leading-5 text-muted-foreground"><strong>{english ? 'On-site checklist' : 'Checklist terrain'} :</strong> {english ? 'open Tag Assistant, trigger a test conversion, verify consent/cookies, duplicate tags and receipt in Google Ads/GA4. The API alone cannot certify browser firing.' : 'ouvrir Tag Assistant, déclencher une conversion de test, vérifier consentement/cookies, doublons de balise et réception dans Google Ads/GA4. L’API seule ne certifie pas le déclenchement navigateur.'}</div>
         </CardContent></Card>
 
-        <Card className="border-[#dde4e7] shadow-none"><CardContent className="p-6">
+        <Card className="border-border shadow-none"><CardContent className="p-6">
           <div className="flex items-center gap-3"><History className="size-5 text-[var(--brand-accent)]" /><div><h2 className="font-semibold">{english ? 'Unified timeline' : 'Timeline unifiée'}</h2><p className="text-sm text-muted-foreground">{english ? 'Google changes and internal actions, without automatic claims of causation.' : 'Changements Google et actions internes, sans affirmation automatique de causalité.'}</p></div></div>
-          {unifiedTimeline.length === 0 ? <p className="mt-5 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">{english ? 'No synchronized event over the last 30 days.' : 'Aucun événement synchronisé sur les 30 derniers jours.'}</p> : <ol className="mt-5 space-y-3">{unifiedTimeline.map((event) => <li key={event.id} className="rounded-xl border p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold">{event.title}</p><time className="text-xs text-muted-foreground">{event.occurredAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</time></div><p className="mt-1 text-xs text-muted-foreground">{event.source} · {event.description}{event.linked && event.source === 'Google Ads' ? (english ? ' · linked to an internal action' : ' · rapproché d’une action interne') : ''}</p></li>)}</ol>}
+          {unifiedTimeline.length === 0 ? <p className="mt-5 rounded-md border border-dashed p-4 text-sm text-muted-foreground">{english ? 'No synchronized event over the last 30 days.' : 'Aucun événement synchronisé sur les 30 derniers jours.'}</p> : <ol className="mt-5 space-y-3">{unifiedTimeline.map((event) => <li key={event.id} className="rounded-md border p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold">{event.title}</p><time className="text-xs text-muted-foreground">{event.occurredAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</time></div><p className="mt-1 text-xs text-muted-foreground">{event.source} · {event.description}{event.linked && event.source === 'Google Ads' ? (english ? ' · linked to an internal action' : ' · rapproché d’une action interne') : ''}</p></li>)}</ol>}
         </CardContent></Card>
       </section>
     </>
@@ -139,13 +139,13 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
 }
 
 function HistoryMetric({ icon: Icon, label, value }: { icon: typeof Activity; label: string; value: string }) {
-  return <Card className="border-[#dde4e7] shadow-none"><CardContent className="p-5"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p></div><Icon className="size-5 text-[var(--brand-accent)]" /></div></CardContent></Card>
+  return <Card className="border-border shadow-none"><CardContent className="p-5"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p></div><Icon className="size-5 text-[var(--brand-accent)]" /></div></CardContent></Card>
 }
 
 function ComparisonCard({ comparison, currency, locale }: { comparison: PerformanceComparison; currency: string; locale: 'fr' | 'en' }) {
   const english = locale === 'en'
   const change = (value: number | null) => value === null ? (english ? 'zero baseline' : 'base nulle') : formatPercent(value)
-  return <div className="rounded-xl border bg-[#f8fafb] p-4">
+  return <div className="rounded-md border bg-card p-4">
     <div className="flex items-start justify-between gap-2"><h3 className="text-sm font-semibold">{comparison.label}</h3><Badge variant={comparison.available ? 'secondary' : 'outline'}>{comparison.available ? 'comparable' : (english ? 'incomplete' : 'incomplet')}</Badge></div>
     <p className="mt-2 text-xs text-muted-foreground">{english ? 'Coverage' : 'Couverture'} : {formatPercent(comparison.currentCoverage)} / {formatPercent(comparison.previousCoverage)}</p>
     <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">

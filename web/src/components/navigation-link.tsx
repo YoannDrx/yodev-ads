@@ -19,5 +19,5 @@ export function SkipToContent({ children }: { children: ReactNode }) {
       main.focus()
       main.scrollIntoView({ block: 'start' })
     }
-  }} className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-slate-900 focus:shadow-lg">{children}</a>
+  }} className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-3 focus:text-foreground focus:">{children}</a>
 }

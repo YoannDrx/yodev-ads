@@ -19,7 +19,7 @@ export function LegalDocument({
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/" className="text-sm font-medium text-emerald-700">{messages.back}</Link>
+        <Link href="/" className="text-sm font-medium text-[var(--y-success)]">{messages.back}</Link>
         <LocaleSwitcher locale={locale} />
       </div>
       <h1 className="mt-8 text-4xl font-semibold tracking-tight">{title}</h1>

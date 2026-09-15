@@ -51,14 +51,14 @@ export default async function TeamsDestinationPage({
         title={english ? 'Choose a destination' : 'Choisir une destination'}
         description={english ? 'Messages are sent through Microsoft Graph on behalf of the account that granted access.' : 'Les messages sont envoyés via Microsoft Graph au nom du compte ayant accordé l’accès.'}
       />
-      <Card className="max-w-3xl border-[#e8e5ef] shadow-sm">
+      <Card className="max-w-3xl border-border ">
         <CardHeader><CardTitle>{english ? 'Team and channel' : 'Équipe et canal'}</CardTitle></CardHeader>
         <CardContent className="space-y-5">
           <p className="text-xs text-muted-foreground">{english ? `This selection session expires at ${expiresAt.toLocaleTimeString('en-GB')}.` : `Cette session de sélection expire à ${expiresAt.toLocaleTimeString('fr-FR')}.`}</p>
           <form method="get" className="flex flex-col gap-3 sm:flex-row">
             <input type="hidden" name="workspaceId" value={workspace.id} />
             <input type="hidden" name="sessionId" value={sessionId} />
-            <select aria-label={english ? 'Team' : 'Équipe'} name="teamId" defaultValue={selectedTeam?.id ?? ''} required className="h-10 flex-1 rounded-lg border bg-white px-3 text-sm">
+            <select aria-label={english ? 'Team' : 'Équipe'} name="teamId" defaultValue={selectedTeam?.id ?? ''} required className="h-10 flex-1 rounded-lg border bg-card px-3 text-sm">
               <option value="">{english ? 'Choose a team' : 'Choisir une équipe'}</option>
               {teams.map((team) => <option key={team.id} value={team.id}>{team.displayName}</option>)}
             </select>
@@ -69,7 +69,7 @@ export default async function TeamsDestinationPage({
               <input type="hidden" name="workspaceId" value={workspace.id} />
               <input type="hidden" name="sessionId" value={sessionId} />
               <input type="hidden" name="teamId" value={selectedTeam.id} />
-              <select aria-label={english ? 'Channel' : 'Canal'} name="channelId" required className="h-10 w-full rounded-lg border bg-white px-3 text-sm">
+              <select aria-label={english ? 'Channel' : 'Canal'} name="channelId" required className="h-10 w-full rounded-lg border bg-card px-3 text-sm">
                 <option value="">{english ? 'Choose a channel' : 'Choisir un canal'}</option>
                 {channels.map((channel) => <option key={channel.id} value={channel.id}>{channel.displayName}{channel.membershipType ? ` · ${channel.membershipType}` : ''}</option>)}
               </select>
@@ -77,7 +77,7 @@ export default async function TeamsDestinationPage({
               <Button type="submit" disabled={channels.length === 0}>{english ? 'Connect this channel' : 'Connecter ce canal'}</Button>
             </form>
           )}
-          {teams.length === 0 && <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">{english ? 'No directly joined Microsoft Teams team is available for this account.' : 'Aucune équipe Microsoft Teams dont ce compte est membre direct n’est disponible.'}</p>}
+          {teams.length === 0 && <p className="rounded-md y-status-warning p-4 text-sm text-[var(--y-warning)]">{english ? 'No directly joined Microsoft Teams team is available for this account.' : 'Aucune équipe Microsoft Teams dont ce compte est membre direct n’est disponible.'}</p>}
         </CardContent>
       </Card>
     </>

@@ -48,28 +48,28 @@ export function SecretRevelation({ title, buttonLabel, workspaceId, revelationId
   }
 
   return (
-    <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800">{title}</p>
+    <div className="mt-5 rounded-md border border-emerald-200 y-status-success p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--y-success)]">{title}</p>
       {secret ? (
         <div className="mt-3 space-y-2">
           {dnsRecord ? <>
-            <p className="text-xs text-emerald-900">{english ? 'Create a TXT record with these fields.' : 'Créez un enregistrement TXT avec ces champs.'}</p>
+            <p className="text-xs text-[var(--y-success)]">{english ? 'Create a TXT record with these fields.' : 'Créez un enregistrement TXT avec ces champs.'}</p>
             {[{ label: english ? 'DNS name' : 'Nom DNS', value: dnsRecord.name, button: english ? 'Copy name' : 'Copier le nom' }, { label: english ? 'TXT value' : 'Valeur TXT', value: dnsRecord.value, button: english ? 'Copy value' : 'Copier la valeur' }].map((field) => <div key={field.label} className="space-y-1">
-              <label className="block text-xs text-emerald-900">{field.label}<Input readOnly value={field.value} className="mt-1 bg-white font-mono text-xs" /></label>
+              <label className="block text-xs text-[var(--y-success)]">{field.label}<Input readOnly value={field.value} className="mt-1 bg-card font-mono text-xs" /></label>
               <Button type="button" variant="outline" size="sm" onClick={() => copy(field.value)}>{field.button}</Button>
             </div>)}
           </> : <>
-            <Input aria-label={title} readOnly value={secret} className="bg-white font-mono text-xs" />
+            <Input aria-label={title} readOnly value={secret} className="bg-card font-mono text-xs" />
             <Button type="button" variant="outline" size="sm" onClick={() => copy(secret)}>{english ? 'Copy' : 'Copier'}</Button>
           </>}
-          {copied && <p role="status" className="text-xs text-emerald-800">{english ? 'Copied.' : 'Copié.'}</p>}
+          {copied && <p role="status" className="text-xs text-[var(--y-success)]">{english ? 'Copied.' : 'Copié.'}</p>}
         </div>
       ) : (
         <Button type="button" className="mt-3" onClick={reveal} disabled={loading || !revelationId}>
           {loading ? english ? 'Revealing…' : 'Révélation…' : buttonLabel}
         </Button>
       )}
-      {(error || !revelationId) && <p role="alert" className="mt-2 text-xs text-red-700">{error ?? unavailable}</p>}
+      {(error || !revelationId) && <p role="alert" className="mt-2 text-xs text-[var(--y-danger)]">{error ?? unavailable}</p>}
     </div>
   )
 }

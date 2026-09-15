@@ -18,7 +18,7 @@ export function ActivationOverview({ totalCommercial, funnel, cohorts }: Props) 
       <CardHeader><CardTitle>Funnel d’activation commercial</CardTitle><p className="text-xs text-muted-foreground">Jalons atteints parmi les {totalCommercial} espaces commerciaux actuels, toutes dates d’inscription. Les espaces internes et supprimés sont exclus.</p></CardHeader>
       <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{ACTIVATION_STAGES.map(({ milestone, label }) => {
         const value = Number(funnel[milestone] ?? 0)
-        return <div key={milestone} className="rounded-2xl border p-4"><p className="text-xs text-muted-foreground">{label}</p><div className="mt-2 flex items-end justify-between"><span className="text-2xl font-semibold">{value}</span><Badge variant="outline">{rate(value, totalCommercial)}</Badge></div><progress aria-label={label} value={value} max={Math.max(1, totalCommercial)} className="mt-3 h-1.5 w-full accent-emerald-500" /></div>
+        return <div key={milestone} className="rounded-md border p-4"><p className="text-xs text-muted-foreground">{label}</p><div className="mt-2 flex items-end justify-between"><span className="text-2xl font-semibold">{value}</span><Badge variant="outline">{rate(value, totalCommercial)}</Badge></div><progress aria-label={label} value={value} max={Math.max(1, totalCommercial)} className="mt-3 h-1.5 w-full accent-emerald-500" /></div>
       })}</CardContent>
     </Card>
     <Card className="mb-6 shadow-none">
@@ -35,7 +35,7 @@ export function ActivationOverview({ totalCommercial, funnel, cohorts }: Props) 
           </table>
         </div>
         <p className="mb-3 mt-5 text-xs text-muted-foreground">Délai médian depuis l’inscription, uniquement parmi les espaces des 12 semaines ayant atteint le jalon. Les autres ne sont pas des conversions à zéro jour. Une absence de jalon ne suffit pas à conclure à un abandon.</p>
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{ACTIVATION_STAGES.map(({ field, label }) => <div key={field} className="rounded-xl border p-3"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 text-sm font-medium">{median(cohorts.medianDaysByStage[field])}</dd></div>)}</dl>
+        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{ACTIVATION_STAGES.map(({ field, label }) => <div key={field} className="rounded-md border p-3"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 text-sm font-medium">{median(cohorts.medianDaysByStage[field])}</dd></div>)}</dl>
       </CardContent>
     </Card>
   </>

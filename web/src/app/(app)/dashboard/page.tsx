@@ -98,7 +98,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
               <select
                 name="client"
                 defaultValue={client?.id}
-                className="h-10 min-w-60 rounded-lg border bg-white px-3 text-sm"
+                className="h-10 min-w-60 rounded-lg border bg-card px-3 text-sm"
                 aria-label={english ? 'Client account' : 'Compte client'}
               >
                 {workspaceClients
@@ -119,7 +119,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
       {client && <CollectionStatus client={client} {...collection} locale={locale} canRefresh={canRefresh} canConnect={canConnect} destination="/dashboard" feedback={query.sync} />}
       {!client || (!campaignSnapshot && !totals) ? (
-        <div role="status" className="rounded-xl border bg-white p-6">
+        <div role="status" className="rounded-md border bg-card p-6">
           <h2 className="font-semibold">{client ? (english ? 'Collection pending' : 'Collecte en attente') : connection ? (english ? 'Choose your managed accounts' : 'Choisissez les comptes à gérer') : (english ? 'Connect Google Ads' : 'Connectez Google Ads')}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{client
             ? (english ? 'Account data will appear after a successful collection. See the collection status above.' : 'Les données du compte apparaîtront après une collecte réussie. Consultez l’état de la collecte ci-dessus.')
@@ -170,35 +170,35 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       )}
       {client && (
           <section className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_.7fr]">
-            <Card className="overflow-hidden border-[#dce5e7] bg-[#0d1722] text-white shadow-none">
+            <Card className="overflow-hidden border-border bg-card text-foreground shadow-none">
               <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p id="dashboard-score-label" className="text-xs font-semibold uppercase tracking-[.16em] text-[#19A58F]">{english ? 'Monitoring score' : 'Score de vigilance'}</p>
+                  <p id="dashboard-score-label" className="text-xs font-semibold uppercase tracking-[.16em] text-primary">{english ? 'Monitoring score' : 'Score de vigilance'}</p>
                   <p aria-labelledby="dashboard-score-label" data-dashboard-score className="mt-3 text-4xl font-semibold tracking-tight">
                     {healthScore ?? '—'}
-                    <span className="text-lg text-white/35"> / 100</span>
+                    <span className="text-lg text-muted-foreground"> / 100</span>
                   </p>
-                  <p className="mt-2 max-w-md text-sm leading-6 text-white/55">
+                  <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                     {english ? 'Client score based on delivery, spend without conversions, and open or reopened incidents. Requires fresh campaign data with all available query pages received. Acknowledged and snoozed incidents are excluded.' : 'Score du client fondé sur la diffusion, les dépenses sans conversion et les incidents ouverts ou rouverts. Le score exige des campagnes récentes et toutes les pages disponibles de la collecte. Les incidents acquittés et reportés sont exclus.'}
                   </p>
                 </div>
                 <div aria-hidden="true" className="relative grid size-28 shrink-0 place-items-center">
                   <svg viewBox="0 0 112 112" className="absolute inset-0 size-full -rotate-90" focusable="false">
-                    <circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="10" className="text-white/10" />
-                    {healthScore !== null && <circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="10" pathLength="100" strokeDasharray={`${healthScore} 100`} className="text-[#19A58F]" />}
+                    <circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted-foreground" />
+                    {healthScore !== null && <circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="10" pathLength="100" strokeDasharray={`${healthScore} 100`} className="text-primary" />}
                   </svg>
-                  <Gauge className={`size-9 ${healthScore === null ? 'text-white/35' : 'text-[#19A58F]'}`} />
+                  <Gauge className={`size-9 ${healthScore === null ? 'text-muted-foreground' : 'text-primary'}`} />
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-[#dce5e7] shadow-none">
+            <Card className="border-border shadow-none">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
                     <p id="dashboard-alert-label" className="text-sm text-muted-foreground">{english ? 'Open incidents' : 'Incidents ouverts'}</p>
                     <p aria-labelledby="dashboard-alert-label" data-dashboard-alerts className="mt-2 text-4xl font-semibold tracking-tight">{openAlerts ?? '—'}</p>
                   </div>
-                  <span className="grid size-11 place-items-center rounded-2xl bg-amber-50 text-amber-700">
+                  <span className="grid size-11 place-items-center rounded-md y-status-warning text-[var(--y-warning)]">
                     <BellRing className="size-5" />
                   </span>
                 </div>
@@ -210,7 +210,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
           </section>
       )}
       {client && (
-          <Card className="mt-6 border-[#dce5e7] shadow-none">
+          <Card className="mt-6 border-border shadow-none">
             <CardHeader><CardTitle>{english ? 'Goal and monthly pacing' : 'Objectif et pacing du mois'}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{english ? `Calculated through the last completed day in ${client.timezone}, without currency conversion.` : `Calculé jusqu’au dernier jour terminé dans le fuseau ${client.timezone}, sans conversion entre devises.`}</p></CardHeader>
             <CardContent>
               {goalContext?.goal ? (
@@ -223,11 +223,11 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                 </div>
               ) : <p className="text-sm text-muted-foreground">{english ? 'No goal defined: no pacing recommendation will be generated.' : 'Aucun objectif défini : aucune recommandation de pacing ne sera générée.'}</p>}
               {isAdmin && (
-                <details className="mt-5 rounded-xl border p-4">
+                <details className="mt-5 rounded-md border p-4">
                   <summary className="cursor-pointer text-sm font-medium">{english ? 'Configure goal' : 'Configurer l’objectif'}</summary>
                   <form action={updateClientGoal} className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <input type="hidden" name="clientId" value={client.id} />
-                    <select name="primaryKpi" defaultValue={goalContext?.goal?.primaryKpi ?? 'cpa'} className="h-10 rounded-lg border bg-white px-3 text-sm"><option value="cpa">CPA</option><option value="roas">ROAS</option><option value="conversions">Conversions</option><option value="conversion_value">{english ? 'Conversion value' : 'Valeur de conversion'}</option></select>
+                    <select name="primaryKpi" defaultValue={goalContext?.goal?.primaryKpi ?? 'cpa'} className="h-10 rounded-lg border bg-card px-3 text-sm"><option value="cpa">CPA</option><option value="roas">ROAS</option><option value="conversions">Conversions</option><option value="conversion_value">{english ? 'Conversion value' : 'Valeur de conversion'}</option></select>
                     <Input name="monthlyBudget" type="number" min="0.01" step="0.01" placeholder={`${english ? 'Monthly budget' : 'Budget mensuel'} ${currency}`} defaultValue={goalContext?.goal ? Number(goalContext.goal.monthlyBudgetMicros) / 1_000_000 : ''} required />
                     <Input name="targetCpa" type="number" min="0.01" step="0.01" placeholder={english ? 'Target CPA (optional)' : 'CPA cible (facultatif)'} defaultValue={goalContext?.goal?.targetCpaMicros ? Number(goalContext.goal.targetCpaMicros) / 1_000_000 : ''} />
                     <Input name="targetRoas" type="number" min="0.01" step="0.01" placeholder={english ? 'Target ROAS (optional)' : 'ROAS cible (facultatif)'} defaultValue={goalContext?.goal?.targetRoas ?? ''} />
@@ -239,18 +239,18 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                   </form>
                 </details>
               )}
-              <div className="mt-5 rounded-2xl border border-[#dce5e7] bg-[#f8fbfb] p-4">
+              <div className="mt-5 rounded-md border border-border bg-card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold">{english ? 'Guarded budget recommendations' : 'Recommandations budgétaires gardées'}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{pacingRecommendations.message}</p>
                   </div>
-                  <span className="rounded-full border bg-white px-3 py-1 text-xs font-medium">30 {english ? 'days' : 'jours'} · {currency}</span>
+                  <span className="rounded-md border bg-card px-3 py-1 text-xs font-medium">30 {english ? 'days' : 'jours'} · {currency}</span>
                 </div>
                 {pacingRecommendations.recommendations.length > 0 && (
                   <div className="mt-4 space-y-3">
                     {pacingRecommendations.recommendations.map((recommendation) => recommendation.kind === 'reallocate' ? (
-                      <div key={`reallocate-${recommendation.fromCampaign.id}-${recommendation.toCampaign.id}`} className="rounded-xl border bg-white p-4">
+                      <div key={`reallocate-${recommendation.fromCampaign.id}-${recommendation.toCampaign.id}`} className="rounded-md border bg-card p-4">
                         <p className="font-medium">{english ? 'Reallocate' : 'Réallouer'} {formatMoneyFromMicros(recommendation.transferMicros, currency)} / {english ? 'day' : 'jour'}</p>
                         <p className="mt-1 text-sm text-muted-foreground">{recommendation.fromCampaign.name} → {recommendation.toCampaign.name}</p>
                         <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
@@ -270,11 +270,11 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                             <Button type="submit" size="sm" variant="outline">{english ? 'Validate and propose atomic batch' : 'Valider et proposer le batch atomique'}</Button>
                           </form>
                         ) : (
-                          <p className="mt-3 text-xs font-medium text-amber-700">{english ? 'Advisory only: atomic batches are reserved for the Agency plan.' : 'Consultatif uniquement : le batch atomique est réservé au plan Agency.'}</p>
+                          <p className="mt-3 text-xs font-medium text-[var(--y-warning)]">{english ? 'Advisory only: atomic batches are reserved for the Agency plan.' : 'Consultatif uniquement : le batch atomique est réservé au plan Agency.'}</p>
                         )}
                       </div>
                     ) : (
-                      <div key={`${recommendation.kind}-${recommendation.campaign.id}`} className="flex flex-col gap-4 rounded-xl border bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div key={`${recommendation.kind}-${recommendation.campaign.id}`} className="flex flex-col gap-4 rounded-md border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                           <p className="font-medium">{recommendation.kind === 'increase' ? (english ? 'Incremental increase' : 'Hausse incrémentale') : (english ? 'Incremental decrease' : 'Baisse incrémentale')} · {recommendation.campaign.name}</p>
                           <p className="mt-1 text-sm text-muted-foreground">
@@ -305,8 +305,8 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
 
       )}
       {client && campaignSnapshot && (
-          <Card className="mt-6 overflow-hidden border-[#e8e5ef] shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between border-b bg-white">
+          <Card className="mt-6 overflow-hidden border-border ">
+            <CardHeader className="flex flex-row items-center justify-between border-b bg-card">
               <div>
                 <CardTitle>{english ? 'Campaigns' : 'Campagnes'} · {client.name}</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -318,7 +318,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-[#faf9fc] text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <thead className="bg-card text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th className="px-5 py-3">{english ? 'Campaign' : 'Campagne'}</th>
                       <th className="px-4 py-3">{english ? 'Status' : 'Statut'}</th>
@@ -332,7 +332,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                   </thead>
                   <tbody className="divide-y">
                     {campaigns.map((campaign) => (
-                      <tr key={campaign.id} className="bg-white align-top hover:bg-[#fcfbff]">
+                      <tr key={campaign.id} className="bg-card align-top hover:bg-card">
                         <td className="px-5 py-4">
                           <p className="max-w-sm font-medium">{campaign.name}</p>
                           <p className="mt-1 text-xs text-muted-foreground">
@@ -360,7 +360,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
                             <summary className="cursor-pointer list-none rounded-lg border px-3 py-2 text-xs font-medium hover:bg-muted">
                               {english ? 'Prepare' : 'Préparer'}
                             </summary>
-                            <div className="absolute right-0 z-10 mt-2 w-72 rounded-2xl border bg-white p-4 text-left shadow-xl">
+                            <div className="absolute right-0 z-10 mt-2 w-72 rounded-md border bg-card p-4 text-left ">
                               {canProposeStatus && <form action={requestGoogleAdsChange} className="space-y-3">
                                 <input type="hidden" name="kind" value="campaign_status" />
                                 <input type="hidden" name="clientId" value={client.id} />
@@ -437,14 +437,14 @@ function MetricCard({
   icon: typeof Activity
 }) {
   return (
-    <Card className="border-[#e8e5ef] bg-white shadow-sm">
+    <Card className="border-border bg-card ">
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
           </div>
-          <span className="grid size-10 place-items-center rounded-xl bg-[#f2effd] text-[var(--brand-accent)]">
+          <span className="grid size-10 place-items-center rounded-md bg-card text-[var(--brand-accent)]">
             <Icon className="size-5" />
           </span>
         </div>

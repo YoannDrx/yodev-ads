@@ -11,7 +11,7 @@ export function ReportPeriodFields({ id, locale, initial }: { id: string; locale
   const [period, setPeriod] = useState(selection?.period ?? 'unsupported')
   return <div className="space-y-2">
     <label className="block text-sm font-medium" htmlFor={id}>{english ? 'Period' : 'Période'}</label>
-    <select id={id} name="period" value={period} onChange={(event) => setPeriod(event.target.value)} required className="h-10 w-full rounded-lg border bg-white px-3 text-sm">
+    <select id={id} name="period" value={period} onChange={(event) => setPeriod(event.target.value)} required className="h-10 w-full rounded-lg border bg-card px-3 text-sm">
       {!selection && <option value="unsupported" disabled>{english ? 'Choose a valid period' : 'Choisissez une période valide'}</option>}
       {[7, 30, 90].map((days) => <option key={days} value={days}>{days} {english ? 'completed days' : 'jours complets'}</option>)}
       <option value="previous_month">{english ? 'Previous calendar month' : 'Mois civil précédent'}</option>

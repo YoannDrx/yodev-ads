@@ -32,7 +32,7 @@ export function BillingActivationStatus({
   if (!processing) return null
   const english = locale === 'en'
   return (
-    <div className={`mb-6 rounded-2xl border p-4 text-sm ${active ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950'}`} role="status">
+    <div className={`mb-6 rounded-md border p-4 text-sm ${active ? 'border-emerald-200 y-status-success text-[var(--y-success)]' : 'border-amber-200 y-status-warning text-amber-950'}`} role="status">
       {active
         ? (english ? 'Subscription active. Your paid features are now available.' : 'Abonnement actif. Vos fonctionnalités payantes sont maintenant disponibles.')
         : timedOut

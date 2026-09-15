@@ -50,13 +50,13 @@ export default async function BillingPage({
       />
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
       <BillingActivationStatus processing={query.checkout === 'processing'} active={active} locale={locale} />
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border bg-white p-4 text-sm">
-        <span className={`size-2 rounded-full ${active ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-md border bg-card p-4 text-sm">
+        <span className={`size-2 rounded-md ${active ? 'bg-emerald-500' : 'bg-amber-500'}`} />
         <strong>{english ? 'Current plan' : 'Offre actuelle'} : {currentPlan.name}</strong>
         <span className="text-muted-foreground">· {clients.length} {english ? `connected account${clients.length === 1 ? '' : 's'}` : 'compte(s) connecté(s)'}</span>
         <span className="text-muted-foreground">· {english ? 'status' : 'statut'} {workspace.subscriptionStatus}</span>
       </div>
-      {workspace.requestedPlan && <div className="mb-6 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+      {workspace.requestedPlan && <div className="mb-6 rounded-md border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span>
             {english ? 'Requested plan' : 'Offre demandée'} : <strong>{requestedPlan?.name ?? workspace.requestedPlan}</strong>
@@ -69,7 +69,7 @@ export default async function BillingPage({
           {!requestedUpgrade && isAdmin && <form action={cancelScheduledSubscriptionPlanChange}><Button type="submit" size="sm" variant="outline">{english ? 'Cancel scheduled change' : 'Annuler le changement'}</Button></form>}
         </div>
       </div>}
-      {workspace.billingReconciliationRequired && <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+      {workspace.billingReconciliationRequired && <div className="mb-6 rounded-md border border-red-200 y-status-danger p-4 text-sm text-[var(--y-danger)]">
         {english ? 'Billing is being reconciled. A new Checkout is temporarily blocked; current rights are not increased.' : 'La facturation est en cours de réconciliation. Un nouveau Checkout est temporairement bloqué et les droits actuels ne sont pas augmentés.'}
       </div>}
       <section className="grid gap-5 lg:grid-cols-3">
@@ -79,13 +79,13 @@ export default async function BillingPage({
           return (
             <Card
               key={id}
-              className={current ? 'border-[var(--brand-accent)] shadow-md' : 'border-[#dde4e7] shadow-none'}
+              className={current ? 'border-[var(--brand-accent)] ' : 'border-border shadow-none'}
             >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold">{plan.name}</h2>
                   {current && (
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700">{english ? 'Current' : 'Actuelle'}</span>
+                    <span className="rounded-md y-status-success px-2.5 py-1 text-xs text-[var(--y-success)]">{english ? 'Current' : 'Actuelle'}</span>
                   )}
                 </div>
                 <p className="mt-5 text-4xl font-semibold tracking-tight">
@@ -96,12 +96,12 @@ export default async function BillingPage({
                 <ul className="mt-6 space-y-3">
                   {planFeaturesForLocale(id as keyof typeof planCatalog, locale).map((feature) => (
                     <li key={feature} className="flex gap-2 text-sm">
-                      <Check className="mt-0.5 size-4 text-emerald-600" />
+                      <Check className="mt-0.5 size-4 text-[var(--y-success)]" />
                       {feature}
                     </li>
                   ))}
                 </ul>
-                {!current && <div className="mt-5 rounded-xl border bg-slate-50 p-3 text-sm">
+                {!current && <div className="mt-5 rounded-md border bg-muted p-3 text-sm">
                   <p>{english ? `${impact.includedAdvertisers.length} accounts would remain managed with your saved priorities.` : `${impact.includedAdvertisers.length} comptes seraient gérés selon vos priorités enregistrées.`}</p>
                   {impact.deactivated.length > 0 && <details className="mt-2"><summary className="cursor-pointer font-medium">{english ? `${impact.deactivated.length} accounts would pause` : `${impact.deactivated.length} comptes seraient mis en pause`}</summary><ul className="mt-2 list-inside list-disc">{impact.deactivated.map((account) => <li key={account.id}>{account.name} · {account.googleCustomerId}</li>)}</ul></details>}
                   <p className="mt-2 text-xs text-muted-foreground">{english ? 'History and selections are retained. This preview follows the current Google inventory.' : 'L’historique et les sélections sont conservés. Cet aperçu utilise l’inventaire Google actuel.'}</p>
@@ -114,7 +114,7 @@ export default async function BillingPage({
                     <Input name="billingEmail" type="email" defaultValue={workspace.billingEmail ?? ''} placeholder={english ? 'Billing email' : 'Email de facturation'} required />
                     <Input name="billingLegalName" defaultValue={workspace.billingLegalName ?? workspace.name} placeholder={english ? 'Legal company name' : 'Raison sociale'} minLength={2} maxLength={180} required />
                     <div className="grid grid-cols-[1fr_90px] gap-2">
-                      <div className="flex h-10 items-center rounded-lg border bg-slate-50 px-3 text-sm">{english ? 'Business' : 'Professionnel'}</div>
+                      <div className="flex h-10 items-center rounded-lg border bg-muted px-3 text-sm">{english ? 'Business' : 'Professionnel'}</div>
                       <Input name="countryCode" aria-label={english ? 'Country' : 'Pays'} defaultValue={workspace.countryCode} maxLength={2} pattern="[A-Za-z]{2}" required />
                     </div>
                     <label className="flex items-start gap-2 text-xs leading-5"><input name="acceptLegal" type="checkbox" required className="mt-1" /><span>{english ? 'I accept the ' : 'J’accepte les '}<a className="underline" href="/terms" target="_blank">{english ? 'Terms' : 'CGV'}</a>{english ? ' and the ' : ' et la '}<a className="underline" href="/privacy" target="_blank">{english ? 'Privacy Policy' : 'politique de confidentialité'}</a>.</span></label>
@@ -143,15 +143,15 @@ export default async function BillingPage({
           )
         })}
       </section>
-      <div className="mt-6 flex gap-3 rounded-2xl bg-[#0d1722] p-5 text-sm text-white/70">
-        <ShieldCheck className="size-5 shrink-0 text-[#19A58F]" />
-        {english ? 'Card data never passes through Ads by Yodev. Checkout, renewals, invoices and cancellations are handled by Stripe.' : 'Les données de carte ne transitent jamais par Ads by Yodev. Le checkout, les renouvellements, factures et annulations sont traités par Stripe.'}
+      <div className="mt-6 flex gap-3 rounded-md bg-card p-5 text-sm text-muted-foreground">
+        <ShieldCheck className="size-5 shrink-0 text-primary" />
+        {english ? 'Card data never passes through Yodev Ads. Checkout, renewals, invoices and cancellations are handled by Stripe.' : 'Les données de carte ne transitent jamais par Yodev Ads. Le checkout, les renouvellements, factures et annulations sont traités par Stripe.'}
       </div>
       {active && isAdmin && (
-        <Card className="mt-6 border-[#dde4e7] shadow-none"><CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold">{english ? 'Online cancellation' : 'Résiliation électronique'}</h2><p className="mt-1 text-sm text-muted-foreground">{english ? 'Access remains active until the end of the paid period. You can withdraw the cancellation request before then.' : 'L’accès reste actif jusqu’à la fin de la période déjà payée. Vous pourrez annuler la demande avant cette date.'}</p></div><div className="flex gap-2"><form action={cancelSubscriptionAtPeriodEnd}><Button type="submit" variant="outline">{english ? 'Cancel at period end' : 'Résilier à l’échéance'}</Button></form><form action={reactivateSubscription}><Button type="submit" variant="ghost">{english ? 'Undo cancellation' : 'Annuler une résiliation'}</Button></form></div></CardContent></Card>
+        <Card className="mt-6 border-border shadow-none"><CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-semibold">{english ? 'Online cancellation' : 'Résiliation électronique'}</h2><p className="mt-1 text-sm text-muted-foreground">{english ? 'Access remains active until the end of the paid period. You can withdraw the cancellation request before then.' : 'L’accès reste actif jusqu’à la fin de la période déjà payée. Vous pourrez annuler la demande avant cette date.'}</p></div><div className="flex gap-2"><form action={cancelSubscriptionAtPeriodEnd}><Button type="submit" variant="outline">{english ? 'Cancel at period end' : 'Résilier à l’échéance'}</Button></form><form action={reactivateSubscription}><Button type="submit" variant="ghost">{english ? 'Undo cancellation' : 'Annuler une résiliation'}</Button></form></div></CardContent></Card>
       )}
       {role === 'owner' && (
-        <Card className="mt-6 border-[#dde4e7] shadow-none">
+        <Card className="mt-6 border-border shadow-none">
           <CardContent className="p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div><h2 className="font-semibold">{english ? 'Data export' : 'Export des données'}</h2><p className="mt-1 text-sm text-muted-foreground">{english ? 'Complete secret-free ZIP archive, retained for seven days.' : 'Archive ZIP complète sans secrets, conservée pendant sept jours.'}</p></div>
@@ -164,7 +164,7 @@ export default async function BillingPage({
       {role === 'owner' && (
         <Card className="mt-6 border-red-200 shadow-none">
           <CardContent className="p-6">
-            <h2 className="font-semibold text-red-800">{english ? 'Delete workspace' : 'Suppression de l’espace'}</h2>
+            <h2 className="font-semibold text-[var(--y-danger)]">{english ? 'Delete workspace' : 'Suppression de l’espace'}</h2>
             {workspace.accessState === 'deletion_pending' ? (
               <div className="mt-3">
                 <p className="text-sm text-muted-foreground">{english ? 'Access and secrets have been revoked. Final purge is scheduled for' : 'Les accès et secrets ont été révoqués. La purge définitive est prévue le'} {workspace.purgeAt?.toLocaleDateString(english ? 'en-GB' : 'fr-FR')}.</p>

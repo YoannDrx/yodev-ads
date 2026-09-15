@@ -45,11 +45,11 @@ export function AccountSelectionEditor({ accounts, limit, version, workspaceId, 
     <input type="hidden" name="workspaceId" value={workspaceId} />
     <input type="hidden" name="version" value={version} />
     <input type="hidden" name="clientIds" value={JSON.stringify(selected)} />
-    <section className="rounded-2xl border bg-white p-5" aria-labelledby="managed-selection-title">
+    <section className="rounded-md border bg-card p-5" aria-labelledby="managed-selection-title">
       <h2 id="managed-selection-title" className="font-semibold">{english ? 'Managed selection and priorities' : 'Sélection gérée et priorités'}</h2>
       <p className="mt-2 text-sm">{english ? `${preview.includedAdvertisers.length} accounts managed with this selection · ${selected.length} selected · quota ${limit ?? 'unlimited'}.` : `${preview.includedAdvertisers.length} comptes gérés avec cette sélection · ${selected.length} sélectionnés · quota ${limit ?? 'illimité'}.`}</p>
       <p className="mt-2 text-sm text-muted-foreground">{english ? 'Accounts are activated in this order, within the plan quota and Google access. A downgrade preserves your choices and history. New MCC accounts require selection. Managers do not consume quota.' : 'Les comptes sont activés dans cet ordre, selon le quota et l’accès Google. Une baisse de forfait conserve vos choix et l’historique. Les nouveaux comptes du MCC doivent être sélectionnés. Les comptes administrateurs ne consomment pas de quota.'}</p>
-      {overQuota && <p role="status" className="mt-3 text-sm text-amber-800">{english ? 'Your retained selection exceeds the current quota. You can reorder it without removing choices, or reduce it before saving a new selection.' : 'Votre sélection conservée dépasse le quota actuel. Vous pouvez changer son ordre sans supprimer vos choix, ou la réduire avant d’enregistrer une nouvelle sélection.'}</p>}
+      {overQuota && <p role="status" className="mt-3 text-sm text-[var(--y-warning)]">{english ? 'Your retained selection exceeds the current quota. You can reorder it without removing choices, or reduce it before saving a new selection.' : 'Votre sélection conservée dépasse le quota actuel. Vous pouvez changer son ordre sans supprimer vos choix, ou la réduire avant d’enregistrer une nouvelle sélection.'}</p>}
       <ol className="my-4 divide-y">
         {selected.map((id, index) => { const account = byId.get(id)!; return <li key={id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
           <span className="min-w-0 break-words">{index + 1}. {account.name} <span className="text-muted-foreground">· {activeIds.has(id) ? (english ? 'Managed' : 'Géré') : !account.googleAccessible ? (english ? 'Google access unavailable' : 'Accès Google indisponible') : (english ? 'Outside quota' : 'Hors quota')}</span></span>
@@ -60,7 +60,7 @@ export function AccountSelectionEditor({ accounts, limit, version, workspaceId, 
         <p className="mb-3 text-sm" aria-live="polite">{english ? `On save: ${preview.deactivated.length} accounts paused, ${preview.activated.length} activated. History is retained; paused accounts stop collection and automation.` : `À l’enregistrement : ${preview.deactivated.length} comptes mis en pause, ${preview.activated.length} activés. L’historique est conservé ; les comptes en pause ne sont plus collectés ni automatisés.`}</p>
         <SaveButtons english={english} overQuota={overQuota} sameSelection={sameSelection} /></>}
     </section>
-    <section className="rounded-2xl border bg-white p-5" aria-labelledby="account-inventory-title">
+    <section className="rounded-md border bg-card p-5" aria-labelledby="account-inventory-title">
       <h2 id="account-inventory-title" className="font-semibold">{english ? 'MCC inventory' : 'Inventaire du MCC'} · {accounts.length}</h2>
       <label className="mt-4 block text-sm" htmlFor="account-inventory-search">{english ? 'Search by name or account ID' : 'Rechercher par nom ou identifiant'}</label>
       <Input id="account-inventory-search" value={search} onKeyDown={(event) => { if (event.key === 'Enter') event.preventDefault() }} onChange={(event) => { setSearch(event.target.value); setPage(0) }} className="mt-2 max-w-lg" />

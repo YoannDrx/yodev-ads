@@ -9,8 +9,8 @@ export default async function LegalPage() {
   return (
     <LegalDocument locale={locale} title={fr ? 'Mentions légales' : 'Legal notice'} updated="25 août 2026" updatedEn="25 August 2026">
       <section><h2>{fr ? 'Éditeur' : 'Publisher'}</h2><p>{fr
-        ? 'Ads by Yodev est édité sous le nom commercial Yodev par Yoann Andrieux, entrepreneur individuel (EI). SIREN : 803 272 590. SIRET : 803 272 590 00024. Activité principale : programmation informatique (NAF/APE 62.01Z).'
-        : 'Ads by Yodev is published under the Yodev trade name by Yoann Andrieux, a French sole trader (entrepreneur individuel). SIREN: 803 272 590. SIRET: 803 272 590 00024. Main business activity: computer programming (NAF/APE 62.01Z).'}</p></section>
+        ? 'Yodev Ads est édité sous le nom commercial Yodev par Yoann Andrieux, entrepreneur individuel (EI). SIREN : 803 272 590. SIRET : 803 272 590 00024. Activité principale : programmation informatique (NAF/APE 62.01Z).'
+        : 'Yodev Ads is published under the Yodev trade name by Yoann Andrieux, a French sole trader (entrepreneur individuel). SIREN: 803 272 590. SIRET: 803 272 590 00024. Main business activity: computer programming (NAF/APE 62.01Z).'}</p></section>
       <section><h2>{fr ? 'Adresse et contact' : 'Address and contact'}</h2><p>7 allée des Jonquilles, 95130 Franconville, France · <a href="mailto:hello@yodev.fr">hello@yodev.fr</a>.</p></section>
       <section><h2>{fr ? 'Directeur de la publication' : 'Publication director'}</h2><p>Yoann Andrieux.</p></section>
       <section><h2>{fr ? 'TVA' : 'VAT'}</h2><p>{fr

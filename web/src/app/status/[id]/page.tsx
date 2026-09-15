@@ -13,13 +13,13 @@ export default async function IncidentPage({ params, searchParams }: { params: P
   const result = await getPublicPlatformIncident(id, query)
   if (!result) notFound()
   const english = locale === 'en'
-  return <main className="min-h-screen bg-[#f3f6f8] px-4 py-10 text-[#0d1722] sm:px-7">
+  return <main className="min-h-screen bg-card px-4 py-10 text-foreground sm:px-7">
     <div className="mx-auto max-w-4xl">
       <Link href="/status" className="text-sm underline">{english ? 'Back to service status' : 'Revenir au statut du service'}</Link>
       <h1 className="mt-6 break-words text-3xl font-semibold [overflow-wrap:anywhere]">{english ? result.incident.titleEn : result.incident.titleFr}</h1>
       <Badge className="mt-3" variant="outline">{statusCopy[result.incident.status]?.[locale] ?? result.incident.status}</Badge>
       <PublicHistoryPages page={result.page} path={`/status/${id}`} locale={locale} />
-      <section className="rounded-2xl border bg-white p-5"><PublicIncidentUpdates updates={result.page.items} locale={locale} />
+      <section className="rounded-md border bg-card p-5"><PublicIncidentUpdates updates={result.page.items} locale={locale} />
         {!result.page.invalidCursor && result.page.total === 0 && <p className="text-sm text-muted-foreground">{english ? 'No update has been published for this incident.' : 'Aucun message n’a été publié pour cet incident.'}</p>}
       </section>
     </div>

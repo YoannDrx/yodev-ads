@@ -81,8 +81,8 @@ export default async function AlertsPage({
                 </p>
                 {(incident.assignedTo || incident.dueAt) && (
                   <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                    {incident.assignedTo && <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700"><UserRoundCheck className="size-3" />{english ? 'Assigned' : 'Assignée'}</span>}
-                    {incident.dueAt && <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium ${incident.dueAt < new Date() && incident.status !== 'resolved' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700'}`}><Clock3 className="size-3" />{english ? 'Due' : 'Échéance'} {incident.dueAt.toLocaleDateString(english ? 'en-GB' : 'fr-FR')}</span>}
+                    {incident.assignedTo && <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 font-medium text-blue-700"><UserRoundCheck className="size-3" />{english ? 'Assigned' : 'Assignée'}</span>}
+                    {incident.dueAt && <span className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 font-medium ${incident.dueAt < new Date() && incident.status !== 'resolved' ? 'y-status-danger text-[var(--y-danger)]' : 'bg-muted text-muted-foreground'}`}><Clock3 className="size-3" />{english ? 'Due' : 'Échéance'} {incident.dueAt.toLocaleDateString(english ? 'en-GB' : 'fr-FR')}</span>}
                   </div>
                 )}
               </div>
@@ -90,7 +90,7 @@ export default async function AlertsPage({
               {canManageAlerts && incident.status !== 'resolved' && (
                 <form action={updateAlertWorkflow} className="grid min-w-64 gap-2">
                   <input type="hidden" name="incidentId" value={incident.id} />
-                  <select name="operation" aria-label={english ? 'Alert action' : 'Action sur l’alerte'} className="h-9 rounded-lg border bg-white px-3 text-xs"><option value="acknowledge">{english ? 'Acknowledge' : 'Acquitter'}</option><option value="assign_self">{english ? 'Assign to me' : 'Me l’assigner'}</option>{incident.assignedTo && <option value="unassign">{english ? 'Remove assignment' : 'Retirer l’assignation'}</option>}<option value="snooze_24h">{english ? 'Snooze for 24h' : 'Masquer 24 h'}</option><option value="resolve">{english ? 'Resolve' : 'Résoudre'}</option></select>
+                  <select name="operation" aria-label={english ? 'Alert action' : 'Action sur l’alerte'} className="h-9 rounded-lg border bg-card px-3 text-xs"><option value="acknowledge">{english ? 'Acknowledge' : 'Acquitter'}</option><option value="assign_self">{english ? 'Assign to me' : 'Me l’assigner'}</option>{incident.assignedTo && <option value="unassign">{english ? 'Remove assignment' : 'Retirer l’assignation'}</option>}<option value="snooze_24h">{english ? 'Snooze for 24h' : 'Masquer 24 h'}</option><option value="resolve">{english ? 'Resolve' : 'Résoudre'}</option></select>
                   <input name="dueDate" type="date" aria-label={english ? 'Due date' : 'Échéance'} defaultValue={incident.dueAt?.toISOString().slice(0, 10)} className="h-9 rounded-lg border px-3 text-xs" />
                   <input name="comment" aria-label={english ? 'Comment' : 'Commentaire'} maxLength={2000} placeholder={english ? 'Optional comment' : 'Commentaire facultatif'} className="h-9 rounded-lg border px-3 text-xs" />
                   <Button type="submit" size="sm" variant="outline"><CheckCircle2 className="mr-2 size-4" />{english ? 'Update' : 'Mettre à jour'}</Button>
@@ -103,8 +103,8 @@ export default async function AlertsPage({
           </Card>
         ))}
         {!collection.invalidCursor && incidents.length === 0 && (
-          <div className="rounded-3xl border border-dashed bg-white p-14 text-center">
-            <CheckCircle2 className="mx-auto size-8 text-emerald-500" />
+          <div className="rounded-md border border-dashed bg-card p-14 text-center">
+            <CheckCircle2 className="mx-auto size-8 text-[var(--y-success)]" />
             <h2 className="mt-4 font-semibold">{english ? 'No matching alert' : 'Aucune alerte correspondante'}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               {english ? 'Enable a monitor, then run an analysis to begin monitoring.' : 'Activez une vigie, puis lancez une analyse pour commencer la surveillance.'}
@@ -128,18 +128,18 @@ function Summary({
   tone: 'critical' | 'warning' | 'positive'
 }) {
   const styles = {
-    critical: 'bg-red-50 text-red-700',
-    warning: 'bg-amber-50 text-amber-700',
-    positive: 'bg-emerald-50 text-emerald-700',
+    critical: 'y-status-danger text-[var(--y-danger)]',
+    warning: 'y-status-warning text-[var(--y-warning)]',
+    positive: 'y-status-success text-[var(--y-success)]',
   }
   return (
-    <Card className="border-[#dde4e7] shadow-none">
+    <Card className="border-border shadow-none">
       <CardContent className="flex items-center justify-between p-5">
         <div>
           <p className="text-sm text-muted-foreground">{label}</p>
           <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
         </div>
-        <span className={`grid size-11 place-items-center rounded-2xl ${styles[tone]}`}>
+        <span className={`grid size-11 place-items-center rounded-md ${styles[tone]}`}>
           <Icon className="size-5" />
         </span>
       </CardContent>

@@ -49,11 +49,11 @@ export default async function ApprovalsPage({
       <FlashMessage notice={query.notice} error={query.error} locale={locale} />
       <CollectionControls path="/approvals" query={query} page={collection} locale={locale} statuses={COLLECTION_STATUSES.approvals} />
       <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
-        <ShieldCheck className="size-4 text-emerald-600" />
+        <ShieldCheck className="size-4 text-[var(--y-success)]" />
         <span>{pending.length} {english ? `pending request${pending.length === 1 ? '' : 's'} on this page` : `demande${pending.length > 1 ? 's' : ''} en attente sur cette page`}</span>
       </div>
       {[...batchGroups.values()].filter((group) => group.length >= 2).map((group) => (
-        <Card key={`batch-${group[0].client.id}`} className="mb-5 border-indigo-200 bg-indigo-50/50 shadow-sm">
+        <Card key={`batch-${group[0].client.id}`} className="mb-5 border-indigo-200 bg-indigo-50/50 ">
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
               <Layers3 className="mt-0.5 size-5 text-indigo-700" />
@@ -61,19 +61,19 @@ export default async function ApprovalsPage({
             </div>
             <form action={requestAtomicGoogleAdsBatch} className="mt-4 space-y-2">
               {group.map(({ request }) => (
-                <label key={`batch-source-${request.id}`} className="flex cursor-pointer items-start gap-3 rounded-xl border bg-white px-4 py-3 text-sm">
+                <label key={`batch-source-${request.id}`} className="flex cursor-pointer items-start gap-3 rounded-md border bg-card px-4 py-3 text-sm">
                   <input type="checkbox" name="approvalId" value={request.id} className="mt-1 size-4" />
                   <span><span className="font-medium">{request.title}</span><span className="mt-0.5 block text-xs text-muted-foreground">{approvalKindLabel(request.kind, locale)}</span></span>
                 </label>
               ))}
-              <Button type="submit" size="sm" className="bg-indigo-700 text-white"><Layers3 className="mr-1 size-4" />{english ? 'Create atomic batch' : 'Créer le batch atomique'}</Button>
+              <Button type="submit" size="sm" className="bg-indigo-700 text-foreground"><Layers3 className="mr-1 size-4" />{english ? 'Create atomic batch' : 'Créer le batch atomique'}</Button>
             </form>
           </CardContent>
         </Card>
       ))}
       <div className="space-y-4">
         {approvals.map(({ request, client, comments, hasMoreComments, clientFeedback, observation }) => (
-          <Card key={request.id} className="border-[#e8e5ef] shadow-sm">
+          <Card key={request.id} className="border-border ">
             <CardContent className="p-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
@@ -89,24 +89,24 @@ export default async function ApprovalsPage({
                   {request.validationRequestId && <p className="mt-2 font-mono text-[10px] text-muted-foreground">{english ? 'Google validation' : 'Validation Google'} : {request.validationRequestId}</p>}
                   {request.expectedState && request.proposedState && (
                     <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-                      <div className="rounded-lg bg-slate-50 px-3 py-2">
-                        <span className="font-semibold text-slate-700">{english ? 'Before' : 'Avant'}</span>
-                        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px] text-slate-600">{JSON.stringify(request.expectedState, null, 2)}</pre>
+                      <div className="rounded-lg bg-muted px-3 py-2">
+                        <span className="font-semibold text-muted-foreground">{english ? 'Before' : 'Avant'}</span>
+                        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px] text-muted-foreground">{JSON.stringify(request.expectedState, null, 2)}</pre>
                       </div>
-                      <div className="rounded-lg bg-emerald-50 px-3 py-2">
-                        <span className="font-semibold text-emerald-800">{english ? 'Proposed' : 'Proposé'}</span>
-                        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px] text-emerald-700">{JSON.stringify(request.proposedState, null, 2)}</pre>
+                      <div className="rounded-lg y-status-success px-3 py-2">
+                        <span className="font-semibold text-[var(--y-success)]">{english ? 'Proposed' : 'Proposé'}</span>
+                        <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-[10px] text-[var(--y-success)]">{JSON.stringify(request.proposedState, null, 2)}</pre>
                       </div>
                     </div>
                   )}
                   {request.kind === 'campaign_budget' && request.expectedState?.explicitlyShared === true && (
-                    <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                    <p className="mt-2 rounded-lg y-status-warning px-3 py-2 text-xs font-medium text-[var(--y-warning)]">
                       {english ? `Budget shared by ${String(request.expectedState.referenceCount ?? 'several')} campaigns: this change will affect every use.` : `Budget partagé entre ${String(request.expectedState.referenceCount ?? 'plusieurs')} campagnes : le changement affectera toutes ses utilisations.`}
                     </p>
                   )}
                   {request.impactPreview && (
-                    <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs">
-                      <div className="flex flex-wrap items-center gap-2 font-semibold text-slate-800">
+                    <div className="mt-3 rounded-md border border-border bg-muted px-4 py-3 text-xs">
+                      <div className="flex flex-wrap items-center gap-2 font-semibold text-foreground">
                         <span>{request.impactPreview.atomic ? (english ? 'All or nothing' : 'Tout ou rien') : (english ? 'Single operation' : 'Opération unique')}</span>
                         <span>· {request.impactPreview.operationCount} {english ? `operation${request.impactPreview.operationCount === 1 ? '' : 's'}` : `opération${request.impactPreview.operationCount > 1 ? 's' : ''}`}</span>
                         <span>· {english ? `${request.impactPreview.observationWindowDays}-day observation` : `observation ${request.impactPreview.observationWindowDays} jours`}</span>
@@ -114,7 +114,7 @@ export default async function ApprovalsPage({
                       {request.impactPreview.conflicts.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {request.impactPreview.conflicts.map((conflict) => (
-                            <p key={`${request.id}-${conflict.code}-${conflict.resourceName ?? 'global'}`} className={conflict.severity === 'warning' ? 'text-amber-800' : conflict.severity === 'blocking' ? 'text-red-700' : 'text-slate-600'}>
+                            <p key={`${request.id}-${conflict.code}-${conflict.resourceName ?? 'global'}`} className={conflict.severity === 'warning' ? 'text-[var(--y-warning)]' : conflict.severity === 'blocking' ? 'text-[var(--y-danger)]' : 'text-muted-foreground'}>
                               {conflict.severity === 'warning' ? (english ? 'Warning: ' : 'Attention : ') : ''}{conflict.message}
                             </p>
                           ))}
@@ -123,7 +123,7 @@ export default async function ApprovalsPage({
                     </div>
                   )}
                   {observation && (
-                    <div className="mt-3 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs text-cyan-950">
+                    <div className="mt-3 rounded-md border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs text-cyan-950">
                       <div className="flex flex-wrap items-center gap-2"><span className="font-semibold">{english ? 'Before/after observation' : 'Observation avant/après'}</span><StatusBadge status={observation.status} locale={locale} /></div>
                       <p className="mt-1">{english ? 'Baseline' : 'Référence'} {observation.baselineFrom} → {observation.baselineThrough} · {english ? 'observation' : 'observation'} {observation.observationFrom} → {observation.observationThrough}</p>
                       {observation.outcome && <p className="mt-1 font-medium">{english ? 'Cost' : 'Coût'} {formatObservationDelta(observation.outcome, 'cost', locale)} · {english ? 'conversions' : 'conversions'} {formatObservationDelta(observation.outcome, 'conversions', locale)} · {english ? 'value' : 'valeur'} {formatObservationDelta(observation.outcome, 'conversionValue', locale)}</p>}
@@ -132,9 +132,9 @@ export default async function ApprovalsPage({
                   <p className="mt-2 text-xs text-muted-foreground">
                     {english ? `${request.requiredApprovals} approval${request.requiredApprovals === 1 ? '' : 's'} required.` : `${request.requiredApprovals} approbation${request.requiredApprovals > 1 ? 's' : ''} requise${request.requiredApprovals > 1 ? 's' : ''}.`}
                   </p>
-                  {request.errorMessage && <p className="mt-2 text-sm text-red-700">{request.errorMessage}</p>}
+                  {request.errorMessage && <p className="mt-2 text-sm text-[var(--y-danger)]">{request.errorMessage}</p>}
                   {clientFeedback && (
-                    <p className={`mt-3 rounded-lg px-3 py-2 text-sm ${clientFeedback.decision === 'approved' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+                    <p className={`mt-3 rounded-lg px-3 py-2 text-sm ${clientFeedback.decision === 'approved' ? 'y-status-success text-[var(--y-success)]' : 'y-status-warning text-[var(--y-warning)]'}`}>
                       {english ? 'Client feedback' : 'Retour client'} : {clientFeedback.decision === 'approved' ? (english ? 'approved' : 'approuvé') : (english ? 'changes requested' : 'modifications demandées')} {english ? 'by' : 'par'} {clientFeedback.authorName}
                       {clientFeedback.comment ? ` - ${clientFeedback.comment}` : ''}
                     </p>
@@ -161,7 +161,7 @@ export default async function ApprovalsPage({
                         </form>
                         {featureEnabled('googleMutations') && !featureEnabled('forceReadOnly') && googleMutationKindEnabled(request.kind) && <form action={approveGoogleAdsChange}>
                           <input type="hidden" name="approvalId" value={request.id} />
-                          <Button size="sm" className="bg-[var(--brand-accent)] text-white"><Check className="mr-1 size-4" />{english ? 'Approve' : 'Approuver'}</Button>
+                          <Button size="sm" className="bg-[var(--brand-accent)] text-foreground"><Check className="mr-1 size-4" />{english ? 'Approve' : 'Approuver'}</Button>
                         </form>}
                       </>
                     )}
@@ -171,7 +171,7 @@ export default async function ApprovalsPage({
               <div className="mt-5 border-t pt-4">
                 <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"><MessageCircle className="size-4" />{english ? 'Discussion' : 'Discussion'} · {comments.length}</p>
                 <DiscussionLink kind="approvals" id={request.id} more={hasMoreComments} locale={locale} />
-                {comments.length > 0 && <div className="mt-3 space-y-2">{comments.map((comment) => <div key={comment.id} className="rounded-xl bg-[#f7f9fa] px-4 py-3"><p className="text-sm leading-6">{comment.body}</p><p className="mt-1 text-[10px] text-muted-foreground">{comment.authorUserId} · {comment.createdAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</p></div>)}</div>}
+                {comments.length > 0 && <div className="mt-3 space-y-2">{comments.map((comment) => <div key={comment.id} className="rounded-md bg-card px-4 py-3"><p className="text-sm leading-6">{comment.body}</p><p className="mt-1 text-[10px] text-muted-foreground">{comment.authorUserId} · {comment.createdAt.toLocaleString(english ? 'en-GB' : 'fr-FR')}</p></div>)}</div>}
                 {permissions.has('workspace:read') && <form action={addApprovalComment} className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <input type="hidden" name="approvalId" value={request.id} />
                   <Textarea name="body" aria-label={english ? 'Comment' : 'Commentaire'} minLength={2} maxLength={2000} placeholder={english ? 'Add context, a question or a rationale…' : 'Ajouter un contexte, une question ou une justification…'} required className="min-h-10" />
@@ -181,7 +181,7 @@ export default async function ApprovalsPage({
             </CardContent>
           </Card>
         ))}
-        {!collection.invalidCursor && approvals.length === 0 && <div className="rounded-3xl border border-dashed bg-white p-14 text-center text-muted-foreground">{english ? 'No request. Changes prepared from the cockpit will appear here.' : 'Aucune demande. Les changements préparés depuis le cockpit apparaîtront ici.'}</div>}
+        {!collection.invalidCursor && approvals.length === 0 && <div className="rounded-md border border-dashed bg-card p-14 text-center text-muted-foreground">{english ? 'No request. Changes prepared from the cockpit will appear here.' : 'Aucune demande. Les changements préparés depuis le cockpit apparaîtront ici.'}</div>}
       </div>
     </>
   )

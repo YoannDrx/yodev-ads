@@ -3,7 +3,7 @@ import { COST_CATEGORIES, COST_METHODS, COST_PLANS, COST_PLAN_LABELS, unitsToDec
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-const selectClass = 'h-10 w-full rounded-lg border bg-white px-3 text-sm'
+const selectClass = 'h-10 w-full rounded-lg border bg-card px-3 text-sm'
 export function OperatingCostForm({ entry, month }: { entry?: CostEntry; month: string }) {
   return <form action={recordOperatingCost} className="space-y-4" aria-label={entry ? `Corriger ${entry.sourceKey}` : 'Ajouter une observation de coût'}>
     <input type="hidden" name="expectedVersion" value={entry?.version ?? 0} />
@@ -18,7 +18,7 @@ export function OperatingCostForm({ entry, month }: { entry?: CostEntry; month: 
       <label className="text-sm">Méthode de répartition<select name="allocationMethod" className={selectClass} defaultValue={entry?.allocationMethod ?? 'unallocated'}>{Object.entries(COST_METHODS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       {entry ? <label className="text-sm">Prise en compte<select name="voided" className={selectClass} defaultValue={String(entry.voided)}><option value="false">Active</option><option value="true">Retirée des totaux, preuve conservée</option></select></label> : <input type="hidden" name="voided" value="false" />}
     </div>
-    <fieldset className="rounded-xl border p-3"><legend className="px-1 text-sm font-medium">Répartition par forfait pendant le mois du service — total 100 %</legend><div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">{COST_PLANS.map((plan) => <label key={plan} className="text-sm">{COST_PLAN_LABELS[plan]} (%)<Input name={`${plan}Weight`} type="number" min="0" max="100" step="0.01" required defaultValue={entry ? entry[`${plan}Weight`] / 100 : plan === 'unallocated' ? 100 : 0} /></label>)}</div></fieldset>
+    <fieldset className="rounded-md border p-3"><legend className="px-1 text-sm font-medium">Répartition par forfait pendant le mois du service — total 100 %</legend><div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">{COST_PLANS.map((plan) => <label key={plan} className="text-sm">{COST_PLAN_LABELS[plan]} (%)<Input name={`${plan}Weight`} type="number" min="0" max="100" step="0.01" required defaultValue={entry ? entry[`${plan}Weight`] / 100 : plan === 'unallocated' ? 100 : 0} /></label>)}</div></fieldset>
     <p className="text-xs text-muted-foreground">Une référence par ligne de justificatif, réutilisée pour chaque correction. Aucun nom de client, secret, URL privée ni contenu de facture. Conservez le justificatif et le calcul de répartition dans votre dossier comptable. Montants décimaux avec un point, jusqu’à 6 décimales ; avoirs négatifs admis. Pour le support non valorisé, laissez le montant vide. Une valeur 0 signifie un zéro documenté ou estimé, selon l’origine choisie.</p>
     <Button type="submit">{entry ? `Enregistrer la correction (v${entry.version})` : 'Enregistrer l’observation'}</Button>
   </form>

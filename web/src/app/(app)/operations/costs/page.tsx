@@ -40,7 +40,7 @@ export default async function OperatingCostsPage({ searchParams }: { searchParam
     <Card className="mb-6 shadow-none"><CardHeader><CardTitle>Ajouter une observation</CardTitle></CardHeader><CardContent><OperatingCostForm month={snapshot.month} /></CardContent></Card>
     <Card className="mb-6 shadow-none"><CardHeader><CardTitle>Justificatifs et corrections</CardTitle></CardHeader><CardContent className="space-y-4">
       <p className="text-sm">25 références maximum par page, actives ou retirées. Les contributions ci-dessus couvrent toutes les pages du mois. Corriger une référence conserve son audit ; la retirer l’exclut des calculs sans effacer la preuve.</p>
-      {snapshot.entries.map((entry) => <details key={entry.id} className="rounded-xl border p-4"><summary className="cursor-pointer break-all text-sm font-medium">{entry.sourceKey} · v{entry.version} · {entry.voided ? 'Retirée' : 'Active'}</summary><div className="mt-4"><OperatingCostForm entry={entry} month={snapshot.month} /></div></details>)}
+      {snapshot.entries.map((entry) => <details key={entry.id} className="rounded-md border p-4"><summary className="cursor-pointer break-all text-sm font-medium">{entry.sourceKey} · v{entry.version} · {entry.voided ? 'Retirée' : 'Active'}</summary><div className="mt-4"><OperatingCostForm entry={entry} month={snapshot.month} /></div></details>)}
       <nav aria-label="Pages des justificatifs" className="flex gap-4">{query.after && <Link className="underline" href={`/operations/costs?month=${snapshot.month}`}>Première page</Link>}{snapshot.next && <Link className="underline" href={`/operations/costs?${new URLSearchParams({ month: snapshot.month, after: snapshot.next })}`}>Page suivante</Link>}</nav>
     </CardContent></Card>
   </>

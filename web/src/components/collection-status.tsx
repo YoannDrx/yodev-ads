@@ -19,7 +19,7 @@ export function CollectionStatus({ client, snapshots, attempts, locale, canRefre
     recent: english ? 'A refresh was requested recently. Please wait 15 minutes between collections.' : 'Une actualisation a été demandée récemment. Patientez 15 minutes entre deux collectes.',
     unavailable: english ? 'Collection unavailable. Check the connection and your access in settings.' : 'Collecte indisponible. Vérifiez la connexion et vos accès dans les réglages.',
   }
-  return <section aria-label={english ? 'Data synchronization' : 'Synchronisation des données'} className="mb-6 rounded-xl border bg-white p-5">
+  return <section aria-label={english ? 'Data synchronization' : 'Synchronisation des données'} className="mb-6 rounded-md border bg-card p-5">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="font-semibold">{english ? 'Stored Google Ads data' : 'Données Google Ads enregistrées'}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{available}/{analyticalFamilies.length} {english ? 'up-to-date sections' : 'sections à jour'} · {pending} {english ? 'pending' : 'en attente'} · {failed} {english ? 'failed' : 'en échec'} · {client.timezone}</p>
@@ -38,7 +38,7 @@ export function CollectionStatus({ client, snapshots, attempts, locale, canRefre
         const state = analyticalSnapshotState(row, client)
         const label = state === 'available' ? (english ? 'Up to date' : 'À jour') : state === 'stale' ? (english ? 'Older data' : 'Données anciennes') : (english ? 'Not collected' : 'Non disponible')
         return <li key={family} className="flex flex-wrap justify-between gap-2 py-2"><Link prefetch={false} href={`/insights/${family}?client=${client.id}`} className="font-medium underline">{ANALYTICAL_FAMILIES[family][locale]} · {label}</Link><span>
-          {row && state !== 'unavailable' && <>{row.periodFrom} → {row.periodThrough} · {formatDate(row.collectedAt)}<span className={googleCoverageState(row.coverage) === 'limited' ? 'ml-2 font-medium text-amber-800' : 'ml-2'}>{googleCoverageLabel(row.coverage, locale)}</span></>}
+          {row && state !== 'unavailable' && <>{row.periodFrom} → {row.periodThrough} · {formatDate(row.collectedAt)}<span className={googleCoverageState(row.coverage) === 'limited' ? 'ml-2 font-medium text-[var(--y-warning)]' : 'ml-2'}>{googleCoverageLabel(row.coverage, locale)}</span></>}
           {attempt && <span className="ml-2">{attempt.startedAt ? (english ? 'Last attempt' : 'Dernière tentative') : (english ? 'Requested' : 'Demandée')} : {formatDate(attempt.startedAt ?? attempt.createdAt)}{['queued', 'retrying'].includes(attempt.status) ? ` · ${english ? 'Scheduled after' : 'Planifiée après'} ${formatDate(attempt.availableAt)}` : ['dead_letter', 'failed'].includes(attempt.status) ? ` · ${english ? 'Collection failed; previous data preserved' : 'Collecte échouée ; données précédentes conservées'}` : ''}</span>}
         </span></li>
       })}</ul>

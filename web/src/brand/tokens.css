@@ -1,0 +1,36 @@
+/* Yodev 2.0 — canonical tokens. Run npm run brand:sync after editing. */
+:root {
+  --y-bg: #141716; --y-surface: #1b201e; --y-surface-2: #242a27;
+  --y-text: #ebefeb; --y-muted: #a5afa8; --y-border: #343d37;
+  --y-accent: #b6d68b; --y-on-accent: #141c10;
+  --y-mail: #a7cfe8; --y-ads: #b6d68b; --y-spend: #f0c66e;
+  --y-danger: #f49b9b; --y-success: #7ed8b5; --y-warning: #e9b978;
+  --y-radius: 4px; color-scheme: dark;
+}
+html.light, html[data-theme="light"] {
+  --y-bg: #f7f8f5; --y-surface: #ffffff; --y-surface-2: #ecefe9;
+  --y-text: #18201b; --y-muted: #566359; --y-border: #d2d9d0;
+  --y-accent: #426026; --y-on-accent: #ffffff;
+  --y-mail: #276181; --y-ads: #426026; --y-spend: #81580c;
+  --y-danger: #b02b36; --y-success: #1d7054; --y-warning: #87510c;
+  color-scheme: light;
+}
+:root[data-product="mail"], [data-product="mail"] { --y-accent: var(--y-mail); }
+:root[data-product="ads"], [data-product="ads"] { --y-accent: var(--y-ads); }
+:root[data-product="spend"], [data-product="spend"] { --y-accent: var(--y-spend); }
+.y-brand { display: inline-flex; align-items: center; gap: .6rem; white-space: nowrap; font-family: var(--font-yodev-body), var(--font-dm-sans), sans-serif; font-weight: 650; letter-spacing: -.04em; color: var(--y-text); }
+.y-symbol { width: 1.5em; height: 1.5em; flex-shrink: 0; color: var(--y-accent); }
+.y-product-name { letter-spacing: -.035em; font-weight: 500; }
+.y-family { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; font-size: 12px; color: var(--y-muted); }
+.y-family a { text-decoration: none; padding-block: .6rem; }
+.y-family a:hover { color: var(--y-text); text-decoration: underline; text-underline-offset: 4px; }
+.y-theme-toggle { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 8px; border: 1px solid var(--y-border); border-radius: var(--y-radius); background: var(--y-surface); color: var(--y-text); cursor: pointer; }
+.y-theme-toggle svg { width: 18px; height: 18px; }
+.y-light-icon { display: none; }
+html.light .y-light-icon, html[data-theme="light"] .y-light-icon { display: block; }
+html.light .y-dark-icon, html[data-theme="light"] .y-dark-icon { display: none; }
+
+/* Semantic state colours stay distinct from product accents in both themes. */
+.y-status-success { color:var(--y-success); background:color-mix(in srgb,var(--y-success) 10%,var(--y-surface)); }
+.y-status-warning { color:var(--y-warning); background:color-mix(in srgb,var(--y-warning) 10%,var(--y-surface)); }
+.y-status-danger { color:var(--y-danger); background:color-mix(in srgb,var(--y-danger) 10%,var(--y-surface)); }
