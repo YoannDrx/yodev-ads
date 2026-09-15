@@ -113,7 +113,9 @@ jobs:
       - name: Verify database load and bounded connection pools
         env:
           DATABASE_POOL_MAX: '10'
-        run: npx tsx scripts/verify-database-load.ts
+        run: |
+          export APP_ENCRYPTION_KEY="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))")"
+          npx tsx scripts/verify-database-load.ts
       - name: Install browser for disposable authenticated journeys
         run: npx playwright install --with-deps chromium
       - name: Verify five-role authentication, lifecycle and mobile journeys
