@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
 async function runScheduler(request: Request, startedAt: Date) {
   const requestId = request.headers.get('x-vercel-id') ?? crypto.randomUUID()
-  const nextExpectedAt = new Date(startedAt.getTime() + 5 * 60_000)
+  const nextExpectedAt = new Date(startedAt.getTime() + 15 * 60_000)
   const leaseOwner = `scheduler:${requestId}`
   const lease = await acquireOperationalLease({ component: 'scheduler', owner: leaseOwner, now: startedAt })
   if (!lease) {
